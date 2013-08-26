@@ -1,0 +1,1 @@
+var<string> ai = 42

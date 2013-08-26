@@ -1,0 +1,1 @@
+var<int> i   -- FAIL: Missing definition of non-nilable type

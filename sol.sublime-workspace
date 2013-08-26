@@ -1,0 +1,1167 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"Lambda",
+				"LambdaFunction"
+			],
+			[
+				"repo",
+				"reportWarning"
+			],
+			[
+				"acti",
+				"activate"
+			],
+			[
+				"report",
+				"reportError"
+			],
+			[
+				"wher",
+				"whereAmI"
+			],
+			[
+				"break",
+				"break_"
+			],
+			[
+				"varia",
+				"variant"
+			],
+			[
+				"act",
+				"active"
+			],
+			[
+				"Ty",
+				"Type"
+			],
+			[
+				"check",
+				"check_arguments"
+			],
+			[
+				"as",
+				"asTypeList"
+			],
+			[
+				"Type",
+				"Typelist"
+			],
+			[
+				"deduc",
+				"deducedType"
+			],
+			[
+				"does",
+				"doesReturn"
+			],
+			[
+				"La",
+				"LabelStatement"
+			],
+			[
+				"Return",
+				"ReturnStatement"
+			],
+			[
+				"Local",
+				"LocalStatement"
+			],
+			[
+				"pro",
+				"problemRope"
+			],
+			[
+				"lef",
+				"leftType"
+			],
+			[
+				"le",
+				"leftType"
+			],
+			[
+				"ar",
+				"args"
+			],
+			[
+				"expe",
+				"Expected"
+			],
+			[
+				"self",
+				"self_var"
+			],
+			[
+				"print",
+				"printHelp"
+			],
+			[
+				"called",
+				"called_as_mem_fun"
+			],
+			[
+				"repor",
+				"reportError"
+			],
+			[
+				"Com",
+				"combineTypeLists"
+			],
+			[
+				"Un",
+				"UnknownTypeList"
+			],
+			[
+				"follow",
+				"follow_identifiers"
+			],
+			[
+				"com",
+				"compileStr"
+			],
+			[
+				"file",
+				"filename"
+			],
+			[
+				"pre",
+				"Pretty"
+			],
+			[
+				"UN",
+				"Unknown"
+			],
+			[
+				"Creat",
+				"CreateGlobal"
+			],
+			[
+				"Declare",
+				"DeclareLocal"
+			],
+			[
+				"token",
+				"tokenList"
+			],
+			[
+				"toke",
+				"tokenList"
+			],
+			[
+				"Token",
+				"TokenList"
+			],
+			[
+				"lead",
+				"leadingTokens"
+			],
+			[
+				"should",
+				"shouldPass"
+			],
+			[
+				"sho",
+				"shouldPass"
+			],
+			[
+				"Consu",
+				"ConsumeSymbol"
+			],
+			[
+				"All",
+				"allLeadingWhite"
+			],
+			[
+				"all",
+				"allLeadingWhite"
+			],
+			[
+				"Unkno",
+				"UnknownTypeList"
+			],
+			[
+				"Unkn",
+				"Unknown"
+			],
+			[
+				"var",
+				"varargs"
+			],
+			[
+				"do",
+				"doAssigment"
+			],
+			[
+				"right",
+				"rightType"
+			],
+			[
+				"gene",
+				"generateError"
+			],
+			[
+				"could",
+				"couldbe"
+			],
+			[
+				"Va",
+				"Variable"
+			],
+			[
+				"Emp",
+				"EmptyObj"
+			],
+			[
+				"anayl",
+				"analyzeExpr_Single"
+			],
+			[
+				"Unk",
+				"UnknownTypeList"
+			],
+			[
+				"anal",
+				"analyzeStatement"
+			],
+			[
+				"Gene",
+				"GenerateError"
+			],
+			[
+				"Consum",
+				"ConsumeToken"
+			],
+			[
+				"Lua",
+				"LuaSettings"
+			],
+			[
+				"analyzeExpr",
+				"analyzeExpr_Single"
+			],
+			[
+				"remo",
+				"remove_this_type"
+			],
+			[
+				"module",
+				"module_name"
+			],
+			[
+				"path",
+				"path_out"
+			],
+			[
+				"path_",
+				"path_in"
+			],
+			[
+				"va",
+				"variants"
+			],
+			[
+				"cou",
+				"couldbe"
+			],
+			[
+				"expecte",
+				"expectedType"
+			],
+			[
+				"ignor",
+				"ignoreSet"
+			],
+			[
+				"lo",
+				"lookupify"
+			],
+			[
+				"is",
+				"is_useful_boolean"
+			],
+			[
+				"analyz",
+				"analyzeExpr"
+			],
+			[
+				"vlu",
+				"valueTypes"
+			],
+			[
+				"make",
+				"make_variant"
+			],
+			[
+				"Ast",
+				"AstType"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "sol/type_check.sol",
+			"settings":
+			{
+				"buffer_size": 52698,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sol/format_identity.sol",
+			"settings":
+			{
+				"buffer_size": 11655,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sol/class.sol",
+			"settings":
+			{
+				"buffer_size": 2774,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sol/scope.sol",
+			"settings":
+			{
+				"buffer_size": 5320,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sol/parser.sol",
+			"settings":
+			{
+				"buffer_size": 41454,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "{\n	\"font_size\": 11,\n	\"ignored_packages\":\n	[\n		\"Vintage\",\n		\"SimpleClone\"\n	],\n	\"tab_size\": 3\n}\n",
+			"file": "/Users/emilk/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+			"file_size": 94,
+			"file_write_time": 130215006210000000,
+			"settings":
+			{
+				"buffer_size": 94,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "Packages/User/solc-solc.sublime-build",
+	"command_palette":
+	{
+		"height": 392.0,
+		"selected_items":
+		[
+			[
+				"sol",
+				"Set Syntax: Sol"
+			],
+			[
+				"defau",
+				"Preferences: Settings - Default"
+			],
+			[
+				"user",
+				"Preferences: Settings - User"
+			],
+			[
+				"brow",
+				"Preferences: Browse Packages"
+			],
+			[
+				"space",
+				"Indentation: Convert to Spaces"
+			],
+			[
+				"tabs",
+				"Indentation: Convert to Tabs"
+			],
+			[
+				"rein",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"indn",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"side",
+				"View: Toggle Side Bar"
+			],
+			[
+				"tab",
+				"Indentation: Convert to Tabs"
+			],
+			[
+				"spa",
+				"Indentation: Convert to Spaces"
+			],
+			[
+				"spac",
+				"Indentation: Convert to Spaces"
+			],
+			[
+				"setting",
+				"Preferences: Settings - Default"
+			],
+			[
+				"love",
+				"Set Syntax: Lua (Love)"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 449.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/emilk/Documents/kod/lua/Sol/sol/parser.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/scope.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/class.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/type.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/sol_debug.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/solc.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/type_check.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/util.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/sol.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/lexer.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/debug.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/format_identity.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/pretty.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/strict.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/FormatIdentity.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/Parser.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/TypeCheck.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/Debug.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/Scope.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/Lexer.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/Type.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/Util.sol",
+		"/Users/emilk/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+		"/Users/emilk/Library/Application Support/Sublime Text 3/Packages/Default/Preferences.sublime-settings",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/Scope_foo.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/debugger.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/force_build.sh",
+		"/Users/emilk/Library/Application Support/Sublime Text 3/Packages/User/solc-solc.sublime-build",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/TODO.txt",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/enum_arg_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/type_comp_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/underscore_read_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/underscore_read.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/build/FormatIdentity.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/forward_declare_2_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/if_nilable.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/ret_type.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/enum_arg.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/build/Type.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/empty_list.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/install/pretty.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/typedef.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/recursion.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/obj_medium.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/obj_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/obj_extended.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/inherit.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/type_export_1.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/build/Parser.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/typedef_namespaced_premature_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/typedef_namespaced_bad_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/run_tests.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/typedef_namespaced_premature_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/if_non_nilable_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/_README.txt",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/enum.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/type_import_1.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/local_type_single_multiple_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/output/obj.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/obj.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/arg_count_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/arg_count.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/int_literal_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/arg_type_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/ret_type_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/shadowing_FAIL.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/build/build.sh",
+		"/Users/emilk/Documents/kod/lua/Sol/install/Parser.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/bool.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/arg_type.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/install/Lexer.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/tests_pass/argument_type.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/tests_fail/argument_type.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/tests_fail/argument_type.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/foo_module.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/foo.lua",
+		"/Users/emilk/Documents/kod/lua/love/snake/pretty.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/build.sh",
+		"/Users/emilk/Documents/kod/lua/Sol/sol/EditDistance.lua",
+		"/Users/emilk/Library/Application Support/Sublime Text 2/Packages/Sol/Sol.sublime-settings",
+		"/Users/emilk/Library/Application Support/Sublime Text 2/Packages/Sol/Comments.tmPreferences",
+		"/Users/emilk/Documents/kod/lua/Sol/solc_test.sol",
+		"/Users/emilk/Documents/kod/lua/Sol/solc_test.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/test.sol",
+		"/Users/emilk/Library/Application Support/Sublime Text 2/Packages/Lua Dev/Main.sublime-menu",
+		"/Users/emilk/Documents/kod/lua/Sol/ParseLua.lua",
+		"/Users/emilk/Documents/kod/lua/Sol/tests/report.txt",
+		"/Applications/Sublime Text.app/Contents/MacOS/changelog.txt",
+		"/Users/emilk/Documents/kod/lua/love/test/main.lua",
+		"/Users/emilk/Library/Application Support/Sublime Text 3/Cache/SublimeLove/Love.tmLanguage.cache",
+		"/Users/emilk/Library/Application Support/Sublime Text 3/Installed Packages/SublimeLove.sublime-package",
+		"/Users/emilk/Library/Application Support/Sublime Text 3/Packages/User/Flake8Lint.sublime-settings",
+		"/Users/emilk/Documents/kod/Python/super.py",
+		"/Users/emilk/Documents/kod/Python/test.py",
+		"/Users/emilk/Documents/html5/old/ornament9.html",
+		"/Users/emilk/Library/Application Support/Sublime Text 3/Packages/Python Flake8 Lint/Flake8Lint.sublime-settings"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 93.0,
+		"where_history":
+		[
+			"",
+			"Parser.",
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": true,
+		"find_history":
+		[
+			"Function",
+			"ParseFunctionArgsAndBody",
+			"Function",
+			"ParseFunctionArgsAndBody",
+			"global",
+			"formatExpr",
+			"skipNextToken",
+			"ParseFunctionArgsAndBody",
+			"'Function",
+			"Function",
+			"parse_declaration",
+			"global",
+			"report_error",
+			"Function",
+			"reportWarning",
+			"expected boolean or",
+			"Scope:new",
+			"setmetatable",
+			"‘setmetatable",
+			"var_",
+			"analyze_typedef",
+			"Typedef",
+			"identifier",
+			"GetScopedType",
+			"Typedefs",
+			"T.Obj",
+			"ExpectedTypes",
+			"Expected",
+			"used as namespace but is not an object",
+			"ExpectedTypes",
+			"analyze_typedef",
+			"forward de",
+			"ParseType",
+			"parseTypeAssignment",
+			"Typedef",
+			"identifier",
+			"require 'debug'",
+			"activate",
+			"strict",
+			"require",
+			"require 'Debug'",
+			"require",
+			"require 'Util'",
+			"require 'Type'",
+			"require 'Parser'",
+			"require 'Lexer'",
+			"require",
+			"typecheck'",
+			"typecheck",
+			"formatidentity",
+			"'identifier'",
+			"\"identifier\"",
+			"ExpectedTypes",
+			"'identifier'",
+			"'typedef'",
+			"parseBases",
+			"'typedef'",
+			"analyzeTypedef",
+			"Typedef",
+			"Typedef\nTypedef",
+			"Typedef",
+			"formatExpr",
+			"reportError",
+			"appendWhite",
+			"appendToken",
+			"appendStr",
+			"countLineBreak",
+			"combineTypeLists",
+			"asTypeList",
+			"numTypesInList",
+			"couldbe",
+			"is_obj",
+			"isa_obj",
+			"isa_map",
+			"isa_list",
+			"problemRope",
+			"isTypeList",
+			"is_int",
+			"isint",
+			"Failed to find member",
+			"ParseSubExpr",
+			"ParseExpr",
+			"ParseExpr\n",
+			"ParseExpr",
+			"Indexing unkown table",
+			"Initializing value with nil",
+			"		\n",
+			"<any",
+			"Error type-checking expression",
+			"Children =",
+			":sub",
+			"reportError",
+			"-dedu",
+			"dedu",
+			"Unde",
+			"local<",
+			"ParseTypeArgs",
+			"'<'",
+			"local<",
+			"appendWhite",
+			"\"var\"",
+			"t:peek() == \"var\"",
+			"ParseFunctionArgsAndBody",
+			"local function ParseFunctionArgsAndBody(scope, tokenList, is_mem_fun)",
+			"bad argument",
+			"parseModule",
+			"var<",
+			"local<",
+			"var<",
+			"format",
+			"local<",
+			"appendStr",
+			"LocalStatement",
+			"parse_declaration",
+			"'global'",
+			"'var'",
+			"\"var_\"",
+			"var",
+			"var-args",
+			"var",
+			"va",
+			"var",
+			"Typedef",
+			"Child type ",
+			"build",
+			"buil",
+			"Peek()",
+			"reportError"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"report_warning",
+			"v",
+			"Namespace",
+			"require 'sol_debug'",
+			"require 'debug'",
+			"require 'util'",
+			"require 'type'",
+			"require 'parser'",
+			"require 'lexer'",
+			"analyze_typedef",
+			"report_error",
+			"append_white",
+			"append_token",
+			"append_str",
+			"count_line_breaks",
+			"combine_type_lists",
+			"as_type_list",
+			"could_be",
+			"is_obj",
+			"problem_rope",
+			"is_type_list",
+			"is_int",
+			"var<",
+			"local<",
+			"var<",
+			"var_",
+			"variable",
+			"varargs",
+			"v",
+			"Scope:",
+			"isa_memo",
+			"D.assert",
+			"couldbe",
+			"T.couldbe_tl",
+			"Scope:",
+			"T.isa",
+			"T.isa_typelists(",
+			"end",
+			"(",
+			"is_any",
+			"T.Any",
+			"'any'",
+			"'",
+			"-> any",
+			": any",
+			"",
+			": any",
+			"-> any",
+			"bool, any",
+			"g_local_parse",
+			"it",
+			"t:append",
+			"self.it",
+			"sol_dir",
+			"script_dir",
+			"reportError",
+			"ReportError",
+			"ParseSimpleType",
+			"ParseAtomicType",
+			"ParseAtomicTypes",
+			"analyzeFunDecl",
+			"isunknown",
+			"expr2str",
+			"LexSol",
+			"obj",
+			"util.Pretty",
+			"ParseSol",
+			"sol",
+			"luac",
+			"sol",
+			"Sol",
+			"sol",
+			"Sol",
+			"Sol Dev",
+			".sol"
+		],
+		"reverse": false,
+		"show_context": false,
+		"use_buffer2": false,
+		"whole_word": true,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 5,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "sol/type_check.sol",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 52698,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								51688,
+								51688
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Sol/Sol.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 26785.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "sol/format_identity.sol",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 11655,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								9429,
+								9429
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Sol/Sol.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 5437.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "sol/class.sol",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2774,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1325,
+								1335
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Sol/Sol.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 493.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "sol/scope.sol",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5320,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								628,
+								628
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Sol/Sol.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 101.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "sol/parser.sol",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 41454,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								41454,
+								41454
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Sol/Sol.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 23274.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "/Users/emilk/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 94,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								94,
+								94
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JSON.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 23.0
+	},
+	"input":
+	{
+		"height": 31.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 325.0
+	},
+	"output.find_results":
+	{
+		"height": 254.0
+	},
+	"project": "sol.sublime-project",
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+			[
+				"par",
+				"parser.sol"
+			],
+			[
+				"form",
+				"format_identity.sol"
+			],
+			[
+				"forma",
+				"format_identity.sol"
+			],
+			[
+				"type_c",
+				"type_check.sol"
+			],
+			[
+				"type.",
+				"type.sol"
+			],
+			[
+				"typ",
+				"Type.sol"
+			],
+			[
+				"type",
+				"TypeCheck.sol"
+			],
+			[
+				"ty",
+				"TypeCheck.sol"
+			],
+			[
+				"lex",
+				"Lexer.sol"
+			],
+			[
+				"pars",
+				"Parser.sol"
+			],
+			[
+				"pa",
+				"Parser.sol"
+			],
+			[
+				"scop",
+				"Scope.sol"
+			],
+			[
+				"solc",
+				"solc.sol"
+			],
+			[
+				"ut",
+				"Util.sol"
+			],
+			[
+				"uti",
+				"Util.sol"
+			],
+			[
+				"le",
+				"Lexer.sol"
+			],
+			[
+				"str",
+				"strict.sol"
+			],
+			[
+				"pr",
+				"pretty.sol"
+			],
+			[
+				"util",
+				"Util.sol"
+			],
+			[
+				"stric",
+				"strict.sol"
+			],
+			[
+				"de",
+				"debugger.lua"
+			],
+			[
+				"pret",
+				"pretty.sol"
+			],
+			[
+				"sco",
+				"Scope.sol"
+			],
+			[
+				"debu",
+				"debugger.lua"
+			],
+			[
+				"for",
+				"FormatIdentity.sol"
+			],
+			[
+				"t",
+				"Type.sol"
+			],
+			[
+				"fo",
+				"FormatIdentity.sol"
+			],
+			[
+				"bui",
+				"~/Library/Application Support/Sublime Text 3/Packages/User/solc-solc.sublime-build"
+			],
+			[
+				"formati",
+				"build/FormatIdentity.lua"
+			],
+			[
+				"parser",
+				"sol/Parser.sol"
+			],
+			[
+				"typech",
+				"TypeCheck.sol"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 224.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
