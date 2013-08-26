@@ -454,7 +454,7 @@ function L.LexSol(src, filename, settings)
 	local st, err = pcall( local_lexer )
 
 	if not st then
-		util.printf_err( err )
+		util.printf_err( "%s", err )
 		return false, err
 	end
 

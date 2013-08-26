@@ -41,7 +41,7 @@ T
 
 .on_error = function(fmt, ...)
 	local msg = string.format(fmt, ...)
-	util.printf_err( msg )
+	util.printf_err( "%s", msg )
 	error(msg, 2)
 end
 
@@ -184,18 +184,22 @@ function T.follow_identifiers(t, forgiving)
 			end
 			--]]
 
-			if t.var_ then
-				if not t.var_.Namespace then
+			if t.var_name then
+				local var_ = t.scope:GetVar( t.var_name )  -- A namespace is always a variable
+				if not var_ then
+					T.on_error("Failed to find namespace variable %q", t.var_name)
+					t.type = T.Any
+				elseif not var_.Namespace then
 					if forgiving then
 						return T.Any
 					else
-						T.on_error("%s: Variable '%s' is not a namespace (looking up '%s')", t.first_usage, t.var_.Name, t.name)
+						T.on_error("%s: Variable '%s' is not a namespace (looking up '%s')", t.first_usage, var_.Name, t.name)
 						t.type = T.Any
 					end
 				else
-					t.type = t.var_.Namespace[t.name]
+					t.type = var_.Namespace[t.name]
 					if not t.type then
-						T.on_error("%s: Type '%s' not found in namespace '%s'", t.first_usage, t.name, t.var_.Name)
+						T.on_error("%s: Type '%s' not found in namespace '%s'", t.first_usage, t.name, var_.Name)
 						t.type = T.Any
 					end
 				end
@@ -333,8 +337,8 @@ function T.isa_raw(d, b, problem_rope)
 		return true -- Early out optimization
 	end
 
-	assert(T.is_type(d))
-	assert(T.is_type(b))
+	D.assert(T.is_type(d))
+	D.assert(T.is_type(b))
 	d = T.follow_identifiers(d)
 	b = T.follow_identifiers(b)
 

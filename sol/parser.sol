@@ -57,13 +57,13 @@ P.SolSettings = {
 
 --------------------------------------------------------
 
-typedef P.ExprType = 'VarExpr' or 'NumberExpr' or 'StringExpr' or 'BooleanExpr' or 'NilExpr'
+typedef P.ExprType = 'IdExpr' or 'VarExpr' or 'NumberExpr' or 'StringExpr' or 'BooleanExpr' or 'NilExpr'
                   or 'BinopExpr' or 'UnopExpr' or 'DotsExpr'
                   or 'CallExpr' or 'TableCallExpr' or 'StringCallExpr'
                   or 'IndexExpr' or 'MemberExpr' or 'LambdaFunction'
                   or 'ConstructorExpr' or 'Parentheses'
 
-typedef P.StatType = 'AssignmentStatement' or 'CallStatement' or 'LocalStatement'
+typedef P.StatType = 'AssignmentStatement' or 'CallStatement' or 'VarDeclareStatement'
                   or 'IfStatement' or 'WhileStatement' or 'DoStatement' or 'RepeatStatement'
                   or 'GenericForStatement' or 'NumericForStatement'
                   or 'ReturnStatement' or 'BreakStatement' or 'LabelStatement' or 'GotoStatement'
@@ -176,47 +176,6 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 		return scope
 	end
 
-	local function DeclareLocal(scope, name) -> S.Variable
-		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
-
-		local old = scope:GetScoped(name)
-		if old then
-			if name ~= "st" and name ~= "_" then  -- HACK
-				report_sol_error("'%s' already declared in this scope, at %s", name, old.where)
-			end
-			return old
-		end
-
-		return scope:CreateLocal(name, where_am_i())
-	end
-
-	local function DeclareGlobal(scope, name) -> S.Variable
-		D.assert(scope and scope.Parent)
-		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
-
-		local old = scope:GetVar(name)
-		if old then
-			report_error("'%s' already declared at %s", name, old.where)
-			return old
-		end
-
-		if name ~= '_' then
-			if not scope:is_module_level() then
-				report_sol_error("Global variables should be declared in the top scope")
-			end
-		end
-
-		return scope:CreateGlobal(name, where_am_i())
-	end
-
-	local function DeclareVar(scope, name: string, is_local: bool) -> S.Variable
-		if is_local then
-			return DeclareLocal(scope, name)
-		else
-			return DeclareGlobal(scope, name)
-		end
-	end
-
 
 	local ParseExpr
 	local ParseStatementList
@@ -239,28 +198,27 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 			return false, report_error("`(` expected.")
 		end
 
-		var<S.Variable?> self_var = nil
-
-		if is_mem_fun then
-			self_var = DeclareLocal(func_scope, 'self')
-			assert(self_var)
-		end
-
-		var<[S.Variable]>  arg_list = {}
-		var<S.Variable?>   vararg  = nil
+		typedef ArgInfo = {
+			name: string;
+			type: T.Type?;
+		}
+		var<[ArgInfo]>  arg_list = {}
+		var<T.VarArgs?> vararg  = nil
 
 		while not tok:ConsumeSymbol(')', token_list) do
 			if tok:Is('Ident') then
-				local arg_name = tok:Get(token_list).Data
-				local arg = DeclareLocal(func_scope, arg_name)
-				arg_list[#arg_list+1] = arg
+				local arg = {
+					name = tok:Get(token_list).Data
+				}
 
 				if settings.FunctionTypes and tok:ConsumeSymbol(':') then
-					arg.Type = ParseType(func_scope)
-					if not arg.Type then
+					arg.type = ParseType(func_scope)
+					if not arg.type then
 						return false, report_error("type expected.")
 					end
 				end
+
+				arg_list[#arg_list+1] = arg
 
 				if not tok:ConsumeSymbol(',', token_list) then
 					if tok:ConsumeSymbol(')', token_list) then
@@ -279,13 +237,11 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 					end
 				end
 
-				vararg = DeclareLocal(func_scope, '...')
-
 				var<T.VarArgs> var_arg_type = {
 					tag  = 'varargs',
 					type = elem_type,
 				}
-				vararg.Type = var_arg_type
+				vararg = var_arg_type
 
 				if not tok:ConsumeSymbol(')', token_list) then
 					return false, report_error("`...` must be the last argument of a function.")
@@ -314,19 +270,14 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 		local node_func = {
 			--AstType     = 'Function', LambdaFunction or FunctionDecl
 			Scope       = func_scope,
-			Arguments   = arg_list,
-			Body        = body,
-			VarArg      = vararg,
 			Tokens      = token_list,
 			IsMemFun    = is_mem_fun,
+			Arguments   = arg_list,
+			VarArg      = vararg,
 			ReturnTypes = return_types,
-			SelfVar     = self_var,
+			Body        = body,
 		}
 
-		if node_func.IsMemFun then
-			assert(node_func.SelfVar)
-		end
-		--
 		return true, node_func
 	end
 
@@ -349,23 +300,12 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 
 		elseif tok:Is('Ident') then
 			local id = tok:Get(token_list)
-			local var_ = scope:GetVar(id.Data)
-			if not var_ then
-				if id.Data ~= '_' then  -- Implicit '_' var is OK
-					report_sol_error("Implicit global %q", id.Data)
-				end
-				var_ = DeclareGlobal(scope, id.Data)
-			else
-				var_.References = var_.References + 1
-			end
-			--
-			local node_prim_exp = {}
-			node_prim_exp.AstType   = 'VarExpr'
-			node_prim_exp.Name      = id.Data
-			node_prim_exp.Variable  = var_
-			node_prim_exp.Tokens    = token_list
-			--
-			return true, node_prim_exp
+
+			return true, {
+				AstType = 'IdExpr',
+				Name    = id.Data,
+				Tokens  = token_list
+			}
 		else
 			return false, report_error("primary expression expected")
 		end
@@ -792,7 +732,6 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 						break
 					end
 
-
 					var<string?> arg_name = nil
 					if tok:Is('Ident') and tok:Peek(1).Data == ':' then
 						-- named type
@@ -856,25 +795,21 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 				end
 
 				local sub_name = tok:Get().Data
-				local var_ = scope:GetVar(name)  -- A namespace is always a variable
-				if not var_ then
-					report_error("Failed to find namespace variable %q", name)
-					return T.Any
-				end
 
 				return {
-					tag        = 'identifier',
-					scope      = scope,
-					var_       = var_,
-					name       = sub_name,
+					tag         = 'identifier',
+					scope       = scope,
+					--var_       = var_,
+					var_name    = name,
+					name        = sub_name,
 					first_usage = where,
 				}
 			else
 				-- Local or global identifier
 				return {
-					tag        = 'identifier',
-					scope      = scope,
-					name       = name,
+					tag         = 'identifier',
+					scope       = scope,
+					name        = name,
 					first_usage = where,
 				}
 			end
@@ -1031,18 +966,21 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 			end
 
 			local base_name = type_name
+			--[[
 			local var_ = scope:GetVar(base_name)
 			if not var_ then
 				return false, report_error("Namespaced typedef: %s is not a previously defined variable", base_name)
 			end
+			--]]
 
 			type_name = tok:GetIdent()
 			if not type_name then
 				return false, report_error("Identifier expected")
 			end
 
-			node.Variable  = var_
-			node.TypeName  = type_name
+			--node.Variable  = var_
+			node.NamespaceName = base_name
+			node.TypeName      = type_name
 		end
 
 		-- Are we a forward-declare?
@@ -1074,15 +1012,14 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 			if not tok:Is('Ident') then
 				return false, report_error("Function name expected")
 			end
-			local name = tok:Get(token_list).Data
-			local local_var = DeclareVar(scope, name, is_local)
-			--
+
+			local var_name = tok:Get(token_list).Data
 			local st, func = ParseFunctionArgsAndBody(scope, token_list)
 			if not st then return false, func end
-			--
-			func.AstType      = 'FunctionDecl'
-			func.Variable     = local_var
-			func.IsLocal      = is_local
+
+			func.AstType  = 'FunctionDecl'
+			func.VarName  = var_name
+			func.IsLocal  = is_local
 			return true, func
 
 		elseif tok:Is('Ident') or angle_bracket then
@@ -1098,12 +1035,12 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 				return false, report_error("Empty type list")
 			end
 
-			local var_list = { tok:Get(token_list).Data }
+			local name_list = { tok:Get(token_list).Data }
 			while tok:ConsumeSymbol(',', token_list) do
 				if not tok:Is('Ident') then
 					return false, report_error("local variable name expected")
 				end
-				var_list[#var_list+1] = tok:Get(token_list).Data
+				name_list[#name_list+1] = tok:Get(token_list).Data
 			end
 
 			local init_list = {}
@@ -1115,17 +1052,10 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 				until not tok:ConsumeSymbol(',', token_list)
 			end
 
-			--now patch var_ list
-			--we can't do this before getting the init list, because the init list does not
-			--have the locals themselves in scope.
-			for i, v in ipairs(var_list) do
-				var_list[i] = DeclareVar(scope, v, is_local)
-			end
-
 			local node_local = {}
-			node_local.AstType   = 'LocalStatement'
+			node_local.AstType   = 'VarDeclareStatement'
 			node_local.TypeList  = types
-			node_local.LocalList = var_list
+			node_local.NameList  = name_list
 			node_local.InitList  = init_list
 			node_local.Tokens    = token_list
 			node_local.IsLocal   = is_local
@@ -1239,7 +1169,6 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 			if tok:ConsumeSymbol('=', token_list) then
 				--numeric for
 				local for_scope = CreateScope(scope)
-				local for_var = DeclareLocal(for_scope, base_var_name.Data)
 				--
 				local st, start_ex = ParseExpr(scope)
 				if not st then return false, start_ex end
@@ -1266,7 +1195,7 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 				local node_for = {}
 				node_for.AstType  = 'NumericForStatement'
 				node_for.Scope    = for_scope
-				node_for.Variable = for_var
+				node_for.VarName  = base_var_name.Data
 				node_for.Start    = start_ex
 				node_for.End      = end_ex
 				node_for.Step     = step_ex
@@ -1277,12 +1206,12 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 				--generic for
 				local for_scope = CreateScope(scope)
 				--
-				local var_list = { DeclareLocal(for_scope, base_var_name.Data) }
+				var var_names = { base_var_name.Data }
 				while tok:ConsumeSymbol(',', token_list) do
 					if not tok:Is('Ident') then
 						return false, report_error("for variable expected.")
 					end
-					var_list[#var_list+1] = DeclareLocal(for_scope, tok:Get(token_list).Data)
+					var_names[#var_names+1] = tok:Get(token_list).Data
 				end
 				if not tok:ConsumeKeyword('in', token_list) then
 					return false, report_error("`in` expected.")
@@ -1306,12 +1235,12 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 				end
 				--
 				local node_for = {}
-				node_for.AstType      = 'GenericForStatement'
-				node_for.Scope        = for_scope
-				node_for.VariableList = var_list
-				node_for.Generators   = generators
-				node_for.Body         = body
-				node_for.Tokens       = token_list
+				node_for.AstType    = 'GenericForStatement'
+				node_for.Scope      = for_scope
+				node_for.VarNames   = var_names
+				node_for.Generators = generators
+				node_for.Body       = body
+				node_for.Tokens     = token_list
 				stat = node_for
 			end
 
@@ -1332,6 +1261,7 @@ function P.ParseSol(src: string, tok, filename: string?, settings, module_scope)
 			node_repeat.Condition = cond
 			node_repeat.Body      = body
 			node_repeat.Tokens    = token_list
+			node_repeat.Scope     = body.Scope
 			stat = node_repeat
 
 		elseif tok:ConsumeKeyword('function', token_list) then

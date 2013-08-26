@@ -20,6 +20,7 @@ end
 
 -- Returns the number of lines, and the number of characters on the last line
 local function count_line_breaks(str: string) -> int, int
+	D.assert(type(str) == 'string')
 	local n = 0
 	local c = 0
 	for i = 1,#str do
@@ -178,6 +179,9 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 				t:append_str( expr.Name )
 			end
 
+		elseif expr.AstType == 'IdExpr' then
+			t:append_str( expr.Name )
+
 		elseif expr.AstType == 'NumberExpr' then
 			t:append_token( expr.Value )
 
@@ -237,7 +241,7 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 			t:append_next_token( "(" )
 			if #expr.Arguments > 0 then
 				for i = 1, #expr.Arguments do
-					t:append_str( expr.Arguments[i].Name )
+					t:append_str( expr.Arguments[i].name )
 					if i ~= #expr.Arguments then
 						t:append_next_token(",")
 					elseif expr.VarArg then
@@ -279,7 +283,7 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 			t:append_next_token( ")" )
 
 		else
-			printf_err("Unknown AST Type: ", expr.AstType)
+			printf_err("Unknown expr AST Type: '%s'", expr.AstType)
 		end
 
 		t:on_end()
@@ -309,7 +313,7 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 		elseif stat.AstType == 'CallStatement' then
 			format_expr(stat.Expression)
 
-		elseif stat.AstType == 'LocalStatement' then
+		elseif stat.AstType == 'VarDeclareStatement' then
 			if t:peek() == "local" then
 				t:append_next_token( "local" )
 			elseif t:peek() == "global" then
@@ -319,9 +323,9 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 				t:append_str('local')
 			end
 
-			for i = 1, #stat.LocalList do
-				t:append_str( stat.LocalList[i].Name )
-				t:append_comma( i ~= #stat.LocalList )
+			for i = 1, #stat.NameList do
+				t:append_str( stat.NameList[i] )
+				t:append_comma( i ~= #stat.NameList )
 			end
 			if #stat.InitList > 0 then
 				t:append_next_token( "=" )
@@ -389,13 +393,13 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 			if stat.Name then
 				format_expr( stat.Name )
 			else
-				t:append_str( stat.Variable.Name )
+				t:append_str( stat.VarName )
 			end
 
 			t:append_next_token( "(" )
 			if #stat.Arguments > 0 then
 				for i = 1, #stat.Arguments do
-					t:append_str( stat.Arguments[i].Name )
+					t:append_str( stat.Arguments[i].name )
 					t:append_comma( i ~= #stat.Arguments or stat.VarArg )
 					if i == #stat.Arguments and stat.VarArg then
 						t:append_next_token( "..." )
@@ -411,9 +415,9 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 
 		elseif stat.AstType == 'GenericForStatement' then
 			t:append_next_token( "for" )
-			for i = 1, #stat.VariableList do
-				t:append_str( stat.VariableList[i].Name )
-				t:append_comma( i ~= #stat.VariableList )
+			for i,name in ipairs(stat.VarNames) do
+				t:append_str( name )
+				t:append_comma( i ~= #stat.VarNames )
 			end
 			t:append_next_token( "in" )
 			for i = 1, #stat.Generators do
@@ -426,7 +430,7 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 
 		elseif stat.AstType == 'NumericForStatement' then
 			t:append_next_token( "for" )
-			t:append_str( stat.Variable.Name )
+			t:append_str( stat.VarName )
 			t:append_next_token( "=" )
 			format_expr(stat.Start)
 			t:append_next_token( "," )
@@ -454,7 +458,7 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 		elseif stat.AstType == 'Typedef' then
 
 		else
-			printf_err("Unknown AST Type: ", stat.AstType)
+			printf_err("Unknown stat AST Type: '%s'", stat.AstType)
 		end
 
 		if stat.Semicolon then
@@ -484,4 +488,3 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 end
 
 return FormatIdentity
-	

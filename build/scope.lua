@@ -41,7 +41,7 @@ require 'class'
 
 local S = {}
 
---local Scope = class("Scope")
+--global Scope = class("Scope")
 
 
 
@@ -266,16 +266,29 @@ function Scope:GetLocal(name)
 end
 
 
-function Scope:GetGlobal(name)
+-- Global declared in this scope
+function Scope:GetScopedGlobal(name)
 	assert(name and name ~= '')
 
 	for k, v in ipairs(self.Globals) do
 		if v.Name == name then return v end
 	end
+end
+
+
+function Scope:GetGlobal(name)
+	local v = self:GetScopedGlobal(name)
+	if v then return v end
 	
 	if self.Parent then
 		return self.Parent:GetGlobal(name)
 	end
+end
+
+
+-- Var declared in this scope
+function Scope:GetScopedVar(name)
+	return self:GetScoped(name) or self:GetScopedGlobal(name)
 end
 
 

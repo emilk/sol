@@ -100,6 +100,7 @@ end
 
 
 function U.shallow_clone(t)  -- TODO
+	if not t then return t end
 	local t2 = {}
 	for k,v in pairs(t) do
 		t2[k] = v

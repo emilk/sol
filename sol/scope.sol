@@ -44,7 +44,7 @@ local S = {}
 typedef S.Scope    = Scope
 typedef S.Variable = Variable
 
---local Scope = class("Scope")
+--global Scope = class("Scope")
 local Scope = {}
 
 function Scope:new(parent: S.Scope?) -> S.Scope
@@ -266,16 +266,29 @@ function Scope:GetLocal(name: string) -> S.Variable?
 end
 
 
-function Scope:GetGlobal(name: string) -> S.Variable ?
+-- Global declared in this scope
+function Scope:GetScopedGlobal(name: string) -> S.Variable ?
 	assert(name and name ~= '')
 
 	for k, v in ipairs(self.Globals) do
 		if v.Name == name then return v end
 	end
+end
+
+
+function Scope:GetGlobal(name: string) -> S.Variable ?
+	local v = self:GetScopedGlobal(name)
+	if v then return v end
 	
 	if self.Parent then
 		return self.Parent:GetGlobal(name)
 	end
+end
+
+
+-- Var declared in this scope
+function Scope:GetScopedVar(name: string) -> S.Variable ?
+	return self:GetScoped(name) or self:GetScopedGlobal(name)
 end
 
 
