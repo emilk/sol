@@ -66,21 +66,21 @@ local function Analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		return msg
 	end
 
-	local function report_spam(node: P.Node?, fmt, ...)
+	local function report_spam(node: P.Node?, fmt: string, ...)
 		if _G.g_spam then
 			print( report('Spam', node, fmt, ...) )
 		end
 	end
 
-	local function report_info(node: P.Node?, fmt, ...)
+	local function report_info(node: P.Node?, fmt: string, ...)
 		print( report('Info', node, fmt, ...) )
 	end
 
-	local function report_warning(node: P.Node?, fmt, ...)
+	local function report_warning(node: P.Node?, fmt: string, ...)
 		print( report('WARNING', node, fmt, ...) )
 	end
 
-	local function sol_warning(node: P.Node?, fmt, ...)
+	local function sol_warning(node: P.Node?, fmt: string, ...)
 		if settings.Sol then
 			report_warning(node, fmt, ...)
 		end
@@ -724,7 +724,7 @@ local function Analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if T.is_any(typ) then
 				if _G.g_spam then
-					report_spam(expr, "'Function call cannot be deduced - calling something of unknown type: '%s'", T.name(fun_type))
+					report_spam(expr, "Function call cannot be deduced - calling something of unknown type: '%s'", T.name(fun_type))
 				end
 
 				return T.AnyTypeList
@@ -782,7 +782,13 @@ local function Analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	-- for k,v in some_expr
 	-- this functions returns a list of types for k,v in the example above
 	local function extract_iterator_type(expr, scope: S.Scope) -> [T.Type]
+		report_spam(expr, "extract_iterator_type...")
+
 		local gen_t = analyze_expr_single(expr, scope)
+
+		if _G.g_spam then
+			report_spam(expr, "extract_iterator_type, gen_t: '%s'", T.name(gen_t))
+		end
 
 		gen_t = T.follow_identifiers(gen_t)
 		if gen_t == T.Any then
@@ -1594,7 +1600,7 @@ local function Analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		assert(scope)
 		var is_pre_analyze = false
 
-		--printf("analyze_statement %s", stat.AstType)
+		report_spam(stat, "analyze_statement %s", stat.AstType)
 
 		if stat.AstType == 'AssignmentStatement' then
 			local nLhs = #stat.Lhs
