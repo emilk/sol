@@ -23,6 +23,41 @@ local NumCompOps = bimap{
 }
 
 
+local function loose_lookup(table, id)
+	D.assert(type(id) == 'string')
+
+	if table[id] then
+		return table[id]
+	end
+
+	local edit_distance = require 'edit_distance'
+
+	local MAX_DIST = 3
+	local closest_dist = math.huge
+	local closest_key = nil
+
+	for k,v in pairs(table) do
+		D.assert(type(k) == 'string')
+
+		local dist = edit_distance(k, id, MAX_DIST)
+		if dist < MAX_DIST then
+			--U.printf("Dist between '%s' and '%s' is %d", k, id, dist)
+			if dist < closest_dist then
+				closest_dist = dist
+				closest_key = k
+			end
+		end
+	end
+
+	if closest_dist >= MAX_DIST then
+		return nil
+	end
+
+	assert(type(closest_key) == 'string')
+	return closest_key
+end
+
+
 local function expr2str(e) 
 	local ignore_set = U.bimap{'var_', 'scope', 'Tokens'}
 	return Pretty.serialize(e, ignore_set)
@@ -1374,7 +1409,11 @@ local function Analyze(ast, filename, on_require, settings)
 							return true
 						end
 					else
-						-- TODO: check for similarly named member first!
+						local close_name = loose_lookup(base_t.members, name)
+
+						if close_name then
+							report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name)
+						end
 
 						report_spam(stat, "Adding member")
 
@@ -1445,7 +1484,11 @@ local function Analyze(ast, filename, on_require, settings)
 							return true
 						end
 					else
-						-- TODO: check for similarly named member first!
+						local close_name = loose_lookup(var_t.members, name)
+
+						if close_name then
+							report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name)
+						end
 
 						report_spam(stat, "Adding member")
 
@@ -1656,7 +1699,7 @@ local function Analyze(ast, filename, on_require, settings)
 			for _,name in ipairs(stat.NameList) do
 				report_spam(stat, "Declaration: %s %s", stat.type, name)
 				local v = DeclareVar(stat, scope, name, is_local)
-				v.type = nil -- Ignore any forward-deduced type
+				--v.type = nil -- Ignore any forward-deduced type
 				vars[#vars + 1] = v
 			end
 

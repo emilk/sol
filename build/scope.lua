@@ -214,7 +214,7 @@ function Scope:create_local(name, where)
 	local v = {
 		scope      = self,
 		name       = name,
-		is_global   = false,
+		is_global  = false,
 		references = 1,
 		type       = nil,
 		where      = where,
@@ -239,7 +239,7 @@ function Scope:create_global(name, where)
 	local v = {
 		scope      = self,
 		name       = name,
-		is_global   = true,
+		is_global  = true,
 		references = 1,
 		type       = nil,
 		where      = where,

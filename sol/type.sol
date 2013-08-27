@@ -16,7 +16,7 @@ local T = {}
 
 
 typedef S.Variable = {
-	Scope : S.Scope,
+	scope : S.Scope,
 	name  : string,
 	type  : T.Type?,
 	is_global   : bool,
