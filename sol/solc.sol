@@ -55,8 +55,8 @@ local Parser          = require 'parser'
 local S               = require 'scope'
 local T               = require 'type'
 local TypeCheck       = require 'type_check'
-local util            = require 'util'
-local printf_err = util.printf_err
+local U            = require 'util'
+local printf_err = U.printf_err
 
 _G.g_local_parse = false -- If true, ignore 'require'
 _G.g_spam = false
@@ -71,7 +71,7 @@ typedef parse_info = {
 typedef CURRENTLY_PARSING = false
 local CURRENTLY_PARSING = false
 
--- Type is CURRENTLY_PARSING during parsing.
+-- type is CURRENTLY_PARSING during parsing.
 var<{string => parse_info or CURRENTLY_PARSING}> g_modules = {}
 
 local FAIL_INFO = { ast = nil, type = T.Any }
@@ -82,19 +82,19 @@ local function find_moudle(path_in: string, mod_name: string) -> string?
 	local dir      = path.splitpath(path_in) .. '/'
 
 	local sol_path = dir .. mod_name .. '.sol'
-	if util.file_exists(sol_path) then
-		--util.printf("Found moudle at %q", sol_path)
+	if U.file_exists(sol_path) then
+		--U.printf("Found moudle at %q", sol_path)
 		return sol_path
 	end
 
 	local lua_path = dir .. mod_name .. '.lua'
-	if util.file_exists(lua_path) then
-		--util.printf("Found moudle at %q", lua_path)
+	if U.file_exists(lua_path) then
+		--U.printf("Found moudle at %q", lua_path)
 		return lua_path
 	end
 
-	--util.printf("No file at %q", sol_path)
-	--util.printf_err("No file at %q", sol_path)
+	--U.printf("No file at %q", sol_path)
+	--U.printf_err("No file at %q", sol_path)
 
 	return nil
 end
@@ -136,7 +136,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 			return T.Any
 		end
 
-		--util.printf('require %q', v)
+		--U.printf('require %q', v)
 		local longer_chain = { unpack(chain) }
 		table.insert(longer_chain, mod_name)
 		local mod_path = find_moudle(path_in, mod_name)
@@ -152,16 +152,16 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 
 			for _,v in ipairs(mod_info.global_vars) do
 				--D.break_();
-				local existing = module_scope:GetGlobal( v.Name )
+				local existing = module_scope:get_global( v.name )
 				if existing and existing ~= v then
 					printf_err("Global clash when including module '%s' at %s:"
 						     .. "Global variable '%s' re-declared at %s, previously declared in %s",
-						mod_name, req_where, v.Name, v.where, existing.where)
+						mod_name, req_where, v.name, v.where, existing.where)
 				end
 
 				if not existing then
 					if _G.g_spam then
-						util.printf("Adding global '%s'", v.Name)
+						U.printf("Adding global '%s'", v.name)
 					end
 					module_scope:add_global(v)
 				end
@@ -176,7 +176,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 			end
 		else
 			--printf_err('Failed to find module %q', mod_name)
-			util.printf('Failed to find module %q', mod_name)
+			U.printf('Failed to find module %q', mod_name)
 			return T.Any
 		end
 	end
@@ -192,9 +192,9 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	end
 
 	if _G.g_spam then
-		util.printf("Module %q successfully deduced to type %s", path_in, T.name(type))
+		U.printf("Module %q successfully deduced to type %s", path_in, T.name(type))
 	else
-		util.printf("Module %q successfully parsed and checked", module_name)
+		U.printf("Module %q successfully parsed and checked", module_name)
 	end
 
 	local info = {
@@ -214,21 +214,21 @@ parse_module = function(chain: [string], path_in: string) -> parse_info
 
 	local old_info = g_modules[module_name]
 	if old_info == CURRENTLY_PARSING then
-		printf_err("Module 'require' recusion detected: dependency chain: " .. util.Pretty(chain))
+		printf_err("Module 'require' recusion detected: dependency chain: " .. U.Pretty(chain))
 		error(-42)
 		return FAIL_INFO
 	elseif old_info then
-		--util.printf('require(%q) had buffered result', path_in)
+		--U.printf('require(%q) had buffered result', path_in)
 		return old_info
 	end
 
 	g_modules[module_name] = CURRENTLY_PARSING
 
 	if _G.g_spam then
-		util.printf("Parsing %q...", path_in)
+		U.printf("Parsing %q...", path_in)
 	end
 
-	local source_text = util.read_entire_file( path_in )
+	local source_text = U.read_entire_file( path_in )
 
 	if not source_text then
 		printf_err("'Failed to find module %q", path_in)
@@ -245,17 +245,17 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 	if info.ast and path_out then
 		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] '
 		out_text = out_text .. FormatIdentity(info.ast, path_in)
-		if not util.write_file(path_out, out_text) then
+		if not U.write_file(path_out, out_text) then
 			printf_err("Failed to open %q for writing", path_out)
 			os.exit(4)
 		else
-			util.printf("File written to %q", path_out)
+			U.printf("File written to %q", path_out)
 		end
 	end
 
 	if info.type and path_out then
 		-- TODO: output .solh file with type deductions
-		--util.write_file(path_out .. '.h', T.name(info.type) .. '\n')
+		--U.write_file(path_out .. '.h', T.name(info.type) .. '\n')
 	end
 end
 
@@ -371,8 +371,8 @@ else
 
 			-- Read entire stdin
 			print("Reading from stdin...")
-			local file_content = util.read_entire_stdin()
-			util.printf("Parsing " .. path_in)
+			local file_content = U.read_entire_stdin()
+			U.printf("Parsing " .. path_in)
 			local info = parse_module_str({}, path_in, file_content)
 
 			-- TODO: write output?
@@ -381,7 +381,7 @@ else
 			num_files = num_files + 1
 
 		elseif a:match('^-') then
-			util.printf_err("Unknown option: %q", a)
+			U.printf_err("Unknown option: %q", a)
 			print_help()
 			os.exit(1337)
 

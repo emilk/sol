@@ -1,6 +1,6 @@
 local T = require 'type'
 local D = require 'sol_debug'
-local util = require 'util'
+local U = require 'util'
 require 'class'
 
 
@@ -18,24 +18,25 @@ typedef Scope;
 
 
 typedef Variable = {
-	--Scope : Scope,  TODO
-	Sope : any,
-	Name  : string,
-	Type  : T.Type?,
-	IsGlobal   : bool,
-	References : int,
-	Namespace  : { string => T.Type } ?,
+	--scope : Scope,  TODO
+	scope      : any,
+	name       : string,
+	type       : T.Type?,
+	is_global  : bool,
+	references : int,
+	namespace  : { string => T.Type } ?,
+	where      : string,
 }
 
 typedef Scope = {
-	Parent   : Scope?,
-	Children : [Scope],
-	Locals   : [Variable],
-	Globals  : [Variable],
-	Typedefs : { string => T.Type },
-	VarArg   : Variable?,  -- if non-nil, points to a variable named '...' with the type of T.VarArgs
+	parent   : Scope?,
+	children : [Scope],
+	locals   : [Variable],
+	globals  : [Variable],
+	typedefs : { string => T.Type },
+	vararg   : Variable?,  -- if non-nil, points to a variable named '...' with the type of T.VarArgs
 
-	--GetScopedType : function(self, name: string) -> T.Type?
+	--get_scoped_type : function(self, name: string) -> T.Type?
 }
 
 
@@ -44,26 +45,45 @@ local S = {}
 typedef S.Scope    = Scope
 typedef S.Variable = Variable
 
---global Scope = class("Scope")
+
+--[-[
 local Scope = {}
 
 function Scope:new(parent: S.Scope?) -> S.Scope
 	var<S.Scope> s = {
-		Parent             = parent;
-		Children           = { };
-		Locals             = { };
-		Globals            = { };
-		Typedefs           = { };  -- string -> T.Type     - simple typedefs:
-		GlobalsTypedefs    = { };
+		parent             = parent;
+		children           = { };
+		locals             = { };
+		globals            = { };
+		typedefs           = { };  -- string -> T.Type     - simple typedefs:
+		global_typedefs    = { };
 		fixed              = false;
 	}
 	
 	if parent then
-		table.insert(parent.Children, s)
+		table.insert(parent.children, s)
 	end
 	
 	return setmetatable(s, { __index = self })
 end
+--]]
+--[[
+global Scope = class("Scope")
+
+function Scope:init(parent: S.Scope?)
+	self.parent             = parent
+	self.children           = { }
+	self.locals             = { }
+	self.globals            = { }
+	self.typedefs           = { }  -- string -> T.Type     - simple typedefs:
+	self.global_typedefs    = { }
+	self.fixed              = false
+end
+
+function Scope:new(parent: S.Scope?) -> S.Scope
+	return Scope(parent)
+end
+--]]
 
 
 -- Created the global top-level scope
@@ -80,8 +100,8 @@ end
 
 
 function Scope:is_module_level() -> bool
-	-- Parent should be global scope, and so should have no parent
-	return self.Parent and self.Parent.Parent == nil
+	-- parent should be global scope, and so should have no parent
+	return self.parent and self.parent.parent == nil
 end
 
 
@@ -122,12 +142,12 @@ function Scope:create_global_scope() -> S.Scope
 		'jit',
 	}
 	for _,name in ipairs(intrinsics) do
-		s:CreateGlobal( name, where )
+		s:create_global( name, where )
 	end
 
 	-- Ensure 'require' is recognized by TypeCheck.sol
-	local require = s:CreateGlobal( 'require', where )
-	require.Type = {
+	local require = s:create_global( 'require', where )
+	require.type = {
 		tag  = "function",
 		args = { { type = T.String } },
 		rets = T.AnyTypeList,
@@ -135,24 +155,24 @@ function Scope:create_global_scope() -> S.Scope
 	}
 
 	-- Ensure 'pairs' and 'ipairs' are recognized by TypeCheck.sol
-	local pairs = s:CreateGlobal( 'pairs', where )
-	pairs.Type = {
+	local pairs = s:create_global( 'pairs', where )
+	pairs.type = {
 		tag  = "function",
 		args = { { type = T.Any } },
 		rets = T.AnyTypeList,
 		name = "pairs"
 	}
 
-	local ipairs = s:CreateGlobal( 'ipairs', where )
-	ipairs.Type = {
+	local ipairs_ = s:create_global( 'ipairs', where )
+	ipairs_.type = {
 		tag  = "function",
 		args = { { type = T.List } },
 		rets = T.AnyTypeList,
 		name = "ipairs"
 	}
 
-	local setmetatable = s:CreateGlobal( 'setmetatable', where )
-	setmetatable.Type = {
+	local setmetatable = s:create_global( 'setmetatable', where )
+	setmetatable.type = {
 		tag  = "function",
 		args = { { type = T.Object }, { type = T.Object } },
 		rets = { T.Object },
@@ -160,18 +180,18 @@ function Scope:create_global_scope() -> S.Scope
 	}
 
 
-	--s:DeclareType( 'void',    T.Void ) -- Not a valid type, only allowed as a typelist
-	s:DeclareType( 'bool',    T.Bool,   where )
-	s:DeclareType( 'int',     T.Int,    where )
-	s:DeclareType( 'uint',    T.Uint,   where )
-	s:DeclareType( 'number',  T.Num,    where )
-	s:DeclareType( 'string',  T.String, where )
-	s:DeclareType( 'any',     T.Any,    where )
+	--s:declare_type( 'void',    T.Void ) -- Not a valid type, only allowed as a typelist
+	s:declare_type( 'bool',    T.Bool,   where )
+	s:declare_type( 'int',     T.Int,    where )
+	s:declare_type( 'uint',    T.Uint,   where )
+	s:declare_type( 'number',  T.Num,    where )
+	s:declare_type( 'string',  T.String, where )
+	s:declare_type( 'any',     T.Any,    where )
 
 	-- Keywords are handles explicitly:
-	--s:DeclareType( 'nil',     T.Nil)    -- for e.g.:   foo or bar or nil
-	--s:DeclareType( 'true',    T.True)
-	--s:DeclareType( 'false',   T.False)
+	--s:declare_type( 'nil',     T.Nil)    -- for e.g.:   foo or bar or nil
+	--s:declare_type( 'true',    T.True)
+	--s:declare_type( 'false',   T.False)
 
 	-- No more changes - user globals should be declared in 
 	s.fixed = true
@@ -180,27 +200,27 @@ function Scope:create_global_scope() -> S.Scope
 end
 
 
-function Scope:DeclareType(name: string, type: T.Type, where: string)
+function Scope:declare_type(name: string, type: T.Type, where: string)
 	D.assert(not self.fixed)
-	D.assert(name and where)
-	self.Typedefs[name] = type
+	D.assert(name) D.assert(where)
+	self.typedefs[name] = type
 end
 
 
-function Scope:CreateLocal(name: string, where: string) -> S.Variable
+function Scope:create_local(name: string, where: string) -> S.Variable
 	D.assert(not self.fixed)
 	D.assert(name and where)
 
 	local v = {
-		Scope      = self,
-		Name       = name,
-		IsGlobal   = false,
-		References = 1,
-		Type       = nil,
+		scope      = self,
+		name       = name,
+		is_global  = false,
+		references = 1,
+		type       = nil,
 		where      = where,
 	}
 
-	table.insert(self.Locals, v)
+	table.insert(self.locals, v)
 
 	return v
 end
@@ -208,20 +228,20 @@ end
 
 function Scope:add_global(v)
 	assert(not self.fixed)
-	table.insert(self.Globals, v)
+	table.insert(self.globals, v)
 end
 
 
-function Scope:CreateGlobal(name: string, where: string) -> S.Variable
+function Scope:create_global(name: string, where: string) -> S.Variable
 	assert(not self.fixed)
 	assert(name and where)
 
 	local v = {
-		Scope      = self,
-		Name       = name,
-		IsGlobal   = true,
-		References = 1,
-		Type       = nil,
+		scope      = self,
+		name       = name,
+		is_global  = true,
+		references = 1,
+		type       = nil,
 		where      = where,
 	}
 
@@ -231,23 +251,23 @@ function Scope:CreateGlobal(name: string, where: string) -> S.Variable
 end
 
 
-function Scope:GetScopedType(name: string) -> T.Type?
-	return self.Typedefs[name]
+function Scope:get_scoped_type(name: string) -> T.Type?
+	return self.typedefs[name]
 end
 
 
-function Scope:GetType(name) -> T.Type?
-	local t = self:GetScopedType(name)
+function Scope:get_type(name) -> T.Type?
+	local t = self:get_scoped_type(name)
 	if t then return t end
-	if self.Parent then return self.Parent:GetType(name) end
+	if self.parent then return self.parent:get_type(name) end
 	return nil
 end
 
 
 -- Will only check local scope
-function Scope:GetScoped(name: string) -> S.Variable?
-	for _,v in ipairs(self.Locals) do
-		if v.Name == name then return v end
+function Scope:get_scoped(name: string) -> S.Variable?
+	for _,v in ipairs(self.locals) do
+		if v.name == name then return v end
 	end
 
 	return nil
@@ -255,56 +275,56 @@ end
 
 
 -- Will check locals and parents
-function Scope:GetLocal(name: string) -> S.Variable?
-	local v = self:GetScoped(name)
+function Scope:get_local(name: string) -> S.Variable?
+	local v = self:get_scoped(name)
 	if v then return v end
 	
-	if self.Parent then
-		return self.Parent:GetLocal(name)
+	if self.parent then
+		return self.parent:get_local(name)
 	end
 end
 
 
 -- Global declared in this scope
-function Scope:GetScopedGlobal(name: string) -> S.Variable ?
+function Scope:get_scoped_global(name: string) -> S.Variable ?
 	assert(name and name ~= '')
 
-	for k, v in ipairs(self.Globals) do
-		if v.Name == name then return v end
+	for k, v in ipairs(self.globals) do
+		if v.name == name then return v end
 	end
 end
 
 
-function Scope:GetGlobal(name: string) -> S.Variable ?
-	local v = self:GetScopedGlobal(name)
+function Scope:get_global(name: string) -> S.Variable ?
+	local v = self:get_scoped_global(name)
 	if v then return v end
 	
-	if self.Parent then
-		return self.Parent:GetGlobal(name)
+	if self.parent then
+		return self.parent:get_global(name)
 	end
 end
 
 
 -- Var declared in this scope
-function Scope:GetScopedVar(name: string) -> S.Variable ?
-	return self:GetScoped(name) or self:GetScopedGlobal(name)
+function Scope:get_scoped_var(name: string) -> S.Variable ?
+	return self:get_scoped(name) or self:get_scoped_global(name)
 end
 
 
-function Scope:GetVar(name: string) -> S.Variable ?
-	return self:GetLocal(name) or self:GetGlobal(name)
+function Scope:get_var(name: string) -> S.Variable ?
+	return self:get_local(name) or self:get_global(name)
 end
 
 
-function Scope:GetVarArgs() -> T.Type?
-	local v = self:GetLocal('...')
+function Scope:get_var_args() -> T.Type?
+	local v = self:get_local('...')
 	
 	if v then
-		return v.Type or T.Any
+		return v.type or T.Any
 	end
 
-	if self.Parent then
-		return self.Parent:GetVarArgs()
+	if self.parent then
+		return self.parent:get_var_args()
 	end
 
 	return nil
@@ -313,8 +333,8 @@ end
 
 function Scope:get_global_vars(list: [Variable] or nil) -> [Variable]
 	list = list or {}
-	util.table_join(list, self.Globals)
-	for _,c in ipairs(self.Children) do
+	U.table_join(list, self.globals)
+	for _,c in ipairs(self.children) do
 		c:get_global_vars(list)
 	end
 	return list
@@ -322,7 +342,7 @@ end
 
 
 function Scope:get_global_typedefs(list: [Variable] or nil) -> [Variable]
-	return util.shallow_clone( self.GlobalsTypedefs )
+	return U.shallow_clone( self.global_typedefs )
 end
 
 

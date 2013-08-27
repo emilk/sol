@@ -7,12 +7,12 @@
 
 local L         = require 'lexer'
 local D         = require 'sol_debug'
-local S         = require 'Scope'
+local S         = require 'scope'
 local T         = require 'type'  -- For intrinsic functions
-local util      = require 'util'
+local U      = require 'util'
 
-local printf_err = util.printf_err
-local bimap  = util.bimap
+local printf_err = U.printf_err
+local bimap  = U.bimap
 
 
 local P = {}
@@ -269,11 +269,11 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 
 		local node_func = {
 			--AstType     = 'Function', LambdaFunction or FunctionDecl
-			Scope       = func_scope,
+			scope       = func_scope,
 			Tokens      = token_list,
 			IsMemFun    = is_mem_fun,
 			Arguments   = arg_list,
-			VarArg      = vararg,
+			vararg      = vararg,
 			ReturnTypes = return_types,
 			Body        = body,
 		}
@@ -303,7 +303,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 
 			return true, {
 				AstType = 'IdExpr',
-				Name    = id.Data,
+				name    = id.Data,
 				Tokens  = token_list
 			}
 		else
@@ -471,7 +471,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 						return false, report_error("Value Expression Expected")
 					end
 					v.EntryList[#v.EntryList+1] = {
-						Type  = 'Key';
+						type  = 'Key';
 						Key   = key;
 						Value = value;
 					}
@@ -479,7 +479,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 				elseif tok:Is('Ident') then
 					--value or key
 					local lookahead = tok:Peek(1)
-					if lookahead.Type == 'Symbol' and lookahead.Data == '=' then
+					if lookahead.type == 'Symbol' and lookahead.Data == '=' then
 						--we are a key
 						local key = tok:Get(token_list)
 						if not tok:ConsumeSymbol('=', token_list) then
@@ -490,7 +490,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 							return false, report_error("Value Expression Expected")
 						end
 						v.EntryList[#v.EntryList+1] = {
-							Type  = 'KeyString';
+							type  = 'KeyString';
 							Key   = key.Data;
 							Value = value;
 						}
@@ -502,7 +502,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 							return false, report_error("Value Exected")
 						end
 						v.EntryList[#v.EntryList+1] = {
-							Type = 'Value';
+							type = 'Value';
 							Value = value;
 						}
 
@@ -514,7 +514,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 					--value
 					local st, value = ParseExpr(scope)
 					v.EntryList[#v.EntryList+1] = {
-						Type = 'Value';
+						type = 'Value';
 						Value = value;
 					}
 					if not st then
@@ -788,7 +788,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 			local name = tok:Get().Data
 
 			if tok:ConsumeSymbol('.') then
-				-- Namespaced type
+				-- namespaced type
 				if not tok:Is('Ident') then
 					report_error("Identifier expected")
 					return nil
@@ -951,7 +951,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 
 		local node = { 
 			AstType   = 'Typedef',
-			Scope     = scope,
+			scope     = scope,
 			TypeName  = type_name,
 			Tokens    = {},
 			where     = where,
@@ -967,9 +967,9 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 
 			local base_name = type_name
 			--[[
-			local var_ = scope:GetVar(base_name)
+			local var_ = scope:get_var(base_name)
 			if not var_ then
-				return false, report_error("Namespaced typedef: %s is not a previously defined variable", base_name)
+				return false, report_error("namespaced typedef: %s is not a previously defined variable", base_name)
 			end
 			--]]
 
@@ -979,7 +979,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 			end
 
 			--node.Variable  = var_
-			node.NamespaceName = base_name
+			node.namespaceName = base_name
 			node.TypeName      = type_name
 		end
 
@@ -988,8 +988,8 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 			node.BaseTypes = parse_bases()
 			if not node.BaseTypes then return false, report_error("Base type(s) expected") end
 
-			node.Type  = parse_type_assignment()
-			if not node.Type then return false, report_error("Type assignment expected") end
+			node.type  = parse_type_assignment()
+			if not node.type then return false, report_error("type assignment expected") end
 		end
 
 		return true, node
@@ -1059,7 +1059,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 			node_local.InitList  = init_list
 			node_local.Tokens    = token_list
 			node_local.IsLocal   = is_local
-			node_local.Type      = type   -- 'local' or 'global' or 'var'
+			node_local.type      = type   -- 'local' or 'global' or 'var'
 			--
 			return true, node_local
 
@@ -1194,7 +1194,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 				--
 				local node_for = {}
 				node_for.AstType  = 'NumericForStatement'
-				node_for.Scope    = for_scope
+				node_for.scope    = for_scope
 				node_for.VarName  = base_var_name.Data
 				node_for.Start    = start_ex
 				node_for.End      = end_ex
@@ -1236,7 +1236,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 				--
 				local node_for = {}
 				node_for.AstType    = 'GenericForStatement'
-				node_for.Scope      = for_scope
+				node_for.scope      = for_scope
 				node_for.VarNames   = var_names
 				node_for.Generators = generators
 				node_for.Body       = body
@@ -1253,7 +1253,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 			end
 			-- FIX: Used to parse in parent scope
 			-- Now parses in repeat scope
-			local st, cond = ParseExpr(body.Scope)
+			local st, cond = ParseExpr(body.scope)
 			if not st then return false, cond end
 			--
 			local node_repeat = {}
@@ -1261,7 +1261,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 			node_repeat.Condition = cond
 			node_repeat.Body      = body
 			node_repeat.Tokens    = token_list
-			node_repeat.Scope     = body.Scope
+			node_repeat.scope     = body.scope
 			stat = node_repeat
 
 		elseif tok:ConsumeKeyword('function', token_list) then
@@ -1277,7 +1277,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 			--
 			func.AstType  = 'FunctionDecl'
 			func.IsLocal  = false
-			func.Name     = name
+			func.name     = name
 			stat = func
 
 		elseif tok:ConsumeKeyword('local', token_list) then
@@ -1424,7 +1424,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 	ParseStatementList = function(scope)
 		assert(scope)
 		local node_statlist   = {}
-		node_statlist.Scope   = scope
+		node_statlist.scope   = scope
 		node_statlist.AstType = 'Statlist'
 		node_statlist.Body    = { }
 		node_statlist.Tokens  = { }
@@ -1432,7 +1432,7 @@ function P.ParseSol(src, tok, filename, settings, module_scope)
 		--local stats = {}
 		--
 		while not stat_list_close_keywords[tok:Peek().Data] and not tok:IsEof() do
-			local st, node_statement = ParseStatement(node_statlist.Scope)
+			local st, node_statement = ParseStatement(node_statlist.scope)
 			if not st then return false, node_statement end
 			--stats[#stats+1] = node_statement
 			node_statlist.Body[#node_statlist.Body + 1] = node_statement

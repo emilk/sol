@@ -30,9 +30,18 @@ end
 
 function U.printf_err(fmt: string, ...)
 	local msg = string.format(fmt, ...)
-	msg = msg:sub(1, 256) -- Limit length
+
+	local MAX_LEN = 256
+	if #msg > MAX_LEN then
+		msg = msg:sub(1, MAX_LEN/2) .. ' ... ' .. msg:sub(-MAX_LEN/2)
+	end
+
 	io.stderr:write( msg .. '\n' )
 	D.break_()
+
+	if _G.g_spam then
+		os.exit(1)	
+	end
 end
 
 

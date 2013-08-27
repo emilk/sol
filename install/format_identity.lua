@@ -1,11 +1,11 @@
 --[[ DO NOT MODIFY - COMPILED FROM sol/format_identity.sol --]] require 'parser'
 local D = require 'sol_debug'
-local util = require 'util'
-local printf_err = util.printf_err
+local U = require 'util'
+local printf_err = U.printf_err
 
 local function debug_printf(...)
 	--[[
-	util.printf(...)
+	U.printf(...)
 	--]]
 end
 
@@ -109,7 +109,7 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 		function t:append_next_token(str)
 			local tok = expr.Tokens[it];
 			if str and tok.Data ~= str then
-				report_error("Expected token '" .. str .. "'. Tokens: " .. util.Pretty(expr.Tokens))
+				report_error("Expected token '" .. str .. "'. Tokens: " .. U.Pretty(expr.Tokens))
 			end
 			out:append_token( tok )
 			it = it + 1	
@@ -120,7 +120,7 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 		end
 		function t:append_white()
 			local tok = expr.Tokens[it];
-			--if not tok then report_error("Missing token: %s", util.Pretty(expr)) end
+			--if not tok then report_error("Missing token: %s", U.Pretty(expr)) end
 			if not tok then report_error("Missing token") end
 			out:append_white( tok )
 			it = it + 1
@@ -140,13 +140,13 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 		function t:append_comma(mandatory, seperators)
 			if true then
 				seperators = seperators or { "," }
-				seperators = util.bimap( seperators )
+				seperators = U.bimap( seperators )
 				if not mandatory and not seperators[self:peek()] then
 					return
 				end
 				if not seperators[self:peek()] then
 					report_error("Missing comma or semicolon; next token is: %s, token iterator: %i, tokens: %s",
-						util.Pretty( self:peek() ), it, util.Pretty( expr.Tokens ))
+						U.Pretty( self:peek() ), it, U.Pretty( expr.Tokens ))
 				end
 				self:append_next_token()
 			else
@@ -174,13 +174,13 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 
 		if expr.AstType == 'VarExpr' then
 			if expr.Variable then
-				t:append_str( expr.Variable.Name )
+				t:append_str( expr.Variable.name )
 			else
-				t:append_str( expr.Name )
+				t:append_str( expr.name )
 			end
 
 		elseif expr.AstType == 'IdExpr' then
-			t:append_str( expr.Name )
+			t:append_str( expr.name )
 
 		elseif expr.AstType == 'NumberExpr' then
 			t:append_token( expr.Value )
@@ -244,12 +244,12 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 					t:append_str( expr.Arguments[i].name )
 					if i ~= #expr.Arguments then
 						t:append_next_token(",")
-					elseif expr.VarArg then
+					elseif expr.vararg then
 						t:append_next_token(",")
 						t:append_next_token("...")
 					end
 				end
-			elseif expr.VarArg then
+			elseif expr.vararg then
 				t:append_next_token("...")
 			end
 			t:append_next_token(")")
@@ -260,15 +260,15 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 			t:append_next_token( "{" )
 			for i = 1, #expr.EntryList do
 				local entry = expr.EntryList[i]
-				if entry.Type == 'Key' then
+				if entry.type == 'Key' then
 					t:append_next_token( "[" )
 					format_expr(entry.Key)
 					t:append_next_token( "]" )
 					t:append_next_token( "=" )
 					format_expr(entry.Value)
-				elseif entry.Type == 'Value' then
+				elseif entry.type == 'Value' then
 					format_expr(entry.Value)
-				elseif entry.Type == 'KeyString' then
+				elseif entry.type == 'KeyString' then
 					t:append_str(entry.Key)
 					t:append_next_token( "=" )
 					format_expr(entry.Value)
@@ -283,7 +283,7 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 			t:append_next_token( ")" )
 
 		else
-			printf_err("Unknown expr AST Type: '%s'", expr.AstType)
+			printf_err("Unknown expr AST type: '%s'", expr.AstType)
 		end
 
 		t:on_end()
@@ -382,7 +382,7 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 			format_expr(stat.Condition)
 
 		elseif stat.AstType == 'FunctionDecl' then
-			--print(util.Pretty(stat))
+			--print(U.Pretty(stat))
 
 			if stat.IsLocal then
 				t:append_next_token( "local" )
@@ -390,8 +390,8 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 				t:skip_next_token()
 			end
 			t:append_next_token( "function" )
-			if stat.Name then
-				format_expr( stat.Name )
+			if stat.name then
+				format_expr( stat.name )
 			else
 				t:append_str( stat.VarName )
 			end
@@ -400,12 +400,12 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 			if #stat.Arguments > 0 then
 				for i = 1, #stat.Arguments do
 					t:append_str( stat.Arguments[i].name )
-					t:append_comma( i ~= #stat.Arguments or stat.VarArg )
-					if i == #stat.Arguments and stat.VarArg then
+					t:append_comma( i ~= #stat.Arguments or stat.vararg )
+					if i == #stat.Arguments and stat.vararg then
 						t:append_next_token( "..." )
 					end
 				end
-			elseif stat.VarArg then
+			elseif stat.vararg then
 				t:append_next_token( "..." )
 			end
 			t:append_next_token( ")" )
@@ -458,7 +458,7 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 		elseif stat.AstType == 'Typedef' then
 
 		else
-			printf_err("Unknown stat AST Type: '%s'", stat.AstType)
+			printf_err("Unknown stat AST type: '%s'", stat.AstType)
 		end
 
 		if stat.Semicolon then
@@ -477,7 +477,7 @@ local function FormatIdentity(ast, filename, insert_new_lines)
 	end
 
 
-	if util.is_array(ast.Body) then
+	if U.is_array(ast.Body) then
 		format_statlist(ast)
 	else
 		format_expr(ast)

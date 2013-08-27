@@ -2,12 +2,12 @@
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
-local util = require 'util'
+local U = require 'util'
 local D = require 'sol_debug'
 
 --[[
 FIXME: recursive dependency
-local S    = require 'Scope'
+local S    = require 'scope'
 typedef Scope    = S.Scope
 typedef Variable = S.Variable
 --]]
@@ -41,7 +41,7 @@ T
 
 .on_error = function(fmt, ...)
 	local msg = string.format(fmt, ...)
-	util.printf_err( "%s", msg )
+	U.printf_err( "%s", msg )
 	error(msg, 2)
 end
 
@@ -185,26 +185,26 @@ function T.follow_identifiers(t, forgiving)
 			--]]
 
 			if t.var_name then
-				local var_ = t.scope:GetVar( t.var_name )  -- A namespace is always a variable
+				local var_ = t.scope:get_var( t.var_name )  -- A namespace is always a variable
 				if not var_ then
 					T.on_error("Failed to find namespace variable %q", t.var_name)
 					t.type = T.Any
-				elseif not var_.Namespace then
+				elseif not var_.namespace then
 					if forgiving then
 						return T.Any
 					else
-						T.on_error("%s: Variable '%s' is not a namespace (looking up '%s')", t.first_usage, var_.Name, t.name)
+						T.on_error("%s: Variable '%s' is not a namespace (looking up '%s')", t.first_usage, var_.name, t.name)
 						t.type = T.Any
 					end
 				else
-					t.type = var_.Namespace[t.name]
+					t.type = var_.namespace[t.name]
 					if not t.type then
-						T.on_error("%s: Type '%s' not found in namespace '%s'", t.first_usage, t.name, var_.Name)
+						T.on_error("%s: type '%s' not found in namespace '%s'", t.first_usage, t.name, var_.name)
 						t.type = T.Any
 					end
 				end
 			else
-				t.type = t.scope:GetType( t.name )
+				t.type = t.scope:get_type( t.name )
 				if not t.type then
 					T.on_error("%s: typename '%s' not found", t.first_usage, t.name)
 					t.type = T.Any
@@ -266,8 +266,8 @@ end
 
 
 function T.is_type_list(list)
-	--return util.is_array(list)
-	if not util.is_array(list) then return false end
+	--return U.is_array(list)
+	if not U.is_array(list) then return false end
 	for _,v in pairs(list) do
 		if not T.is_type(v) then
 			return false
@@ -342,7 +342,7 @@ function T.isa_raw(d, b, problem_rope)
 	d = T.follow_identifiers(d)
 	b = T.follow_identifiers(b)
 
-	--util.printf("isa, b: %s, d: %s", T.name(b), T.name(d))
+	--U.printf("isa, b: %s, d: %s", T.name(b), T.name(d))
 	if d == b then
 		return true -- Early out optimization
 	end
@@ -470,7 +470,7 @@ function T.isa_raw(d, b, problem_rope)
 	elseif d.tag == 'varargs' and b.tag == 'varargs' then
 		return T.isa(d.type, b.type)
 	else
-		--error('isa failed: derived: ' .. util.Pretty(d) .. ', base: ' .. util.Pretty(b))
+		--error('isa failed: derived: ' .. U.Pretty(d) .. ', base: ' .. U.Pretty(b))
 		error('isa failed: derived: ' .. T.name(d) .. ', base: ' .. T.name(b))
 	end
 end
@@ -541,7 +541,7 @@ end
 
 -- Will look through a way for a type to match a given type
 function T.find(t, target)
-	--util.printf("T.find(%s, %s)", T.name(t), T.name(target))
+	--U.printf("T.find(%s, %s)", T.name(t), T.name(target))
 	D.assert( T.is_type(t) )
 	D.assert( T.is_type(target) )
 
@@ -748,11 +748,11 @@ function T.name(typ, indent, verbose)
 			return '{ }'
 		else
 			local str = '{\n'
-			if obj.Namespace then
+			if obj.namespace then
 				str = str .. next_indent .. '-- Types:\n'
 
 				local type_list = {}
-				for k,v in pairs(obj.Namespace) do
+				for k,v in pairs(obj.namespace) do
 					table.insert(type_list, {name = k, type = v})
 				end
 				table.sort(type_list, function(a,b) return a.name < b.name end)
@@ -837,7 +837,7 @@ function T.name(typ, indent, verbose)
 		return typ.tag
 
 	else
-		return string.format("[UNKNOWN TYPE: %q]", util.Pretty(typ))
+		return string.format("[UNKNOWN TYPE: %q]", U.Pretty(typ))
 	end
 end
 
@@ -855,7 +855,7 @@ end
 
 function T.extend_variant_one(v, e)
 	--if #v.variants > 15 then
-	--	util.printf("WARNING: extremely long variant: %s", T.name(v))
+	--	U.printf("WARNING: extremely long variant: %s", T.name(v))
 	--end
 
 	if e == T.Any then
@@ -988,7 +988,7 @@ function T.combine(a, b)
 	end
 
 	-- A true super-type
-	util.printf_err('TODO: T.combine(%s, %s)', T.name(a), T.name(b))
+	U.printf_err('TODO: T.combine(%s, %s)', T.name(a), T.name(b))
 	return T.Any
 end
 
@@ -1000,7 +1000,7 @@ function T.combine_type_lists(a, b, forgiving)
 	end
 
 	if _G.g_spam then
-		util.printf('combine_type_lists(%s, %s)', T.name(a), T.name(b))
+		U.printf('combine_type_lists(%s, %s)', T.name(a), T.name(b))
 	end
 
 	if a == nil then return b end
@@ -1029,7 +1029,7 @@ function T.combine_type_lists(a, b, forgiving)
 		for i = 1, #a do
 			ret[i] = T.variant( a[i], b[i] )
 			if _G.g_spam then
-				util.printf('variant(%s, %s) = %s', T.name(a[i]), T.name(b[i]), T.name(ret[i]))
+				U.printf('variant(%s, %s) = %s', T.name(a[i]), T.name(b[i]), T.name(ret[i]))
 			end
 		end
 		if #a == 1 then
@@ -1087,7 +1087,7 @@ function T.simplify(t)
 				v = T.extend_variant_one(v, variant)
 			end
 
-			--util.printf("Simplified '%s' to '%s'", T.name(t), T.name(v))
+			--U.printf("Simplified '%s' to '%s'", T.name(t), T.name(v))
 
 			if #v.variants == 1 then
 				return v.variants[1]

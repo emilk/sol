@@ -30,8 +30,8 @@ local Parser          = require 'parser'
 local S               = require 'scope'
 local T               = require 'type'
 local TypeCheck       = require 'type_check'
-local util            = require 'util'
-local printf_err = util.printf_err
+local U            = require 'util'
+local printf_err = U.printf_err
 
 
 local function compile_sol(source_text: string) -> string or nil
@@ -139,7 +139,7 @@ else
 				os.exit(-2)
 			end
 
-			local sol = util.read_entire_file( path_in )
+			local sol = U.read_entire_file( path_in )
 
 			if not sol then
 				printf_err( "Input file not found" )
