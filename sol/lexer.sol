@@ -4,37 +4,37 @@ local bimap = U.bimap
 
 local WhiteChars = bimap{' ', '\n', '\t', '\r'}
 local EscapeLookup = {['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'"}
-local LowerChars = bimap{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-							 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-							 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
+local LowerChars = bimap{ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+                          'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+                          's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
 local UpperChars = bimap{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-							 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-							 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}
+                         'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
+                         'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}
 local Digits = bimap{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
 local HexDigits = bimap{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-							'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'}
+                        'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'}
 
 
 local L = {}
 
-typedef TokID = 'Keyword' or 'Ident' or 'Number' or 'String' or 'Symbol' or 'Eof'
+typedef TokID = 'Keyword' or 'ident' or 'Number' or 'String' or 'Symbol' or 'Eof'
 
 typedef L.Token = {
 	type   :  TokID,
-	Data   :  string,
-	Line   :  int,
-	Char   :  int,
+	data   :  string,
+	line   :  int,
+	char   :  int,
 }
 
 typedef L.TokenList = [L.Token]
 
 
 -- The settings are found in Parser.sol
-function L.LexSol(src: string, filename: string, settings) -> bool, any
+function L.lex_sol(src: string, filename: string, settings) -> bool, any
 	assert(type(src) == 'string')
 
-	local Symbols  = settings.Symbols
-	local Keywords = settings.Keywords
+	local symbols  = settings.symbols
+	local keywords = settings.keywords
 
 	--token dump
 	var<[L.Token]> tokens = {}
@@ -146,7 +146,7 @@ function L.LexSol(src: string, filename: string, settings) -> bool, any
 					--get the interior string
 					local content_string = src:sub(content_start, p-1)
 
-					--found the end. Get rid of the trailing bit
+					--found the end. get rid of the trailing bit
 					for i = 0, equals_count+1 do get() end
 
 					--get the exterior string
@@ -182,14 +182,14 @@ function L.LexSol(src: string, filename: string, settings) -> bool, any
 					end
 					if leading_tokens then
 						local token = {
-							type = 'Comment',
+							type        = 'Comment',
 							CommentType = 'Shebang',
-							Data = shebang,
-							Line = line,
-							Char = char
+							data        = shebang,
+							line        = line,
+							char        = char
 						}
-						token.Print = function()
-							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.Data .." >"
+						token.print = function()
+							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.data .." >"
 						end
 						table.insert(leading_tokens, token)
 					end
@@ -197,7 +197,7 @@ function L.LexSol(src: string, filename: string, settings) -> bool, any
 				elseif c == ' ' or c == '\t' or c == '\n' or c == '\r' then
 					local white = get()
 					if leading_tokens then
-						table.insert(leading_tokens, { type = 'Whitespace', Line = line, Char = char, Data = white })
+						table.insert(leading_tokens, { type = 'Whitespace', line = line, char = char, data = white })
 					end
 
 				elseif c == '-' and peek(1) == '-' then
@@ -222,14 +222,14 @@ function L.LexSol(src: string, filename: string, settings) -> bool, any
 
 					if leading_tokens then
 						local token = {
-							type = 'Comment',
+							type        = 'Comment',
 							CommentType = long_str and 'LongComment' or 'Comment',
-							Data = comment,
-							Line = line,
-							Char = char,
+							data        = comment,
+							line        = line,
+							char        = char,
 						}
-						token.Print = function()
-							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.Data .." >"
+						token.print = function()
+							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.data .." >"
 						end
 						table.insert(leading_tokens, token)
 					end
@@ -315,10 +315,10 @@ function L.LexSol(src: string, filename: string, settings) -> bool, any
 					c = peek()
 				until not (UpperChars[c] or LowerChars[c] or Digits[c] or c == '_')
 				local dat = src:sub(start, p-1)
-				if Keywords[dat] then
-					to_emit = {type = 'Keyword', Data = dat}
+				if keywords[dat] then
+					to_emit = {type = 'Keyword', data = dat}
 				else
-					to_emit = {type = 'Ident', Data = dat}
+					to_emit = {type = 'ident', data = dat}
 				end
 
 			elseif Digits[c] or (peek() == '.' and Digits[peek(1)]) then
@@ -341,7 +341,7 @@ function L.LexSol(src: string, filename: string, settings) -> bool, any
 						while Digits[peek()] do get() end
 					end
 				end
-				to_emit = {type = 'Number', Data = src:sub(start, p-1)}
+				to_emit = {type = 'Number', data = src:sub(start, p-1)}
 
 			elseif c == '\'' or c == '\"' then
 				local start = p
@@ -360,36 +360,36 @@ function L.LexSol(src: string, filename: string, settings) -> bool, any
 				end
 				local content = src:sub(content_start, p-2)
 				local constant = src:sub(start, p-1)
-				to_emit = {type = 'String', Data = constant, Constant = content}
+				to_emit = {type = 'String', data = constant, Constant = content}
 
 			elseif c == '[' then
 				local content, wholetext = try_get_long_string()
 				if wholetext then
-					to_emit = {type = 'String', Data = wholetext, Constant = content}
+					to_emit = {type = 'String', data = wholetext, Constant = content}
 				else
 					get()
-					to_emit = {type = 'Symbol', Data = '['}
+					to_emit = {type = 'Symbol', data = '['}
 				end
 
 			elseif consume('=') then
 				if consume('=') then
-					to_emit = {type = 'Symbol', Data = '=='}
-				elseif settings.Sol and consume('>') then
-					to_emit = {type = 'Symbol', Data = '=>'}
+					to_emit = {type = 'Symbol', data = '=='}
+				elseif settings.is_sol and consume('>') then
+					to_emit = {type = 'Symbol', data = '=>'}
 				else
-					to_emit = {type = 'Symbol', Data = '='}
+					to_emit = {type = 'Symbol', data = '='}
 				end
 
 			elseif consume('><') then
 				if consume('=') then
-					to_emit = {type = 'Symbol', Data = c..'='}  -- '>=' or '<='
+					to_emit = {type = 'Symbol', data = c..'='}  -- '>=' or '<='
 				else
-					to_emit = {type = 'Symbol', Data = c}       -- '>' or '<'
+					to_emit = {type = 'Symbol', data = c}       -- '>' or '<'
 				end
 
 			elseif consume('~') then
 				if consume('=') then
-					to_emit = {type = 'Symbol', Data = '~='}
+					to_emit = {type = 'Symbol', data = '~='}
 				else
 					return report_lexer_error("Unexpected symbol `~` in source.", 2)
 				end
@@ -397,54 +397,54 @@ function L.LexSol(src: string, filename: string, settings) -> bool, any
 			elseif consume('.') then
 				if consume('.') then
 					if consume('.') then
-						to_emit = {type = 'Symbol', Data = '...'}
+						to_emit = {type = 'Symbol', data = '...'}
 					else
-						to_emit = {type = 'Symbol', Data = '..'}
+						to_emit = {type = 'Symbol', data = '..'}
 					end
 				else
-					to_emit = {type = 'Symbol', Data = '.'}
+					to_emit = {type = 'Symbol', data = '.'}
 				end
 
 			elseif consume(':') then
 				if consume(':') then
-					to_emit = {type = 'Symbol', Data = '::'}
+					to_emit = {type = 'Symbol', data = '::'}
 				elseif consume(':<') then
-					to_emit = {type = 'Symbol', Data = ':<'}  -- Start of template function call, i.e. type_name:<int>()
+					to_emit = {type = 'Symbol', data = ':<'}  -- start of template function call, i.e. type_name:<int>()
 				else
-					to_emit = {type = 'Symbol', Data = ':'}
+					to_emit = {type = 'Symbol', data = ':'}
 				end
 
-			elseif settings.FunctionTypes and consume('-') then
+			elseif settings.function_types and consume('-') then
 				if consume('>') then
-					to_emit = {type = 'Symbol', Data = '->'}
+					to_emit = {type = 'Symbol', data = '->'}
 				else
-					to_emit = {type = 'Symbol', Data = '-'}
+					to_emit = {type = 'Symbol', data = '-'}
 				end
 
-			elseif Symbols[c] then
+			elseif symbols[c] then
 				get()
-				to_emit = {type = 'Symbol', Data = c}
+				to_emit = {type = 'Symbol', data = c}
 
 			else
 				local contents, all = try_get_long_string()
 				if contents then
-					to_emit = {type = 'String', Data = all, Constant = contents}
+					to_emit = {type = 'String', data = all, Constant = contents}
 				else
 					return report_lexer_error("Unexpected Symbol `"..c.."` when paring in source.", 2)
 				end
 			end
 
 			--add the emitted symbol, after adding some common data
-			to_emit.LeadingWhite = leading_tokens -- table of leading whitespace/comments
-			to_emit.AllLeadingWhite = all_leading_white
+			to_emit.leading_white = leading_tokens -- table of leading whitespace/comments
+			to_emit.all_leading_white = all_leading_white
 			--for k, tok in pairs(leading_tokens) do
 			--  tokens[#tokens + 1] = tok
 			--end
 
-			to_emit.Line = this_line
-			to_emit.Char = this_char
-			to_emit.Print = function()
-				return "<" .. to_emit.type .. string.rep(' ', 7-#to_emit.type) .. "  " .. (to_emit.Data or '') .. " >"
+			to_emit.line = this_line
+			to_emit.char = this_char
+			to_emit.print = function()
+				return "<" .. to_emit.type .. string.rep(' ', 7-#to_emit.type) .. "  " .. (to_emit.data or '') .. " >"
 			end
 			tokens[#tokens+1] = to_emit
 
@@ -477,13 +477,13 @@ function L.LexSol(src: string, filename: string, settings) -> bool, any
 	end
 	
 	--getters
-	function tok:Peek(n: int?) -> L.Token?
+	function tok:peek(n: int?) -> L.Token?
 		n = n or 0
 		local ix = math.max(1, math.min(#tokens, p+n))
 		return tokens[ix]
 	end
 
-	function tok:Get(token_list: L.TokenList?) -> L.Token?
+	function tok:get(token_list: L.TokenList?) -> L.Token?
 		local t = tokens[p]
 		p = math.min(p + 1, #tokens)
 		if token_list then
@@ -492,24 +492,24 @@ function L.LexSol(src: string, filename: string, settings) -> bool, any
 		return t
 	end
 
-	function tok:GetIdent(token_list: L.TokenList?) -> string?
-		if tok:Is('Ident') then
-			return tok:Get(token_list).Data
+	function tok:get_ident(token_list: L.TokenList?) -> string?
+		if tok:is('ident') then
+			return tok:get(token_list).data
 		else
 			return nil
 		end
 	end
 
-	function tok:Is(t: TokID) -> bool
-		return tok:Peek().type == t
+	function tok:is(t: TokID) -> bool
+		return tok:peek().type == t
 	end
 
 	-- either cosumes and returns the given symbil if there is one, or nil
-	function tok:ConsumeSymbol(symb: string, token_list: L.TokenList?) -> L.Token?
-		local t = self:Peek()
+	function tok:consume_symbol(symb: string, token_list: L.TokenList?) -> L.Token?
+		local t = self:peek()
 		if t.type == 'Symbol' then
-			if t.Data == symb then
-				return self:Get(token_list)
+			if t.data == symb then
+				return self:get(token_list)
 			else
 				return nil
 			end
@@ -518,36 +518,27 @@ function L.LexSol(src: string, filename: string, settings) -> bool, any
 		end
 	end
 
-	function tok:ConsumeKeyword(kw: string, token_list: L.TokenList?) -> L.Token?
-		local t = self:Peek()
-		if t.type == 'Keyword' and t.Data == kw then
-			return self:Get(token_list)
+	function tok:consume_keyword(kw: string, token_list: L.TokenList?) -> L.Token?
+		local t = self:peek()
+		if t.type == 'Keyword' and t.data == kw then
+			return self:get(token_list)
 		else
 			return nil
 		end
 	end
 
-	function tok:ConsumeIdent(ident: string, token_list: L.TokenList?) -> L.Token?
-		local t = self:Peek()
-		if t.type == 'Ident' and t.Data == ident then
-			return self:Get(token_list)
-		else
-			return nil
-		end
+	function tok:is_keyword(kw: string) -> bool
+		local t = tok:peek()
+		return t.type == 'Keyword' and t.data == kw
 	end
 
-	function tok:IsKeyword(kw: string) -> bool
-		local t = tok:Peek()
-		return t.type == 'Keyword' and t.Data == kw
+	function tok:is_symbol(s: string) -> bool
+		local t = tok:peek()
+		return t.type == 'Symbol' and t.data == s
 	end
 
-	function tok:IsSymbol(s: string) -> bool
-		local t = tok:Peek()
-		return t.type == 'Symbol' and t.Data == s
-	end
-
-	function tok:IsEof() -> bool
-		return tok:Peek().type == 'Eof'
+	function tok:is_eof() -> bool
+		return tok:peek().type == 'Eof'
 	end
 
 	return true, tok

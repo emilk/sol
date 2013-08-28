@@ -10,7 +10,7 @@ local function debug_printf(...)
 end
 
 --
--- FormatIdentity.lua
+-- format_identity.lua
 --
 -- Returns the exact source code that was used to create an AST, preserving all
 -- comments and whitespace.
@@ -33,7 +33,7 @@ local function count_line_breaks(str: string) -> int, int
 end
 
 
-local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -> string
+local function format_identity(ast, filename: string, insert_new_lines : bool?) -> string
 	if insert_new_lines == nil then
 		insert_new_lines = true
 	end
@@ -59,12 +59,12 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 		append_token = function(self, token)
 			self:append_white(token)
 
-			local str  = token.Data
+			local str  = token.data
 
 			if insert_new_lines then
 				local nl, c = count_line_breaks(str)
 
-				while self.line + nl < token.Line do
+				while self.line + nl < token.line do
 					--print("Inserting extra line")
 					table.insert(self.rope, '\n')
 					self.line = self.line + 1
@@ -82,8 +82,8 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 		end,
 
 		append_white = function(self, token)
-			if token.AllLeadingWhite then
-				self:append_str( token.AllLeadingWhite )
+			if token.all_leading_white then
+				self:append_str( token.all_leading_white )
 			end
 		end
 	}
@@ -107,9 +107,9 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 		}
 
 		function t:append_next_token(str)
-			local tok = expr.Tokens[it];
-			if str and tok.Data ~= str then
-				report_error("Expected token '" .. str .. "'. Tokens: " .. U.Pretty(expr.Tokens))
+			local tok = expr.tokens[it];
+			if str and tok.data ~= str then
+				report_error("Expected token '" .. str .. "'. tokens: " .. U.pretty(expr.tokens))
 			end
 			out:append_token( tok )
 			it = it + 1	
@@ -119,8 +119,8 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 			it = it + 1
 		end
 		function t:append_white()
-			local tok = expr.Tokens[it];
-			--if not tok then report_error("Missing token: %s", U.Pretty(expr)) end
+			local tok = expr.tokens[it];
+			--if not tok then report_error("Missing token: %s", U.pretty(expr)) end
 			if not tok then report_error("Missing token") end
 			out:append_white( tok )
 			it = it + 1
@@ -133,8 +133,8 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 			out:append_str(str)
 		end
 		function t:peek()
-			if it <= #expr.Tokens then
-				return expr.Tokens[it].Data
+			if it <= #expr.tokens then
+				return expr.tokens[it].data
 			end
 		end
 		function t:append_comma(mandatory, seperators)
@@ -146,7 +146,7 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 				end
 				if not seperators[self:peek()] then
 					report_error("Missing comma or semicolon; next token is: %s, token iterator: %i, tokens: %s",
-						U.Pretty( self:peek() ), it, U.Pretty( expr.Tokens ))
+						U.pretty( self:peek() ), it, U.pretty( expr.tokens ))
 				end
 				self:append_next_token()
 			else
@@ -158,7 +158,7 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 		end
 
 		function t:on_end()
-			assert(it == #expr.Tokens + 1)
+			assert(it == #expr.tokens + 1)
 		end
 
 		return t
@@ -167,82 +167,82 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 
 	format_expr = function(expr) -> void
 		D.assert(expr)
-		D.assert(expr.AstType)
+		D.assert(expr.ast_type)
 
 		local t = tokens(expr)
-		--debug_printf("format_expr(%s) at line %i", expr.AstType, expr.Tokens[1] and expr.Tokens[1].Line or -1)
+		--debug_printf("format_expr(%s) at line %i", expr.ast_type, expr.tokens[1] and expr.tokens[1].line or -1)
 
-		if expr.AstType == 'VarExpr' then
+		if expr.ast_type == 'VarExpr' then
 			if expr.Variable then
 				t:append_str( expr.Variable.name )
 			else
 				t:append_str( expr.name )
 			end
 
-		elseif expr.AstType == 'IdExpr' then
+		elseif expr.ast_type == 'IdExpr' then
 			t:append_str( expr.name )
 
-		elseif expr.AstType == 'NumberExpr' then
-			t:append_token( expr.Value )
+		elseif expr.ast_type == 'NumberExpr' then
+			t:append_token( expr.value )
 
-		elseif expr.AstType == 'StringExpr' then
-			t:append_token( expr.Value )
+		elseif expr.ast_type == 'StringExpr' then
+			t:append_token( expr.value )
 
-		elseif expr.AstType == 'BooleanExpr' then
-			t:append_next_token( expr.Value and "true" or "false" )
+		elseif expr.ast_type == 'BooleanExpr' then
+			t:append_next_token( expr.value and "true" or "false" )
 
-		elseif expr.AstType == 'NilExpr' then
+		elseif expr.ast_type == 'NilExpr' then
 			t:append_next_token( "nil" )
 
-		elseif expr.AstType == 'BinopExpr' then
-			format_expr(expr.Lhs)
-			t:append_str( expr.Op )
-			format_expr(expr.Rhs)
+		elseif expr.ast_type == 'BinopExpr' then
+			format_expr(expr.lhs)
+			t:append_str( expr.op )
+			format_expr(expr.rhs)
 
-		elseif expr.AstType == 'UnopExpr' then
-			t:append_str( expr.Op )
-			format_expr(expr.Rhs)
+		elseif expr.ast_type == 'UnopExpr' then
+			t:append_str( expr.op )
+			format_expr(expr.rhs)
 
-		elseif expr.AstType == 'DotsExpr' then
+		elseif expr.ast_type == 'DotsExpr' then
 			t:append_next_token( "..." )
 
-		elseif expr.AstType == 'CallExpr' then
-			format_expr(expr.Base)
+		elseif expr.ast_type == 'CallExpr' then
+			format_expr(expr.base)
 			t:append_next_token( "(" )
-			for i,arg in ipairs( expr.Arguments ) do
+			for i,arg in ipairs( expr.arguments ) do
 				format_expr(arg)
-				t:append_comma( i ~= #expr.Arguments )
+				t:append_comma( i ~= #expr.arguments )
 			end
 			t:append_next_token( ")" )
 
-		elseif expr.AstType == 'TableCallExpr' then
-			format_expr( expr.Base )
-			format_expr( expr.Arguments[1] )
+		elseif expr.ast_type == 'TableCallExpr' then
+			format_expr( expr.base )
+			format_expr( expr.arguments[1] )
 
-		elseif expr.AstType == 'StringCallExpr' then
-			format_expr(expr.Base)
-			--t:append_token( expr.Arguments[1] )
-			format_expr( expr.Arguments[1] )
+		elseif expr.ast_type == 'StringCallExpr' then
+			format_expr(expr.base)
+			--t:append_token( expr.arguments[1] )
+			format_expr( expr.arguments[1] )
 
-		elseif expr.AstType == 'IndexExpr' then
-			format_expr(expr.Base)
+		elseif expr.ast_type == 'IndexExpr' then
+			format_expr(expr.base)
 			t:append_next_token( "[" )
-			format_expr(expr.Index)
+			format_expr(expr.index)
 			t:append_next_token( "]" )
 
-		elseif expr.AstType == 'MemberExpr' then
-			format_expr(expr.Base)
+		elseif expr.ast_type == 'MemberExpr' then
+			format_expr(expr.base)
 			t:append_next_token()  -- . or :
-			t:append_token(expr.Ident)
+			t:append_token(expr.ident)
 
-		elseif expr.AstType == 'LambdaFunction' then
+		elseif expr.ast_type == 'LambdaFunctionExpr' then
 			-- anonymous function
 			t:append_next_token( "function" )
 			t:append_next_token( "(" )
-			if #expr.Arguments > 0 then
-				for i = 1, #expr.Arguments do
-					t:append_str( expr.Arguments[i].name )
-					if i ~= #expr.Arguments then
+			if #expr.arguments > 0 then
+				for i = 1, #expr.arguments do
+					t:append_str( expr.arguments[i].name )
+					if i ~= #expr.arguments then
 						t:append_next_token(",")
 					elseif expr.vararg then
 						t:append_next_token(",")
@@ -253,37 +253,37 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 				t:append_next_token("...")
 			end
 			t:append_next_token(")")
-			format_statlist(expr.Body)
+			format_statlist(expr.body)
 			t:append_next_token("end")
 
-		elseif expr.AstType == 'ConstructorExpr' then
+		elseif expr.ast_type == 'ConstructorExpr' then
 			t:append_next_token( "{" )
-			for i = 1, #expr.EntryList do
-				local entry = expr.EntryList[i]
-				if entry.type == 'Key' then
+			for i = 1, #expr.entry_list do
+				local entry = expr.entry_list[i]
+				if entry.type == 'key' then
 					t:append_next_token( "[" )
-					format_expr(entry.Key)
+					format_expr(entry.key)
 					t:append_next_token( "]" )
 					t:append_next_token( "=" )
-					format_expr(entry.Value)
-				elseif entry.type == 'Value' then
-					format_expr(entry.Value)
+					format_expr(entry.value)
+				elseif entry.type == 'value' then
+					format_expr(entry.value)
 				elseif entry.type == 'KeyString' then
-					t:append_str(entry.Key)
+					t:append_str(entry.key)
 					t:append_next_token( "=" )
-					format_expr(entry.Value)
+					format_expr(entry.value)
 				end
-				t:append_comma( i ~= #expr.EntryList, { ",", ";" } )
+				t:append_comma( i ~= #expr.entry_list, { ",", ";" } )
 			end
 			t:append_next_token( "}" )
 
-		elseif expr.AstType == 'Parentheses' then
+		elseif expr.ast_type == 'ParenthesesExpr' then
 			t:append_next_token( "(" )
-			format_expr(expr.Inner)
+			format_expr(expr.inner)
 			t:append_next_token( ")" )
 
 		else
-			printf_err("Unknown expr AST type: '%s'", expr.AstType)
+			printf_err("Unknown expr AST type: '%s'", expr.ast_type)
 		end
 
 		t:on_end()
@@ -295,25 +295,25 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 		local t = tokens(stat)
 
 		--debug_printf("")
-		--debug_printf(string.format("format_statement(%s) at line %i", stat.AstType, stat.Tokens and stat.Tokens[1] and stat.Tokens[1].Line or -1))
+		--debug_printf(string.format("format_statement(%s) at line %i", stat.ast_type, stat.tokens and stat.tokens[1] and stat.tokens[1].line or -1))
 
-		if stat.AstType == 'AssignmentStatement' then
-			for i,v in ipairs(stat.Lhs) do
+		if stat.ast_type == 'AssignmentStatement' then
+			for i,v in ipairs(stat.lhs) do
 				format_expr(v)
-				t:append_comma( i ~= #stat.Lhs )
+				t:append_comma( i ~= #stat.lhs )
 			end
-			if #stat.Rhs > 0 then
+			if #stat.rhs > 0 then
 				t:append_next_token( "=" )
-				for i,v in ipairs(stat.Rhs) do
+				for i,v in ipairs(stat.rhs) do
 					format_expr(v)
-					t:append_comma( i ~= #stat.Rhs )
+					t:append_comma( i ~= #stat.rhs )
 				end
 			end
 
-		elseif stat.AstType == 'CallStatement' then
-			format_expr(stat.Expression)
+		elseif stat.ast_type == 'CallStatement' then
+			format_expr(stat.expression)
 
-		elseif stat.AstType == 'VarDeclareStatement' then
+		elseif stat.ast_type == 'VarDeclareStatement' then
 			if t:peek() == "local" then
 				t:append_next_token( "local" )
 			elseif t:peek() == "global" then
@@ -323,68 +323,68 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 				t:append_str('local')
 			end
 
-			for i = 1, #stat.NameList do
-				t:append_str( stat.NameList[i] )
-				t:append_comma( i ~= #stat.NameList )
+			for i = 1, #stat.name_list do
+				t:append_str( stat.name_list[i] )
+				t:append_comma( i ~= #stat.name_list )
 			end
-			if #stat.InitList > 0 then
+			if #stat.init_list > 0 then
 				t:append_next_token( "=" )
-				for i = 1, #stat.InitList do
-					format_expr(stat.InitList[i])
-					t:append_comma( i ~= #stat.InitList )
+				for i = 1, #stat.init_list do
+					format_expr(stat.init_list[i])
+					t:append_comma( i ~= #stat.init_list )
 				end
 			end
 
-		elseif stat.AstType == 'IfStatement' then
+		elseif stat.ast_type == 'IfStatement' then
 			t:append_next_token( "if" )
-			format_expr( stat.Clauses[1].Condition )
+			format_expr( stat.clauses[1].condition )
 			t:append_next_token( "then" )
-			format_statlist( stat.Clauses[1].Body )
-			for i = 2, #stat.Clauses do
-				local st = stat.Clauses[i]
-				if st.Condition then
+			format_statlist( stat.clauses[1].body )
+			for i = 2, #stat.clauses do
+				local st = stat.clauses[i]
+				if st.condition then
 					t:append_next_token( "elseif" )
-					format_expr(st.Condition)
+					format_expr(st.condition)
 					t:append_next_token( "then" )
 				else
 					t:append_next_token( "else" )
 				end
-				format_statlist(st.Body)
+				format_statlist(st.body)
 			end
 			t:append_next_token( "end" )
 
-		elseif stat.AstType == 'WhileStatement' then
+		elseif stat.ast_type == 'WhileStatement' then
 			t:append_next_token( "while" )
-			format_expr(stat.Condition)
+			format_expr(stat.condition)
 			t:append_next_token( "do" )
-			format_statlist(stat.Body)
+			format_statlist(stat.body)
 			t:append_next_token( "end" )
 
-		elseif stat.AstType == 'DoStatement' then
+		elseif stat.ast_type == 'DoStatement' then
 			t:append_next_token( "do" )
-			format_statlist(stat.Body)
+			format_statlist(stat.body)
 			t:append_next_token( "end" )
 
-		elseif stat.AstType == 'ReturnStatement' then
+		elseif stat.ast_type == 'ReturnStatement' then
 			t:append_next_token( "return" )
-			for i = 1, #stat.Arguments do
-				format_expr(stat.Arguments[i])
-				t:append_comma( i ~= #stat.Arguments )
+			for i = 1, #stat.arguments do
+				format_expr(stat.arguments[i])
+				t:append_comma( i ~= #stat.arguments )
 			end
 
-		elseif stat.AstType == 'BreakStatement' then
+		elseif stat.ast_type == 'BreakStatement' then
 			t:append_next_token( "break" )
 
-		elseif stat.AstType == 'RepeatStatement' then
+		elseif stat.ast_type == 'RepeatStatement' then
 			t:append_next_token( "repeat" )
-			format_statlist(stat.Body)
+			format_statlist(stat.body)
 			t:append_next_token( "until" )
-			format_expr(stat.Condition)
+			format_expr(stat.condition)
 
-		elseif stat.AstType == 'FunctionDecl' then
-			--print(U.Pretty(stat))
+		elseif stat.ast_type == 'FunctionDeclStatement' then
+			--print(U.pretty(stat))
 
-			if stat.IsLocal then
+			if stat.is_local then
 				t:append_next_token( "local" )
 			elseif t:peek() == "global" then
 				t:skip_next_token()
@@ -393,15 +393,15 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 			if stat.name then
 				format_expr( stat.name )
 			else
-				t:append_str( stat.VarName )
+				t:append_str( stat.var_name )
 			end
 
 			t:append_next_token( "(" )
-			if #stat.Arguments > 0 then
-				for i = 1, #stat.Arguments do
-					t:append_str( stat.Arguments[i].name )
-					t:append_comma( i ~= #stat.Arguments or stat.vararg )
-					if i == #stat.Arguments and stat.vararg then
+			if #stat.arguments > 0 then
+				for i = 1, #stat.arguments do
+					t:append_str( stat.arguments[i].name )
+					t:append_comma( i ~= #stat.arguments or stat.vararg )
+					if i == #stat.arguments and stat.vararg then
 						t:append_next_token( "..." )
 					end
 				end
@@ -410,58 +410,58 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 			end
 			t:append_next_token( ")" )
 
-			format_statlist(stat.Body)
+			format_statlist(stat.body)
 			t:append_next_token( "end" )
 
-		elseif stat.AstType == 'GenericForStatement' then
+		elseif stat.ast_type == 'GenericForStatement' then
 			t:append_next_token( "for" )
-			for i,name in ipairs(stat.VarNames) do
+			for i,name in ipairs(stat.var_names) do
 				t:append_str( name )
-				t:append_comma( i ~= #stat.VarNames )
+				t:append_comma( i ~= #stat.var_names )
 			end
 			t:append_next_token( "in" )
-			for i = 1, #stat.Generators do
-				format_expr(stat.Generators[i])
-				t:append_comma( i ~= #stat.Generators )
+			for i = 1, #stat.generators do
+				format_expr(stat.generators[i])
+				t:append_comma( i ~= #stat.generators )
 			end
 			t:append_next_token( "do" )
-			format_statlist(stat.Body)
+			format_statlist(stat.body)
 			t:append_next_token( "end" )
 
-		elseif stat.AstType == 'NumericForStatement' then
+		elseif stat.ast_type == 'NumericForStatement' then
 			t:append_next_token( "for" )
-			t:append_str( stat.VarName )
+			t:append_str( stat.var_name )
 			t:append_next_token( "=" )
-			format_expr(stat.Start)
+			format_expr(stat.start)
 			t:append_next_token( "," )
-			format_expr(stat.End)
-			if stat.Step then
+			format_expr(stat.end_)
+			if stat.step then
 				t:append_next_token( "," )
-				format_expr(stat.Step)
+				format_expr(stat.step)
 			end
 			t:append_next_token( "do" )
-			format_statlist(stat.Body)
+			format_statlist(stat.body)
 			t:append_next_token( "end" )
 
-		elseif stat.AstType == 'LabelStatement' then
+		elseif stat.ast_type == 'LabelStatement' then
 			t:append_next_token( "::" )
-			t:append_str( stat.Label )
+			t:append_str( stat.label )
 			t:append_next_token( "::" )
 
-		elseif stat.AstType == 'GotoStatement' then
+		elseif stat.ast_type == 'GotoStatement' then
 			t:append_next_token( "goto" )
-			t:append_str( stat.Label )
+			t:append_str( stat.label )
 
-		elseif stat.AstType == 'Eof' then
+		elseif stat.ast_type == 'Eof' then
 			t:append_white()
 
-		elseif stat.AstType == 'Typedef' then
+		elseif stat.ast_type == 'Typedef' then
 
 		else
-			printf_err("Unknown stat AST type: '%s'", stat.AstType)
+			printf_err("Unknown stat AST type: '%s'", stat.ast_type)
 		end
 
-		if stat.Semicolon then
+		if stat.semicolon then
 			t:append_next_token(";")
 		end
 
@@ -471,13 +471,13 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 
 
 	format_statlist = function(stat_list) -> void
-		for _, stat in ipairs(stat_list.Body) do
+		for _, stat in ipairs(stat_list.body) do
 			format_statement(stat)
 		end
 	end
 
 
-	if U.is_array(ast.Body) then
+	if U.is_array(ast.body) then
 		format_statlist(ast)
 	else
 		format_expr(ast)
@@ -487,4 +487,4 @@ local function FormatIdentity(ast, filename: string, insert_new_lines : bool?) -
 	return table.concat(out.rope)
 end
 
-return FormatIdentity
+return format_identity

@@ -188,7 +188,7 @@ function Scope:create_global_scope() -> S.Scope
 	s:declare_type( 'string',  T.String, where )
 	s:declare_type( 'any',     T.Any,    where )
 
-	-- Keywords are handles explicitly:
+	-- keywords are handles explicitly:
 	--s:declare_type( 'nil',     T.Nil)    -- for e.g.:   foo or bar or nil
 	--s:declare_type( 'true',    T.True)
 	--s:declare_type( 'false',   T.False)

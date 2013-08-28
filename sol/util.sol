@@ -18,7 +18,7 @@ function U.bimap(tb)
 end
 
 
-function U.Pretty(arg)
+function U.pretty(arg)
 	return pretty.serialize(arg)
 end
 

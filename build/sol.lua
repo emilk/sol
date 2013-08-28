@@ -24,7 +24,7 @@ package.path = sol_dir..'?.lua;' .. package.path
 
 ------------------------------------------------
 
-local FormatIdentity  = require 'format_identity'
+local format_identity  = require 'format_identity'
 local Lexer           = require 'lexer'
 local Parser          = require 'parser'
 local S               = require 'scope'
@@ -38,7 +38,7 @@ local function compile_sol(source_text)
 	local filename = "input"
 	local settings = Parser.SolSettings
 
-	local st, tokens = Lexer.LexSol(source_text, filename, settings)
+	local st, tokens = Lexer.lex_sol(source_text, filename, settings)
 	if not st then
 		os.exit(1)
 		return nil
@@ -46,7 +46,7 @@ local function compile_sol(source_text)
 
 	local module_scope = S.Scope:create_module_scope()
 
-	local st, ast = Parser.ParseSol(source_text, tokens, filename, settings, module_scope)
+	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope)
 	if not st then
 		os.exit(2)
 		return nil
@@ -63,7 +63,7 @@ local function compile_sol(source_text)
 		return nil
 	end
 
-	local str = FormatIdentity(ast, filename)
+	local str = format_identity(ast, filename)
 
 	return str
 end
@@ -99,7 +99,7 @@ local function print_help()
 
 		OPTIONS
 			-h or --help
-				Print this help text
+				print this help text
 
 			-s
 				Spam mode: Will print extensive trace text (for debugging solc)

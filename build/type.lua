@@ -470,7 +470,7 @@ function T.isa_raw(d, b, problem_rope)
 	elseif d.tag == 'varargs' and b.tag == 'varargs' then
 		return T.isa(d.type, b.type)
 	else
-		--error('isa failed: derived: ' .. U.Pretty(d) .. ', base: ' .. U.Pretty(b))
+		--error('isa failed: derived: ' .. U.pretty(d) .. ', base: ' .. U.pretty(b))
 		error('isa failed: derived: ' .. T.name(d) .. ', base: ' .. T.name(b))
 	end
 end
@@ -561,7 +561,7 @@ function T.find(t, target)
 end
 
 
--- Is a variant of 'a' a 'b' ?
+-- is a variant of 'a' a 'b' ?
 -- T.could_be(T.Bool, T.False)  == true
 -- T.could_be(some_nilable, T.Nil)  == true
 -- T.could_be(int or bool, string or bool)  == true
@@ -662,7 +662,7 @@ function T.could_be_true(a)
 end
 
 
--- Is 'a' a boolean expresson that could be evaluates as either true and false?
+-- is 'a' a boolean expresson that could be evaluates as either true and false?
 -- If not, we are doing somethinglike    if always_true then ...
 -- Which is almost certainly wrong
 function T.is_useful_boolean(a)
@@ -837,7 +837,7 @@ function T.name(typ, indent, verbose)
 		return typ.tag
 
 	else
-		return string.format("[UNKNOWN TYPE: %q]", U.Pretty(typ))
+		return string.format("[UNKNOWN TYPE: %q]", U.pretty(typ))
 	end
 end
 

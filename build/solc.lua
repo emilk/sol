@@ -49,7 +49,7 @@ package.path = sol_dir..'?.lua;' .. package.path
 
 
 local D               = require 'sol_debug'
-local FormatIdentity  = require 'format_identity'
+local format_identity  = require 'format_identity'
 local Lexer           = require 'lexer'
 local Parser          = require 'parser'
 local S               = require 'scope'
@@ -112,7 +112,7 @@ local function parse_module_str(chain, path_in, source_text)
 
 	local settings = (is_sol and Parser.SolSettings or Parser.LuaSettings)
 
-	local st, tokens = Lexer.LexSol(source_text, filename, settings)
+	local st, tokens = Lexer.lex_sol(source_text, filename, settings)
 	if not st then
 		printf_err("Failed to lex %q", path_in)
 		g_modules[module_name] = FAIL_INFO
@@ -122,7 +122,7 @@ local function parse_module_str(chain, path_in, source_text)
 
 	local module_scope = S.Scope:create_module_scope()
 
-	local st, ast = Parser.ParseSol(source_text, tokens, filename, settings, module_scope)
+	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope)
 	if not st then
 		--we failed to parse the file, show why
 		printf_err("Failed to parse %q", path_in)
@@ -214,7 +214,7 @@ parse_module = function(chain, path_in)
 
 	local old_info = g_modules[module_name]
 	if old_info == CURRENTLY_PARSING then
-		printf_err("Module 'require' recusion detected: dependency chain: " .. U.Pretty(chain))
+		printf_err("Module 'require' recusion detected: dependency chain: " .. U.pretty(chain))
 		error(-42)
 		return FAIL_INFO
 	elseif old_info then
@@ -244,7 +244,7 @@ end
 local function output_module(info, path_in, path_out)
 	if info.ast and path_out then
 		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] '
-		out_text = out_text .. FormatIdentity(info.ast, path_in)
+		out_text = out_text .. format_identity(info.ast, path_in)
 		if not U.write_file(path_out, out_text) then
 			printf_err("Failed to open %q for writing", path_out)
 			os.exit(4)
@@ -294,7 +294,7 @@ local function print_help()
 
 		OPTIONS
 			-h or --help
-				Print this help text
+				print this help text
 
 			-o output_dir
 				Write compiled .lua files here rather than the default '.'

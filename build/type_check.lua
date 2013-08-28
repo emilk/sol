@@ -1,14 +1,13 @@
 --[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol --]] --[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
 --[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
-local U   = require 'util'
-local bimap = U.bimap
-local Pretty = require 'pretty'
+local U      = require 'util'
+local bimap  = U.bimap
+local pretty = require 'pretty'
 local T      = require 'type'
 local L      = require 'lexer'
 local P      = require 'parser'
 local S      = require 'scope'
 local D      = require 'sol_debug'
-
 
 
 
@@ -33,8 +32,8 @@ local function loose_lookup(table, id)
 	local edit_distance = require 'edit_distance'
 
 	local MAX_DIST = 3
-	local closest_dist = math.huge
-	local closest_key = nil
+	local  closest_dist = math.huge
+	local closest_key  = nil
 
 	for k,v in pairs(table) do
 		D.assert(type(k) == 'string')
@@ -59,15 +58,15 @@ end
 
 
 local function expr2str(e) 
-	local ignore_set = U.bimap{'var_', 'scope', 'Tokens'}
-	return Pretty.serialize(e, ignore_set)
+	local ignore_set = U.bimap{'var_', 'scope', 'tokens'}
+	return pretty.serialize(e, ignore_set)
 end
 
 
 local function format_expr(e)
-	local FormatIdentity = require 'format_identity'
+	local format_identity = require 'format_identity'
 	local insert_new_lines = false
-	local str = FormatIdentity(e, '', insert_new_lines)
+	local str = format_identity(e, '', insert_new_lines)
 	str = U.trim(str)
 	return str
 end
@@ -76,7 +75,7 @@ end
 
 
 
-local function Analyze(ast, filename, on_require, settings)
+local function analyze(ast, filename, on_require, settings)
 	local analyze_statlist, analyze_expr, analyze_expr_single;
 	local analyze_expr_unchecked;
 
@@ -85,9 +84,9 @@ local function Analyze(ast, filename, on_require, settings)
 	local function where_is(node)
 		if node and node.where then
 			return node.where
-		elseif node and node.Tokens and node.Tokens[1] then
-			local tok = node.Tokens[1]
-			return string.format('%s:%i', filename, tok.Line)
+		elseif node and node.tokens and node.tokens[1] then
+			local tok = node.tokens[1]
+			return string.format('%s:%i', filename, tok.line)
 		else
 			D.break_()
 			return filename .. ':??'
@@ -116,13 +115,13 @@ local function Analyze(ast, filename, on_require, settings)
 	end
 
 	local function sol_warning(node, fmt, ...)
-		if settings.Sol then
+		if settings.is_sol then
 			report_warning(node, fmt, ...)
 		end
 	end
 
 	local function report_error(node, fmt, ...)
-		if settings.Sol then
+		if settings.is_sol then
 			U.printf_err( "%s", report('ERROR', node, fmt, ...) )
 			error_count = error_count + 1
 		else
@@ -164,14 +163,14 @@ local function Analyze(ast, filename, on_require, settings)
 
 
 
-	local function DeclareLocal(node, scope, name)
+	local function declare_local(node, scope, name)
 		D.assert(node and scope and name)
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
 		local old = scope:get_scoped(name)
 
-		if old and old.ForwardDeclared then
-			old.ForwardDeclared = false -- Properly declared now
+		if old and old.forward_declared then
+			old.forward_declared = false -- Properly declared now
 			-- TODO: move to proper scope!
 			assert(not old.is_global)
 			assert(old.scope == scope)
@@ -189,7 +188,7 @@ local function Analyze(ast, filename, on_require, settings)
 		return scope:create_local(name, where_is(node))
 	end
 
-	local function DeclareGlobal(node, scope, name)
+	local function declare_global(node, scope, name)
 		D.assert(node and scope and scope.parent)
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
@@ -201,8 +200,8 @@ local function Analyze(ast, filename, on_require, settings)
 
 		local old = scope:get_var(name)
 
-		if old and old.ForwardDeclared then
-			old.ForwardDeclared = false -- Properly declared now
+		if old and old.forward_declared then
+			old.forward_declared = false -- Properly declared now
 			-- TODO: move to proper scope!
 			assert(old.is_global)
 			assert(old.scope == scope)
@@ -218,11 +217,11 @@ local function Analyze(ast, filename, on_require, settings)
 		return scope:create_global(name, where_is(node))
 	end
 
-	local function DeclareVar(node, scope, name, is_local)
+	local function declare_var(node, scope, name, is_local)
 		if is_local then
-			return DeclareLocal(node, scope, name)
+			return declare_local(node, scope, name)
 		else
-			return DeclareGlobal(node, scope, name)
+			return declare_global(node, scope, name)
 		end
 	end
 
@@ -247,7 +246,7 @@ local function Analyze(ast, filename, on_require, settings)
 			st, type, var_ = pcall( analyze_expr_unchecked, expr, scope )
 			if not st then
 				local err_msg = string.sub(type, 256) -- Limit msg length
-				report_error(expr, "Error type-checking expression of type '%s': %s", expr.AstType, err_msg)
+				report_error(expr, "Error type-checking expression of type '%s': %s", expr.ast_type, err_msg)
 
 				-- Show stack-trace:
 				analyze_expr_unchecked(expr, scope)
@@ -257,11 +256,11 @@ local function Analyze(ast, filename, on_require, settings)
 		D.assert(T.is_type(type)  or  T.is_type_list(type))
 
 		if not T.is_type(type) and not T.is_type_list(type) then
-			report_error(expr, "Expression of type %s: evaluated to non-type: '%s'", expr.AstType, U.Pretty(type))
+			report_error(expr, "expression of type %s: evaluated to non-type: '%s'", expr.ast_type, U.pretty(type))
 			type = T.AnyTypeList -- Could be any number of unknown values
 		end
 
-		--report_spam(expr, 'Expression of type %s evaluated to %s', expr.AstType, T.name(type))
+		--report_spam(expr, 'expression of type %s evaluated to %s', expr.ast_type, T.name(type))
 
 		return type, var_
 	end
@@ -280,7 +279,7 @@ local function Analyze(ast, filename, on_require, settings)
 			elseif #t == 1 then
 				return t[1], v
 			else
-				report_error(expr, "Expected single type, got: '%s' when analyzing '%s' expression", T.name(t), expr.AstType)
+				report_error(expr, "Expected single type, got: '%s' when analyzing '%s' expression", T.name(t), expr.ast_type)
 				return T.Any, v
 			end
 		else
@@ -309,7 +308,7 @@ local function Analyze(ast, filename, on_require, settings)
 			return analyze_expr_single(expr, scope)
 		end
 
-		if expr.AstType == 'IdExpr' then
+		if expr.ast_type == 'IdExpr' then
 			local base_var = scope:get_var( expr.name )
 
 			if base_var then
@@ -337,8 +336,8 @@ local function Analyze(ast, filename, on_require, settings)
 
 		if node.IsMemFun then
 			local name = node.name
-			assert(name.AstType == 'MemberExpr' and name.Indexer == ':')
-			local self_type = analyze_expr_single_custom(name.Base, scope, is_pre_analyze)
+			assert(name.ast_type == 'MemberExpr' and name.indexer == ':')
+			local self_type = analyze_expr_single_custom(name.base, scope, is_pre_analyze)
 			table.insert(fun_t.args, {name = 'self', type = self_type})
 
 			node.SelfVarType = self_type  -- Assign a type to the local 'self' variable
@@ -348,7 +347,7 @@ local function Analyze(ast, filename, on_require, settings)
 			end
 		end
 
-		for i,arg in ipairs(node.Arguments) do
+		for i,arg in ipairs(node.arguments) do
 			table.insert(fun_t.args, {name = arg.name, type = arg.type or T.Any})
 		end
 
@@ -373,24 +372,24 @@ local function Analyze(ast, filename, on_require, settings)
 		-- Declare arguments as variables:
 		if node.IsMemFun then
 			assert(node.SelfVarType) -- Set by analyze_function_head
-			local v = DeclareLocal(node, func_scope, 'self')
+			local v = declare_local(node, func_scope, 'self')
 			v.type = node.SelfVarType
 		end
 
-		for _,arg in ipairs(node.Arguments) do
-			local v = DeclareLocal(node, func_scope, arg.name)
+		for _,arg in ipairs(node.arguments) do
+			local v = declare_local(node, func_scope, arg.name)
 			v.type = arg.type
 		end
 
 		if node.vararg then
-			local v = DeclareLocal(node, func_scope, '...')
+			local v = declare_local(node, func_scope, '...')
 			v.type = node.vararg
 			assert(T.is_type(v.type))
 		end
 
 		---
 
-		local ret_t = analyze_statlist(node.Body, func_scope, fun_t)
+		local ret_t = analyze_statlist(node.body, func_scope, fun_t)
 		ret_t = ret_t and T.as_type_list(ret_t) or T.Void
 
 		if fun_t.rets then
@@ -687,7 +686,7 @@ local function Analyze(ast, filename, on_require, settings)
 		end
 
 		if fun_t.name == 'pairs' or fun_t.name == 'ipairs' then
-			-- Generators returns function that returns 'it_types':
+			-- generators returns function that returns 'it_types':
 			local it_types = generator_types(expr, fun_t, arg_ts)
 
 			if it_types ~= T.AnyTypeList then
@@ -726,18 +725,18 @@ local function Analyze(ast, filename, on_require, settings)
 		--------------------------------------------------------
 		-- Pick out function type:
 		report_spam(expr, "Analyzing function base...")
-		local fun_type = analyze_expr_single(expr.Base, scope)
+		local fun_type = analyze_expr_single(expr.base, scope)
 		report_spam(expr, "Done")
 
 		--------------------------------------------------------
-		-- Get argument types (they will be evaluated regardless of function type):
+		-- get argument types (they will be evaluated regardless of function type):
 
-		local args = U.shallow_clone( expr.Arguments )
+		local args = U.shallow_clone( expr.arguments )
 
-		local called_as_mem_fun = (expr.Base.AstType == 'MemberExpr' and expr.Base.Indexer == ':')
+		local called_as_mem_fun = (expr.base.ast_type == 'MemberExpr' and expr.base.indexer == ':')
 
 		if called_as_mem_fun then
-			local obj_expr = expr.Base.Base
+			local obj_expr = expr.base.base
 			table.insert(args, 1, obj_expr)
 		end
 
@@ -773,8 +772,8 @@ local function Analyze(ast, filename, on_require, settings)
 
 				if not called_as_mem_fun and is_mem_fun then
 					report_warning(expr, "Member function called as non-member function")
-					--report_info(expr, "expr.Base.AstType: " .. expr.Base.AstType)
-					--report_info(expr, "expr.Base.Indexer: " .. expr2str(expr.Base.Indexer))
+					--report_info(expr, "expr.base.ast_type: " .. expr.base.ast_type)
+					--report_info(expr, "expr.base.indexer: " .. expr2str(expr.base.indexer))
 				end
 
 				local rets = analyze_fun_call(expr, fun_t, arg_ts, report_errors)
@@ -854,12 +853,12 @@ local function Analyze(ast, filename, on_require, settings)
 	analyze_expr_unchecked = function(expr, scope)
 		assert(expr)
 		assert(type(expr) == 'table')
-		if not expr.AstType then
+		if not expr.ast_type then
 			error("Not an expression: " .. expr2str(expr))
 		end
-		assert(expr.AstType)
+		assert(expr.ast_type)
 
-		report_spam(expr, "analyze_expr %s", expr.AstType)
+		report_spam(expr, "analyze_expr %s", expr.ast_type)
 
 
 		local function handle_var(var_)
@@ -883,7 +882,7 @@ local function Analyze(ast, filename, on_require, settings)
 			end
 			
 			if _G.g_spam then
-				report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.AstType, T.name(type))
+				report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, T.name(type))
 			end
 
 			D.assert(T.is_type(type)  or  T.is_type_list(type))
@@ -891,7 +890,7 @@ local function Analyze(ast, filename, on_require, settings)
 			return type, var_
 		end
 
-		if expr.AstType == 'IdExpr' then
+		if expr.ast_type == 'IdExpr' then
 			if expr.name == '_' then
 				report_error(expr, "You may not read from discard variable '_'")
 			end
@@ -899,7 +898,7 @@ local function Analyze(ast, filename, on_require, settings)
 			local var_ = scope:get_var( expr.name )
 
 			if var_ then
-				if var_.ForwardDeclared then
+				if var_.forward_declared then
 					report_error(expr, "Use of forward-declared variable '%s', forward-declared here: %s",
 						expr.name, var_.where)
 				end
@@ -919,7 +918,7 @@ local function Analyze(ast, filename, on_require, settings)
 			return handle_var(var_)
 
 
-		elseif expr.AstType == 'VarExpr' then
+		elseif expr.ast_type == 'VarExpr' then
 			local var_ = expr.Variable
 
 			if var_.name == '_' then
@@ -935,7 +934,7 @@ local function Analyze(ast, filename, on_require, settings)
 			local type = analyze_simple_expr_unchecked(expr, scope)
 
 			if _G.g_spam then
-				report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.AstType, T.name(type))
+				report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, T.name(type))
 			end
 
 			D.assert(T.is_type(type)  or  T.is_type_list(type))
@@ -946,9 +945,9 @@ local function Analyze(ast, filename, on_require, settings)
 
 	-- Return type
 	analyze_simple_expr_unchecked = function(expr, scope)
-		if expr.AstType == 'NumberExpr' then
+		if expr.ast_type == 'NumberExpr' then
 			-- TODO: 0xff, 42 is int,  42.0 is num
-			local str = expr.Value.Data
+			local str = expr.value.data
 			local t = T.from_num_literal( str )
 			if t then return t end
 			if not t then
@@ -957,27 +956,27 @@ local function Analyze(ast, filename, on_require, settings)
 			end
 
 
-		elseif expr.AstType == 'StringExpr' then
-			return T.from_string_literal( expr.Value.Data )
+		elseif expr.ast_type == 'StringExpr' then
+			return T.from_string_literal( expr.value.data )
 
 
-		elseif expr.AstType == 'BooleanExpr' then
-			assert(expr.Value == true or expr.Value == false)
-			if expr.Value == true then
+		elseif expr.ast_type == 'BooleanExpr' then
+			assert(expr.value == true or expr.value == false)
+			if expr.value == true then
 				return T.True
 			else
 				return T.False
 			end
 
 
-		elseif expr.AstType == 'NilExpr' then
+		elseif expr.ast_type == 'NilExpr' then
 			return T.Nil
 
 
-		elseif expr.AstType == 'BinopExpr' then
-			local op = expr.Op
-			local lt = analyze_expr_single( expr.Lhs, scope )
-			local rt = analyze_expr_single( expr.Rhs, scope )
+		elseif expr.ast_type == 'BinopExpr' then
+			local op = expr.op
+			local lt = analyze_expr_single( expr.lhs, scope )
+			local rt = analyze_expr_single( expr.rhs, scope )
 
 			--report_spam(expr, "Binop: %s %s %s", T.name(lt), op, T.name(rt))
 
@@ -1041,7 +1040,7 @@ local function Analyze(ast, filename, on_require, settings)
 			elseif op == 'and' then
 				if not T.is_useful_boolean(lt) then
 					report_warning(expr,
-						--"Operator 'and' expected boolean expression to the left, got %s from expression %s", T.name(lt), expr2str(expr.Lhs))
+						--"Operator 'and' expected boolean expression to the left, got %s from expression %s", T.name(lt), expr2str(expr.lhs))
 						"Operator 'and' expected boolean expression to the left, got '%s'", T.name(lt))
 				end
 
@@ -1063,7 +1062,7 @@ local function Analyze(ast, filename, on_require, settings)
 			elseif op == 'or' then
 				if not T.is_useful_boolean(lt) then
 					report_warning(expr,
-						--"Operator 'or' expected boolean expression to the left, got %s from expression %s", T.name(lt), expr2str(expr.Lhs))
+						--"Operator 'or' expected boolean expression to the left, got %s from expression %s", T.name(lt), expr2str(expr.lhs))
 						"Operator 'or' expected boolean expression to the left, got '%s'", T.name(lt))
 				end
 
@@ -1081,15 +1080,15 @@ local function Analyze(ast, filename, on_require, settings)
 				types = T.variant(types, rt)         -- ...or anything on the right
 				return types
 			else
-				report_error(expr, "Unknown binary operator %q", expr.Op)
+				report_error(expr, "Unknown binary operator %q", expr.op)
 				return T.Any
 			end
 
 
-		elseif expr.AstType == 'UnopExpr' then
-			local arg_t = analyze_expr_single(expr.Rhs, scope)
+		elseif expr.ast_type == 'UnopExpr' then
+			local arg_t = analyze_expr_single(expr.rhs, scope)
 
-			if expr.Op == '-' then
+			if expr.op == '-' then
 				if T.isa(arg_t, T.Num) then
 					return arg_t
 				else
@@ -1097,25 +1096,25 @@ local function Analyze(ast, filename, on_require, settings)
 					return T.Num -- Good guess
 				end
 
-			elseif expr.Op == 'not' then
+			elseif expr.op == 'not' then
 				if not T.is_useful_boolean(arg_t) then
 					report_warning(expr, "'not' operator expected boolean or nil:able, got '%s'", T.name(arg_t))
 				end
 				return T.Bool
 
-			elseif expr.Op == '#' then
+			elseif expr.op == '#' then
 				if not T.could_be(arg_t, T.List) and not T.could_be(arg_t, T.String) then
 					report_error(expr, "'#' operator expected list or string, got %s", T.name(arg_t))
 				end
 				return T.Uint
 
 			else
-				report_error(expr, 'Unknown operator %q', expr.Op)
+				report_error(expr, 'Unknown operator %q', expr.op)
 				return T.Any
 			end
 
 
-		elseif expr.AstType == 'DotsExpr' then
+		elseif expr.ast_type == 'DotsExpr' then
 			local t = scope:get_var_args()
 			if t then
 				assert(t.tag == 'varargs')
@@ -1129,25 +1128,25 @@ local function Analyze(ast, filename, on_require, settings)
 			end
 
 
-		elseif expr.AstType == 'CallExpr' then        -- foo(arg, ...)
-			--U.printf('CallExpr, base: %q, args: %q', expr2str(expr.Base), expr2str(expr.Arguments))
+		elseif expr.ast_type == 'CallExpr' then        -- foo(arg, ...)
+			--U.printf('CallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
 			return call_function(expr, scope)
 
 
-		elseif expr.AstType == 'TableCallExpr' then   -- foo{arg}
-			--U.printf('TableCallExpr, base: %q, args: %q', expr2str(expr.Base), expr2str(expr.Arguments))
+		elseif expr.ast_type == 'TableCallExpr' then   -- foo{arg}
+			--U.printf('TableCallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
 			return call_function(expr, scope)
 
 
-		elseif expr.AstType == 'StringCallExpr' then  -- foo'arg'
-			--U.printf('StringCallExpr, base: %q, args: %q', expr2str(expr.Base), expr2str(expr.Arguments))
+		elseif expr.ast_type == 'StringCallExpr' then  -- foo'arg'
+			--U.printf('StringCallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
 			return call_function(expr, scope)
 
 
-		elseif expr.AstType == 'IndexExpr' then
-			-- Base[Index]
-			local base_t  = analyze_expr_single(expr.Base, scope)
-			local index_t = analyze_expr_single(expr.Index, scope)
+		elseif expr.ast_type == 'IndexExpr' then
+			-- base[index]
+			local base_t  = analyze_expr_single(expr.base, scope)
+			local index_t = analyze_expr_single(expr.index, scope)
 
 			if T.is_any(base_t) then
 				return T.Any
@@ -1160,7 +1159,7 @@ local function Analyze(ast, filename, on_require, settings)
 			else
 				local list = T.find(base_t, T.List) -- TODO: find all lists and variant the reuslts
 				if list then
-					check_type_is_a("List index", expr.Index, index_t, T.Uint)
+					check_type_is_a("List index", expr.index, index_t, T.Uint)
 					if list.type then
 						return list.type
 					else
@@ -1170,7 +1169,7 @@ local function Analyze(ast, filename, on_require, settings)
 
 				local map = T.find(base_t, T.Map) -- TODO: find all maps and variant the reuslts
 				if map then
-					check_type_is_a("Map index", expr.Index, index_t, map.key_type)
+					check_type_is_a("Map index", expr.index, index_t, map.key_type)
 					return T.variant(map.value_type, T.Nil)  -- Nil on not found
 				else
 					report_error(expr, 'Cannot index type %s with %s - not a list, table or map', T.name(base_t), T.name(index_t))
@@ -1180,10 +1179,10 @@ local function Analyze(ast, filename, on_require, settings)
 			end
 
 
-		elseif expr.AstType == 'MemberExpr' then
+		elseif expr.ast_type == 'MemberExpr' then
 			-- .  or  :
-			local base_t = analyze_expr_single(expr.Base, scope)
-			local name = expr.Ident.Data
+			local base_t = analyze_expr_single(expr.base, scope)
+			local name = expr.ident.data
 
 			if T.is_any(base_t) then
 				return T.Any
@@ -1198,7 +1197,7 @@ local function Analyze(ast, filename, on_require, settings)
 			end
 
 
-		elseif expr.AstType == 'LambdaFunction' then
+		elseif expr.ast_type == 'LambdaFunctionExpr' then
 			-- Lambda function
 			local is_pre_analyze = false
 			local fun_t = analyze_function_head( expr, scope, is_pre_analyze )
@@ -1206,23 +1205,23 @@ local function Analyze(ast, filename, on_require, settings)
 			return fun_t
 
 
-		elseif expr.AstType == 'ConstructorExpr' then
+		elseif expr.ast_type == 'ConstructorExpr' then
 			-- TODO    { foo = 32, bar = 15 }
-			--[[ v.EntryList contains entries on the form
+			--[[ v.entry_list contains entries on the form
 
 				{
-					type  : 'KeyString' or 'Key' or 'Value',
-					Key   : ident or expr or nil,
-					Value : expr,
+					type  : 'KeyString' or 'key' or 'value',
+					key   : ident or expr or nil,
+					value : expr,
 				}
 
-				'Key'        means   { [expr]  =  val }    -  For maps
+				'key'        means   { [expr]  =  val }    -  For maps
 				'KeyString'  means   { ident   =  val }    -  For objects
-				'Value'      means   { val            }    -  For lists
+				'value'      means   { val            }    -  For lists
 
 				Mixing is allowed in Lua, but not in Sol
 			--]]
-			if #expr.EntryList == 0 then
+			if #expr.entry_list == 0 then
 				-- {}
 				--return T.EmptyTable
 				-- Assume empty object?
@@ -1232,35 +1231,35 @@ local function Analyze(ast, filename, on_require, settings)
 				local value_type = T.make_variant()
 				local members = {}
 
-				local count = { ['Key'] = 0, ['KeyString'] = 0, ['Value'] = 0 }
-				for _,e in pairs(expr.EntryList) do
+				local count = { ['key'] = 0, ['KeyString'] = 0, ['value'] = 0 }
+				for _,e in pairs(expr.entry_list) do
 					count[e.type] = count[e.type] + 1
 
-					local this_val_type = analyze_expr_single(e.Value, scope)
+					local this_val_type = analyze_expr_single(e.value, scope)
 					if this_val_type.tag == 'varargs' then
 						this_val_type = this_val_type.type -- Many of these
 					end
 
 					value_type = T.extend_variant( value_type, this_val_type )
 
-					if e.type == 'Key' then
-						assert(e.Key)
-						if not e.Key.AstType then
-							report_error(expr, "Bad map key: %s", expr2str(e.Key))
+					if e.type == 'key' then
+						assert(e.key)
+						if not e.key.ast_type then
+							report_error(expr, "Bad map key: %s", expr2str(e.key))
 						end
-						local this_key_type = analyze_expr_single(e.Key, scope)
+						local this_key_type = analyze_expr_single(e.key, scope)
 						key_type = T.extend_variant( key_type, this_key_type )
 					end
 
 					if e.type == 'KeyString' then
-						members[ e.Key ] = this_val_type
+						members[ e.key ] = this_val_type
 					end
 				end
 
 				key_type   = T.simplify( key_type )
 				value_type = T.simplify( value_type )
 
-				if count['Key'] == #expr.EntryList then
+				if count['key'] == #expr.entry_list then
 					-- A map
 					return {
 						tag = 'map',
@@ -1268,21 +1267,21 @@ local function Analyze(ast, filename, on_require, settings)
 						value_type = value_type
 					}
 
-				elseif count['Value'] == #expr.EntryList then
+				elseif count['value'] == #expr.entry_list then
 					-- A list
 					return {
 						tag  = 'list',
 						type = value_type
 					}
 
-				elseif count['KeyString'] == #expr.EntryList then
+				elseif count['KeyString'] == #expr.entry_list then
 					return {
 						tag = 'object',
 						members = members
 					}
 
 				else
-					if count['Value'] == 0 then
+					if count['value'] == 0 then
 						report_error(expr, "Mixed initialization - please use [] on everything or nothing")
 					else
 						report_error(expr, "Mixed initialization - all or none of the values must have explicit keys")
@@ -1293,15 +1292,15 @@ local function Analyze(ast, filename, on_require, settings)
 			end
 
 
-		elseif expr.AstType == 'Parentheses' then
-			local t = analyze_expr_single( expr.Inner, scope )
+		elseif expr.ast_type == 'ParenthesesExpr' then
+			local t = analyze_expr_single( expr.inner, scope )
 			return t
 
 		else
-			print("Unknown expression AST type: ", expr.AstType)
+			print("Unknown expression AST type: ", expr.ast_type)
 		end
 
-		report_error(expr, "Failed to figure out type of %s", expr.AstType)
+		report_error(expr, "Failed to figure out type of %s", expr.ast_type)
 
 		return T.Any
 	end
@@ -1311,7 +1310,7 @@ local function Analyze(ast, filename, on_require, settings)
 	-- examples:   if some_expr then ...
 	-- examples:   while true then ...
 	local check_condition = function(stat, name, expr, scope)
-		if expr.AstType == 'BooleanExpr' then
+		if expr.ast_type == 'BooleanExpr' then
 			-- 'true' or 'false' as explici argument - that's OK
 			-- e.g. for   while true do  ... break ... end
 		else
@@ -1323,7 +1322,7 @@ local function Analyze(ast, filename, on_require, settings)
 	end
 
 
-	local function declare_var(stat, var_, deduced_type)
+	local function assign_var_type(stat, var_, deduced_type)
 		D.assert( T.is_type(deduced_type) )
 
 		if var_.type then
@@ -1366,13 +1365,13 @@ local function Analyze(ast, filename, on_require, settings)
 			report_error(stat, "Cannot assign namespace outside of declaration")
 		end
 
-		report_spam(stat, 'do_assignment, left_expr.AstType: %s', left_expr.AstType)
+		report_spam(stat, 'do_assignment, left_expr.ast_type: %s', left_expr.ast_type)
 
-		if left_expr.AstType == 'MemberExpr' then
+		if left_expr.ast_type == 'MemberExpr' then
 			-- foo.bar = ...
-			local name = left_expr.Ident.Data
+			local name = left_expr.ident.data
 
-			local base_t, base_var = analyze_expr_single_custom(left_expr.Base, scope, is_pre_analyze)
+			local base_t, base_var = analyze_expr_single_custom(left_expr.base, scope, is_pre_analyze)
 
 			if not base_var then
 			--if true then  -- TODO: always use this path
@@ -1524,16 +1523,16 @@ local function Analyze(ast, filename, on_require, settings)
 			end
 		end
 
-		if left_expr.AstType == 'IndexExpr' then
+		if left_expr.ast_type == 'IndexExpr' then
 			-- foo[bar] = ...  -- TODO
 		end
 
-		if left_expr.AstType == 'VarExpr' and left_expr.Variable.name == '_' then
+		if left_expr.ast_type == 'VarExpr' and left_expr.Variable.name == '_' then
 			-- Assigning to _ is always OK
 			return true
 		end
 
-		if left_expr.AstType == 'IdExpr' and left_expr.name == '_' then
+		if left_expr.ast_type == 'IdExpr' and left_expr.name == '_' then
 			-- Assigning to _ is always OK
 			return true
 		end
@@ -1559,12 +1558,12 @@ local function Analyze(ast, filename, on_require, settings)
 	local function analyze_typedef(stat, scope)
 		local name = stat.TypeName
 
-		if stat.namespaceName then
+		if stat.namespace_name then
 			--local v = stat.Variable
-			local v = scope:get_var( stat.namespaceName )
+			local v = scope:get_var( stat.namespace_name )
 
 			if not v then
-				report_error(stat, "namespaced typedef: %s is not a previously defined variable", stat.namespaceName)
+				report_error(stat, "namespaced typedef: %s is not a previously defined variable", stat.namespace_name)
 				return
 			end
 
@@ -1640,53 +1639,53 @@ local function Analyze(ast, filename, on_require, settings)
 		assert(scope)
 		local is_pre_analyze = false
 
-		report_spam(stat, "analyze_statement %s", stat.AstType)
+		report_spam(stat, "analyze_statement %s", stat.ast_type)
 
-		if stat.AstType == 'AssignmentStatement' then
-			local nLhs = #stat.Lhs
-			local nRhs = #stat.Rhs
-			assert(nRhs > 0)
-			if nRhs == 1 then
-				local rt = analyze_expr(stat.Rhs[1], scope)
+		if stat.ast_type == 'AssignmentStatement' then
+			local nlhs = #stat.lhs
+			local nrhs = #stat.rhs
+			assert(nrhs > 0)
+			if nrhs == 1 then
+				local rt = analyze_expr(stat.rhs[1], scope)
 				rt = T.as_type_list(rt)
 				if rt == T.AnyTypeList then
 					-- Nothing to do
-				elseif nLhs > #rt then
-					report_error(stat, "Unequal number of variables and values: left hand side has %i variables, right hand side evaluates to %s", nLhs, T.name(rt))
-				elseif nLhs < #rt then
-					report_warning(stat, "Assignment discards values: left hand side has %i variables, right hand side evaluates to %s", nLhs, T.name(rt))
+				elseif nlhs > #rt then
+					report_error(stat, "Unequal number of variables and values: left hand side has %i variables, right hand side evaluates to %s", nlhs, T.name(rt))
+				elseif nlhs < #rt then
+					report_warning(stat, "Assignment discards values: left hand side has %i variables, right hand side evaluates to %s", nlhs, T.name(rt))
 				else
 					for i,v in ipairs(rt) do
-						do_assignment(stat, scope, stat.Lhs[i], rt[i], is_pre_analyze)
+						do_assignment(stat, scope, stat.lhs[i], rt[i], is_pre_analyze)
 					end
 				end
 			else
-				if #stat.Lhs ~= #stat.Rhs then
+				if #stat.lhs ~= #stat.rhs then
 					report_error(stat, "Unequal number of variables and values")
 				else
-					for i = 1,nRhs do
-						local rti = analyze_expr_single(stat.Rhs[i], scope)
-						do_assignment(stat, scope, stat.Lhs[i], rti, is_pre_analyze)
+					for i = 1,nrhs do
+						local rti = analyze_expr_single(stat.rhs[i], scope)
+						do_assignment(stat, scope, stat.lhs[i], rti, is_pre_analyze)
 					end
 				end
 			end
 
-		elseif stat.AstType == 'CallStatement' then
-			analyze_expr(stat.Expression, scope)
+		elseif stat.ast_type == 'CallStatement' then
+			analyze_expr(stat.expression, scope)
 
 
-		elseif stat.AstType == 'VarDeclareStatement' then
+		elseif stat.ast_type == 'VarDeclareStatement' then
 			report_spam(stat, "VarDeclareStatement")
 
-			-- Analyze InitList before declaring variables to prevent
+			-- Analyze init_list before declaring variables to prevent
 			-- local x = x
 
 			local init_types = {}
 
-			if #stat.InitList == 1 then
-				init_types = analyze_expr( stat.InitList[1], scope )
+			if #stat.init_list == 1 then
+				init_types = analyze_expr( stat.init_list[1], scope )
 			else
-				for _,exp in ipairs(stat.InitList) do
+				for _,exp in ipairs(stat.init_list) do
 					init_types[#init_types + 1] = analyze_expr_single( exp, scope )
 				end
 			end
@@ -1696,9 +1695,9 @@ local function Analyze(ast, filename, on_require, settings)
 			-- Declare variables:
 			local is_local = (stat.type ~= 'global')
 			local vars = {}
-			for _,name in ipairs(stat.NameList) do
+			for _,name in ipairs(stat.name_list) do
 				report_spam(stat, "Declaration: %s %s", stat.type, name)
-				local v = DeclareVar(stat, scope, name, is_local)
+				local v = declare_var(stat, scope, name, is_local)
 				--v.type = nil -- Ignore any forward-deduced type
 				vars[#vars + 1] = v
 			end
@@ -1725,7 +1724,7 @@ local function Analyze(ast, filename, on_require, settings)
 				end
 			end
 
-			if #stat.InitList == 0 then
+			if #stat.init_list == 0 then
 				-- local a,b
 				if stat.type == 'var' then
 					report_error(stat, "'var' must be initialized at declaration")
@@ -1745,7 +1744,7 @@ local function Analyze(ast, filename, on_require, settings)
 					end
 				end
 
-			elseif #stat.InitList == 1 then
+			elseif #stat.init_list == 1 then
 				-- local a,b = foo()
 				local t = init_types
 				if t == T.AnyTypeList then
@@ -1773,14 +1772,14 @@ local function Analyze(ast, filename, on_require, settings)
 								D.break_()
 								assert( T.is_type(deduced_types[i]) )
 							end
-							declare_var(stat, v, deduced_types[i])
+							assign_var_type(stat, v, deduced_types[i])
 						end
 					end
 				end
-			elseif #vars ~= #stat.InitList then
+			elseif #vars ~= #stat.init_list then
 				-- local a,b,c = 1,2
 				report_error(stat, "Uneven number of variables and values in local declaration. Variables: %i, inits: %i",
-					#vars, #stat.InitList)
+					#vars, #stat.init_list)
 			else
 				-- local a,b,c = 1,2,3
 				local N = #vars
@@ -1788,7 +1787,7 @@ local function Analyze(ast, filename, on_require, settings)
 					local v = vars[i]
 					local deduced_type = init_types[i]
 					assert( T.is_type(deduced_type) )
-					declare_var(stat, v, deduced_type)
+					assign_var_type(stat, v, deduced_type)
 				end
 			end
 
@@ -1801,43 +1800,43 @@ local function Analyze(ast, filename, on_require, settings)
 			end
 
 
-		elseif stat.AstType == 'IfStatement' then
-			check_condition( stat, 'if', stat.Clauses[1].Condition, scope )
+		elseif stat.ast_type == 'IfStatement' then
+			check_condition( stat, 'if', stat.clauses[1].condition, scope )
 
-			local ret = analyze_statlist( stat.Clauses[1].Body, scope, scope_fun )
+			local ret = analyze_statlist( stat.clauses[1].body, scope, scope_fun )
 
-			for i = 2, #stat.Clauses do
-				local st = stat.Clauses[i]
-				if st.Condition then
-					check_condition( stat, 'elseif', st.Condition, scope )
+			for i = 2, #stat.clauses do
+				local st = stat.clauses[i]
+				if st.condition then
+					check_condition( stat, 'elseif', st.condition, scope )
 				end
-				ret = T.combine_type_lists(ret, analyze_statlist( st.Body, scope, scope_fun ))
+				ret = T.combine_type_lists(ret, analyze_statlist( st.body, scope, scope_fun ))
 			end
 
 			return ret
 
 
-		elseif stat.AstType == 'WhileStatement' then
-			check_condition( stat, 'while', stat.Condition, scope )
-			local ret = analyze_statlist(stat.Body, scope, scope_fun)
+		elseif stat.ast_type == 'WhileStatement' then
+			check_condition( stat, 'while', stat.condition, scope )
+			local ret = analyze_statlist(stat.body, scope, scope_fun)
 			return ret
 
 
-		elseif stat.AstType == 'DoStatement' then
-			local ret = analyze_statlist(stat.Body, scope, scope_fun)
+		elseif stat.ast_type == 'DoStatement' then
+			local ret = analyze_statlist(stat.body, scope, scope_fun)
 			return ret
 
 
-		elseif stat.AstType == 'ReturnStatement' then
+		elseif stat.ast_type == 'ReturnStatement' then
 			local what_to_return = nil
-			if #stat.Arguments == 0 then
+			if #stat.arguments == 0 then
 				what_to_return = T.Void
-			elseif #stat.Arguments == 1 then
-				what_to_return = T.as_type_list( analyze_expr( stat.Arguments[1], scope ) )
+			elseif #stat.arguments == 1 then
+				what_to_return = T.as_type_list( analyze_expr( stat.arguments[1], scope ) )
 			else
 				local type_list = {}
-				for i = 1, #stat.Arguments do
-					local t = analyze_expr_single( stat.Arguments[i], scope )
+				for i = 1, #stat.arguments do
+					local t = analyze_expr_single( stat.arguments[i], scope )
 					type_list[i] = t
 				end
 				what_to_return = type_list
@@ -1847,15 +1846,15 @@ local function Analyze(ast, filename, on_require, settings)
 			--end
 			return what_to_return
 
-		elseif stat.AstType == 'BreakStatement' then
+		elseif stat.ast_type == 'BreakStatement' then
 			-- TODO
 
-		elseif stat.AstType == 'RepeatStatement' then
-			local ret = analyze_statlist(stat.Body, stat.scope, scope_fun)
-			check_condition( stat, 'repeat', stat.Condition, stat.scope )
+		elseif stat.ast_type == 'RepeatStatement' then
+			local ret = analyze_statlist(stat.body, stat.scope, scope_fun)
+			check_condition( stat, 'repeat', stat.condition, stat.scope )
 			return ret
 
-		elseif stat.AstType == 'FunctionDecl' then
+		elseif stat.ast_type == 'FunctionDeclStatement' then
 			assert(stat.scope.parent == scope)
 			local is_pre_analyze = false
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze )
@@ -1863,7 +1862,7 @@ local function Analyze(ast, filename, on_require, settings)
 			--[[ Assign type before recursing on body.
 			     This is so that recursive function can typecheck the calls to itself
 			]]--
-			if stat.VarName then
+			if stat.var_name then
 				--[[ e.g:
 					"local function foo(bar)"
 					"global function foo(bar)"
@@ -1872,13 +1871,13 @@ local function Analyze(ast, filename, on_require, settings)
 					report_spam(stat, "local function, name: %q", expr2str(stat.name))
 				end
 
-				local v = DeclareVar(stat, scope, stat.VarName, stat.IsLocal)
+				local v = declare_var(stat, scope, stat.var_name, stat.is_local)
 				v.type = fun_t
 			else
 				-- function foo:bar(arg)
 
 				D.assert(stat.name)
-				if stat.name.AstType ~= 'MemberExpr' then
+				if stat.name.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
 					report_warning(stat, "non-local function, name: %q", expr2str(stat.name))
 				end
@@ -1888,33 +1887,33 @@ local function Analyze(ast, filename, on_require, settings)
 			analyze_function_body( stat, fun_t )
 
 
-		elseif stat.AstType == 'GenericForStatement' then
+		elseif stat.ast_type == 'GenericForStatement' then
 			assert(stat.scope.parent == scope)
 
-			if #stat.Generators > 1 then
+			if #stat.generators > 1 then
 				report_warning(stat, "Sol currently only support one generator")
 			end
 
-			local types = extract_iterator_type( stat.Generators[1], scope )
+			local types = extract_iterator_type( stat.generators[1], scope )
 
 			if types ~= T.AnyTypeList then
-				if #types ~= #stat.VarNames then
+				if #types ~= #stat.var_names then
 					report_error(stat, "Expected %i variables", #types)
 				end
 			end
 
-			for i = 1,#stat.VarNames do
-				local v = DeclareLocal(stat, stat.scope, stat.VarNames[i])
+			for i = 1,#stat.var_names do
+				local v = declare_local(stat, stat.scope, stat.var_names[i])
 				if types ~= T.AnyTypeList then
 					v.type = types[i]
 				end
 			end
 
-			local ret = analyze_statlist(stat.Body, stat.scope, scope_fun)
+			local ret = analyze_statlist(stat.body, stat.scope, scope_fun)
 			return ret
 
 
-		elseif stat.AstType == 'NumericForStatement' then
+		elseif stat.ast_type == 'NumericForStatement' then
 			assert(stat.scope.parent == scope)
 
 			local function check_num_arg(what, t)
@@ -1923,38 +1922,38 @@ local function Analyze(ast, filename, on_require, settings)
 				end
 			end
 
-			local start_t = analyze_expr_single(stat.Start, stat.scope)
-			local end_t   = analyze_expr_single(stat.End, stat.scope)
+			local start_t = analyze_expr_single(stat.start, stat.scope)
+			local end_t   = analyze_expr_single(stat.end_, stat.scope)
 
 			check_num_arg('start', start_t)
 			check_num_arg('end',   end_t)
 
 			local iter_t = T.combine(start_t, end_t)
 
-			if stat.Step then
-				local step_t   = analyze_expr_single(stat.Step, stat.scope)
+			if stat.step then
+				local step_t   = analyze_expr_single(stat.step, stat.scope)
 				check_num_arg('step', step_t)
 				iter_t = T.combine(iter_t, step_t)
 			end
 
-			local iter_var = DeclareLocal(stat, stat.scope, stat.VarName)
+			local iter_var = declare_local(stat, stat.scope, stat.var_name)
 			iter_var.type = iter_t
 			
-			local ret = analyze_statlist(stat.Body, stat.scope, scope_fun)
+			local ret = analyze_statlist(stat.body, stat.scope, scope_fun)
 			return ret
 
 
-		elseif stat.AstType == 'LabelStatement' then
+		elseif stat.ast_type == 'LabelStatement' then
 
-		elseif stat.AstType == 'GotoStatement' then
+		elseif stat.ast_type == 'GotoStatement' then
 
-		elseif stat.AstType == 'Eof' then
+		elseif stat.ast_type == 'Eof' then
 
-		elseif stat.AstType == 'Typedef' then
+		elseif stat.ast_type == 'Typedef' then
 			analyze_typedef( stat, scope )
 
 		else
-			print("Unknown AST type: ", stat.AstType)
+			print("Unknown AST type: ", stat.ast_type)
 		end
 
 		return nil   -- Returns nothing
@@ -1964,59 +1963,59 @@ local function Analyze(ast, filename, on_require, settings)
 	local function pre_analyze_statement(stat, scope)
 		local is_pre_analyze = true
 
-		if stat.AstType == 'Typedef' then
+		if stat.ast_type == 'Typedef' then
 			--analyze_typedef( stat, scope )
 
-		elseif stat.AstType == 'VarDeclareStatement' then
+		elseif stat.ast_type == 'VarDeclareStatement' then
 			-- HACK for forward-declaring namespaces:
 			if true then
-				for _,name in ipairs(stat.NameList) do
+				for _,name in ipairs(stat.name_list) do
 					local is_local = (stat.type ~= 'global')
-					local v = DeclareVar(stat, scope, name, is_local)
-					v.ForwardDeclared = true
+					local v = declare_var(stat, scope, name, is_local)
+					v.forward_declared = true
 				end
 			else
-				if #stat.NameList == 1 and #stat.InitList == 1 then
-					local init = stat.InitList[1]
-					if init.AstType == 'ConstructorExpr' then
-						if #init.EntryList == 0 then
+				if #stat.name_list == 1 and #stat.init_list == 1 then
+					local init = stat.init_list[1]
+					if init.ast_type == 'ConstructorExpr' then
+						if #init.entry_list == 0 then
 							-- {}
 							local is_local = (stat.type ~= 'global')
-							local v = DeclareVar(stat, scope, stat.NameList[1], is_local)
-							v.ForwardDeclared = true
+							local v = declare_var(stat, scope, stat.name_list[1], is_local)
+							v.forward_declared = true
 						end
 					end
 				end
 			end
 
-		elseif stat.AstType == 'AssignmentStatement' then
+		elseif stat.ast_type == 'AssignmentStatement' then
 			-- Could be a    foo = function( ... )   where foo has been forward declared earlier without a type
 
-			if #stat.Lhs == 1 and #stat.Rhs == 1 then
-				if stat.Lhs[1].AstType == 'IdExpr' then
-					if stat.Rhs[1].AstType == 'LambdaFunction' then
-						--do_assignment(stat, scope, stat.Lhs[1], fun_t)
+			if #stat.lhs == 1 and #stat.rhs == 1 then
+				if stat.lhs[1].ast_type == 'IdExpr' then
+					if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
+						--do_assignment(stat, scope, stat.lhs[1], fun_t)
 
-						local varName = stat.Lhs[1].name
+						local var_name = stat.lhs[1].name
 
 						local v = nil
 
 						if true then
-							v = scope:get_var( varName )
+							v = scope:get_var( var_name )
 
 							if v then
 								-- Assigning to something declared in an outer scope
 							else
 								-- Leave error reporting out of pre-analyzer
-								--v = scope:create_local( varName, where_is(stat) )
-								--v.ForwardDeclared = true
+								--v = scope:create_local( var_name, where_is(stat) )
+								--v.forward_declared = true
 								return
 							end
 						else
-							v = scope:get_var( varName )
+							v = scope:get_var( var_name )
 							if not v then
-								report_error(stat, "Implicit global '%s'", varName)
-								v = scope:create_global( varName, where_is(stat) )
+								report_error(stat, "Implicit global '%s'", var_name)
+								v = scope:create_global( var_name, where_is(stat) )
 							end
 						end
 					
@@ -2024,7 +2023,7 @@ local function Analyze(ast, filename, on_require, settings)
 							report_error(stat, "Cannot forward declare '%s': it already has type '%s'", v.name, T.name(v.type))
 						end
 
-						local fun_t = analyze_function_head( stat.Rhs[1], scope, is_pre_analyze )
+						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze )
 						fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
 
 						v.type = fun_t
@@ -2036,13 +2035,13 @@ local function Analyze(ast, filename, on_require, settings)
 				end
 
 
-				if stat.Lhs[1].AstType == 'VarExpr' then
-					if stat.Rhs[1].AstType == 'LambdaFunction' then
-						local fun_t = analyze_function_head( stat.Rhs[1], scope, is_pre_analyze )
+				if stat.lhs[1].ast_type == 'VarExpr' then
+					if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
+						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze )
 						fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
 
-						--do_assignment(stat, scope, stat.Lhs[1], fun_t)
-						local v = stat.Lhs[1].Variable
+						--do_assignment(stat, scope, stat.lhs[1], fun_t)
+						local v = stat.lhs[1].Variable
 
 						if v.type then
 							report_error(stat, "Cannot forward declare '%s': it already has type '%s'", v.name, T.name(fun_t))
@@ -2057,7 +2056,7 @@ local function Analyze(ast, filename, on_require, settings)
 				end
 			end
 
-		elseif stat.AstType == 'FunctionDecl' then
+		elseif stat.ast_type == 'FunctionDeclStatement' then
 			assert(stat.scope.parent == scope)
 
 			if stat.name then
@@ -2071,7 +2070,7 @@ local function Analyze(ast, filename, on_require, settings)
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze )
 			fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
 
-			if stat.IsLocal then
+			if stat.is_local then
 				-- e.g.  "local function foo(bar)"
 				--report_spam(stat, "local function, name: %q", expr2str(stat.name))
 				stat.Variable.type = fun_t -- TODO: can't use 'Variable' here w/o a lookup!
@@ -2080,7 +2079,7 @@ local function Analyze(ast, filename, on_require, settings)
 				-- or
 				-- function foo.bar(arg)  -- namespaced - OK
 				-- function foo:bar(arg)  -- member - OK
-				if stat.name.AstType ~= 'MemberExpr' then
+				if stat.name.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
 					report_warning(stat, "global function, name: %q", expr2str(stat.name))
 				end
@@ -2112,13 +2111,13 @@ local function Analyze(ast, filename, on_require, settings)
 		-- This is so that we don't need to forward-declare function
 		-- like we have to in lesser languages.
 
-		for _, stat in ipairs(stat_list.Body) do
+		for _, stat in ipairs(stat_list.body) do
 			pre_analyze_statement(stat, list_scope)
 		end
 
 
-		-- End
-		for _, stat in ipairs(stat_list.Body) do
+		-- end_
+		for _, stat in ipairs(stat_list.body) do
 			local stat_rets = analyze_statement(stat, list_scope, scope_fun)
 			return_types = T.combine_type_lists(return_types, stat_rets)
 		end
@@ -2143,4 +2142,4 @@ local function Analyze(ast, filename, on_require, settings)
 	end
 end
 
-return Analyze
+return analyze

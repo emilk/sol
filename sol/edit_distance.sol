@@ -90,7 +90,7 @@ local function edit_distance( s, t, lim: int? ) -> int
             )
             d[ i_pos + j ] = val
             
-            -- Is this eligible for tranposition?
+            -- is this eligible for tranposition?
             if i > 1 and j > 1 and s[ i ] == t[ j - 1 ] and s[ i - 1 ] == t[ j ] then
                 d[ i_pos + j ] = min(
                     val,                                                        -- Current cost

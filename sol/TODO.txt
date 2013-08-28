@@ -1,0 +1,102 @@
+Searching 14 files for "[a-z_]\.[A-Z]" (regex, case sensitive)
+
+/Users/emilk/Documents/kod/lua/Sol/sol/format_identity.sol:
+  176:      if expr.Variable then
+  177:        t:append_str( expr.Variable.name )
+
+/Users/emilk/Documents/kod/lua/Sol/sol/parser.sol:
+  906:      var<Mod.Foo> foo = 42
+  962:      node.TypeName  = type_name
+  981:      --node.Variable  = var_
+  983:      node.TypeName      = type_name
+  988:      node.BaseTypes = parse_bases()
+  989:      if not node.BaseTypes then return false, report_error("base type(s) expected") end
+ 1057:      node_local.TypeList  = types
+
+/Users/emilk/Documents/kod/lua/Sol/sol/sol.sol:
+   39:  local settings = Parser.SolSettings
+
+/Users/emilk/Documents/kod/lua/Sol/sol/solc.sol:
+  113:  local settings = (is_sol and Parser.SolSettings or Parser.LuaSettings)
+  266:      return Parser.SolSettings
+  268:      return Parser.LuaSettings
+
+/Users/emilk/Documents/kod/lua/Sol/sol/TODO.txt:
+    4:   176:      if expr.Variable then
+    5:   177:        t:append_str( expr.Variable.name )
+   22:   906:      var<Mod.Foo> foo = 42
+   23:   962:      node.TypeName  = type_name
+   24:   981:      --node.Variable  = var_
+   25:   983:      node.TypeName      = type_name
+   26:   988:      node.BaseTypes = parse_bases()
+   27:   989:      if not node.BaseTypes then return false, report_error("base type(s) expected") end
+   29:  1057:      node_local.TypeList  = types
+   36:    39:  local settings = Parser.SolSettings
+   39:   113:  local settings = (is_sol and Parser.SolSettings or Parser.LuaSettings)
+   40:   266:      return Parser.SolSettings
+   41:   268:      return Parser.LuaSettings
+   44:     6:   176:       if expr.Variable then
+   45:     7:   177:         t:append_str( expr.Variable.name )
+   58:    51:   906:       var<Mod.Foo> foo = 42
+   59:    52:   962:       node.TypeName  = type_name
+   60:    53:   981:       --node.Variable  = var_
+   61:    54:   983:       node.TypeName      = type_name
+   62:    55:   988:       node.BaseTypes = parse_bases()
+   63:    56:   989:       if not node.BaseTypes then return false, report_error("base type(s) expected") end
+   65:    58:  1057:       node_local.TypeList  = types
+   70:    70:    39:   local settings = Parser.SolSettings
+   71:    73:   113:   local settings = (is_sol and Parser.SolSettings or Parser.LuaSettings)
+   72:    74:   266:       return Parser.SolSettings
+   73:    75:   268:       return Parser.LuaSettings
+   74:    78:   329:     assert(node.ReturnTypes == nil or T.is_type_list(node.ReturnTypes))
+   75:    79:   334:       rets = node.ReturnTypes  -- If any
+   76:    80:   337:     if node.IsMemFun then
+   77:    82:   343:       node.SelfVarType = self_type  -- Assign a type to the local 'self' variable
+   78:    83:   373:     if node.IsMemFun then
+   79:    84:   374:       assert(node.SelfVarType) -- Set by analyze_function_head
+   80:    85:   376:       v.type = node.SelfVarType
+   81:    88:   922:       var<Variable> var_ = expr.Variable
+   93:   112:  1530:     if left_expr.ast_type == 'VarExpr' and left_expr.Variable.name == '_' then
+   94:   113:  1559:     local name = stat.TypeName
+   95:   114:  1562:       --local v = stat.Variable
+   96:   115:  1593:     if stat.BaseTypes and #stat.BaseTypes > 0 then
+   97:   116:  1594:       report_spam(stat, "%s inherits %i types", name, #stat.BaseTypes)
+   98:   117:  1601:         for _,base in ipairs(stat.BaseTypes) do
+   99:   119:  1693:       local explicit_types = U.shallow_clone( stat.TypeList )
+  102:   125:  2076:         stat.Variable.type = fun_t -- TODO: can't use 'Variable' here w/o a lookup!
+  105:   329:    assert(node.ReturnTypes == nil or T.is_type_list(node.ReturnTypes))
+  106:   334:      rets = node.ReturnTypes  -- If any
+  107:   337:    if node.IsMemFun then
+  108:   343:      node.SelfVarType = self_type  -- Assign a type to the local 'self' variable
+  109:   373:    if node.IsMemFun then
+  110:   374:      assert(node.SelfVarType) -- Set by analyze_function_head
+  111:   376:      v.type = node.SelfVarType
+  112:   922:      var<Variable> var_ = expr.Variable
+  124:  1530:    if left_expr.ast_type == 'VarExpr' and left_expr.Variable.name == '_' then
+  125:  1559:    local name = stat.TypeName
+  126:  1562:      --local v = stat.Variable
+  127:  1593:    if stat.BaseTypes and #stat.BaseTypes > 0 then
+  128:  1594:      report_spam(stat, "%s inherits %i types", name, #stat.BaseTypes)
+  129:  1601:        for _,base in ipairs(stat.BaseTypes) do
+  130:  1693:      local explicit_types = U.shallow_clone( stat.TypeList )
+  133:  2076:        stat.Variable.type = fun_t -- TODO: can't use 'Variable' here w/o a lookup!
+
+/Users/emilk/Documents/kod/lua/Sol/sol/type_check.sol:
+  329:    assert(node.ReturnTypes == nil or T.is_type_list(node.ReturnTypes))
+  334:      rets = node.ReturnTypes  -- If any
+  337:    if node.IsMemFun then
+  343:      node.SelfVarType = self_type  -- Assign a type to the local 'self' variable
+  373:    if node.IsMemFun then
+  374:      assert(node.SelfVarType) -- Set by analyze_function_head
+  376:      v.type = node.SelfVarType
+  922:      var<Variable> var_ = expr.Variable
+ 1530:    if left_expr.ast_type == 'VarExpr' and left_expr.Variable.name == '_' then
+ 1559:    local name = stat.TypeName
+ 1562:      --local v = stat.Variable
+ 1593:    if stat.BaseTypes and #stat.BaseTypes > 0 then
+ 1594:      report_spam(stat, "%s inherits %i types", name, #stat.BaseTypes)
+ 1601:        for _,base in ipairs(stat.BaseTypes) do
+ 1693:      local explicit_types = U.shallow_clone( stat.TypeList )
+ 2076:        stat.Variable.type = fun_t -- TODO: can't use 'Variable' here w/o a lookup!
+
+96 matches across 6 files
