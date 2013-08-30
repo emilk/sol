@@ -1,0 +1,4 @@
+{
+    "live_parser" : true,
+    "solc_path": "lua /Users/emilk/Sol/install/solc.lua"
+}

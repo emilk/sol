@@ -1,0 +1,5 @@
+{
+	"cmd": ["lua", "/Users/emilk/Sol/install/sol.lua", "$file"],
+	"file_regex": "^(?:(?:\t)|(?:.+: ))(.+):([0-9]+): (.*)$",
+	"selector": "source.sol"
+}
