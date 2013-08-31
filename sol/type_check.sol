@@ -26,12 +26,12 @@ local function loose_lookup(table, id: string) -> string?
 	D.assert(type(id) == 'string')
 
 	if table[id] then
-		return table[id]
+		return id
 	end
 
 	var edit_distance = require 'edit_distance'
 
-	var MAX_DIST = 3
+	var MAX_DIST = 2
 	var<number>  closest_dist = math.huge
 	var<string?> closest_key  = nil
 
@@ -326,21 +326,21 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	 
 	-- analyze a function declaration head - either a named one or a lambda function
 	local analyze_function_head = function(node: P.Node, scope: S.Scope, is_pre_analyze: bool) -> T.Function
-		assert(node.ReturnTypes == nil or T.is_type_list(node.ReturnTypes))
+		assert(node.return_types == nil or T.is_type_list(node.return_types))
 
 		var<T.Function> fun_t = {
 			tag = "function",
 			args = {},
-			rets = node.ReturnTypes  -- If any
+			rets = node.return_types  -- If any
 		}
 
-		if node.IsMemFun then
+		if node.is_mem_fun then
 			local name = node.name
 			assert(name.ast_type == 'MemberExpr' and name.indexer == ':')
 			local self_type = analyze_expr_single_custom(name.base, scope, is_pre_analyze)
 			table.insert(fun_t.args, {name = 'self', type = self_type})
 
-			node.SelfVarType = self_type  -- Assign a type to the local 'self' variable
+			node.self_var_type = self_type  -- Assign a type to the local 'self' variable
 
 			if _G.g_spam then
 				report_spam(node, "self: '%s'", T.name(self_type))
@@ -370,10 +370,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		local func_scope = node.scope
 
 		-- Declare arguments as variables:
-		if node.IsMemFun then
-			assert(node.SelfVarType) -- Set by analyze_function_head
+		if node.is_mem_fun then
+			assert(node.self_var_type) -- Set by analyze_function_head
 			var v = declare_local(node, func_scope, 'self')
-			v.type = node.SelfVarType
+			v.type = node.self_var_type
 		end
 
 		for _,arg in ipairs(node.arguments) do
@@ -917,19 +917,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			return handle_var(var_)
 
-
-		elseif expr.ast_type == 'VarExpr' then
-			var<Variable> var_ = expr.Variable
-
-			if var_.name == '_' then
-				report_error(expr, "You may not read from discard variable '_'")
-			end
-
-			if _G.g_spam then
-				report_spam(expr, "VarExpr '%s': var_.type: '%s'", var_.name, T.name(var_.type))
-			end
-
-			return handle_var(var_)
 		else
 			local type = analyze_simple_expr_unchecked(expr, scope)
 
@@ -1408,10 +1395,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							return true
 						end
 					else
-						local close_name = loose_lookup(base_t.members, name)
+						if not base_t.members[name] then
+							local close_name = loose_lookup(base_t.members, name)
 
-						if close_name then
-							report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name)
+							if close_name then
+								report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name)
+							end
 						end
 
 						report_spam(stat, "Adding member")
@@ -1483,13 +1472,15 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							return true
 						end
 					else
-						local close_name = loose_lookup(var_t.members, name)
+						if not var_t.members[name] then
+							local close_name = loose_lookup(var_t.members, name)
 
-						if close_name then
-							report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name)
+							if close_name then
+								report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name)
+							end
+
+							report_spam(stat, "Adding member")
 						end
-
-						report_spam(stat, "Adding member")
 
 						--var<T.Object> obj_t = var_t
 						var<T.Object> obj_t = U.shallow_clone( var_t )
@@ -1527,11 +1518,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			-- foo[bar] = ...  -- TODO
 		end
 
-		if left_expr.ast_type == 'VarExpr' and left_expr.Variable.name == '_' then
-			-- Assigning to _ is always OK
-			return true
-		end
-
 		if left_expr.ast_type == 'IdExpr' and left_expr.name == '_' then
 			-- Assigning to _ is always OK
 			return true
@@ -1556,10 +1542,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 	local function analyze_typedef(stat, scope: S.Scope)
-		local name = stat.TypeName
+		local name = stat.type_name
 
 		if stat.namespace_name then
-			--local v = stat.Variable
 			local v = scope:get_var( stat.namespace_name )
 
 			if not v then
@@ -1590,15 +1575,15 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			scope:declare_type(name, stat.type, where_is(stat))
 		end
 
-		if stat.BaseTypes and #stat.BaseTypes > 0 then
-			report_spam(stat, "%s inherits %i types", name, #stat.BaseTypes)
+		if stat.base_types and #stat.base_types > 0 then
+			report_spam(stat, "%s inherits %i types", name, #stat.base_types)
 
 			local child_type = T.follow_identifiers(stat.type)
 
 			if child_type.tag ~= 'object' then
 				report_error(stat, "Only objects can have base-types (child: '%s')", T.name(child_type))
 			else
-				for _,base in ipairs(stat.BaseTypes) do
+				for _,base in ipairs(stat.base_types) do
 					report_spam(stat, "%s inheriting %s", name, base.name)
 
 					if base.tag ~= 'identifier' then
@@ -1690,7 +1675,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 			end
 
-			local explicit_types = U.shallow_clone( stat.TypeList )
+			local explicit_types = U.shallow_clone( stat.type_list )
 
 			-- Declare variables:
 			var is_local = (stat.type ~= 'global')
@@ -2033,27 +2018,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						end
 					end
 				end
-
-
-				if stat.lhs[1].ast_type == 'VarExpr' then
-					if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
-						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze )
-						fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
-
-						--do_assignment(stat, scope, stat.lhs[1], fun_t)
-						local v = stat.lhs[1].Variable
-
-						if v.type then
-							report_error(stat, "Cannot forward declare '%s': it already has type '%s'", v.name, T.name(fun_t))
-						end
-
-						v.type = fun_t
-
-						if _G.g_spam then
-							report_spam(stat, "Forward-declared '%s' as '%s'", v.name, T.name(fun_t))
-						end
-					end
-				end
 			end
 
 		elseif stat.ast_type == 'FunctionDeclStatement' then
@@ -2072,8 +2036,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if stat.is_local then
 				-- e.g.  "local function foo(bar)"
-				--report_spam(stat, "local function, name: %q", expr2str(stat.name))
-				stat.Variable.type = fun_t -- TODO: can't use 'Variable' here w/o a lookup!
+				report_warning(stat, "TODO: local function, name: %q", expr2str(stat.name))
 			else
 				-- function foo(arg)      -- global - not OK
 				-- or

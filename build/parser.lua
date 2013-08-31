@@ -17,7 +17,7 @@ local bimap      = U.bimap
 
 local P = {}
 
-P.LuaSettings = {
+P.LUA_SETTINGS = {
 	-- Lexer:
 	symbols = bimap{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#'};
 
@@ -34,7 +34,7 @@ P.LuaSettings = {
 	function_types = false;
 }
 
-P.SolSettings = {
+P.SOL_SETTINGS = {
 	-- Lexer:
 	symbols = bimap{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#', '?', ':'};
 
@@ -96,7 +96,7 @@ P.SolSettings = {
 
 function P.parse_sol(src, tok, filename, settings, module_scope)
 	filename = filename or ''
-	settings = settings or P.SolSettings
+	settings = settings or P.SOL_SETTINGS
 	local num_err = 0
 
 	--
@@ -271,10 +271,10 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 			--ast_type     = 'Function', LambdaFunctionExpr or FunctionDeclStatement
 			scope       = func_scope,
 			tokens      = token_list,
-			IsMemFun    = is_mem_fun,
+			is_mem_fun    = is_mem_fun,
 			arguments   = arg_list,
 			vararg      = vararg,
-			ReturnTypes = return_types,
+			return_types = return_types,
 			body        = body,
 		}
 
@@ -952,14 +952,14 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 		local node = { 
 			ast_type   = 'Typedef',
 			scope     = scope,
-			TypeName  = type_name,
+			type_name  = type_name,
 			tokens    = {},
 			where     = where,
 			Global    = (type == 'global')
 		}
 
 		if not tok:consume_symbol('.') then
-			node.TypeName  = type_name
+			node.type_name  = type_name
 		else
 			if type == 'global' then
 				return false, report_error("global typedef cannot have namespaced name")
@@ -978,15 +978,15 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 				return false, report_error("Identifier expected")
 			end
 
-			--node.Variable  = var_
+			--nod([^S].)variable  = var_
 			node.namespace_name = base_name
-			node.TypeName      = type_name
+			node.type_name      = type_name
 		end
 
 		-- Are we a forward-declare?
 		if not tok:consume_symbol(';') then
-			node.BaseTypes = parse_bases()
-			if not node.BaseTypes then return false, report_error("base type(s) expected") end
+			node.base_types = parse_bases()
+			if not node.base_types then return false, report_error("base type(s) expected") end
 
 			node.type  = parse_type_assignment()
 			if not node.type then return false, report_error("type assignment expected") end
@@ -1053,13 +1053,13 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 			end
 
 			local node_local = {}
-			node_local.ast_type   = 'VarDeclareStatement'
-			node_local.TypeList  = types
-			node_local.name_list  = name_list
-			node_local.init_list  = init_list
+			node_local.ast_type  = 'VarDeclareStatement'
+			node_local.type_list = types
+			node_local.name_list = name_list
+			node_local.init_list = init_list
 			node_local.tokens    = token_list
-			node_local.is_local   = is_local
-			node_local.type      = type   -- 'local' or 'global' or 'var'
+			node_local.is_local  = is_local
+			node_local.type      = type -- 'local' or 'global' or 'var'
 			--
 			return true, node_local
 

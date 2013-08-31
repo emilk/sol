@@ -409,7 +409,7 @@ function L.lex_sol(src, filename, settings)
 				if consume(':') then
 					to_emit = {type = 'Symbol', data = '::'}
 				elseif consume(':<') then
-					to_emit = {type = 'Symbol', data = ':<'}  -- start of template function call, i.e. type_name:<int>()
+					to_emit = {type = 'Symbol', data = ':<'}  -- start of template function call, i.e. max:<int>()
 				else
 					to_emit = {type = 'Symbol', data = ':'}
 				end

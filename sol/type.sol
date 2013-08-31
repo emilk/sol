@@ -712,7 +712,7 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 		else
 			local str=''
 			for i,t in ipairs(typ) do
-				str = str .. T.name(t, next_indent)
+				str = str .. T.name(t, next_indent, verbose)
 				if i ~= #typ then
 					str = str .. ', '
 				end
@@ -730,9 +730,16 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 		if #typ.variants == 0 then
 			return "void"
 		else
+			if #typ.variants == 2
+				and typ.variants[2] == T.Nil 
+				and typ.variants[1].tag ~= 'variant'
+			then
+				return T.name(typ.variants[1], next_indent, verbose) .. '?'
+			end
+
 			local str = ''
 			for i,t in ipairs(typ.variants) do
-				str = str .. T.name(t, next_indent)
+				str = str .. T.name(t, next_indent, verbose)
 				if i ~= #typ.variants then
 					--str = str .. '|'
 					str = str .. ' or '
@@ -758,7 +765,7 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 				table.sort(type_list, function(a,b) return a.name < b.name end)
 				--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
 				for _,m in ipairs(type_list) do
-					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. T.name(m.type, next_indent) .. ",\n"
+					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. T.name(m.type, next_indent, verbose) .. ",\n"
 				end
 
 				if next(obj.members) then
@@ -770,16 +777,25 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 
 			if false then
 				for k,v in pairs(obj.members) do
-					str = str .. next_indent .. k .. ": " .. T.name(v, next_indent) .. ",\n"
+					str = str .. next_indent .. k .. ": " .. T.name(v, next_indent, verbose) .. ",\n"
 				end
 			else
 				var<[{name:string, type:T.Type}]> mem_list = {}
+				var widest_name = 0
 				for k,v in pairs(obj.members) do
 					table.insert(mem_list, {name = k, type = v})
+					widest_name = math.max(widest_name, #k)
 				end
 				table.sort(mem_list, function(a,b) return a.name < b.name end)
 				for _,m in ipairs(mem_list) do
-					str = str .. next_indent .. m.name .. ": " .. T.name(m.type, next_indent) .. ",\n"
+					str = str .. next_indent .. m.name .. ": "
+
+					-- Align:
+					for i = #m.name, widest_name - 1 do
+						str = str .. ' '
+					end
+
+					str = str .. T.name(m.type, next_indent, verbose) .. ",\n"
 				end
 			end
 
@@ -787,10 +803,10 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 		end
 
 	elseif typ.tag == 'list' then
-		return '[' .. T.name(typ.type, next_indent) .. ']'
+		return '[' .. T.name(typ.type, next_indent, verbose) .. ']'
 
 	elseif typ.tag == 'map' then
-		return '{' .. T.name(typ.key_type, next_indent) .. ' => ' .. T.name(typ.value_type, next_indent) .. '}'
+		return '{' .. T.name(typ.key_type, next_indent, verbose) .. ' => ' .. T.name(typ.value_type, next_indent, verbose) .. '}'
 
 	elseif typ.tag == 'function' then
 		local str = 'function('
@@ -800,7 +816,7 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 			end
 			if arg.type and not T.is_any(arg.type) then
 				if arg.name ~= 'self' then -- Potential recursion (object has function taking object as arg...)
-					str = str .. ": " .. T.name(arg.type, next_indent)
+					str = str .. ": " .. T.name(arg.type, next_indent, verbose)
 				end
 			end
 			if i ~= #typ.args or typ.vararg then
@@ -810,12 +826,12 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 		if typ.vararg then
 			str = str .. "..."
 			if not T.is_any(typ.vararg) then
-				str = str .. " : " .. T.name(typ.vararg, next_indent)
+				str = str .. " : " .. T.name(typ.vararg, next_indent, verbose)
 			end
 		end
 		str = str .. ')'
 		if typ.rets then
-			str = str .. ' -> ' .. T.name(typ.rets, next_indent)
+			str = str .. ' -> ' .. T.name(typ.rets, next_indent, verbose)
 		end
 		return str
 
@@ -827,7 +843,7 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 
 	elseif typ.tag == 'identifier' then
 		if verbose and typ.type then
-			return string.format('%s (%s)', typ.name, T.name(typ.type, next_indent))
+			return string.format('%s (%s)', typ.name, T.name(typ.type, next_indent, verbose))
 		else
 			return string.format('%s', typ.name)
 		end

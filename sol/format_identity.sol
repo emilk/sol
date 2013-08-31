@@ -172,14 +172,7 @@ local function format_identity(ast, filename: string, insert_new_lines : bool?) 
 		local t = tokens(expr)
 		--debug_printf("format_expr(%s) at line %i", expr.ast_type, expr.tokens[1] and expr.tokens[1].line or -1)
 
-		if expr.ast_type == 'VarExpr' then
-			if expr.Variable then
-				t:append_str( expr.Variable.name )
-			else
-				t:append_str( expr.name )
-			end
-
-		elseif expr.ast_type == 'IdExpr' then
+		if expr.ast_type == 'IdExpr' then
 			t:append_str( expr.name )
 
 		elseif expr.ast_type == 'NumberExpr' then

@@ -110,7 +110,7 @@ local function parse_module_str(chain, path_in, source_text)
 
 	local is_sol = (path.extension(filename) == '.sol')
 
-	local settings = (is_sol and Parser.SolSettings or Parser.LuaSettings)
+	local settings = (is_sol and Parser.SOL_SETTINGS or Parser.LUA_SETTINGS)
 
 	local st, tokens = Lexer.lex_sol(source_text, filename, settings)
 	if not st then
@@ -263,9 +263,9 @@ end
 local function compile_file(path_in, path_out)
 	local settings = (function()
 		if path.extension(path_in):lower() == '.sol' then
-			return Parser.SolSettings
+			return Parser.SOL_SETTINGS
 		else
-			return Parser.LuaSettings
+			return Parser.LUA_SETTINGS
 		end
 	end)()
 
@@ -366,7 +366,7 @@ else
 		elseif a == '--check' then
 			local path_in = arg[ix]
 			ix = ix + 1
-
+			
 			_G.g_local_parse = true -- FIXME: else too slow for live-parsing
 
 			-- Read entire stdin

@@ -36,7 +36,7 @@ local printf_err = U.printf_err
 
 local function compile_sol(source_text: string) -> string or nil
 	local filename = "input"
-	local settings = Parser.SolSettings
+	local settings = Parser.SOL_SETTINGS
 
 	local st, tokens = Lexer.lex_sol(source_text, filename, settings)
 	if not st then
