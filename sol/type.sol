@@ -16,10 +16,10 @@ local T = {}
 
 
 typedef S.Variable = {
-	scope : S.Scope,
-	name  : string,
-	type  : T.Type?,
-	is_global   : bool,
+	scope      : S.Scope,
+	name       : string,
+	type       : T.Type?,
+	is_global  : bool,
 	references : int,
 	namespace  : { string => T.Type } ?,
 }
@@ -50,7 +50,7 @@ end
 typedef T.TypeID = 'any'
                  or 'int_literal' or 'num_literal' or 'string_literal'
                  or 'nil' or 'true' or 'false' or 'int' or 'num' or 'string'
-                 or 'list' or 'map' or 'object' or 'function'
+                 or 'table' or 'list' or 'map' or 'object' or 'function'
                  or 'variant' or 'identifier'
                  or 'varargs'
 
@@ -72,6 +72,9 @@ typedef T.Int           : T.Type = { tag : 'int'     }
 typedef T.Num           : T.Type = { tag : 'num'     }
 typedef T.String        : T.Type = { tag : 'string'  }
 
+typedef T.Table : T.Type = {
+	tag  : 'table',
+}
 typedef T.List : T.Type = {
 	tag  : 'list',
 	type : T.Type,
@@ -103,13 +106,13 @@ typedef T.Variant : T.Type = {
 
 -- A typedef/alias.
 typedef T.Identifier : T.Type = {
-	tag        : 'identifier',
-	scope      : Scope,
-	var_       : Variable?,  -- If namespaced typedef, i.e.   typedef var_.type  =  ...
-	name       : string,     -- The name of the type
-	where      : string,     -- Point of declaration (file:line)
-	first_usage : string?,  -- Point of first use
-	type       : T.Type?,    -- Filled in by TypeCheck on declaration/assignement on typedef or declaration of 'var_' if any
+	tag         : 'identifier',
+	scope       : Scope,
+	var_        : Variable?, -- If namespaced typedef, i.e.   typedef var_.type  =  ...
+	name        : string,    -- The name of the type
+	where       : string,    -- Point of declaration (file:line)
+	first_usage : string?,   -- Point of first use
+	type        : T.Type?,   -- Filled in by TypeCheck on declaration/assignement on typedef or declaration of 'var_' if any
 }
 
 
@@ -131,13 +134,12 @@ T.False    = { tag = 'false'  }
 T.String   = { tag = 'string' }
 T.Num      = { tag = 'num'    }
 T.Int      = { tag = 'int'    }
-T.Uint     = T.Int               -- TODO
 T.Empty    = { tag = 'variant', variants = {} }
 --T.Void     = T.Empty
 T.Void     = {} -- empty type-list
 T.Nilable  = T.Any  -- TODO
 
-
+T.Uint = T.Int               -- TODO
 T.Bool = { tag = 'variant',  variants = { T.False, T.True } }
 
 --[[
@@ -150,6 +152,8 @@ function T.is_empty_table(t: T.Type) -> bool
 	return t.tag == 'object' and next(t.members) == nil
 end
 
+-- General table - could be an object, list or map:
+T.Table = { tag = 'table' }
 
 -- Supertype of all objects:
 T.Object = { tag = 'object', members = {} }
@@ -222,11 +226,15 @@ end
 -- Helper:
 function T.is_integral(str: string) -> bool
 	if str:match('0x%w+') then
-		-- Hex
+		-- Hex is intregral
+		return true
+	elseif str:match('%D') then -- (%d == digit, %D == non-digit)
+		-- Non-digits == real
+		return false
+	else
+		-- All digits == integral
 		return true
 	end
-
-	return not str:match('%D+') -- no non-digits (%d == digits, %D == non-digits)
 end
 
 
@@ -347,13 +355,6 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 		return true -- Early out optimization
 	end
 
-
-	if b.tag == 'any' or d.tag == 'any' then
-		-- 'any' can become anything
-		-- Anything can become 'any'
-		return true
-	end
-
 	if b.tag == 'variant' then
 		for _,v in ipairs(b.variants) do
 			if T.isa(d, v) then
@@ -372,6 +373,21 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 			return true
 		end
 		return all_are_b()
+	end
+
+
+	if b.tag == 'any' or d.tag == 'any' then
+		-- 'any' can become anything
+		-- Anything can become 'any'
+		return true
+	end
+
+
+	if b.tag == 'table' then
+		return d.tag == 'table'
+		    or d.tag == 'list'
+		    or d.tag == 'map'
+		    or d.tag == 'object'
 	end
 
 
@@ -419,6 +435,8 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	elseif d.tag == 'int' then
 		return b.tag == 'num'
 		    or b.tag == 'int'
+	elseif d.tag == 'table' then
+		return false -- Already covered
 	elseif d.tag == 'list' then
 		--if b == T.EmptyTable then return true end
 		return b.tag == 'list'

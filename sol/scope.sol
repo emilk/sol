@@ -181,19 +181,23 @@ function Scope:create_global_scope() -> S.Scope
 
 
 	--s:declare_type( 'void',    T.Void ) -- Not a valid type, only allowed as a typelist
-	s:declare_type( 'bool',    T.Bool,   where )
-	s:declare_type( 'int',     T.Int,    where )
-	s:declare_type( 'uint',    T.Uint,   where )
-	s:declare_type( 'number',  T.Num,    where )
-	s:declare_type( 'string',  T.String, where )
-	s:declare_type( 'any',     T.Any,    where )
+	s:declare_type( 'bool',   T.Bool,   where )
+	s:declare_type( 'int',    T.Int,    where )
+	s:declare_type( 'uint',   T.Uint,   where )
+	s:declare_type( 'number', T.Num,    where )
+	s:declare_type( 'string', T.String, where )
+	s:declare_type( 'any',    T.Any,    where )
+	s:declare_type( 'table',  T.Table,  where )
+	--s:declare_type( 'list',   T.List,   where ) -- use: [any]
+	--s:declare_type( 'map',    T.Map,    where ) -- use: {any => any}
+	--s:declare_type( 'object', T.Object, where ) -- use: {}
 
-	-- keywords are handles explicitly:
+	-- keywords are handles explicitly during parsing
 	--s:declare_type( 'nil',     T.Nil)    -- for e.g.:   foo or bar or nil
 	--s:declare_type( 'true',    T.True)
 	--s:declare_type( 'false',   T.False)
 
-	-- No more changes - user globals should be declared in 
+	-- No more changes - user globals should be declared in module scope (a direct child)
 	s.fixed = true
 
 	return s

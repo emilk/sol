@@ -2,18 +2,17 @@
 local D = require 'sol_debug'
 local bimap = U.bimap
 
-local WhiteChars = bimap{' ', '\n', '\t', '\r'}
+local WhiteChars   = bimap{' ', '\n', '\t', '\r'}
 local EscapeLookup = {['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'"}
-local LowerChars = bimap{ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-                          'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-                          's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
-local UpperChars = bimap{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-                         'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-                         'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}
-local Digits = bimap{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
-local HexDigits = bimap{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                        'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'}
-
+local LowerChars   = bimap{ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+                            'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+                            's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
+local UpperChars   = bimap{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+                           'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
+                           'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}
+local Digits       = bimap{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
+local HexDigits    = bimap{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                           'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'}
 
 local L = {}
 
@@ -409,7 +408,7 @@ function L.lex_sol(src, filename, settings)
 				if consume(':') then
 					to_emit = {type = 'Symbol', data = '::'}
 				elseif consume(':<') then
-					to_emit = {type = 'Symbol', data = ':<'}  -- start of template function call, i.e. max:<int>()
+					to_emit = {type = 'Symbol', data = ':<'} -- start of template function call, i.e. max:<int>()
 				else
 					to_emit = {type = 'Symbol', data = ':'}
 				end

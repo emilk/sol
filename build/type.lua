@@ -122,6 +122,9 @@ T
 
 
 
+
+
+
 .Any  = { tag = 'any'  }  -- Single unknown value
 T.AnyTypeList = {}   -- Unkown number of unknown values
 
@@ -131,13 +134,12 @@ T.False    = { tag = 'false'  }
 T.String   = { tag = 'string' }
 T.Num      = { tag = 'num'    }
 T.Int      = { tag = 'int'    }
-T.Uint     = T.Int               -- TODO
 T.Empty    = { tag = 'variant', variants = {} }
 --T.Void     = T.Empty
 T.Void     = {} -- empty type-list
 T.Nilable  = T.Any  -- TODO
 
-
+T.Uint = T.Int               -- TODO
 T.Bool = { tag = 'variant',  variants = { T.False, T.True } }
 
 --[[
@@ -150,6 +152,8 @@ function T.is_empty_table(t)
 	return t.tag == 'object' and next(t.members) == nil
 end
 
+-- General table - could be an object, list or map:
+T.Table = { tag = 'table' }
 
 -- Supertype of all objects:
 T.Object = { tag = 'object', members = {} }
@@ -222,11 +226,15 @@ end
 -- Helper:
 function T.is_integral(str)
 	if str:match('0x%w+') then
-		-- Hex
+		-- Hex is intregral
+		return true
+	elseif str:match('%D') then -- (%d == digit, %D == non-digit)
+		-- Non-digits == real
+		return false
+	else
+		-- All digits == integral
 		return true
 	end
-
-	return not str:match('%D+') -- no non-digits (%d == digits, %D == non-digits)
 end
 
 
@@ -347,13 +355,6 @@ function T.isa_raw(d, b, problem_rope)
 		return true -- Early out optimization
 	end
 
-
-	if b.tag == 'any' or d.tag == 'any' then
-		-- 'any' can become anything
-		-- Anything can become 'any'
-		return true
-	end
-
 	if b.tag == 'variant' then
 		for _,v in ipairs(b.variants) do
 			if T.isa(d, v) then
@@ -372,6 +373,21 @@ function T.isa_raw(d, b, problem_rope)
 			return true
 		end
 		return all_are_b()
+	end
+
+
+	if b.tag == 'any' or d.tag == 'any' then
+		-- 'any' can become anything
+		-- Anything can become 'any'
+		return true
+	end
+
+
+	if b.tag == 'table' then
+		return d.tag == 'table'
+		    or d.tag == 'list'
+		    or d.tag == 'map'
+		    or d.tag == 'object'
 	end
 
 
@@ -419,6 +435,8 @@ function T.isa_raw(d, b, problem_rope)
 	elseif d.tag == 'int' then
 		return b.tag == 'num'
 		    or b.tag == 'int'
+	elseif d.tag == 'table' then
+		return false -- Already covered
 	elseif d.tag == 'list' then
 		--if b == T.EmptyTable then return true end
 		return b.tag == 'list'

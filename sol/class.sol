@@ -88,7 +88,7 @@ global function class(klass_name, super_name)
 
 		-- if some_obj:isa(Widget) then ...
 		function klass:isa( some_class )
-			local c = klass
+			var<table?> c = klass
 			repeat
 				if c == some_class then return true end
 				c = c.base_class -- Walk up inheritence chain
