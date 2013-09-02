@@ -91,10 +91,16 @@ typedef T.Object : T.Type = {
 	derived   : [ T.Identifier ] or nil  -- Things that inherit us
 }
 
+-- Very special: represents an unknown number of values, each of the encapsuled type
+typedef T.VarArgs : T.Type = {
+	tag  : 'varargs',
+	type : T.Type,
+}
+
 typedef T.Function : T.Type = {
 	tag    : 'function',
 	args   : [ { name : string?, type : T.Type } ],  -- if first arg is 'self' we are expected to be a member function
-	vararg : T.Type?,       -- Any number of this type
+	vararg : T.VarArgs?,       -- Any number of this type
 	rets   : [T.Type]?,     -- list of return types
 	name   : string?,       -- SPECIAL - used for built-in function like 'require'
 }
@@ -113,13 +119,6 @@ typedef T.Identifier : T.Type = {
 	where       : string,    -- Point of declaration (file:line)
 	first_usage : string?,   -- Point of first use
 	type        : T.Type?,   -- Filled in by TypeCheck on declaration/assignement on typedef or declaration of 'var_' if any
-}
-
-
--- Very special: represents an unknown number of values, each of the encapsuled type
-typedef T.VarArgs : T.Type = {
-	tag  : 'varargs',
-	type : T.Type,
 }
 
 

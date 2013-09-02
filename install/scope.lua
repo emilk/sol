@@ -109,16 +109,19 @@ function Scope:create_global_scope()
 	local s = Scope:new()
 	local where = "[intrinsic]"  -- var.where
 
-	-- TODO: types
+
 	--[[
+	-- Print out all globals
 	for k,v in pairs(_G)  do print(k, "\t=\t", v)  end
 	--]]
-	local intrinsics = {
-		-- Tables:
+
+	local tables = {
 		'_G',
 		'coroutine', 'debug', 'io', 'math', 'os', 'package', 'string', 'table',
+		'jit'  -- luaJIT
+	}
 
-		-- Functions:
+	local functions = {
 		'assert',
 		'collectgarbage',
 		'dofile',
@@ -130,20 +133,27 @@ function Scope:create_global_scope()
 		'pcall', 'print',
 		'rawequal', 'rawget', 'rawset',
 		'select', 'setfenv',
-		'tonumber', 'tostring', 'type', 'unpack', 'xpcall',
-
-		-- String:
-		'_VERSION',
-
-		-- String list:
-		'arg',
-
-		-- luajit:
-		'jit',
+		'tonumber', 'tostring', 'unpack', 'xpcall',
 	}
-	for _,name in ipairs(intrinsics) do
-		s:create_global( name, where )
+
+	for _,name in ipairs(tables) do
+		s:create_global( name, where, T.Object )
 	end
+
+	for _,name in ipairs(functions) do
+		local fun_t = {
+			tag    = "function",
+			args   = { },
+			vararg = { tag = 'varargs', type = T.Any },
+			rets   = T.AnyTypeList,
+			name   = name,
+		}
+		s:create_global( name, where, fun_t)
+	end
+
+	s:create_global( '_VERSION', where, T.String )
+	s:create_global( 'arg', where, { tag='list', type=T.String} )
+
 
 	-- Ensure 'require' is recognized by TypeCheck.sol
 	local require = s:create_global( 'require', where )
@@ -179,6 +189,14 @@ function Scope:create_global_scope()
 		name = "setmetatable"
 	}
 
+	local type = s:create_global( 'type', where )
+	type.type = {
+		tag  = "function",
+		args = { { type = T.Any } },
+		rets = { T.String },
+		name = "type"
+	}
+
 
 	--s:declare_type( 'void',    T.Void ) -- Not a valid type, only allowed as a typelist
 	s:declare_type( 'bool',   T.Bool,   where )
@@ -197,7 +215,7 @@ function Scope:create_global_scope()
 	--s:declare_type( 'true',    T.True)
 	--s:declare_type( 'false',   T.False)
 
-	-- No more changes - user globals should be declared in 
+	-- No more changes - user globals should be declared in module scope (a direct child)
 	s.fixed = true
 
 	return s
@@ -236,7 +254,7 @@ function Scope:add_global(v)
 end
 
 
-function Scope:create_global(name, where)
+function Scope:create_global(name, where, type)
 	assert(not self.fixed)
 	assert(name and where)
 
@@ -247,6 +265,7 @@ function Scope:create_global(name, where)
 		references = 1,
 		type       = nil,
 		where      = where,
+		type       = type,
 	}
 
 	self:add_global(v)

@@ -230,7 +230,10 @@ local function analyze(ast, filename, on_require, settings)
 		if T.could_be(expr_type, expected_type) then
 			return true
 		else
-			report_error(expr, "%s: Expected type '%s', got '%s'", msg, T.name(expected_type), T.name(expr_type))
+			local error_rope = {}
+			T.could_be(expr_type, expected_type, error_rope)
+			local error_msg = table.concat(error_rope, '\n')
+			report_error(expr, "%s: Expected type '%s', got '%s': %s", msg, T.name(expected_type), T.name(expr_type), error_msg)
 			return false
 		end
 	end
@@ -454,7 +457,7 @@ local function analyze(ast, filename, on_require, settings)
 				local function pairs_type(typ, error_rope)
 					typ = T.follow_identifiers(typ)
 
-					if typ == T.Any then
+					if typ == T.Any or typ == T.Table then
 						return { T.Any, T.Any }
 					elseif typ.tag == 'object' then
 						return { T.String, T.Any }
@@ -488,7 +491,7 @@ local function analyze(ast, filename, on_require, settings)
 					assert(#types == 2)
 					return types
 				else
-					report_error(expr, "'ipairs' called on incompatible type: " .. table.concat(error_rope, '\n'))
+					report_error(expr, "'pairs' called on incompatible type: " .. table.concat(error_rope, '\n'))
 					return { T.Any, T.Any }
 				end
 			end
@@ -506,7 +509,7 @@ local function analyze(ast, filename, on_require, settings)
 
 					if typ == T.Any then
 						return {T.Uint, T.Any}
-					elseif T.is_empty_table(typ) then
+					elseif typ == T.Table or T.is_empty_table(typ) then
 						report_warning(expr, "Calling 'ipairs' on unknown table")
 						return {T.Uint, T.Any} -- Presumably a list?
 					elseif typ.tag == 'list' then
@@ -1158,11 +1161,15 @@ local function analyze(ast, filename, on_require, settings)
 				if map then
 					check_type_is_a("Map index", expr.index, index_t, map.key_type)
 					return T.variant(map.value_type, T.Nil)  -- Nil on not found
-				else
-					report_error(expr, 'Cannot index type %s with %s - not a list, table or map', T.name(base_t), T.name(index_t))
-					--error("FATAL")
+				end
+
+				if T.find(base_t, T.Table) then
 					return T.Any
 				end
+
+				report_error(expr, 'Cannot index type %s with %s - not a list, table or map', T.name(base_t), T.name(index_t))
+				--error("FATAL")
+				return T.Any
 			end
 
 

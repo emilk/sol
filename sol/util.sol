@@ -9,7 +9,7 @@ local pretty = require 'pretty'
 local D      = require 'sol_debug'
 local U = {}
 
-function U.bimap(tb)
+function U.bimap(tb: table) -> table
 	for k, v in pairs(tb) do
 		assert(k, "bimap with 'false' is dangerous")
 		tb[v] = k

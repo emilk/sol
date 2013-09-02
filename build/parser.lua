@@ -719,11 +719,13 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 			if not tok:consume_symbol(')') then
 				while true do
 					if tok:consume_symbol('...') then
-						fun_t.vararg = T.Any
+						local var_arg_t = T.Any
 
 						if tok:consume_symbol(':') then
-							fun_t.vararg = parse_type(scope)
+							var_arg_t = parse_type(scope)
 						end
+
+						fun_t.vararg = { tag = 'varargs', type = var_arg_t }
 
 						if not tok:consume_symbol(')') then
 							report_error('vararg (...) must be last argument to function')

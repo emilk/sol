@@ -48,7 +48,7 @@
         v1.00 - Initial.
 ]]
 local function edit_distance( s, t, lim: int? ) -> int
-    local s_len, t_len = #s, #t -- Calculate the sizes of the strings or arrays
+    var s_len, t_len = #s, #t -- Calculate the sizes of the strings or arrays
     if lim and math.abs( s_len - t_len ) >= lim then -- If sizes differ by lim, we can stop here
         return lim
     end
@@ -63,9 +63,9 @@ local function edit_distance( s, t, lim: int? ) -> int
     end
     
     local min = math.min -- Localize for performance
-    local num_columns = t_len + 1 -- We use this a lot
+    var num_columns = t_len + 1 -- We use this a lot
     
-    local d = {} -- (s_len+1) * (t_len+1) is going to be the size of this array
+    var<[int]> d = {} -- (s_len+1) * (t_len+1) is going to be the size of this array
     -- This is technically a 2D array, but we're treating it as 1D. Remember that 2D access in the
     -- form my_2d_array[ i, j ] can be converted to my_1d_array[ i * num_columns + j ], where
     -- num_columns is the number of columns you had in the 2D array assuming row-major order and
@@ -79,10 +79,10 @@ local function edit_distance( s, t, lim: int? ) -> int
     end
     
     for i=1, s_len do
-        local i_pos = i * num_columns
-        local best = lim -- Check to make sure something in this row will be below the limit
+        var i_pos = i * num_columns
+        var best = lim -- Check to make sure something in this row will be below the limit
         for j=1, t_len do
-            local add_cost = (s[ i ] ~= t[ j ] and 1 or 0)
+            var add_cost = (s[ i ] ~= t[ j ] and 1 or 0)
             local val = min(
                 d[ i_pos - num_columns + j ] + 1,                               -- Cost of deletion
                 d[ i_pos + j - 1 ] + 1,                                         -- Cost of insertion

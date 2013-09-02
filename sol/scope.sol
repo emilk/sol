@@ -109,16 +109,19 @@ function Scope:create_global_scope() -> S.Scope
 	local s = Scope:new()
 	local where = "[intrinsic]"  -- var.where
 
-	-- TODO: types
+
 	--[[
+	-- Print out all globals
 	for k,v in pairs(_G)  do print(k, "\t=\t", v)  end
 	--]]
-	local intrinsics = {
-		-- Tables:
+
+	var tables = {
 		'_G',
 		'coroutine', 'debug', 'io', 'math', 'os', 'package', 'string', 'table',
+		'jit'  -- luaJIT
+	}
 
-		-- Functions:
+	var functions = {
 		'assert',
 		'collectgarbage',
 		'dofile',
@@ -130,20 +133,27 @@ function Scope:create_global_scope() -> S.Scope
 		'pcall', 'print',
 		'rawequal', 'rawget', 'rawset',
 		'select', 'setfenv',
-		'tonumber', 'tostring', 'type', 'unpack', 'xpcall',
-
-		-- String:
-		'_VERSION',
-
-		-- String list:
-		'arg',
-
-		-- luajit:
-		'jit',
+		'tonumber', 'tostring', 'unpack', 'xpcall',
 	}
-	for _,name in ipairs(intrinsics) do
-		s:create_global( name, where )
+
+	for _,name in ipairs(tables) do
+		s:create_global( name, where, T.Object )
 	end
+
+	for _,name in ipairs(functions) do
+		var<T.Function> fun_t = {
+			tag    = "function",
+			args   = { },
+			vararg = { tag = 'varargs', type = T.Any },
+			rets   = T.AnyTypeList,
+			name   = name,
+		}
+		s:create_global( name, where, fun_t)
+	end
+
+	s:create_global( '_VERSION', where, T.String )
+	s:create_global( 'arg', where, { tag='list', type=T.String} )
+
 
 	-- Ensure 'require' is recognized by TypeCheck.sol
 	local require = s:create_global( 'require', where )
@@ -177,6 +187,14 @@ function Scope:create_global_scope() -> S.Scope
 		args = { { type = T.Object }, { type = T.Object } },
 		rets = { T.Object },
 		name = "setmetatable"
+	}
+
+	local type = s:create_global( 'type', where )
+	type.type = {
+		tag  = "function",
+		args = { { type = T.Any } },
+		rets = { T.String },
+		name = "type"
 	}
 
 
@@ -236,7 +254,7 @@ function Scope:add_global(v)
 end
 
 
-function Scope:create_global(name: string, where: string) -> S.Variable
+function Scope:create_global(name: string, where: string, type: T.Type) -> S.Variable
 	assert(not self.fixed)
 	assert(name and where)
 
@@ -247,6 +265,7 @@ function Scope:create_global(name: string, where: string) -> S.Variable
 		references = 1,
 		type       = nil,
 		where      = where,
+		type       = type,
 	}
 
 	self:add_global(v)
