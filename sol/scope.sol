@@ -152,7 +152,7 @@ function Scope:create_global_scope() -> S.Scope
 	end
 
 	s:create_global( '_VERSION', where, T.String )
-	s:create_global( 'arg', where, { tag='list', type=T.String} )
+	s:create_global( 'arg', where, { tag = 'list', type = T.String} )
 
 
 	-- Ensure 'require' is recognized by TypeCheck.sol

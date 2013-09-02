@@ -419,7 +419,7 @@ if g_profiler then
 	--local REPORT_PATH = 'profiler_report.txt'
 	--local REPORT_PATH = os.date("profiler_report_%Y_%m_%d_%X.txt")
 	local REPORT_PATH = os.date("profile_reports/profiler_report_%Y_%m_%d__%H_%M_%S.txt")
-	g_profiler:write_report( REPORT_PATH )
+	g_profiler:writeReport( REPORT_PATH )
 	--print( 'Profile report written to ' .. REPORT_PATH)
 end
 

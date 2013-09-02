@@ -477,9 +477,12 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 	
 	--getters
 	function tok:peek(n: int?) -> L.Token?
-		n = n or 0
-		local ix = math.max(1, math.min(#tokens, p+n))
-		return tokens[ix]
+		if n then
+			local ix = math.min(#tokens, p+n)
+			return tokens[ix]
+		else
+			return tokens[math.min(#tokens, p)]
+		end
 	end
 
 	function tok:get(token_list: L.TokenList?) -> L.Token?

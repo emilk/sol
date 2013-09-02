@@ -170,6 +170,11 @@ end
 
 
 function T.follow_identifiers(t, forgiving)
+	if t.tag ~= 'identifier' then
+		-- Early out
+		return t
+	end
+
 	if forgiving == nil then forgiving = false end
 
 	if _G.g_local_parse then
@@ -178,47 +183,43 @@ function T.follow_identifiers(t, forgiving)
 
 	D.assert(T.is_type(t))
 
-	if t.tag == 'identifier' then
-		if not t.type then
-			--[[
-			if t.type == T.Any then
-				-- Maybe a local parse
-				forgiving = true
-			end
-			--]]
+	if not t.type then
+		--[[
+		if t.type == T.Any then
+			-- Maybe a local parse
+			forgiving = true
+		end
+		--]]
 
-			if t.var_name then
-				local var_ = t.scope:get_var( t.var_name )  -- A namespace is always a variable
-				if not var_ then
-					T.on_error("Failed to find namespace variable %q", t.var_name)
-					t.type = T.Any
-				elseif not var_.namespace then
-					if forgiving then
-						return T.Any
-					else
-						T.on_error("%s: Variable '%s' is not a namespace (looking up '%s')", t.first_usage, var_.name, t.name)
-						t.type = T.Any
-					end
+		if t.var_name then
+			local var_ = t.scope:get_var( t.var_name )  -- A namespace is always a variable
+			if not var_ then
+				T.on_error("Failed to find namespace variable %q", t.var_name)
+				t.type = T.Any
+			elseif not var_.namespace then
+				if forgiving then
+					return T.Any
 				else
-					t.type = var_.namespace[t.name]
-					if not t.type then
-						T.on_error("%s: type '%s' not found in namespace '%s'", t.first_usage, t.name, var_.name)
-						t.type = T.Any
-					end
+					T.on_error("%s: Variable '%s' is not a namespace (looking up '%s')", t.first_usage, var_.name, t.name)
+					t.type = T.Any
 				end
 			else
-				t.type = t.scope:get_type( t.name )
+				t.type = var_.namespace[t.name]
 				if not t.type then
-					T.on_error("%s: typename '%s' not found", t.first_usage, t.name)
+					T.on_error("%s: type '%s' not found in namespace '%s'", t.first_usage, t.name, var_.name)
 					t.type = T.Any
 				end
 			end
+		else
+			t.type = t.scope:get_type( t.name )
+			if not t.type then
+				T.on_error("%s: typename '%s' not found", t.first_usage, t.name)
+				t.type = T.Any
+			end
 		end
-
-		return T.follow_identifiers(t.type)
-	else
-		return t
 	end
+
+	return T.follow_identifiers(t.type)
 end
 
 

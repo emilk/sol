@@ -18,9 +18,13 @@ end
 -- an AST.
 --
 
--- Returns the number of lines, and the number of characters on the last line
+-- Returns the number of line breaks, and the number of characters on the last line
 local function count_line_breaks(str: string) -> int, int
-	D.assert(type(str) == 'string')
+	if not str:find('\n') then
+		-- Early out
+		return 0, #str
+	end
+
 	local n = 0
 	local c = 0
 	for i = 1,#str do
@@ -46,8 +50,8 @@ local function format_identity(ast, filename: string, insert_new_lines : bool?) 
 		append_str = function(self, str: string)
 			local nl, c = count_line_breaks(str)
 
-			if nl == 0 then
-				self.char = self.char + #str
+			if nl > 0 then
+				self.char = self.char + c
 			else
 				self.line = self.line + nl
 				self.char = c

@@ -17,12 +17,14 @@ function D.activate()
 	D.active = true
 end
 
-function D.assert(...)
-	if D.active then
+function D.assert(bool_expr, ...)
+	if bool_expr then
+		return bool_expr
+	elseif D.active then
 		local dbg = D.get_lib()
-		dbg.assert(...)
+		return dbg.assert(bool_expr, ...)
 	else
-		assert(...)
+		return assert(bool_expr, ...)
 	end
 end
 
