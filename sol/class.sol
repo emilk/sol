@@ -47,7 +47,7 @@ global function sol_class(klass_name, super_name)
 
 		local instance_meta = { __index = klass }
 
-		local construct = function(instance, ...)
+		local construct = function(instance: table?, ...)
 			if instance then
 				-- Clear-out:
 				for k,_ in pairs(instance) do

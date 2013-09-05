@@ -226,14 +226,15 @@ local function analyze(ast, filename, on_require, settings)
 	end
 
 
-	local function check_type_is_a(msg, expr, expr_type, expected_type)
+	local function check_type_is_a(msg, expr, expr_type, expected_type, severity)
 		if T.could_be(expr_type, expected_type) then
 			return true
 		else
 			local error_rope = {}
 			T.could_be(expr_type, expected_type, error_rope)
 			local error_msg = table.concat(error_rope, '\n')
-			report_error(expr, "%s: Expected type '%s', got '%s': %s", msg, T.name(expected_type), T.name(expr_type), error_msg)
+			local reporter = (severity == 'error' and report_error or report_warning)
+			reporter(expr, "%s: Expected type '%s', got '%s': %s", msg, T.name(expected_type), T.name(expr_type), error_msg)
 			return false
 		end
 	end
@@ -1153,7 +1154,7 @@ local function analyze(ast, filename, on_require, settings)
 			else
 				local list = T.find(base_t, T.List) -- TODO: find all lists and variant the reuslts
 				if list then
-					check_type_is_a("List index", expr.index, index_t, T.Uint)
+					check_type_is_a("List index", expr.index, index_t, T.Uint, 'error')
 					if list.type then
 						return list.type
 					else
@@ -1163,7 +1164,7 @@ local function analyze(ast, filename, on_require, settings)
 
 				local map = T.find(base_t, T.Map) -- TODO: find all maps and variant the reuslts
 				if map then
-					check_type_is_a("Map index", expr.index, index_t, map.key_type)
+					check_type_is_a("Map index", expr.index, index_t, map.key_type, 'error')
 					return T.variant(map.value_type, T.Nil)  -- Nil on not found
 				end
 
@@ -1320,11 +1321,12 @@ local function analyze(ast, filename, on_require, settings)
 	end
 
 
-	local function assign_var_type(stat, var_, deduced_type)
+	local function decl_var_type(stat, var_, deduced_type)
 		D.assert( T.is_type(deduced_type) )
 
 		if var_.type then
-			check_type_is_a("Variable declaration", stat, deduced_type, var_.type)
+			-- .type must have been deduced by pre-parsing
+			check_type_is_a("Variable declaration", stat, deduced_type, var_.type, 'error')
 		else
 			if deduced_type == T.Nil then
 				--sol_warning(stat, "Initializing value with nil - type cannot be deduced")
@@ -1335,24 +1337,6 @@ local function analyze(ast, filename, on_require, settings)
 		end
 
 		var_.namespace = deduced_type.namespace  -- If any
-
-		--[[
-		if var_.namespace then
-			for name, type in pairs(var_.namespace) do
-				if not deduced_type.namespace then
-					report_error(stat, "Variable expected to be namespace containing type '%s', first used at %s", name, type.first_usage)
-					return
-				end
-
-				if not deduced_type.namespace[name] then
-					report_error(stat, "Variable namespaced missing type '%s', first used at %s", name, type.first_usage)
-					return
-				end
-
-				type.type = deduced_type.namespace[name]
-			end
-		end
-		--]]
 	end
 
 
@@ -1748,11 +1732,7 @@ local function analyze(ast, filename, on_require, settings)
 				else
 					local deduced_types = T.as_type_list( t )
 					local nt = #deduced_types
-					--[[
-					if nt ~= #vars then
-						report_error(stat, "Uneven number of variables and values in 'local' declaration. Right hand side has type %s",
-							T.name(t))
-					--]]
+					
 					if #vars < nt then
 						-- Ignoring a few return values is OK
 					elseif #vars > nt then
@@ -1762,13 +1742,7 @@ local function analyze(ast, filename, on_require, settings)
 						local N = #vars
 						for i = 1,N do
 							local v = vars[i]
-							if not T.is_type(deduced_types[i]) then
-								report_error(stat, "VarDeclareStatement: deduced type %i was not a type: %s", i, T.name(deduced_types[i]))
-								report_error(stat, "t: %s", expr2str(t))
-								D.break_()
-								assert( T.is_type(deduced_types[i]) )
-							end
-							assign_var_type(stat, v, deduced_types[i])
+							decl_var_type(stat, v, deduced_types[i])
 						end
 					end
 				end
@@ -1783,7 +1757,7 @@ local function analyze(ast, filename, on_require, settings)
 					local v = vars[i]
 					local deduced_type = init_types[i]
 					assert( T.is_type(deduced_type) )
-					assign_var_type(stat, v, deduced_type)
+					decl_var_type(stat, v, deduced_type)
 				end
 			end
 
