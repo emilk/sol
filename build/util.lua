@@ -54,7 +54,7 @@ end
 
 function U.write_protect(path)
 	if PLATFORM == "unix" then
-		return 0 == os.execute("chmod go-w " .. path)
+		return 0 == os.execute("chmod -w " .. path)
 	else
 		return 0 == os.execute("attrib +R " .. path)
 	end
@@ -63,7 +63,7 @@ end
 
 function U.write_unprotect(path)
 	if PLATFORM == "unix" then
-		return 0 == os.execute("chmod go+w " .. path)
+		return 0 == os.execute("chmod +w " .. path)
 	else
 		return 0 == os.execute("attrib -R " .. path)
 	end

@@ -6,7 +6,7 @@ local PLATFORM = os.getenv("windir") and "win" or "unix"
 
 function write_protect(path)
 	if PLATFORM == "unix" then
-		return 0 == os.execute("chmod go-w " .. path)
+		return 0 == os.execute("chmod -w " .. path)
 	else
 		return 0 == os.execute("attrib +R " .. path)
 	end
@@ -14,7 +14,7 @@ end
 
 function write_unprotect(path)
 	if PLATFORM == "unix" then
-		return 0 == os.execute("chmod go+w " .. path)
+		return 0 == os.execute("chmod +w " .. path)
 	else
 		return 0 == os.execute("attrib -R " .. path)
 	end
@@ -77,7 +77,7 @@ print "BUILD 3/3: last santiy check"
 print "----------------------------------------"
 run_lua "build/solc.lua -o build sol/*.sol"
 
---run_cmd "cp build/* install/"  -- no cp in windows (oh the swdish irony)
+--run_cmd "cp build/* install/"  -- no cp in windows
 cp("build", "install")
 print "----------------------------------------"
 print "Build successed, copied to install/"
