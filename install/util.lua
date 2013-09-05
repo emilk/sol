@@ -24,13 +24,21 @@ function U.printf(fmt, ...)
 end
 
 
+function U.ellipsis(msg, max_len)
+	max_len = max_len or 1024
+
+	if #msg <= max_len then
+		return msg
+	else
+		return msg:sub(1, max_len/2) .. ' [...] ' .. msg:sub(-max_len/2)
+	end
+end
+
+
 function U.printf_err(fmt, ...)
 	local msg = string.format(fmt, ...)
 
-	local MAX_LEN = 256
-	if #msg > MAX_LEN then
-		msg = msg:sub(1, MAX_LEN/2) .. ' ... ' .. msg:sub(-MAX_LEN/2)
-	end
+	msg = U.ellipsis(msg)
 
 	io.stderr:write( msg .. '\n' )
 	D.break_()

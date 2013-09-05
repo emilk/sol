@@ -269,13 +269,13 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 		local node_func = {
 			--ast_type     = 'Function', LambdaFunctionExpr or FunctionDeclStatement
-			scope       = func_scope,
-			tokens      = token_list,
-			is_mem_fun    = is_mem_fun,
-			arguments   = arg_list,
-			vararg      = vararg,
+			scope        = func_scope,
+			tokens       = token_list,
+			is_mem_fun   = is_mem_fun,
+			arguments    = arg_list,
+			vararg       = vararg,
 			return_types = return_types,
-			body        = body,
+			body         = body,
 		}
 
 		return true, node_func
@@ -703,6 +703,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 		end
 
 		if tok:consume_keyword('function') then
+			-- function type
 			if not tok:consume_symbol('(') then
 				report_error("Expected (")
 				return T.Any
@@ -1019,9 +1020,9 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 			local st, func = parse_function_args_and_body(scope, token_list)
 			if not st then return false, func end
 
-			func.ast_type  = 'FunctionDeclStatement'
-			func.var_name  = var_name
-			func.is_local  = is_local
+			func.ast_type = 'FunctionDeclStatement'
+			func.var_name = var_name
+			func.is_local = is_local
 			return true, func
 
 		elseif tok:is('ident') or angle_bracket then
@@ -1277,8 +1278,8 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 			local st, func = parse_function_args_and_body(scope, token_list, is_mem_fun)
 			if not st then return false, func end
 			--
-			func.ast_type  = 'FunctionDeclStatement'
-			func.is_local  = false
+			func.ast_type = 'FunctionDeclStatement'
+			func.is_local = false
 			func.name     = name
 			stat = func
 

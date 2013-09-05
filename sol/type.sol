@@ -98,11 +98,12 @@ typedef T.VarArgs : T.Type = {
 }
 
 typedef T.Function : T.Type = {
-	tag    : 'function',
-	args   : [ { name : string?, type : T.Type } ],  -- if first arg is 'self' we are expected to be a member function
-	vararg : T.VarArgs?,       -- Any number of this type
-	rets   : [T.Type]?,     -- list of return types
-	name   : string?,       -- SPECIAL - used for built-in function like 'require'
+	tag            : 'function',
+	args           : [ { name : string?, type : T.Type } ], -- if first arg is 'self' we are expected to be a member function
+	vararg         : T.VarArgs?, -- Any number of this type
+	rets           : [T.Type]?,  -- list of return types
+	name           : string?,    -- Used for nicer error messages. nil means lambda
+	intrinsic_name : string?,    -- SPECIAL - used for built-in function like 'require'
 }
 
 typedef T.Variant : T.Type = {

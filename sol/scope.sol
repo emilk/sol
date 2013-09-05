@@ -1,7 +1,6 @@
 local T = require 'type'
 local D = require 'sol_debug'
 local U = require 'util'
-require 'class'
 
 
 --[[
@@ -45,46 +44,40 @@ local S = {}
 typedef S.Scope    = Scope
 typedef S.Variable = Variable
 
-
 --[-[
 local Scope = {}
 
 function Scope:new(parent: S.Scope?) -> S.Scope
-	var<S.Scope> s = {
-		parent             = parent;
-		children           = { };
-		locals             = { };
-		globals            = { };
-		typedefs           = { };  -- string -> T.Type     - simple typedefs:
-		global_typedefs    = { };
-		fixed              = false;
-	}
-	
-	if parent then
-		table.insert(parent.children, s)
-	end
-	
-	return setmetatable(s, { __index = self })
+	local s = {}	
+	setmetatable(s, { __index = self })
+	s:init(parent)
+	return s
 end
 --]]
 --[[
-global Scope = class("Scope")
-
-function Scope:init(parent: S.Scope?)
-	self.parent             = parent
-	self.children           = { }
-	self.locals             = { }
-	self.globals            = { }
-	self.typedefs           = { }  -- string -> T.Type     - simple typedefs:
-	self.global_typedefs    = { }
-	self.fixed              = false
-end
+require 'class'
+local Scope = sol_class("Scope")
+--class Scope
 
 function Scope:new(parent: S.Scope?) -> S.Scope
 	return Scope(parent)
 end
 --]]
 
+-- Constructor
+function Scope:init(parent: Scope?)
+	self.parent          = parent
+	self.children        = { }
+	self.locals          = { }
+	self.globals         = { }
+	self.typedefs        = { } -- string -> T.Type     - simple typedefs:
+	self.global_typedefs = { }
+	self.fixed           = false
+	
+	if parent then
+		table.insert(parent.children, self)
+	end
+end
 
 -- Created the global top-level scope
 function Scope:get_global_scope() -> S.Scope
@@ -142,11 +135,12 @@ function Scope:create_global_scope() -> S.Scope
 
 	for _,name in ipairs(functions) do
 		var<T.Function> fun_t = {
-			tag    = "function",
-			args   = { },
-			vararg = { tag = 'varargs', type = T.Any },
-			rets   = T.AnyTypeList,
-			name   = name,
+			tag            = "function",
+			args           = { },
+			vararg         = { tag = 'varargs', type = T.Any },
+			rets           = T.AnyTypeList,
+			name           = name,
+			intrinsic_name = name,
 		}
 		s:create_global( name, where, fun_t)
 	end
@@ -158,43 +152,48 @@ function Scope:create_global_scope() -> S.Scope
 	-- Ensure 'require' is recognized by TypeCheck.sol
 	local require = s:create_global( 'require', where )
 	require.type = {
-		tag  = "function",
-		args = { { type = T.String } },
-		rets = T.AnyTypeList,
-		name = "require"
+		tag            = "function",
+		args           = { { type = T.String } },
+		rets           = T.AnyTypeList,
+		name           = "require",
+		intrinsic_name = "require",
 	}
 
 	-- Ensure 'pairs' and 'ipairs' are recognized by TypeCheck.sol
 	local pairs = s:create_global( 'pairs', where )
 	pairs.type = {
-		tag  = "function",
-		args = { { type = T.Any } },
-		rets = T.AnyTypeList,
-		name = "pairs"
+		tag            = "function",
+		args           = { { type = T.Any } },
+		rets           = T.AnyTypeList,
+		intrinsic_name = "pairs",
+		name           = "pairs",
 	}
 
 	local ipairs_ = s:create_global( 'ipairs', where )
 	ipairs_.type = {
-		tag  = "function",
-		args = { { type = T.List } },
-		rets = T.AnyTypeList,
-		name = "ipairs"
+		tag            = "function",
+		args           = { { type = T.List } },
+		rets           = T.AnyTypeList,
+		intrinsic_name = "ipairs",
+		name           = "ipairs",
 	}
 
 	local setmetatable = s:create_global( 'setmetatable', where )
 	setmetatable.type = {
-		tag  = "function",
-		args = { { type = T.Object }, { type = T.Object } },
-		rets = { T.Object },
-		name = "setmetatable"
+		tag            = "function",
+		args           = { {  type = T.Table }, { type = T.Table } },
+		rets           = { T.Table },
+		intrinsic_name = "setmetatable",
+		name           = "setmetatable",
 	}
 
 	local type = s:create_global( 'type', where )
 	type.type = {
-		tag  = "function",
-		args = { { type = T.Any } },
-		rets = { T.String },
-		name = "type"
+		tag            = "function",
+		args           = { {        type = T.Any } },
+		rets           = { T.String },
+		intrinsic_name = "type",
+		name           = "type",
 	}
 
 

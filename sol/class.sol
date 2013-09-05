@@ -34,7 +34,7 @@ end
 -- @usage local some_class_object = SomeClass()
 -- @param klass the table to use as template when creating new objects
 -- @param super [optional] the super class whose (non-overridden) functions will be available in klass
-global function class(klass_name, super_name)
+global function sol_class(klass_name, super_name)
 	assert(klass_name, "You must specify a class name")
 
 	if super_name ~= nil then

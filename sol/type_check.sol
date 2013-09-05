@@ -358,7 +358,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			fun_t.vararg = node.vararg
 		end
 
-
 		if _G.g_spam then
 			report_spam(node, "analyze_function_head: '%s'", T.name(fun_t))
 		end
@@ -450,7 +449,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local function generator_types(expr, fun_t, arg_ts: [T.Type]) -> [T.Type]
 		--------------------------------------------------------
 		-- SPECIAL: 'pairs':
-		if fun_t.name == 'pairs' then
+		if fun_t.intrinsic_name == 'pairs' then
 			if #arg_ts ~= 1 then
 				report_error(expr, "Too many arguments to 'pairs'")
 			else
@@ -500,7 +499,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		--------------------------------------------------------
 		-- SPECIAL: 'ipairs':
-		if fun_t.name == 'ipairs' then
+		if fun_t.intrinsic_name == 'ipairs' then
 			if #arg_ts ~= 1 then
 				report_error(expr, "Too many arguments to 'ipairs'")
 			else
@@ -549,6 +548,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	local function check_arguments(expr, fun_t: T.Function, arg_ts: [T.Type])
 		assert(fun_t.args)
+		var fun_name = fun_t.name or "lambda"
+		D.assert(type(fun_name) == 'string', "fun_name: %s", fun_name)
 
 		-- check arguments:
 		local i = 1
@@ -585,7 +586,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						local problem_rope = {}
 						T.could_be(given, expected, problem_rope)
 						local err_msg = table.concat(problem_rope, '\n')
-						report_error(expr, "Argument %i: could not convert from '%s' to '%s': %s", i, T.name_verbose(given), T.name_verbose(expected), err_msg)
+						report_error(expr, "%s argument %i: could not convert from '%s' to '%s': %s",
+						                    fun_name, i, T.name_verbose(given), T.name_verbose(expected), err_msg)
 					end
 				else
 					if i == 1 and fun_t.args[i].name == 'self' then
@@ -616,10 +618,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					end
 
 					if not T.could_be(given, expected) then
-						report_error(expr, "Argument %i: could not convert from '%s' to '%s' (varargs)", i, T.name(given), T.name(expected))
+						report_error(expr, "%s argument %i: could not convert from '%s' to '%s' (varargs)", fun_name, i, T.name(given), T.name(expected))
 					end
 				else
-					report_error(expr, "Too many arguments to function, expected %s", #fun_t.args)
+					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args)
 				end
 			else
 				break
@@ -677,7 +679,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		--------------------------------------------------------
 		-- Check special functions:
 
-		if fun_t.name == 'require' then
+		if fun_t.intrinsic_name == 'require' then
 			if #arg_ts == 1 and arg_ts[1].tag == 'string_literal' then
 				--U.printf('"require" called with argument: %q', arg_ts[1])
 				if on_require then
@@ -688,7 +690,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 		end
 
-		if fun_t.name == 'pairs' or fun_t.name == 'ipairs' then
+		if fun_t.intrinsic_name == 'pairs' or fun_t.intrinsic_name == 'ipairs' then
 			-- generators returns function that returns 'it_types':
 			local it_types = generator_types(expr, fun_t, arg_ts)
 
@@ -1079,8 +1081,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local arg_t = analyze_expr_single(expr.rhs, scope)
 
 			if expr.op == '-' then
-				if T.isa(arg_t, T.Num) then
-					return arg_t
+				if T.could_be(arg_t, T.Num) then
+					return T.Num
+				elseif T.could_be(arg_t, T.Int) then
+					return T.Int
 				else
 					report_error(expr, "Unary minus expected numeric argument, got %s", T.name(arg_t))
 					return T.Num -- Good guess
@@ -1859,6 +1863,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					"local function foo(bar)"
 					"global function foo(bar)"
 				--]]
+				fun_t.name = stat.var_name
+
 				if _G.g_spam then
 					report_spam(stat, "local function, name: %q", expr2str(stat.name))
 				end
@@ -1867,8 +1873,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				v.type = fun_t
 			else
 				-- function foo:bar(arg)
-
 				D.assert(stat.name)
+				--fun_t.name = stat.name.name
+				fun_t.name = 'its_complicated' -- TODO!
+
 				if stat.name.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
 					report_warning(stat, "non-local function, name: %q", expr2str(stat.name))
@@ -2040,6 +2048,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze )
 			fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
+			if stat.var_name then
+				fun_t.name = stat.var_name
+			else
+				fun_t.name = 'its_complicated' -- TODO
+			end
 
 			if stat.is_local then
 				-- e.g.  "local function foo(bar)"
