@@ -267,7 +267,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 					end
 
 				elseif line == 1 and c == '#' and peek(1) == '!' then
-					-- #! shebang for linux scripts
+					-- #! shebang
 					get()
 					get()
 					repeat

@@ -18,23 +18,25 @@ end
 -- an AST.
 --
 
--- Returns the number of line breaks, and the number of characters on the last line
+-- Returns the number of line breaks
 local function count_line_breaks(str)
 	if not str:find('\n') then
 		-- Early out
-		return 0, #str
+		return 0
 	end
 
 	local n = 0
-	local c = 0
 	for i = 1,#str do
 		if str:sub(i,i) == '\n' then
 			n = n + 1
-			c = #str - i
 		end
 	end
-	return n,c
+	return n
 end
+
+assert(count_line_breaks("hello") == 0)
+assert(count_line_breaks("hello\n") == 1)
+assert(count_line_breaks("hello\nyou\ntoo") == 2)
 
 
 local function format_identity(ast, filename, insert_new_lines)
@@ -45,18 +47,10 @@ local function format_identity(ast, filename, insert_new_lines)
 	local out = {
 		rope = {},  -- List of strings
 		line = 1,
-		char = 1,
 
 		append_str = function(self, str)
-			local nl, c = count_line_breaks(str)
-
-			if nl == 0 then
-				self.char = self.char + #str
-			else
-				self.line = self.line + nl
-				self.char = c
-			end
-
+			local nl = count_line_breaks(str)
+			self.line = self.line + nl
 			table.insert(self.rope, str)
 		end,
 
@@ -66,13 +60,12 @@ local function format_identity(ast, filename, insert_new_lines)
 			local str  = token.data
 
 			if insert_new_lines then
-				local nl, c = count_line_breaks(str)
+				local nl = count_line_breaks(str)
 
 				while self.line + nl < token.line do
 					--print("Inserting extra line")
 					table.insert(self.rope, '\n')
 					self.line = self.line + 1
-					self.char = 1
 				end
 			end
 

@@ -1,9 +1,8 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/util.sol --]] 
---
--- Util.lua
---
--- Provides some common utilities shared throughout the project.
---
+--[[ DO NOT MODIFY - COMPILED FROM sol/util.sol --]] --[[
+Util.lua
+
+Provides some common utilities shared throughout the project.
+--]]
 
 local pretty = require 'pretty'
 local D      = require 'sol_debug'
@@ -61,6 +60,7 @@ function U.read_entire_file(path)
 	if not f then return nil end
 	local content = f:read("*all")
 	f:close()
+	content = content:gsub('\r', '')  -- Fixes sillyness on windows
 	return content
 end
 

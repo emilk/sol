@@ -1,9 +1,8 @@
+--[[
+Util.lua
 
---
--- Util.lua
---
--- Provides some common utilities shared throughout the project.
---
+Provides some common utilities shared throughout the project.
+--]]
 
 local pretty = require 'pretty'
 local D      = require 'sol_debug'
@@ -61,6 +60,7 @@ function U.read_entire_file(path: string) -> string?
 	if not f then return nil end
 	local content = f:read("*all")
 	f:close()
+	content = content:gsub('\r', '')  -- Fixes sillyness on windows
 	return content
 end
 

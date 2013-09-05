@@ -1,4 +1,5 @@
-#!
+io.stdout:setvbuf 'no'
+
 local lfs  = require 'lfs'
 local path = require 'pl.path'
 
@@ -10,6 +11,15 @@ end
 
 -------------------------------------------
 
+local PLATFORM = os.getenv("windir") and "win" or "unix"
+
+local NULL_PIPE
+
+if PLATFORM == 'unix' then
+	NULL_PIPE = ' &> /dev/null'
+else
+	NULL_PIPE = ' > nul 2>&1'
+end
 
 
 local DIVISION = '\n--------------------------\n'
@@ -20,7 +30,15 @@ local numTested      = 0
 
 --print('arg[0] == ' .. arg[0])    -- ../run_tests.lua
 --print('arg[-1] == ' .. arg[-1])  -- lua  or  luajit
-local interpreter = (arg[-1]  or  'luajit') .. ' ' .. sol_dir .. 'install/solc.lua '
+local interpreter = ('"'..arg[-1]..'"'  or  'luajit') .. ' ' .. sol_dir .. 'install/solc.lua '
+
+--[[
+print("PLATFORM:    "..PLATFORM)
+print("NULL_PIPE:   "..NULL_PIPE)
+print("rel_path:    "..rel_path)
+print("sol_dir:     "..sol_dir)
+print("interpreter: "..interpreter)
+--]]
 
 local spam = (arg[1] == '-s')
 
@@ -38,7 +56,7 @@ local function test_dir(dir)
 
 			--lfs.chdir(sol_dir .. 'install/')
 			local file_path = dir .. '/' .. file
-			local result = os.execute( interpreter .. ' -o tests_built ' .. file_path .. ' &> /dev/null' )
+			local result = os.execute( interpreter .. ' -o tests_built ' .. file_path .. NULL_PIPE)
 
 			if shouldPass and result ~= 0 then
 				failed_to_pass = failed_to_pass + 1
