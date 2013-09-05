@@ -1,6 +1,25 @@
 io.stdout:setvbuf 'no'
 local lfs = require 'lfs'
+
 local interpreter = ('"'..arg[-1]..'"'  or  'luajit')
+local PLATFORM = os.getenv("windir") and "win" or "unix"
+
+function write_protect(path)
+	if PLATFORM == "unix" then
+		return 0 == os.execute("chmod go-w " .. path)
+	else
+		return 0 == os.execute("attrib +R " .. path)
+	end
+end
+
+function write_unprotect(path)
+	if PLATFORM == "unix" then
+		return 0 == os.execute("chmod go+w " .. path)
+	else
+		return 0 == os.execute("attrib -R " .. path)
+	end
+end
+
 
 local function run_cmd(cmd)
 	if 0 ~= os.execute(cmd) then
@@ -27,9 +46,16 @@ function cp(source, dest)
 				local f = io.open(source_path, "rb")
 				local content = f:read("*all")
 				f:close()
-				local w = io.open(dest .. "/" .. filename, "wb")
+
+				local out_path = dest .. "/" .. filename
+				write_unprotect(out_path)
+				local w = io.open(out_path, "wb")
+				if not w then
+					error("Failed to write to " .. out_path)
+				end
 				w:write(content)
 				w:close() 
+				write_protect(out_path)  -- Ensure the user doesn't accidently modify a .lua file instead of a .sol file!
 			end
 		end
 	end

@@ -22,7 +22,7 @@ print = function(msg)
 end
 --]]
 
-
+io.stdout:setvbuf 'no'
 local lfs  = require 'lfs'
 local path = require 'pl.path'
 
@@ -49,14 +49,16 @@ package.path = sol_dir..'?.lua;' .. package.path
 
 
 local D               = require 'sol_debug'
-local format_identity  = require 'format_identity'
+local format_identity = require 'format_identity'
 local Lexer           = require 'lexer'
 local Parser          = require 'parser'
 local S               = require 'scope'
 local T               = require 'type'
 local TypeCheck       = require 'type_check'
-local U            = require 'util'
-local printf_err = U.printf_err
+local U               = require 'util'
+local printf_err      = U.printf_err
+
+------------------------------------------------
 
 _G.g_local_parse = false -- If true, ignore 'require'
 _G.g_spam = false
@@ -243,6 +245,8 @@ end
 
 local function output_module(info: parse_info, path_in: string, path_out: string?)
 	if info.ast and path_out then
+		U.write_unprotect(path_out) -- Ensure we can write over it
+
 		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] '
 		out_text = out_text .. format_identity(info.ast, path_in)
 		if not U.write_file(path_out, out_text) then
@@ -250,6 +254,7 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 			os.exit(4)
 		else
 			U.printf("File written to %q", path_out)
+			U.write_protect(path_out)
 		end
 	end
 

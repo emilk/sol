@@ -6,15 +6,12 @@ Provides some common utilities shared throughout the project.
 
 local pretty = require 'pretty'
 local D      = require 'sol_debug'
+
+------------------------------------------------
+
 local U = {}
 
-function U.bimap(tb: table) -> table
-	for k, v in pairs(tb) do
-		assert(k, "bimap with 'false' is dangerous")
-		tb[v] = k
-	end
-	return tb
-end
+local PLATFORM = os.getenv("windir") and "win" or "unix"
 
 
 function U.pretty(arg)
@@ -41,6 +38,36 @@ function U.printf_err(fmt: string, ...)
 	if _G.g_spam then
 		os.exit(1)	
 	end
+end
+
+
+------------------------------------------------------
+-- Files:
+
+function U.write_protect(path: string) -> bool
+	if PLATFORM == "unix" then
+		return 0 == os.execute("chmod go-w " .. path)
+	else
+		return 0 == os.execute("attrib +R " .. path)
+	end
+end
+
+
+function U.write_unprotect(path: string) -> bool
+	if PLATFORM == "unix" then
+		return 0 == os.execute("chmod go+w " .. path)
+	else
+		return 0 == os.execute("attrib -R " .. path)
+	end
+end
+
+
+function U.bimap(tb: table) -> table
+	for k, v in pairs(tb) do
+		assert(k, "bimap with 'false' is dangerous")
+		tb[v] = k
+	end
+	return tb
 end
 
 
