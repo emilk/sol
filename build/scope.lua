@@ -1,6 +1,6 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol --]] local T = require 'type'
-local D = require 'sol_debug'
-local U = require 'util'
+--[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol --]] local T = require 'type' --[[SOL OUTPUT--]] 
+local D = require 'sol_debug' --[[SOL OUTPUT--]] 
+local U = require 'util' --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 
@@ -39,20 +39,20 @@ local U = require 'util'
 
 
 
-local S = {}
+local S = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 --[-[
 
 
 
-local Scope = {}
+local Scope = {} --[[SOL OUTPUT--]] 
 
 function Scope:new(parent)
-	local s = {}	
-	setmetatable(s, { __index = self })
-	s:init(parent)
-	return s
-end
+	local s = {} --[[SOL OUTPUT--]] 	
+	setmetatable(s, { __index = self }) --[[SOL OUTPUT--]] 
+	s:init(parent) --[[SOL OUTPUT--]] 
+	return s --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 --]]
 --[[
 require 'class'
@@ -66,41 +66,41 @@ end
 
 -- Constructor
 function Scope:init(parent)
-	self.parent          = parent
-	self.children        = { }
-	self.locals          = { }
-	self.globals         = { }
-	self.typedefs        = { } -- string -> T.Type     - simple typedefs:
-	self.global_typedefs = { }
-	self.fixed           = false
+	self.parent          = parent --[[SOL OUTPUT--]] 
+	self.children        = { } --[[SOL OUTPUT--]] 
+	self.locals          = { } --[[SOL OUTPUT--]] 
+	self.globals         = { } --[[SOL OUTPUT--]] 
+	self.typedefs        = { } --[[SOL OUTPUT--]]  -- string -> T.Type     - simple typedefs:
+	self.global_typedefs = { } --[[SOL OUTPUT--]] 
+	self.fixed           = false --[[SOL OUTPUT--]] 
 	
 	if parent then
-		table.insert(parent.children, self)
-	end
-end
+		table.insert(parent.children, self) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 -- Created the global top-level scope
 function Scope:get_global_scope()
-	Scope.global_scope = Scope.global_scope or Scope:create_global_scope()
-	return Scope.global_scope
-end
+	Scope.global_scope = Scope.global_scope or Scope:create_global_scope() --[[SOL OUTPUT--]] 
+	return Scope.global_scope --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:create_module_scope()
-	local top_scope = self:get_global_scope()
-	return Scope:new( top_scope )
-end
+	local top_scope = self:get_global_scope() --[[SOL OUTPUT--]] 
+	return Scope:new( top_scope ) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:is_module_level()
 	-- parent should be global scope, and so should have no parent
-	return self.parent and self.parent.parent == nil
-end
+	return self.parent and self.parent.parent == nil --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:create_global_scope()
-	local s = Scope:new()
-	local where = "[intrinsic]"  -- var.where
+	local s = Scope:new() --[[SOL OUTPUT--]] 
+	local where = "[intrinsic]" --[[SOL OUTPUT--]]   -- var.where
 
 
 	--[[
@@ -112,7 +112,7 @@ function Scope:create_global_scope()
 		'_G',
 		'coroutine', 'debug', 'io', 'math', 'os', 'package', 'string', 'table',
 		'jit'  -- luaJIT
-	}
+	} --[[SOL OUTPUT--]] 
 
 	local functions = {
 		'assert',
@@ -127,11 +127,11 @@ function Scope:create_global_scope()
 		'rawequal', 'rawget', 'rawset',
 		'select', 'setfenv',
 		'tonumber', 'tostring', 'unpack', 'xpcall',
-	}
+	} --[[SOL OUTPUT--]] 
 
 	for _,name in ipairs(tables) do
-		s:create_global( name, where, T.Object )
-	end
+		s:create_global( name, where, T.Object ) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	for _,name in ipairs(functions) do
 		local fun_t = {
@@ -141,70 +141,70 @@ function Scope:create_global_scope()
 			rets           = T.AnyTypeList,
 			name           = name,
 			intrinsic_name = name,
-		}
-		s:create_global( name, where, fun_t)
-	end
+		} --[[SOL OUTPUT--]] 
+		s:create_global( name, where, fun_t) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
-	s:create_global( '_VERSION', where, T.String )
-	s:create_global( 'arg', where, { tag = 'list', type = T.String} )
+	s:create_global( '_VERSION', where, T.String ) --[[SOL OUTPUT--]] 
+	s:create_global( 'arg', where, { tag = 'list', type = T.String} ) --[[SOL OUTPUT--]] 
 
 
 	-- Ensure 'require' is recognized by TypeCheck.sol
-	local require = s:create_global( 'require', where )
+	local require = s:create_global( 'require', where ) --[[SOL OUTPUT--]] 
 	require.type = {
 		tag            = "function",
 		args           = { { type = T.String } },
 		rets           = T.AnyTypeList,
 		name           = "require",
 		intrinsic_name = "require",
-	}
+	} --[[SOL OUTPUT--]] 
 
 	-- Ensure 'pairs' and 'ipairs' are recognized by TypeCheck.sol
-	local pairs = s:create_global( 'pairs', where )
+	local pairs = s:create_global( 'pairs', where ) --[[SOL OUTPUT--]] 
 	pairs.type = {
 		tag            = "function",
 		args           = { { type = T.Any } },
 		rets           = T.AnyTypeList,
 		intrinsic_name = "pairs",
 		name           = "pairs",
-	}
+	} --[[SOL OUTPUT--]] 
 
-	local ipairs_ = s:create_global( 'ipairs', where )
+	local ipairs_ = s:create_global( 'ipairs', where ) --[[SOL OUTPUT--]] 
 	ipairs_.type = {
 		tag            = "function",
 		args           = { { type = T.List } },
 		rets           = T.AnyTypeList,
 		intrinsic_name = "ipairs",
 		name           = "ipairs",
-	}
+	} --[[SOL OUTPUT--]] 
 
-	local setmetatable = s:create_global( 'setmetatable', where )
+	local setmetatable = s:create_global( 'setmetatable', where ) --[[SOL OUTPUT--]] 
 	setmetatable.type = {
 		tag            = "function",
 		args           = { {  type = T.Table }, { type = T.Table } },
 		rets           = { T.Table },
 		intrinsic_name = "setmetatable",
 		name           = "setmetatable",
-	}
+	} --[[SOL OUTPUT--]] 
 
-	local type = s:create_global( 'type', where )
+	local type = s:create_global( 'type', where ) --[[SOL OUTPUT--]] 
 	type.type = {
 		tag            = "function",
 		args           = { {        type = T.Any } },
 		rets           = { T.String },
 		intrinsic_name = "type",
 		name           = "type",
-	}
+	} --[[SOL OUTPUT--]] 
 
 
 	--s:declare_type( 'void',    T.Void ) -- Not a valid type, only allowed as a typelist
-	s:declare_type( 'bool',   T.Bool,   where )
-	s:declare_type( 'int',    T.Int,    where )
-	s:declare_type( 'uint',   T.Uint,   where )
-	s:declare_type( 'number', T.Num,    where )
-	s:declare_type( 'string', T.String, where )
-	s:declare_type( 'any',    T.Any,    where )
-	s:declare_type( 'table',  T.Table,  where )
+	s:declare_type( 'bool',   T.Bool,   where ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'int',    T.Int,    where ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'uint',   T.Uint,   where ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'number', T.Num,    where ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'string', T.String, where ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'any',    T.Any,    where ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'table',  T.Table,  where ) --[[SOL OUTPUT--]] 
 	--s:declare_type( 'list',   T.List,   where ) -- use: [any]
 	--s:declare_type( 'map',    T.Map,    where ) -- use: {any => any}
 	--s:declare_type( 'object', T.Object, where ) -- use: {}
@@ -215,21 +215,21 @@ function Scope:create_global_scope()
 	--s:declare_type( 'false',   T.False)
 
 	-- No more changes - user globals should be declared in module scope (a direct child)
-	s.fixed = true
+	s.fixed = true --[[SOL OUTPUT--]] 
 
-	return s
-end
+	return s --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:declare_type(name, type, where)
-	D.assert(not self.fixed)
-	D.assert(name) D.assert(where)
-	self.typedefs[name] = type
-end
+	D.assert(not self.fixed) --[[SOL OUTPUT--]] 
+	D.assert(name) --[[SOL OUTPUT--]]  D.assert(where) --[[SOL OUTPUT--]] 
+	self.typedefs[name] = type --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:create_local(name, where)
-	D.assert(not self.fixed)
+	D.assert(not self.fixed) --[[SOL OUTPUT--]] 
 
 	local v = {
 		scope      = self,
@@ -238,22 +238,22 @@ function Scope:create_local(name, where)
 		references = 1,
 		type       = nil,
 		where      = where,
-	}
+	} --[[SOL OUTPUT--]] 
 
-	table.insert(self.locals, v)
+	table.insert(self.locals, v) --[[SOL OUTPUT--]] 
 
-	return v
-end
+	return v --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:add_global(v)
-	assert(not self.fixed)
-	table.insert(self.globals, v)
-end
+	assert(not self.fixed) --[[SOL OUTPUT--]] 
+	table.insert(self.globals, v) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:create_global(name, where, type)
-	assert(not self.fixed)
+	assert(not self.fixed) --[[SOL OUTPUT--]] 
 
 	local v = {
 		scope      = self,
@@ -263,106 +263,107 @@ function Scope:create_global(name, where, type)
 		type       = nil,
 		where      = where,
 		type       = type,
-	}
+	} --[[SOL OUTPUT--]] 
 
-	self:add_global(v)
+	self:add_global(v) --[[SOL OUTPUT--]] 
 
-	return v
-end
+	return v --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:get_scoped_type(name)
-	return self.typedefs[name]
-end
+	return self.typedefs[name] --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:get_type(name)
-	local t = self:get_scoped_type(name)
-	if t then return t end
-	if self.parent then return self.parent:get_type(name) end
-	return nil
-end
+	local t = self:get_scoped_type(name) --[[SOL OUTPUT--]] 
+	if t then return t --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if self.parent then return self.parent:get_type(name) --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	return nil --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 -- Will only check local scope
 function Scope:get_scoped(name)
 	for _,v in ipairs(self.locals) do
-		if v.name == name then return v end
-	end
+		if v.name == name then return v --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
-	return nil
-end
+	return nil --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 -- Will check locals and parents
 function Scope:get_local(name)
-	local v = self:get_scoped(name)
-	if v then return v end
+	local v = self:get_scoped(name) --[[SOL OUTPUT--]] 
+	if v then return v --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	
 	if self.parent then
-		return self.parent:get_local(name)
-	end
-end
+		return self.parent:get_local(name) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 -- Global declared in this scope
 function Scope:get_scoped_global(name)
 	for k, v in ipairs(self.globals) do
-		if v.name == name then return v end
-	end
-end
+		if v.name == name then return v --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:get_global(name)
-	local v = self:get_scoped_global(name)
-	if v then return v end
+	local v = self:get_scoped_global(name) --[[SOL OUTPUT--]] 
+	if v then return v --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	
 	if self.parent then
-		return self.parent:get_global(name)
-	end
-end
+		return self.parent:get_global(name) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 -- Var declared in this scope
 function Scope:get_scoped_var(name)
-	return self:get_scoped(name) or self:get_scoped_global(name)
-end
+	return self:get_scoped(name) or self:get_scoped_global(name) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:get_var(name)
-	return self:get_local(name) or self:get_global(name)
-end
+	return self:get_local(name) or self:get_global(name) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:get_var_args()
-	local v = self:get_local('...')
+	local v = self:get_local('...') --[[SOL OUTPUT--]] 
 	
 	if v then
-		return v.type or T.Any
-	end
+		return v.type or T.Any --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	if self.parent then
-		return self.parent:get_var_args()
-	end
+		return self.parent:get_var_args() --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
-	return nil
-end
+	return nil --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:get_global_vars(list)
-	list = list or {}
-	U.table_join(list, self.globals)
+	list = list or {} --[[SOL OUTPUT--]] 
+	U.table_join(list, self.globals) --[[SOL OUTPUT--]] 
 	for _,c in ipairs(self.children) do
-		c:get_global_vars(list)
-	end
-	return list
-end
+		c:get_global_vars(list) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+	return list --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 function Scope:get_global_typedefs(list)
-	return U.shallow_clone( self.global_typedefs )
-end
+	return U.shallow_clone( self.global_typedefs ) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
-S.Scope = Scope
-return S
+S.Scope = Scope --[[SOL OUTPUT--]] 
+return S --[[SOL OUTPUT--]] 
+ --[[SOL OUTPUT--]] 

@@ -456,6 +456,10 @@ local function format_identity(ast, filename: string, insert_new_lines : bool?) 
 		end
 
 		t:on_end()
+
+		-- Ensure the lua code is easily spotted as something you shouldn't modify:
+		out:append_str(" --[[SOL OUTPUT--]] ")
+
 		debug_printf("/format_statment")
 	end
 

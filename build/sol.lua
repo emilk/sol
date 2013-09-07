@@ -1,85 +1,85 @@
 --[[ DO NOT MODIFY - COMPILED FROM sol/sol.sol --]] -- For running a .sol without outputting a .lua to disk
 -- TODO: compiler.sol continaing thing common to sol.sol and solc.sol
 
-local lfs  = require 'lfs'
-local path = require 'pl.path'
+local lfs  = require 'lfs' --[[SOL OUTPUT--]] 
+local path = require 'pl.path' --[[SOL OUTPUT--]] 
 
 ------------------------------------------------
 -- Setup local includes:
 -- Without this code 
 
-local sol_dir  = path.dirname(arg[0])
+local sol_dir  = path.dirname(arg[0]) --[[SOL OUTPUT--]] 
 
 if sol_dir == "" then
 	-- OK
 elseif path.isabs(sol_dir) then
-	sol_dir = sol_dir .. '/'
+	sol_dir = sol_dir .. '/' --[[SOL OUTPUT--]] 
 else
-	sol_dir = lfs.currentdir() .. '/' .. sol_dir .. '/'
-end
+	sol_dir = lfs.currentdir() .. '/' .. sol_dir .. '/' --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 -- Ensure the local includes work:
-package.path = sol_dir..'?.lua;' .. package.path
+package.path = sol_dir..'?.lua;' .. package.path --[[SOL OUTPUT--]] 
 	
 
 ------------------------------------------------
 
-local format_identity  = require 'format_identity'
-local Lexer           = require 'lexer'
-local Parser          = require 'parser'
-local S               = require 'scope'
-local T               = require 'type'
-local TypeCheck       = require 'type_check'
-local U            = require 'util'
-local printf_err = U.printf_err
+local format_identity  = require 'format_identity' --[[SOL OUTPUT--]] 
+local Lexer           = require 'lexer' --[[SOL OUTPUT--]] 
+local Parser          = require 'parser' --[[SOL OUTPUT--]] 
+local S               = require 'scope' --[[SOL OUTPUT--]] 
+local T               = require 'type' --[[SOL OUTPUT--]] 
+local TypeCheck       = require 'type_check' --[[SOL OUTPUT--]] 
+local U            = require 'util' --[[SOL OUTPUT--]] 
+local printf_err = U.printf_err --[[SOL OUTPUT--]] 
 
 
 local function compile_sol(source_text)
-	local filename = "input"
-	local settings = Parser.SOL_SETTINGS
+	local filename = "input" --[[SOL OUTPUT--]] 
+	local settings = Parser.SOL_SETTINGS --[[SOL OUTPUT--]] 
 
-	local st, tokens = Lexer.lex_sol(source_text, filename, settings)
+	local st, tokens = Lexer.lex_sol(source_text, filename, settings) --[[SOL OUTPUT--]] 
 	if not st then
-		os.exit(1)
-		return nil
-	end
+		os.exit(1) --[[SOL OUTPUT--]] 
+		return nil --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
-	local module_scope = S.Scope:create_module_scope()
+	local module_scope = S.Scope:create_module_scope() --[[SOL OUTPUT--]] 
 
-	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope)
+	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope) --[[SOL OUTPUT--]] 
 	if not st then
-		os.exit(2)
-		return nil
-	end
+		os.exit(2) --[[SOL OUTPUT--]] 
+		return nil --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	local on_require = function(name, where)
-		return T.Any
-	end
+		return T.Any --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
-	local st, type = TypeCheck(ast, filename, on_require, settings)
+	local st, type = TypeCheck(ast, filename, on_require, settings) --[[SOL OUTPUT--]] 
 
 	if not st then
-		os.exit(3)
-		return nil
-	end
+		os.exit(3) --[[SOL OUTPUT--]] 
+		return nil --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
-	local str = format_identity(ast, filename)
+	local str = format_identity(ast, filename) --[[SOL OUTPUT--]] 
 
-	return str
-end
+	return str --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 local function run_sol(sol)
-	local lua = compile_sol(sol)
+	local lua = compile_sol(sol) --[[SOL OUTPUT--]] 
 	if lua then
-		local f = loadstring(lua)
+		local f = loadstring(lua) --[[SOL OUTPUT--]] 
 		if f then
-			f()
+			f() --[[SOL OUTPUT--]] 
 		else
-			printf_err("loadstring returned nil")
-		end
-	end
-end
+			printf_err("loadstring returned nil") --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 
@@ -109,54 +109,55 @@ local function print_help()
 
 		AUTHOR
 			Emil Ernerfeldt
-		]])
-end
+		]]) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 
 if #arg == 0 then
-	print_help()
-	os.exit(-1)
+	print_help() --[[SOL OUTPUT--]] 
+	os.exit(-1) --[[SOL OUTPUT--]] 
 else
-	local g_write_lua = true
-	local g_out_dir = 'build/'  -- TODO: use penlight for this
-	local ix = 1
-	local num_files = 0
+	local g_write_lua = true --[[SOL OUTPUT--]] 
+	local g_out_dir = 'build/' --[[SOL OUTPUT--]]   -- TODO: use penlight for this
+	local ix = 1 --[[SOL OUTPUT--]] 
+	local num_files = 0 --[[SOL OUTPUT--]] 
 
 	while ix <= #arg do
-		local a = arg[ix]
-		ix = ix + 1
+		local a = arg[ix] --[[SOL OUTPUT--]] 
+		ix = ix + 1 --[[SOL OUTPUT--]] 
 
 		if a == '-h' or a == '--help' then
-			print_help()
+			print_help() --[[SOL OUTPUT--]] 
 		elseif a == '-s' then
-			_G.g_spam = true
+			_G.g_spam = true --[[SOL OUTPUT--]] 
 		elseif a == '-e0' then
-			_G.g_ignore_errors = true
+			_G.g_ignore_errors = true --[[SOL OUTPUT--]] 
 		else
-			local path_in = a
+			local path_in = a --[[SOL OUTPUT--]] 
 			if path.extension(path_in) ~= '.sol' then
-				printf_err( "Input file must have .sol ending" )
-				os.exit(-2)
-			end
+				printf_err( "Input file must have .sol ending" ) --[[SOL OUTPUT--]] 
+				os.exit(-2) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 
-			local sol = U.read_entire_file( path_in )
+			local sol = U.read_entire_file( path_in ) --[[SOL OUTPUT--]] 
 
 			if not sol then
-				printf_err( "Input file not found" )
-				os.exit(-3)
-			end
+				printf_err( "Input file not found" ) --[[SOL OUTPUT--]] 
+				os.exit(-3) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 
-			run_sol( sol )
+			run_sol( sol ) --[[SOL OUTPUT--]] 
 
-			num_files = num_files + 1
-		end
-	end
+			num_files = num_files + 1 --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	if num_files == 0 then
-		printf_err( "No input!" )
-		print_help()
-		os.exit(-1337)
-	end
-end
+		printf_err( "No input!" ) --[[SOL OUTPUT--]] 
+		print_help() --[[SOL OUTPUT--]] 
+		os.exit(-1337) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
-os.exit(0) -- Success
+os.exit(0) --[[SOL OUTPUT--]]  -- Success
+ --[[SOL OUTPUT--]] 

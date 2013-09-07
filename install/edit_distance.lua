@@ -49,67 +49,68 @@
 		v1.00 - Initial.
 ]]
 local function edit_distance( s, t, lim )
-	local s_len, t_len = #s, #t -- Calculate the sizes of the strings or arrays
+	local s_len, t_len = #s, #t --[[SOL OUTPUT--]]  -- Calculate the sizes of the strings or arrays
 	if lim and math.abs( s_len - t_len ) >= lim then -- If sizes differ by lim, we can stop here
-		return lim
-	end
+		return lim --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 	
 	-- Convert string arguments to arrays of ints (ASCII values)
 	if type( s ) == "string" then
-		s = { string.byte( s, 1, s_len ) }
-	end
+		s = { string.byte( s, 1, s_len ) } --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 	
 	if type( t ) == "string" then
-		t = { string.byte( t, 1, t_len ) }
-	end
+		t = { string.byte( t, 1, t_len ) } --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 	
-	local min = math.min -- Localize for performance
-	local num_columns = t_len + 1 -- We use this a lot
+	local min = math.min --[[SOL OUTPUT--]]  -- Localize for performance
+	local num_columns = t_len + 1 --[[SOL OUTPUT--]]  -- We use this a lot
 	
-	local d = {} -- (s_len+1) * (t_len+1) is going to be the size of this array
+	local d = {} --[[SOL OUTPUT--]]  -- (s_len+1) * (t_len+1) is going to be the size of this array
 	-- This is technically a 2D array, but we're treating it as 1D. Remember that 2D access in the
 	-- form my_2d_array[ i, j ] can be converted to my_1d_array[ i * num_columns + j ], where
 	-- num_columns is the number of columns you had in the 2D array assuming row-major order and
 	-- that row and column indices start at 0 (we're starting at 0).
 	
 	for i=0, s_len do
-		d[ i * num_columns ] = i -- Initialize cost of deletion
-	end
+		d[ i * num_columns ] = i --[[SOL OUTPUT--]]  -- Initialize cost of deletion
+	end --[[SOL OUTPUT--]] 
 	for j=0, t_len do
-		d[ j ] = j -- Initialize cost of insertion
-	end
+		d[ j ] = j --[[SOL OUTPUT--]]  -- Initialize cost of insertion
+	end --[[SOL OUTPUT--]] 
 	
 	for i=1, s_len do
-		local i_pos = i * num_columns
-		local best = lim -- Check to make sure something in this row will be below the limit
+		local i_pos = i * num_columns --[[SOL OUTPUT--]] 
+		local best = lim --[[SOL OUTPUT--]]  -- Check to make sure something in this row will be below the limit
 		for j=1, t_len do
-			local add_cost = (s[ i ] ~= t[ j ] and 1 or 0)
+			local add_cost = (s[ i ] ~= t[ j ] and 1 or 0) --[[SOL OUTPUT--]] 
 			local val = min(
 				d[ i_pos - num_columns + j     ] + 1,        -- Cost of deletion
 				d[ i_pos +               j - 1 ] + 1,        -- Cost of insertion
 				d[ i_pos - num_columns + j - 1 ] + add_cost  -- Cost of substitution, it might not cost anything if it's the same
-			)
-			d[ i_pos + j ] = val
+			) --[[SOL OUTPUT--]] 
+			d[ i_pos + j ] = val --[[SOL OUTPUT--]] 
 			
 			-- is this eligible for tranposition?
 			if i > 1 and j > 1 and s[ i ] == t[ j - 1 ] and s[ i - 1 ] == t[ j ] then
 				d[ i_pos + j ] = min(
 					val,                                                        -- Current cost
 					d[ i_pos - num_columns - num_columns + j - 2 ] + add_cost   -- Cost of transposition
-				)
-			end
+				) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 			
 			if lim and val < best then
-				best = val
-			end
-		end
+				best = val --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 		
 		if lim and best >= lim then
-			return lim
-		end
-	end
+			return lim --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 	
-	return d[ #d ]
-end
+	return d[ #d ] --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
-return edit_distance
+return edit_distance --[[SOL OUTPUT--]] 
+ --[[SOL OUTPUT--]] 

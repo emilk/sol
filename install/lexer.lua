@@ -1,20 +1,20 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol --]] local U = require 'util'
-local D = require 'sol_debug'
-local bimap = U.bimap
+--[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol --]] local U = require 'util' --[[SOL OUTPUT--]] 
+local D = require 'sol_debug' --[[SOL OUTPUT--]] 
+local bimap = U.bimap --[[SOL OUTPUT--]] 
 
-local WhiteChars   = bimap{' ', '\n', '\t', '\r'}
-local EscapeLookup = {['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'"}
+local WhiteChars   = bimap{' ', '\n', '\t', '\r'} --[[SOL OUTPUT--]] 
+local EscapeLookup = {['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'"} --[[SOL OUTPUT--]] 
 local LowerChars   = bimap{ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
                             'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-                            's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
+                            's', 't', 'u', 'v', 'w', 'x', 'y', 'z'} --[[SOL OUTPUT--]] 
 local UpperChars   = bimap{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
                            'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-                           'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}
-local Digits       = bimap{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
+                           'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'} --[[SOL OUTPUT--]] 
+local Digits       = bimap{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'} --[[SOL OUTPUT--]] 
 local HexDigits    = bimap{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                           'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'}
+                           'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'} --[[SOL OUTPUT--]] 
 
-local L = {}
+local L = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 -- The settings are found in Parser.sol
@@ -30,155 +30,155 @@ local L = {}
 
 
 function L.lex_sol(src, filename, settings)
-	assert(type(src) == 'string')
+	assert(type(src) == 'string') --[[SOL OUTPUT--]] 
 
-	local symbols  = settings.symbols
-	local keywords = settings.keywords
+	local symbols  = settings.symbols --[[SOL OUTPUT--]] 
+	local keywords = settings.keywords --[[SOL OUTPUT--]] 
 
 	--token dump
-	local tokens = {}
+	local tokens = {} --[[SOL OUTPUT--]] 
 
 	local function local_lexer()
 		--line / char / pointer tracking
-		local line, char, p = 1,1,1
+		local line, char, p = 1,1,1 --[[SOL OUTPUT--]] 
 
 		--get / peek functions
 		local function get()
-			local c = src:sub(p,p)
+			local c = src:sub(p,p) --[[SOL OUTPUT--]] 
 			if c == '\n' then
-				char = 1
-				line = line + 1
+				char = 1 --[[SOL OUTPUT--]] 
+				line = line + 1 --[[SOL OUTPUT--]] 
 			else
-				char = char + 1
-			end
-			p = p + 1
-			return c
-		end
+				char = char + 1 --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			p = p + 1 --[[SOL OUTPUT--]] 
+			return c --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
 		local function peek(n)
-			n = n or 0
-			return src:sub(p+n,p+n)
-		end
+			n = n or 0 --[[SOL OUTPUT--]] 
+			return src:sub(p+n,p+n) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
 		local function consume(chars)
-			local c = peek()
+			local c = peek() --[[SOL OUTPUT--]] 
 			for i = 1, #chars do
 				if c == chars:sub(i,i) then
-					return get()
-				end
-			end
-		end
+					return get() --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
 		--shared stuff
 		local function report_lexer_error(err, level)
-			D.break_()
-			level = level or 0
+			D.break_() --[[SOL OUTPUT--]] 
+			level = level or 0 --[[SOL OUTPUT--]] 
 			--return error(">> :"..line..":"..char..": "..err, level)
-			return error(filename..':'..line..': '..err, level)
-		end
+			return error(filename..':'..line..': '..err, level) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
 		-- returns content, long
 		local function try_get_long_string()
-			local start = p
+			local start = p --[[SOL OUTPUT--]] 
 			if peek() == '[' then
-				local equals_count = 0
-				local depth = 1
+				local equals_count = 0 --[[SOL OUTPUT--]] 
+				local depth = 1 --[[SOL OUTPUT--]] 
 				while peek(equals_count+1) == '=' do
-					equals_count = equals_count + 1
-				end
+					equals_count = equals_count + 1 --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 				if peek(equals_count+1) == '[' then
 					--start parsing the string. Strip the starting bit
-					for _ = 0, equals_count+1 do get() end
+					for _ = 0, equals_count+1 do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
 					--get the contents
-					local content_start = p
+					local content_start = p --[[SOL OUTPUT--]] 
 					while true do
 						--check for eof
 						if peek() == '' then
-							return report_lexer_error("Expected `]"..string.rep('=', equals_count).."]` near <eof>.", 3)
-						end
+							return report_lexer_error("Expected `]"..string.rep('=', equals_count).."]` near <eof>.", 3) --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 
 						--check for the end
-						local found_end = true
+						local found_end = true --[[SOL OUTPUT--]] 
 						if peek() == ']' then
 							for i = 1, equals_count do
-								if peek(i) ~= '=' then found_end = false end
-							end
+								if peek(i) ~= '=' then found_end = false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
 							if peek(equals_count+1) ~= ']' then
-								found_end = false
-							end
+								found_end = false --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
 						else
 							if peek() == '[' then
 								-- is there an embedded long string?
-								local embedded = true
+								local embedded = true --[[SOL OUTPUT--]] 
 								for i = 1, equals_count do
 									if peek(i) ~= '=' then
-										embedded = false
-										break
-									end
-								end
+										embedded = false --[[SOL OUTPUT--]] 
+										break --[[SOL OUTPUT--]] 
+									end --[[SOL OUTPUT--]] 
+								end --[[SOL OUTPUT--]] 
 								if peek(equals_count + 1) == '[' and embedded then
 									-- oh look, there was
-									depth = depth + 1
+									depth = depth + 1 --[[SOL OUTPUT--]] 
 									for i = 1, (equals_count + 2) do
-										get()
-									end
-								end
-							end
-							found_end = false
-						end
+										get() --[[SOL OUTPUT--]] 
+									end --[[SOL OUTPUT--]] 
+								end --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
+							found_end = false --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 						--
 						if found_end then
-							depth = depth - 1
+							depth = depth - 1 --[[SOL OUTPUT--]] 
 							if depth == 0 then
-								break
+								break --[[SOL OUTPUT--]] 
 							else
 								for i = 1, equals_count + 2 do
-									get()
-								end
-							end
+									get() --[[SOL OUTPUT--]] 
+								end --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
 						else
-							get()
-						end
-					end
+							get() --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 
 					--get the interior string
-					local content_string = src:sub(content_start, p-1)
+					local content_string = src:sub(content_start, p-1) --[[SOL OUTPUT--]] 
 
 					--found the end. get rid of the trailing bit
-					for i = 0, equals_count+1 do get() end
+					for i = 0, equals_count+1 do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
 					--get the exterior string
-					local long_string = src:sub(start, p-1)
+					local long_string = src:sub(start, p-1) --[[SOL OUTPUT--]] 
 
 					--return the stuff
-					return content_string, long_string
+					return content_string, long_string --[[SOL OUTPUT--]] 
 				else
-					return nil, nil
-				end
+					return nil, nil --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 			else
-				return nil, nil
-			end
-		end
+				return nil, nil --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
 
 		-- Will collect tokens for whites
 		local function get_leading_white_old()
 			--local leading_tokens = { }  -- Collect things in special white-tokens
-			local leading_tokens = nil    -- Don't bother
-			local start = p
+			local leading_tokens = nil --[[SOL OUTPUT--]]     -- Don't bother
+			local start = p --[[SOL OUTPUT--]] 
 
 			while true do
-				local c = peek()
+				local c = peek() --[[SOL OUTPUT--]] 
 
 				if line == 1 and c == '#' and peek(1) == '!' then
 					-- #! shebang for linux scripts
-					get()
-					get()
-					local shebang = "#!"
+					get() --[[SOL OUTPUT--]] 
+					get() --[[SOL OUTPUT--]] 
+					local shebang = "#!" --[[SOL OUTPUT--]] 
 					while peek() ~= '\n' and peek() ~= '' do
-						shebang = shebang .. get()
-					end
+						shebang = shebang .. get() --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 					if leading_tokens then
 						local token = {
 							type        = 'Comment',
@@ -186,38 +186,38 @@ function L.lex_sol(src, filename, settings)
 							data        = shebang,
 							line        = line,
 							char        = char
-						}
+						} --[[SOL OUTPUT--]] 
 						token.print = function()
-							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.data .." >"
-						end
-						table.insert(leading_tokens, token)
-					end
+							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.data .." >" --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+						table.insert(leading_tokens, token) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 
 				elseif c == ' ' or c == '\t' or c == '\n' or c == '\r' then
-					local white = get()
+					local white = get() --[[SOL OUTPUT--]] 
 					if leading_tokens then
-						table.insert(leading_tokens, { type = 'Whitespace', line = line, char = char, data = white })
-					end
+						table.insert(leading_tokens, { type = 'Whitespace', line = line, char = char, data = white }) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 
 				elseif c == '-' and peek(1) == '-' then
 					--comment
-					get()
-					get()
-					local comment = '--'
-					local _, whole_text = try_get_long_string()
-					local long_str = false
+					get() --[[SOL OUTPUT--]] 
+					get() --[[SOL OUTPUT--]] 
+					local comment = '--' --[[SOL OUTPUT--]] 
+					local _, whole_text = try_get_long_string() --[[SOL OUTPUT--]] 
+					local long_str = false --[[SOL OUTPUT--]] 
 
 					if whole_text then
 						-- Multiline comment
-						comment = comment .. whole_text
-						long_str = true
+						comment = comment .. whole_text --[[SOL OUTPUT--]] 
+						long_str = true --[[SOL OUTPUT--]] 
 					else
 						-- One-line comment
 						while peek() ~= '\n' and peek() ~= '' do
 							--comment = comment .. get()
-							get()	
-						end
-					end
+							get() --[[SOL OUTPUT--]] 	
+						end --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 
 					if leading_tokens then
 						local token = {
@@ -226,61 +226,61 @@ function L.lex_sol(src, filename, settings)
 							data        = comment,
 							line        = line,
 							char        = char,
-						}
+						} --[[SOL OUTPUT--]] 
 						token.print = function()
-							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.data .." >"
-						end
-						table.insert(leading_tokens, token)
-					end
+							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.data .." >" --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+						table.insert(leading_tokens, token) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 
 				else
-					break
-				end
-			end
+					break --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 
-			local white_str = src:sub(start, p-1)
+			local white_str = src:sub(start, p-1) --[[SOL OUTPUT--]] 
 
-			return white_str, leading_tokens
-		end
+			return white_str, leading_tokens --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
 
 		local function get_leading_white()
-			local start = p
+			local start = p --[[SOL OUTPUT--]] 
 
 			while true do
-				local c = peek()
+				local c = peek() --[[SOL OUTPUT--]] 
 
 				if c == ' ' or c == '\t' or c == '\n' or c == '\r' then
-					get()
+					get() --[[SOL OUTPUT--]] 
 
 				elseif c == '-' and peek(1) == '-' then
 					--comment
-					get()
-					get()
-					local comment = '--'
-					local _, whole_text = try_get_long_string()
+					get() --[[SOL OUTPUT--]] 
+					get() --[[SOL OUTPUT--]] 
+					local comment = '--' --[[SOL OUTPUT--]] 
+					local _, whole_text = try_get_long_string() --[[SOL OUTPUT--]] 
 
 					if not whole_text then
 						repeat
-							local n = get()
-						until n == '\n' or n == ''
-					end
+							local n = get() --[[SOL OUTPUT--]] 
+						until n == '\n' or n == '' --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 
 				elseif line == 1 and c == '#' and peek(1) == '!' then
 					-- #! shebang
-					get()
-					get()
+					get() --[[SOL OUTPUT--]] 
+					get() --[[SOL OUTPUT--]] 
 					repeat
-						local n = get()
-					until n == '\n' or n == ''
+						local n = get() --[[SOL OUTPUT--]] 
+					until n == '\n' or n == '' --[[SOL OUTPUT--]] 
 
 				else
-					break
-				end
-			end
+					break --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 
-			return src:sub(start, p-1)
-		end
+			return src:sub(start, p-1) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
 
 		--main token emitting loop
@@ -289,262 +289,263 @@ function L.lex_sol(src, filename, settings)
 			--preceding the token. This prevents the parser needing to deal with comments
 			--separately.
 			--local all_leading_white, leading_tokens = get_leading_white_old()
-			local all_leading_white = get_leading_white()
-			local leading_tokens = nil
+			local all_leading_white = get_leading_white() --[[SOL OUTPUT--]] 
+			local leading_tokens = nil --[[SOL OUTPUT--]] 
 
 			--get the initial char
-			local this_line = line
-			local this_char = char
-			local error_at = ":"..line..":"..char..":> "
-			local c = peek()
+			local this_line = line --[[SOL OUTPUT--]] 
+			local this_char = char --[[SOL OUTPUT--]] 
+			local error_at = ":"..line..":"..char..":> " --[[SOL OUTPUT--]] 
+			local c = peek() --[[SOL OUTPUT--]] 
 
 			--symbol to emit
-			local to_emit = nil
+			local to_emit = nil --[[SOL OUTPUT--]] 
 
 			--branch on type
 			if c == '' then
 				--eof
-				to_emit = { type = 'Eof' }
+				to_emit = { type = 'Eof' } --[[SOL OUTPUT--]] 
 
 			elseif UpperChars[c] or LowerChars[c] or c == '_' then
 				--ident or keyword
-				local start = p
+				local start = p --[[SOL OUTPUT--]] 
 				repeat
-					get()
-					c = peek()
-				until not (UpperChars[c] or LowerChars[c] or Digits[c] or c == '_')
-				local dat = src:sub(start, p-1)
+					get() --[[SOL OUTPUT--]] 
+					c = peek() --[[SOL OUTPUT--]] 
+				until not (UpperChars[c] or LowerChars[c] or Digits[c] or c == '_') --[[SOL OUTPUT--]] 
+				local dat = src:sub(start, p-1) --[[SOL OUTPUT--]] 
 				if keywords[dat] then
-					to_emit = {type = 'Keyword', data = dat}
+					to_emit = {type = 'Keyword', data = dat} --[[SOL OUTPUT--]] 
 				else
-					to_emit = {type = 'ident', data = dat}
-				end
+					to_emit = {type = 'ident', data = dat} --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 
 			elseif Digits[c] or (peek() == '.' and Digits[peek(1)]) then
 				--number const
-				local start = p
+				local start = p --[[SOL OUTPUT--]] 
 				if c == '0' and peek(1) == 'x' then
-					get()  -- 0
-					get()  -- x
-					while HexDigits[peek()] do get() end
+					get() --[[SOL OUTPUT--]]   -- 0
+					get() --[[SOL OUTPUT--]]   -- x
+					while HexDigits[peek()] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					if consume('Pp') then
-						consume('+-')
-						while Digits[peek()] do get() end
-					end
+						consume('+-') --[[SOL OUTPUT--]] 
+						while Digits[peek()] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 				else
-					while Digits[peek()] do get() end
+					while Digits[peek()] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					if consume('.') then
-						while Digits[peek()] do get() end
-					end
+						while Digits[peek()] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 					if consume('Ee') then
-						consume('+-')
-						while Digits[peek()] do get() end
-					end
-				end
-				to_emit = {type = 'Number', data = src:sub(start, p-1)}
+						consume('+-') --[[SOL OUTPUT--]] 
+						while Digits[peek()] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+				to_emit = {type = 'Number', data = src:sub(start, p-1)} --[[SOL OUTPUT--]] 
 
 			elseif c == '\'' or c == '\"' then
-				local start = p
+				local start = p --[[SOL OUTPUT--]] 
 				--string const
-				local delim = get()
-				local content_start = p
+				local delim = get() --[[SOL OUTPUT--]] 
+				local content_start = p --[[SOL OUTPUT--]] 
 				while true do
-					local c = get()
+					local c = get() --[[SOL OUTPUT--]] 
 					if c == '\\' then
-						get() --get the escape char
+						get() --[[SOL OUTPUT--]]  --get the escape char
 					elseif c == delim then
-						break
+						break --[[SOL OUTPUT--]] 
 					elseif c == '' then
-						return report_lexer_error("Unfinished string near <eof>")
-					end
-				end
-				local content = src:sub(content_start, p-2)
-				local constant = src:sub(start, p-1)
-				to_emit = {type = 'String', data = constant, Constant = content}
+						return report_lexer_error("Unfinished string near <eof>") --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+				local content = src:sub(content_start, p-2) --[[SOL OUTPUT--]] 
+				local constant = src:sub(start, p-1) --[[SOL OUTPUT--]] 
+				to_emit = {type = 'String', data = constant, Constant = content} --[[SOL OUTPUT--]] 
 
 			elseif c == '[' then
-				local content, wholetext = try_get_long_string()
+				local content, wholetext = try_get_long_string() --[[SOL OUTPUT--]] 
 				if wholetext then
-					to_emit = {type = 'String', data = wholetext, Constant = content}
+					to_emit = {type = 'String', data = wholetext, Constant = content} --[[SOL OUTPUT--]] 
 				else
-					get()
-					to_emit = {type = 'Symbol', data = '['}
-				end
+					get() --[[SOL OUTPUT--]] 
+					to_emit = {type = 'Symbol', data = '['} --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 
 			elseif consume('=') then
 				if consume('=') then
-					to_emit = {type = 'Symbol', data = '=='}
+					to_emit = {type = 'Symbol', data = '=='} --[[SOL OUTPUT--]] 
 				elseif settings.is_sol and consume('>') then
-					to_emit = {type = 'Symbol', data = '=>'}
+					to_emit = {type = 'Symbol', data = '=>'} --[[SOL OUTPUT--]] 
 				else
-					to_emit = {type = 'Symbol', data = '='}
-				end
+					to_emit = {type = 'Symbol', data = '='} --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 
 			elseif consume('><') then
 				if consume('=') then
-					to_emit = {type = 'Symbol', data = c..'='}  -- '>=' or '<='
+					to_emit = {type = 'Symbol', data = c..'='} --[[SOL OUTPUT--]]   -- '>=' or '<='
 				else
-					to_emit = {type = 'Symbol', data = c}       -- '>' or '<'
-				end
+					to_emit = {type = 'Symbol', data = c} --[[SOL OUTPUT--]]        -- '>' or '<'
+				end --[[SOL OUTPUT--]] 
 
 			elseif consume('~') then
 				if consume('=') then
-					to_emit = {type = 'Symbol', data = '~='}
+					to_emit = {type = 'Symbol', data = '~='} --[[SOL OUTPUT--]] 
 				else
-					return report_lexer_error("Unexpected symbol `~` in source.", 2)
-				end
+					return report_lexer_error("Unexpected symbol `~` in source.", 2) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 
 			elseif consume('.') then
 				if consume('.') then
 					if consume('.') then
-						to_emit = {type = 'Symbol', data = '...'}
+						to_emit = {type = 'Symbol', data = '...'} --[[SOL OUTPUT--]] 
 					else
-						to_emit = {type = 'Symbol', data = '..'}
-					end
+						to_emit = {type = 'Symbol', data = '..'} --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 				else
-					to_emit = {type = 'Symbol', data = '.'}
-				end
+					to_emit = {type = 'Symbol', data = '.'} --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 
 			elseif consume(':') then
 				if consume(':') then
-					to_emit = {type = 'Symbol', data = '::'}
+					to_emit = {type = 'Symbol', data = '::'} --[[SOL OUTPUT--]] 
 				elseif consume(':<') then
-					to_emit = {type = 'Symbol', data = ':<'} -- start of template function call, i.e. max:<int>()
+					to_emit = {type = 'Symbol', data = ':<'} --[[SOL OUTPUT--]]  -- start of template function call, i.e. max:<int>()
 				else
-					to_emit = {type = 'Symbol', data = ':'}
-				end
+					to_emit = {type = 'Symbol', data = ':'} --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 
 			elseif settings.function_types and consume('-') then
 				if consume('>') then
-					to_emit = {type = 'Symbol', data = '->'}
+					to_emit = {type = 'Symbol', data = '->'} --[[SOL OUTPUT--]] 
 				else
-					to_emit = {type = 'Symbol', data = '-'}
-				end
+					to_emit = {type = 'Symbol', data = '-'} --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 
 			elseif symbols[c] then
-				get()
-				to_emit = {type = 'Symbol', data = c}
+				get() --[[SOL OUTPUT--]] 
+				to_emit = {type = 'Symbol', data = c} --[[SOL OUTPUT--]] 
 
 			else
-				local contents, all = try_get_long_string()
+				local contents, all = try_get_long_string() --[[SOL OUTPUT--]] 
 				if contents then
-					to_emit = {type = 'String', data = all, Constant = contents}
+					to_emit = {type = 'String', data = all, Constant = contents} --[[SOL OUTPUT--]] 
 				else
-					return report_lexer_error("Unexpected Symbol `"..c.."` when paring in source.", 2)
-				end
-			end
+					return report_lexer_error("Unexpected Symbol `"..c.."` when paring in source.", 2) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 
 			--add the emitted symbol, after adding some common data
-			to_emit.leading_white = leading_tokens -- table of leading whitespace/comments
-			to_emit.all_leading_white = all_leading_white
+			to_emit.leading_white = leading_tokens --[[SOL OUTPUT--]]  -- table of leading whitespace/comments
+			to_emit.all_leading_white = all_leading_white --[[SOL OUTPUT--]] 
 			--for k, tok in pairs(leading_tokens) do
 			--  tokens[#tokens + 1] = tok
 			--end
 
-			to_emit.line = this_line
-			to_emit.char = this_char
+			to_emit.line = this_line --[[SOL OUTPUT--]] 
+			to_emit.char = this_char --[[SOL OUTPUT--]] 
 			to_emit.print = function()
-				return "<" .. to_emit.type .. string.rep(' ', 7-#to_emit.type) .. "  " .. (to_emit.data or '') .. " >"
-			end
-			tokens[#tokens+1] = to_emit
+				return "<" .. to_emit.type .. string.rep(' ', 7-#to_emit.type) .. "  " .. (to_emit.data or '') .. " >" --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			tokens[#tokens+1] = to_emit --[[SOL OUTPUT--]] 
 
 			--halt after eof has been emitted
-			if to_emit.type == 'Eof' then break end
-		end
-	end
+			if to_emit.type == 'Eof' then break --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
-	local st, err = pcall( local_lexer )
+	local st, err = pcall( local_lexer ) --[[SOL OUTPUT--]] 
 
 	if not st then
-		U.printf_err( "%s", err )
-		return false, err
-	end
+		U.printf_err( "%s", err ) --[[SOL OUTPUT--]] 
+		return false, err --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	--public interface:
-	local tok = {}
-	local p = 1
+	local tok = {} --[[SOL OUTPUT--]] 
+	local p = 1 --[[SOL OUTPUT--]] 
 	
 	function tok:getp()
-		return p
-	end
+		return p --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 	
 	function tok:setp(n)
-		p = n
-	end
+		p = n --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 	
 	function tok:get_token_list()
-		return tokens
-	end
+		return tokens --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 	
 	--getters
 	function tok:peek(n)
 		if n then
-			local ix = math.min(#tokens, p+n)
-			return tokens[ix]
+			local ix = math.min(#tokens, p+n) --[[SOL OUTPUT--]] 
+			return tokens[ix] --[[SOL OUTPUT--]] 
 		else
-			return tokens[math.min(#tokens, p)]
-		end
-	end
+			return tokens[math.min(#tokens, p)] --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	function tok:get(token_list)
-		local t = tokens[p]
-		p = math.min(p + 1, #tokens)
+		local t = tokens[p] --[[SOL OUTPUT--]] 
+		p = math.min(p + 1, #tokens) --[[SOL OUTPUT--]] 
 		if token_list then
-			table.insert(token_list, t)
-		end
-		return t
-	end
+			table.insert(token_list, t) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+		return t --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	function tok:get_ident(token_list)
 		if tok:is('ident') then
-			return tok:get(token_list).data
+			return tok:get(token_list).data --[[SOL OUTPUT--]] 
 		else
-			return nil
-		end
-	end
+			return nil --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	function tok:is(t)
-		return tok:peek().type == t
-	end
+		return tok:peek().type == t --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	-- either cosumes and returns the given symbil if there is one, or nil
 	function tok:consume_symbol(symb, token_list)
-		local t = self:peek()
+		local t = self:peek() --[[SOL OUTPUT--]] 
 		if t.type == 'Symbol' then
 			if t.data == symb then
-				return self:get(token_list)
+				return self:get(token_list) --[[SOL OUTPUT--]] 
 			else
-				return nil
-			end
+				return nil --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		else
-			return nil
-		end
-	end
+			return nil --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	function tok:consume_keyword(kw, token_list)
-		local t = self:peek()
+		local t = self:peek() --[[SOL OUTPUT--]] 
 		if t.type == 'Keyword' and t.data == kw then
-			return self:get(token_list)
+			return self:get(token_list) --[[SOL OUTPUT--]] 
 		else
-			return nil
-		end
-	end
+			return nil --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	function tok:is_keyword(kw)
-		local t = tok:peek()
-		return t.type == 'Keyword' and t.data == kw
-	end
+		local t = tok:peek() --[[SOL OUTPUT--]] 
+		return t.type == 'Keyword' and t.data == kw --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	function tok:is_symbol(s)
-		local t = tok:peek()
-		return t.type == 'Symbol' and t.data == s
-	end
+		local t = tok:peek() --[[SOL OUTPUT--]] 
+		return t.type == 'Symbol' and t.data == s --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	function tok:is_eof()
-		return tok:peek().type == 'Eof'
-	end
+		return tok:peek().type == 'Eof' --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
-	return true, tok
-end
+	return true, tok --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
-return L
+return L --[[SOL OUTPUT--]] 
+ --[[SOL OUTPUT--]] 
