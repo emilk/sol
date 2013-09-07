@@ -256,23 +256,9 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	analyze_expr = function(expr, scope)
-		local type, var_ --[[SOL OUTPUT--]] 
 
-		if true then
-			type, var_ = analyze_expr_unchecked(expr, scope) --[[SOL OUTPUT--]] 
-		else
-			-- catches 'error':s in e.g. type
-			local st --[[SOL OUTPUT--]] 
-			st, type, var_ = pcall( analyze_expr_unchecked, expr, scope ) --[[SOL OUTPUT--]] 
-			if not st then
-				local err_msg = string.sub(type, 256) --[[SOL OUTPUT--]]  -- Limit msg length
-				report_error(expr, "Error type-checking expression of type '%s': %s", expr.ast_type, err_msg) --[[SOL OUTPUT--]] 
-
-				-- Show stack-trace:
-				analyze_expr_unchecked(expr, scope) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
+	analyze_expr = function(expr, scope) --> T.Type or T.Typelist, Variable?  -- TODO
+		local type, var_ = analyze_expr_unchecked(expr, scope) --[[SOL OUTPUT--]] 
 
 		D.assert(T.is_type(type)  or  T.is_type_list(type)) --[[SOL OUTPUT--]] 
 
@@ -285,6 +271,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		return type, var_ --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
+
 
 	-- Will make sure to return a single type, never void or multiple returns
 	analyze_expr_single = function(expr, scope)
@@ -1638,7 +1625,7 @@ local function analyze(ast, filename, on_require, settings)
 		local name = stat.type_name --[[SOL OUTPUT--]] 
 
 		if stat.namespace_name then
-			local v = scope:get_var( stat.namespace_name ) --[[SOL OUTPUT--]] 
+			local v = scope:get_var( stat.namespace_name ) --[[SOL OUTPUT--]]  -- TODO: var
 
 			if not v then
 				report_error(stat, "namespaced typedef: %s is not a previously defined variable", stat.namespace_name) --[[SOL OUTPUT--]] 

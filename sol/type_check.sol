@@ -94,7 +94,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	local function fancy_format(fmt: string, ...)
-		local buf = {}
+		var<[any]> buf = {}
 		for i = 1, select( '#', ... ) do
 			local a = select( i, ... )
 			if type(a) == 'table' and a.ast_type then
@@ -256,23 +256,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 	end
 
-	analyze_expr = function(expr, scope: Scope)
-		local type, var_
 
-		if true then
-			type, var_ = analyze_expr_unchecked(expr, scope)
-		else
-			-- catches 'error':s in e.g. type
-			local st
-			st, type, var_ = pcall( analyze_expr_unchecked, expr, scope )
-			if not st then
-				local err_msg = string.sub(type, 256) -- Limit msg length
-				report_error(expr, "Error type-checking expression of type '%s': %s", expr.ast_type, err_msg)
-
-				-- Show stack-trace:
-				analyze_expr_unchecked(expr, scope)
-			end
-		end
+	analyze_expr = function(expr: P.Node, scope: Scope) --> T.Type or T.Typelist, Variable?  -- TODO
+		local type, var_ = analyze_expr_unchecked(expr, scope)
 
 		D.assert(T.is_type(type)  or  T.is_type_list(type))
 
@@ -285,6 +271,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		return type, var_
 	end
+
 
 	-- Will make sure to return a single type, never void or multiple returns
 	analyze_expr_single = function(expr: P.ExprNode, scope: Scope) -> T.Type, Variable?
@@ -811,7 +798,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		--------------------------------------------------------
 		-- get argument types (they will be evaluated regardless of function type):
 
-		local args = U.shallow_clone( expr.arguments )
+		var<[P.ExprNode]> args = U.shallow_clone( expr.arguments )
 
 		var called_as_mem_fun = (expr.base.ast_type == 'MemberExpr' and expr.base.indexer == ':')
 
@@ -1638,7 +1625,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		local name = stat.type_name
 
 		if stat.namespace_name then
-			local v = scope:get_var( stat.namespace_name )
+			var<Variable?> v = scope:get_var( stat.namespace_name ) -- TODO: var
 
 			if not v then
 				report_error(stat, "namespaced typedef: %s is not a previously defined variable", stat.namespace_name)

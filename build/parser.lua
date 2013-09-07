@@ -593,8 +593,10 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 	} --[[SOL OUTPUT--]] 
 
 	parse_sub_expr = function(scope, level)
+		local st = false --[[SOL OUTPUT--]] 
+		local exp = nil --[[SOL OUTPUT--]] 
+
 		--base item, possibly with unop prefix
-		local st, exp --[[SOL OUTPUT--]] 
 		if unops[tok:peek().data] then
 			local token_list = {} --[[SOL OUTPUT--]] 
 			local op = tok:get(token_list).data --[[SOL OUTPUT--]] 
@@ -602,10 +604,9 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			if not st then return false, exp --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			local node_ex = {
 				ast_type = 'UnopExpr';
-				rhs     = exp;
-				op      = op;
-				op_precedence = unopprio;
-				tokens  = token_list;
+				rhs      = exp;
+				op       = op;
+				tokens   = token_list;
 			} --[[SOL OUTPUT--]] 
 			exp = node_ex --[[SOL OUTPUT--]] 
 		else
@@ -623,11 +624,10 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				if not st then return false, rhs --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				local node_ex = {
 					ast_type = 'BinopExpr';
-					lhs     = exp;
-					op      = op;
-					op_precedence = prio[1];
-					rhs     = rhs;
-					tokens  = token_list;
+					lhs      = exp;
+					op       = op;
+					rhs      = rhs;
+					tokens   = token_list;
 				} --[[SOL OUTPUT--]] 
 				--
 				exp = node_ex --[[SOL OUTPUT--]] 

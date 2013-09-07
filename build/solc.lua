@@ -78,6 +78,8 @@ local g_modules = {} --[[SOL OUTPUT--]]
 
 local FAIL_INFO = { ast = nil, type = T.Any } --[[SOL OUTPUT--]] 
 
+local g_did_warn_about = {} --[[SOL OUTPUT--]] 
+
 
 -- Find path to a module given it's name, and the path to the file doing the require:ing
 local function find_moudle(path_in, mod_name)
@@ -177,8 +179,10 @@ local function parse_module_str(chain, path_in, source_text)
 				return T.Void --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		else
-			--printf_err('Failed to find module %q', mod_name)
-			U.printf('Failed to find module %q', mod_name) --[[SOL OUTPUT--]] 
+			if not g_did_warn_about[mod_name:lower()] then
+				g_did_warn_about[mod_name:lower()] = true --[[SOL OUTPUT--]] 
+				U.printf('Failed to find module %q', mod_name) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 			return T.Any --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -233,7 +237,7 @@ parse_module = function(chain, path_in)
 	local source_text = U.read_entire_file( path_in ) --[[SOL OUTPUT--]] 
 
 	if not source_text then
-		printf_err("'Failed to find module %q", path_in) --[[SOL OUTPUT--]] 
+		printf_err("'Failed to read %q", path_in) --[[SOL OUTPUT--]] 
 		g_modules[module_name] = FAIL_INFO --[[SOL OUTPUT--]] 
 		return FAIL_INFO --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

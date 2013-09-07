@@ -30,7 +30,7 @@ function U.printf(fmt: string, ...)
 end
 
 
-function U.ellipsis(msg: string, max_len: int?)
+function U.ellipsis(msg: string, max_len: int?) -> string
 	max_len = max_len or 1024
 
 	if #msg <= max_len then

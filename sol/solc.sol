@@ -78,6 +78,8 @@ var<{string => parse_info or CURRENTLY_PARSING}> g_modules = {}
 
 local FAIL_INFO = { ast = nil, type = T.Any }
 
+var<{string => bool}> g_did_warn_about = {}
+
 
 -- Find path to a module given it's name, and the path to the file doing the require:ing
 local function find_moudle(path_in: string, mod_name: string) -> string?
@@ -177,8 +179,10 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 				return T.Void
 			end
 		else
-			--printf_err('Failed to find module %q', mod_name)
-			U.printf('Failed to find module %q', mod_name)
+			if not g_did_warn_about[mod_name:lower()] then
+				g_did_warn_about[mod_name:lower()] = true
+				U.printf('Failed to find module %q', mod_name)
+			end
 			return T.Any
 		end
 	end
@@ -233,7 +237,7 @@ parse_module = function(chain: [string], path_in: string) -> parse_info
 	local source_text = U.read_entire_file( path_in )
 
 	if not source_text then
-		printf_err("'Failed to find module %q", path_in)
+		printf_err("'Failed to read %q", path_in)
 		g_modules[module_name] = FAIL_INFO
 		return FAIL_INFO
 	end

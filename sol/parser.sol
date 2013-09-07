@@ -593,8 +593,10 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	}
 
 	parse_sub_expr = function(scope, level) -> bool, ExprNode_or_error
+		var<bool> st = false
+		var<{}?> exp = nil
+
 		--base item, possibly with unop prefix
-		local st, exp
 		if unops[tok:peek().data] then
 			local token_list = {}
 			local op = tok:get(token_list).data
@@ -602,10 +604,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			if not st then return false, exp end
 			local node_ex = {
 				ast_type = 'UnopExpr';
-				rhs     = exp;
-				op      = op;
-				op_precedence = unopprio;
-				tokens  = token_list;
+				rhs      = exp;
+				op       = op;
+				tokens   = token_list;
 			}
 			exp = node_ex
 		else
@@ -623,11 +624,10 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				if not st then return false, rhs end
 				local node_ex = {
 					ast_type = 'BinopExpr';
-					lhs     = exp;
-					op      = op;
-					op_precedence = prio[1];
-					rhs     = rhs;
-					tokens  = token_list;
+					lhs      = exp;
+					op       = op;
+					rhs      = rhs;
+					tokens   = token_list;
 				}
 				--
 				exp = node_ex
