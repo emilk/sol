@@ -230,7 +230,6 @@ end
 
 function Scope:create_local(name: string, where: string) -> S.Variable
 	D.assert(not self.fixed)
-	D.assert(name and where)
 
 	local v = {
 		scope      = self,
@@ -255,7 +254,6 @@ end
 
 function Scope:create_global(name: string, where: string, type: T.Type) -> S.Variable
 	assert(not self.fixed)
-	assert(name and where)
 
 	local v = {
 		scope      = self,
@@ -309,8 +307,6 @@ end
 
 -- Global declared in this scope
 function Scope:get_scoped_global(name: string) -> S.Variable ?
-	assert(name and name ~= '')
-
 	for k, v in ipairs(self.globals) do
 		if v.name == name then return v end
 	end

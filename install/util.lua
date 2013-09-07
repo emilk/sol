@@ -122,6 +122,10 @@ function U.is_array(val)
 		return false
 	end
 
+	if getmetatable(val) ~= nil then
+		return false
+	end
+
 	local max, n = 0, 0
 
 	for ix, _ in pairs(val) do
@@ -139,7 +143,8 @@ end
 
 function U.bimap(tb)
 	for k, v in pairs(tb) do
-		assert(k, "bimap with 'false' is dangerous")
+		D.assert(k, "bimap with 'false' is dangerous")
+		--D.assert(not tb[v], "bimap clashes") since we iterate over outselves, this is a bad idea
 		tb[v] = k
 	end
 	return tb
@@ -181,6 +186,32 @@ function U.shallow_clone(t)
 	return t2
 end
 
+function U.table_clear(t)
+	for k,v in pairs(t) do
+		t[k] = nil
+	end
+end
+
+
+------------------------------------------------------
+
+-- Write-protects existing table against all modification
+function U.write_protect_table(table)
+	-- TODO: only in debug/development
+
+	local clone = U.shallow_clone(table)
+
+	assert(getmetatable(table) == nil)
+	U.table_clear(table)
+
+	setmetatable(table, {
+		__index    = clone,
+		__newindex = function(table, key, value)
+			D.error("Attempt to modify read-only table")
+		end,
+		__metatable = 'This is a read-only table' -- disallow further meta-tabling
+	})
+end
 
 ------------------------------------------------------
 

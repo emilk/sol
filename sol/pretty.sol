@@ -68,14 +68,14 @@ end
 -- ignore_set   - ignore these key:s
 -- indent      - indent on any _subsequent_ line
 -- discovered  - set of tables already processed (used to discover loops)
-function M.serialize_to_rope(rope, val, ignore_set, indent: string?, discovered) -> void
+function M.serialize_to_rope(rope, val, ignore_set, indent: string?, discovered: {table => bool}?) -> void
 	if val == nil then
 		rope[#rope+1] = "nil"
 		return
 	end
 
-	ignore_set  = ignore_set or {}
-	indent     = indent or ""
+	ignore_set = ignore_set or {}
+	indent     = indent     or ""
 	discovered = discovered or {}
 	
 	if type(val) == "table" then

@@ -22,7 +22,7 @@ print = function(msg)
 end
 --]]
 
-io.stdout:setvbuf 'no'
+--io.stdout:setvbuf 'no'
 local lfs  = require 'lfs'
 local path = require 'pl.path'
 

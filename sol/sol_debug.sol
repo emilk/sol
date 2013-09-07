@@ -17,14 +17,16 @@ function D.activate()
 	D.active = true
 end
 
-function D.assert(bool_expr, ...)
+function D.assert(bool_expr, fmt: string?, ...)
+	--D.active = true
+
 	if bool_expr then
 		return bool_expr
 	elseif D.active then
 		local dbg = D.get_lib()
-		return dbg.assert(bool_expr, ...)
+		return dbg.assert(bool_expr, fmt, ...)
 	else
-		return assert(bool_expr, ...)
+		return assert(bool_expr, fmt, ...)
 	end
 end
 
@@ -36,9 +38,10 @@ function D.break_()
 	end
 end
 
-function D.error(...)
+function D.error(msg: string)
+	print("ERROR: " .. msg)
 	D.break_()
-	error(...)
+	error(msg)
 end
 
 return D

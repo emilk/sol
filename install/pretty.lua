@@ -74,8 +74,8 @@ function M.serialize_to_rope(rope, val, ignore_set, indent, discovered)
 		return
 	end
 
-	ignore_set  = ignore_set or {}
-	indent     = indent or ""
+	ignore_set = ignore_set or {}
+	indent     = indent     or ""
 	discovered = discovered or {}
 	
 	if type(val) == "table" then

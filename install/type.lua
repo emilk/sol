@@ -219,6 +219,9 @@ function T.follow_identifiers(t, forgiving)
 				t.type = T.Any
 			end
 		end
+
+		-- No more need to write to it:
+		U.write_protect_table(t) -- TODO
 	end
 
 	return T.follow_identifiers(t.type)
@@ -288,6 +291,9 @@ end
 
 
 function T.is_obj_obj(d, b, problem_rope)
+	assert(d.tag == 'object')
+	assert(b.tag == 'object')
+
 	for id, b_type in pairs(b.members) do
 		local d_type = d.members[id]
 		if not d_type then
@@ -932,17 +938,17 @@ end
 
 
 -- Remove a type from a variant
-function T.variant_remove(v, remove_this_type)
-	v = T.follow_identifiers(v)
+function T.variant_remove(t, remove_this_type)
+	t = T.follow_identifiers(t)
 
 	assert(not T.is_any(remove_this_type))
 
-	if T.is_any(v) then
-		return v
+	if T.is_any(t) then
+		return t
 	end
 
-	v = T.make_variant(v)
-	assert( T.is_variant(v) )
+	local v = T.make_variant(t)
+	assert(v ~= t)
 
 	local i = 1
 	while i <= #v.variants do
@@ -979,7 +985,7 @@ end
 
 -- Return a or b
 function T.variant(a, b)
-	if a == b then return a end
+	if a == b   then return a end
 	if a == nil then return b end
 	if b == nil then return a end
 	a = T.follow_identifiers(a) -- FIXME
@@ -1037,6 +1043,7 @@ function T.combine(a, b)
 end
 
 
+-- TODO: make arguments : T.Typelist?
 function T.combine_type_lists(a, b, forgiving)
 	--forgiving = forgiving or true
 	if forgiving == nil then
@@ -1053,15 +1060,22 @@ function T.combine_type_lists(a, b, forgiving)
 	if a == T.AnyTypeList then return T.AnyTypeList end
 	if b == T.AnyTypeList then return T.AnyTypeList end
 
-	a = T.as_type_list(a)
-	b = T.as_type_list(b)
+	D.assert(T.is_type_list(a))
+	D.assert(T.is_type_list(b))
 
-	if forgiving then -- TODO: if forgiving
-		while #a < #b do
-			table.insert(a, T.Nil)
+	if forgiving then
+		if #a < #b  then
+			a = U.shallow_clone(a)
+			while #a < #b do
+				table.insert(a, T.Nil)
+			end
 		end
-		while #b < #a do
-			table.insert(b, T.Nil)
+
+		if #b < #a  then
+			b = U.shallow_clone(b)
+			while #b < #a do
+				table.insert(b, T.Nil)
+			end
 		end
 	end
 
@@ -1076,11 +1090,7 @@ function T.combine_type_lists(a, b, forgiving)
 				U.printf('variant(%s, %s) = %s', T.name(a[i]), T.name(b[i]), T.name(ret[i]))
 			end
 		end
-		if #a == 1 then
-			return ret[1]
-		else
-			return ret
-		end
+		return ret
 	end
 end
 

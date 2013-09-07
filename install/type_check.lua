@@ -278,7 +278,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		if T.is_type_list(t) then
 			if #t == 0 then
-				report_error(expr, "Analyzing '%'s expression: Expected type, got void")
+				report_error(expr, "Analyzing '%s' expression: Expected type, got void", expr.ast_type)
 				return T.Any, v
 			elseif #t == 1 then
 				return t[1], v
@@ -1222,6 +1222,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		elseif expr.ast_type == 'IndexExpr' then
 			-- base[index]
+			-- TODO: var
 			local base_t  = analyze_expr_single(expr.base, scope)
 			local index_t = analyze_expr_single(expr.index, scope)
 
@@ -1236,21 +1237,27 @@ local function analyze(ast, filename, on_require, settings)
 			else
 				local list = T.find(base_t, T.List) -- TODO: find all lists and variant the reuslts
 				if list then
+					report_spam(expr, "List index")
 					check_type_is_a("List index", expr.index, index_t, T.Uint, 'error')
 					if list.type then
+						if _G.g_spam then
+							report_spam(expr, "List index: indexing %s, element type is %s", T.name(list), T.name(list.type))
+						end
 						return list.type
 					else
 						return T.Any -- FIXME
 					end
 				end
 
-				local map = T.find(base_t, T.Map) -- TODO: find all maps and variant the reuslts
+				local map = T.find(base_t, T.Map) -- TODO: find all maps and variant the results
 				if map then
+					report_spam(expr, "Map index")
 					check_type_is_a("Map index", expr.index, index_t, map.key_type, 'error')
 					return T.variant(map.value_type, T.Nil)  -- Nil on not found
 				end
 
 				if T.find(base_t, T.Table) then
+					report_spam(expr, "Table index")
 					return T.Any
 				end
 
@@ -1423,8 +1430,79 @@ local function analyze(ast, filename, on_require, settings)
 	end
 
 
+	local function assign_to_obj_member(stat, scope, is_pre_analyze, is_declare,
+		                                 obj_t, name, right_type)
+	 											--> T.Type -- TODO: have this here
+
+
+		report_spam(stat, "Exisiting object")
+
+		local left_type = obj_t.members[name]
+
+		if left_type and left_type.pre_analyzed then
+			if right_type.pre_analyzed and is_pre_analyze then
+				report_error(stat, "Name clash?")
+			else
+				D.assert(not right_type.pre_analyzed)
+			end
+
+			-- The member type was reached by the pre-analyzer - overwrite with refined info:
+			
+			--obj_t.members[name] = nil  -- TODO: makes compilation hang!
+			left_type = nil
+
+			if _G.g_spam then
+				report_spam(stat, "Replacing pre-analyzed type with refined type: '%s'", T.name(right_type))
+			end
+		end
+
+		if left_type then
+			report_spam(stat, "Object already has member")
+			left_type = T.broaden( left_type ) -- Previous value may have been 'false' - we should allow 'true' now:
+
+			if not T.could_be(right_type, left_type) then
+				report_error(stat, "[B] type clash: cannot assign to '%s' (type '%s') with '%s'", name, T.name(left_type), T.name(right_type))
+			end
+
+			return obj_t
+		else
+			if not obj_t.members[name] then
+				if not is_declare then
+					local close_name = loose_lookup(obj_t.members, name)
+
+					if close_name then
+						report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name)
+					end
+				end
+
+				report_spam(stat, "Adding member")
+			end
+
+			obj_t = U.shallow_clone( obj_t )
+			obj_t.members = U.shallow_clone( obj_t.members )
+
+			--[[
+			We do not broaden the type here, to make sure the following code works:
+
+			typedef Foo = { tag : 'foo '}
+
+			function fun() -> Foo
+				local ret = {}
+				ret.tag = 'foo'  -- No broadeding! tag is 'foo', not string
+				return ret
+			end
+			--]]
+			obj_t.members[name] = right_type
+
+			return obj_t
+		end
+	end
+
+
 	local function do_assignment(stat, scope, left_expr, right_type, is_pre_analyze)
 		assert(not T.is_type_list(right_type))
+
+		local is_declare = (stat.ast_type == 'FunctionDeclStatement')
 
 		if right_type.namespace then
 			report_error(stat, "Cannot assign namespace outside of declaration")
@@ -1473,7 +1551,7 @@ local function analyze(ast, filename, on_require, settings)
 							return true
 						end
 					else
-						if not base_t.members[name] then
+						if not is_declare and not base_t.members[name] then
 							local close_name = loose_lookup(base_t.members, name)
 
 							if close_name then
@@ -1516,70 +1594,24 @@ local function analyze(ast, filename, on_require, settings)
 
 				-- HACK: do more nicely:
 				if var_t.tag == 'variant' then
+					local variant = T.clone_variant(var_t)
 
+					for i,v in ipairs(variant.variants) do
+						if v.tag == 'object' then
+							variant.variants[i] = assign_to_obj_member(stat, scope, is_pre_analyze, is_declare,
+								                                        v, name, right_type)	
+						end
+					end
+
+					--[[
 					local obj_t = T.find(var_t, T.Object)
 					if obj_t then
 						var_t = T.follow_identifiers( obj_t )
 					end
-				end
-
-				if var_t.tag == 'object' then
-					report_spam(stat, "Exisiting object")
-
-					local left_type = var_t.members[name]
-
-					if left_type and left_type.pre_analyzed then
-						-- The member type was reached by the pre-analyzer - overwrite with refined info:
-						D.assert(not right_type.pre_analyzed)
-						--var_t.members[name] = nil  -- TODO: makes compilation hang!
-						left_type = nil
-
-						if _G.g_spam then
-							report_spam(stat, "Replacing pre-analyzed type with refined type: '%s'", T.name(right_type))
-						end
-					end
-
-					if left_type then
-						report_spam(stat, "Object already has member")
-						left_type = T.broaden( left_type ) -- Previous value may have been 'false' - we should allow 'true' now:
-
-						if not T.could_be(right_type, left_type) then
-							report_error(stat, "[B] type clash: cannot assign to '%s' (type '%s') with '%s'", name, T.name(left_type), T.name(right_type))
-							return false
-						else
-							return true
-						end
-					else
-						if not var_t.members[name] then
-							local close_name = loose_lookup(var_t.members, name)
-
-							if close_name then
-								report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name)
-							end
-
-							report_spam(stat, "Adding member")
-						end
-
-						--var<T.Object> obj_t = var_t
-						local obj_t = U.shallow_clone( var_t )
-						obj_t.members = U.shallow_clone( obj_t.members )
-
-						--[[
-						We do not broaden the type here, to make sure the following code works:
-
-						typedef Foo = { tag : 'foo '}
-
-						function fun() -> Foo
-							local ret = {}
-							ret.tag = 'foo'  -- No broadeding! tag is 'foo', not string
-							return ret
-						end
-						--]]
-						obj_t.members[name] = right_type
-
-						base_var.type = obj_t
-						return true
-					end
+					]]
+				elseif var_t.tag == 'object' then
+					base_var.type = assign_to_obj_member(stat, scope, is_pre_analyze, is_declare, var_t, name, right_type)	
+					return
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
@@ -1588,6 +1620,7 @@ local function analyze(ast, filename, on_require, settings)
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
 					report_warning(stat, "[B] Trying to index non-object of type '%s' with '%s'", T.name(var_t), name)
+					--D.break_()
 				end
 			end
 		end
@@ -1931,8 +1964,7 @@ local function analyze(ast, filename, on_require, settings)
 			else
 				-- function foo:bar(arg)
 				D.assert(stat.name)
-				--fun_t.name = stat.name.name
-				fun_t.name = 'its_complicated' -- TODO!
+				fun_t.name = format_expr(stat.name)
 
 				if stat.name.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
@@ -1941,6 +1973,8 @@ local function analyze(ast, filename, on_require, settings)
 
 				do_assignment(stat, scope, stat.name, fun_t, is_pre_analyze)
 			end
+
+			-- Now analyze body:
 			analyze_function_body( stat, fun_t )
 
 
