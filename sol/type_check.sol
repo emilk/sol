@@ -836,8 +836,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				if _G.g_spam then
 					report_spam(expr, "Function call cannot be deduced - calling something of unknown type: '%s'", T.name(fun_type))
 				end
-
 				return T.AnyTypeList
+
 			elseif typ.tag == 'function' then
 				var<T.Function> fun_t = typ
 				local is_mem_fun = (#fun_t.args > 0 and fun_t.args[1].name == 'self')
@@ -855,6 +855,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				local rets = analyze_fun_call(expr, fun_t, args, arg_ts, report_errors)
 				D.assert( rets==nil or T.is_type_list(rets) )
 				return rets
+
 			elseif typ.tag == 'variant' then
 				var<T.Typelist?> rets = nil
 				for _,v in ipairs(typ.variants) do
@@ -863,6 +864,18 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 				D.assert( T.is_type_list(rets) )
 				return rets
+
+			elseif typ.tag == 'object' and typ.metatable and typ.metatable.members['__call'] then
+				report_spam(expr, "__call")
+				var call_t = typ.metatable.members['__call']
+
+				var ext_args   = U.list_concat({expr.base}, args)
+				var ext_arg_ts = U.list_concat({fun_type}, arg_ts)
+
+				var rets = analyze_fun_call(expr, call_t, ext_args, ext_arg_ts, report_errors)
+				D.assert( rets==nil or T.is_type_list(rets) )
+				return rets
+
 			elseif report_errors then
 				report_error(expr, "Cannot call '%s'", T.name(typ))
 				return nil

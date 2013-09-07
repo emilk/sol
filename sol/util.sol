@@ -155,6 +155,18 @@ function U.table_join(out: table, in_table: table)
 end
 
 
+function U.list_concat(a: [any], b: [any]) -> [any]
+	local ret = {}
+	for _,v in ipairs(a) do
+		ret[#ret + 1] = v
+	end
+	for _,v in ipairs(b) do
+		ret[#ret + 1] = v
+	end
+	return ret
+end
+
+
 function U.table_empty(t: table) -> bool
 	return next(t) == nil
 end
