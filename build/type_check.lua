@@ -93,9 +93,26 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
+	local function fancy_format(fmt, ...)
+		local buf = {} --[[SOL OUTPUT--]] 
+		for i = 1, select( '#', ... ) do
+			local a = select( i, ... ) --[[SOL OUTPUT--]] 
+			if type(a) == 'table' and a.ast_type then
+				a = format_expr(a) --[[SOL OUTPUT--]] 
+			elseif T.is_type(a) or T.is_type_list(a) then
+				a = T.name(a) --[[SOL OUTPUT--]] 
+			elseif type( a ) ~= 'string' and type( a ) ~= 'number' then
+				-- bool/table
+				a = tostring( a ) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			buf[i] = a --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+		return string.format( fmt, unpack( buf ) ) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
 
 	local function report(type, node, fmt, ...)
-		local inner_msg = string.format(fmt, ...) --[[SOL OUTPUT--]] 
+		local inner_msg = fancy_format(fmt, ...) --[[SOL OUTPUT--]] 
 		local msg = string.format('%s: %s: %s', type, where_is(node), inner_msg) --[[SOL OUTPUT--]] 
 		return msg --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -264,7 +281,7 @@ local function analyze(ast, filename, on_require, settings)
 			type = T.AnyTypeList --[[SOL OUTPUT--]]  -- Could be any number of unknown values
 		end --[[SOL OUTPUT--]] 
 
-		--report_spam(expr, 'expression of type %s evaluated to %s', expr.ast_type, T.name(type))
+		--report_spam(expr, 'expression of type %s evaluated to %s', expr.ast_type, type)
 
 		return type, var_ --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -283,7 +300,7 @@ local function analyze(ast, filename, on_require, settings)
 			elseif #t == 1 then
 				return t[1], v --[[SOL OUTPUT--]] 
 			else
-				report_error(expr, "Expected single type, got: '%s' when analyzing '%s' expression", T.name(t), expr.ast_type) --[[SOL OUTPUT--]] 
+				report_error(expr, "Expected single type, got: '%s' when analyzing '%s' expression", t, expr.ast_type) --[[SOL OUTPUT--]] 
 				return T.Any, v --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		else
@@ -301,7 +318,7 @@ local function analyze(ast, filename, on_require, settings)
 				local problem_rope = {} --[[SOL OUTPUT--]] 
 				T.could_be_tl(does_return, should_return, problem_rope) --[[SOL OUTPUT--]] 
 				local problem_str = table.concat(problem_rope, '\n') --[[SOL OUTPUT--]] 
-				report_warning(node, "Return statement does not match function return type declaration, returns: '%s', expected: '%s'. %s", T.name(does_return), T.name(should_return), problem_str) --[[SOL OUTPUT--]] 
+				report_warning(node, "Return statement does not match function return type declaration, returns: '%s', expected: '%s'. %s", does_return, should_return, problem_str) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -346,9 +363,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			node.self_var_type = self_type --[[SOL OUTPUT--]]   -- Assign a type to the local 'self' variable
 
-			if _G.g_spam then
-				report_spam(node, "self: '%s'", T.name(self_type)) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+			--report_spam(node, "self: '%s'", self_type)
 		end --[[SOL OUTPUT--]] 
 
 		for i,arg in ipairs(node.arguments) do
@@ -359,9 +374,7 @@ local function analyze(ast, filename, on_require, settings)
 			fun_t.vararg = node.vararg --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		if _G.g_spam then
-			report_spam(node, "analyze_function_head: '%s'", T.name(fun_t)) --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
+		report_spam(node, "analyze_function_head: '%s'", fun_t) --[[SOL OUTPUT--]] 
 
 		return fun_t --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -407,15 +420,13 @@ local function analyze(ast, filename, on_require, settings)
 			else
 				fun_t.rets = T.Void --[[SOL OUTPUT--]]   -- No returns  == void
 			end --[[SOL OUTPUT--]] 
-			--report_spam(node, 'function deduced return type: %s', T.name(fun_t.rets))
+			--report_spam(node, 'function deduced return type: %s', fun_t.rets)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
 	local function do_indexing(node, type, name)
-		if _G.g_spam then
-			--report_spam(node, "Looking for member %q in %s", name, T.name(type))
-		end --[[SOL OUTPUT--]] 
+		--report_spam(node, "Looking for member %q in %s", name, type)
 
 		type = T.follow_identifiers(type) --[[SOL OUTPUT--]] 
 
@@ -595,16 +606,15 @@ local function analyze(ast, filename, on_require, settings)
 						given = T.variant(given.type, T.Nil) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
-					if _G.g_spam then
-						--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, T.name(given), T.name(expected))
-					end --[[SOL OUTPUT--]] 
+					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
+
 
 					if T.is_variant(given) then
 						-- ensure  string?  ->  int?   does NOT pass
 						given = T.variant_remove(given, T.Nil) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
-					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), T.name(expected))
+					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), expected)
 					
 					if not T.could_be(given, expected) then
 						local problem_rope = {} --[[SOL OUTPUT--]] 
@@ -617,9 +627,9 @@ local function analyze(ast, filename, on_require, settings)
 					if i == 1 and fun_t.args[i].name == 'self' then
 						report_error(expr, "Missing object argument ('self'). Did you forget to call with : ?") --[[SOL OUTPUT--]] 
 					elseif not T.is_nilable(expected) then
-						report_error(expr, "Missing non-nilable argument %i: expected '%s'", i, T.name(expected)) --[[SOL OUTPUT--]] 
+						report_error(expr, "Missing non-nilable argument %i: expected '%s'", i, expected) --[[SOL OUTPUT--]] 
 					elseif _G.g_spam then
-						report_spam(expr, "Ignoring missing argument %i: it's nilable: '%s'", i, T.name(expected)) --[[SOL OUTPUT--]] 
+						report_spam(expr, "Ignoring missing argument %i: it's nilable: '%s'", i, expected) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			elseif i <= #arg_ts then
@@ -633,16 +643,14 @@ local function analyze(ast, filename, on_require, settings)
 					assert(T.is_type(given)) --[[SOL OUTPUT--]] 
 					assert(T.is_type(expected)) --[[SOL OUTPUT--]] 
 
-					if _G.g_spam then
-						report_spam(expr, "Check varargs. Given: '%s', expected '%s'", T.name(given), T.name(expected)) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
+					report_spam(expr, "Check varargs. Given: '%s', expected '%s'", given, expected) --[[SOL OUTPUT--]] 
 
 					if given.tag == 'varargs' then
 						given = given.type --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
 					if not T.could_be(given, expected) then
-						report_error(expr, "%s argument %i: could not convert from '%s' to '%s' (varargs)", fun_name, i, T.name(given), T.name(expected)) --[[SOL OUTPUT--]] 
+						report_error(expr, "%s argument %i: could not convert from '%s' to '%s' (varargs)", fun_name, i, given, expected) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
 					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args) --[[SOL OUTPUT--]] 
@@ -692,19 +700,15 @@ local function analyze(ast, filename, on_require, settings)
 		target_type = U.shallow_clone(target_type) --[[SOL OUTPUT--]] 
 		target_type.metatable = arg_ts[2] --[[SOL OUTPUT--]] 
 
-		if _G.g_spam then
-			report_spam(expr, "Setting metatable") --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
+		report_spam(expr, "Setting metatable") --[[SOL OUTPUT--]] 
 
 		target_var.type = target_type --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
 	local function analyze_fun_call(expr, typ, args, arg_ts, report_errors)
-		if _G.g_spam then
-			report_spam(expr, "analyze_fun_call, typ: '%s'", T.name(typ)) --[[SOL OUTPUT--]] 
-			report_spam(expr, "analyze_fun_call, arg_ts: '%s'", T.name(arg_ts)) --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
+		report_spam(expr, "analyze_fun_call, typ: '%s'", typ) --[[SOL OUTPUT--]] 
+		report_spam(expr, "analyze_fun_call, arg_ts: '%s'", arg_ts) --[[SOL OUTPUT--]] 
 
 		typ = T.follow_identifiers(typ) --[[SOL OUTPUT--]] 
 
@@ -732,7 +736,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		if typ.tag ~= 'function' then
 			if report_errors then
-				report_error(expr, "Not a function: '%s'", T.name(typ)) --[[SOL OUTPUT--]] 
+				report_error(expr, "Not a function: '%s'", typ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			return nil --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -760,7 +764,7 @@ local function analyze(ast, filename, on_require, settings)
 			local it_types = generator_types(expr, fun_t, arg_ts) --[[SOL OUTPUT--]] 
 
 			if it_types ~= T.AnyTypeList then
-				--report_info(expr, "Generator recognized: %s", T.name(it_types))
+				--report_info(expr, "Generator recognized: %s", it_types)
 			end --[[SOL OUTPUT--]] 
 
 			--var<T.Function> ret = {  -- FIXME
@@ -818,9 +822,6 @@ local function analyze(ast, filename, on_require, settings)
 
 		local arg_ts = {} --[[SOL OUTPUT--]] 
 		for i,v in ipairs(args) do
-			if _G.g_spam then
-				--U.printf('Analyzing function argument %q', expr2str(v))
-			end --[[SOL OUTPUT--]] 
 			arg_ts[i], _ = analyze_expr_single(v, scope) --[[SOL OUTPUT--]] 
 			assert(arg_ts[i], "missing type") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -833,9 +834,7 @@ local function analyze(ast, filename, on_require, settings)
 			typ = T.follow_identifiers(typ) --[[SOL OUTPUT--]] 
 
 			if T.is_any(typ) then
-				if _G.g_spam then
-					report_spam(expr, "Function call cannot be deduced - calling something of unknown type: '%s'", T.name(fun_type)) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
+				report_spam(expr, "Function call cannot be deduced - calling something of unknown type: '%s'", fun_type) --[[SOL OUTPUT--]] 
 				return T.AnyTypeList --[[SOL OUTPUT--]] 
 
 			elseif typ.tag == 'function' then
@@ -877,7 +876,7 @@ local function analyze(ast, filename, on_require, settings)
 				return rets --[[SOL OUTPUT--]] 
 
 			elseif report_errors then
-				report_error(expr, "Cannot call '%s'", T.name(typ)) --[[SOL OUTPUT--]] 
+				report_error(expr, "Cannot call '%s'", typ) --[[SOL OUTPUT--]] 
 				return nil --[[SOL OUTPUT--]] 
 			else
 				return nil --[[SOL OUTPUT--]] 
@@ -887,14 +886,12 @@ local function analyze(ast, filename, on_require, settings)
 		local rets = try_call(fun_type, false) --[[SOL OUTPUT--]] 
 
 		if rets then
-			if _G.g_spam then
-				report_spam(expr, "Function deduced to: '%s'", T.name(rets)) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+			report_spam(expr, "Function deduced to returning: '%s'", rets) --[[SOL OUTPUT--]] 
 			D.assert( T.is_type_list(rets) ) --[[SOL OUTPUT--]] 
 			return rets --[[SOL OUTPUT--]] 
 		else
 			-- Show errors:
-			report_error(expr, "Cannot call '%s'", T.name(fun_type)) --[[SOL OUTPUT--]] 
+			report_error(expr, "Cannot call '%s'", fun_type) --[[SOL OUTPUT--]] 
 			try_call(fun_type, true) --[[SOL OUTPUT--]] 
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -909,9 +906,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		local gen_t = analyze_expr_single(expr, scope) --[[SOL OUTPUT--]] 
 
-		if _G.g_spam then
-			report_spam(expr, "extract_iterator_type, gen_t: '%s'", T.name(gen_t)) --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
+		report_spam(expr, "extract_iterator_type, gen_t: '%s'", gen_t) --[[SOL OUTPUT--]] 
 
 		gen_t = T.follow_identifiers(gen_t) --[[SOL OUTPUT--]] 
 		if gen_t == T.Any then
@@ -924,13 +919,13 @@ local function analyze(ast, filename, on_require, settings)
 				suggestion = 'ipairs' --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			report_error(expr, "Generator function expected, got '%s' - did you forget to use '%s'?", T.name(gen_t), suggestion) --[[SOL OUTPUT--]] 
+			report_error(expr, "Generator function expected, got '%s' - did you forget to use '%s'?", gen_t, suggestion) --[[SOL OUTPUT--]] 
 
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		local fun = gen_t --[[SOL OUTPUT--]] 
-		--report_info(expr, "Generator deducted to %s", T.name(fun.rets))
+		--report_info(expr, "Generator deducted to %s", fun.rets)
 		return fun.rets --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -971,9 +966,7 @@ local function analyze(ast, filename, on_require, settings)
 				var_ = scope:create_global( expr.name, where_is(expr) ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			if _G.g_spam then
-				report_spam(expr, "IdExpr '%s': var_.type: '%s'", var_.name, T.name(var_.type)) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+			--report_spam(expr, "IdExpr '%s': var_.type: '%s'", var_.name, var_.type)
 
 			local type = var_.type or T.Any --[[SOL OUTPUT--]] 
 			if var_.namespace then
@@ -989,14 +982,12 @@ local function analyze(ast, filename, on_require, settings)
 						var_.type = type --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
-					report_error(expr, "Variable '%s' used as namespace but is not an object (it's '%s')", var_.name, T.name(type)) --[[SOL OUTPUT--]] 
+					report_error(expr, "Variable '%s' used as namespace but is not an object (it's '%s')", var_.name, type) --[[SOL OUTPUT--]] 
 					var_.namespace = nil --[[SOL OUTPUT--]]  -- Only warn once
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			
-			if _G.g_spam then
-				report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, T.name(type)) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+			--report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, type)
 
 			D.assert(T.is_type(type)  or  T.is_type_list(type)) --[[SOL OUTPUT--]] 
 
@@ -1008,10 +999,7 @@ local function analyze(ast, filename, on_require, settings)
 		else
 			local type = analyze_simple_expr_unchecked(expr, scope) --[[SOL OUTPUT--]] 
 
-			if _G.g_spam then
-				report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, T.name(type)) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
+			report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, type) --[[SOL OUTPUT--]] 
 			D.assert(T.is_type(type)  or  T.is_type_list(type)) --[[SOL OUTPUT--]] 
 
 			return type, nil --[[SOL OUTPUT--]] 
@@ -1053,7 +1041,7 @@ local function analyze(ast, filename, on_require, settings)
 			local lt = analyze_expr_single( expr.lhs, scope ) --[[SOL OUTPUT--]] 
 			local rt = analyze_expr_single( expr.rhs, scope ) --[[SOL OUTPUT--]] 
 
-			--report_spam(expr, "Binop: %s %s %s", T.name(lt), op, T.name(rt))
+			--report_spam(expr, "Binop: %s %s %s", lt, op, rt)
 
 			if NumOps[op] then
 				if T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
@@ -1099,7 +1087,7 @@ local function analyze(ast, filename, on_require, settings)
 				-- Make sure we aren't comparing string to int:s:
 				if (not T.could_be(lt, rt)) and (not T.could_be(rt, lt)) then
 					-- Apples and oranges
-					report_error(expr, "Comparing incompatible types: '%s' and '%s'", T.name(lt), T.name(rt)) --[[SOL OUTPUT--]] 
+					report_error(expr, "Comparing incompatible types: '%s' and '%s'", lt, rt) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				return T.Bool --[[SOL OUTPUT--]] 
 
@@ -1169,19 +1157,19 @@ local function analyze(ast, filename, on_require, settings)
 				elseif T.could_be(arg_t, T.Int) then
 					return T.Int --[[SOL OUTPUT--]] 
 				else
-					report_error(expr, "Unary minus expected numeric argument, got %s", T.name(arg_t)) --[[SOL OUTPUT--]] 
+					report_error(expr, "Unary minus expected numeric argument, got %s", arg_t) --[[SOL OUTPUT--]] 
 					return T.Num --[[SOL OUTPUT--]]  -- Good guess
 				end --[[SOL OUTPUT--]] 
 
 			elseif expr.op == 'not' then
 				if not T.is_useful_boolean(arg_t) then
-					report_warning(expr, "'not' operator expected boolean or nil:able, got '%s'", T.name(arg_t)) --[[SOL OUTPUT--]] 
+					report_warning(expr, "'not' operator expected boolean or nil:able, got '%s'", arg_t) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				return T.Bool --[[SOL OUTPUT--]] 
 
 			elseif expr.op == '#' then
 				if not T.could_be(arg_t, T.List) and not T.could_be(arg_t, T.String) then
-					report_error(expr, "'#' operator expected list or string, got %s", T.name(arg_t)) --[[SOL OUTPUT--]] 
+					report_error(expr, "'#' operator expected list or string, got %s", arg_t) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				return T.Uint --[[SOL OUTPUT--]] 
 
@@ -1240,9 +1228,7 @@ local function analyze(ast, filename, on_require, settings)
 					report_spam(expr, "List index") --[[SOL OUTPUT--]] 
 					check_type_is_a("List index", expr.index, index_t, T.Uint, 'error') --[[SOL OUTPUT--]] 
 					if list.type then
-						if _G.g_spam then
-							report_spam(expr, "List index: indexing %s, element type is %s", T.name(list), T.name(list.type)) --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
+						report_spam(expr, "List index: indexing %s, element type is %s", list, list.type) --[[SOL OUTPUT--]] 
 						return list.type --[[SOL OUTPUT--]] 
 					else
 						return T.Any --[[SOL OUTPUT--]]  -- FIXME
@@ -1261,7 +1247,7 @@ local function analyze(ast, filename, on_require, settings)
 					return T.Any --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-				report_error(expr, 'Cannot index type %s with %s - not a list, table or map', T.name(base_t), T.name(index_t)) --[[SOL OUTPUT--]] 
+				report_error(expr, 'Cannot index type %s with %s - not a list, table or map', base_t, index_t) --[[SOL OUTPUT--]] 
 				--error("FATAL")
 				return T.Any --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1405,7 +1391,7 @@ local function analyze(ast, filename, on_require, settings)
 		else
 			local t = analyze_expr_single(expr, scope) --[[SOL OUTPUT--]] 
 			if not T.is_useful_boolean(t) then
-				report_warning(expr, "Not a useful boolean expression in %q, type is '%s'", name, T.name(t)) --[[SOL OUTPUT--]] 
+				report_warning(expr, "Not a useful boolean expression in %q, type is '%s'", name, t) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -1451,9 +1437,7 @@ local function analyze(ast, filename, on_require, settings)
 			--obj_t.members[name] = nil  -- TODO: makes compilation hang!
 			left_type = nil --[[SOL OUTPUT--]] 
 
-			if _G.g_spam then
-				report_spam(stat, "Replacing pre-analyzed type with refined type: '%s'", T.name(right_type)) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+			report_spam(stat, "Replacing pre-analyzed type with refined type: '%s'", right_type) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if left_type then
@@ -1461,7 +1445,7 @@ local function analyze(ast, filename, on_require, settings)
 			left_type = T.broaden( left_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
 
 			if not T.could_be(right_type, left_type) then
-				report_error(stat, "[B] type clash: cannot assign to '%s' (type '%s') with '%s'", name, T.name(left_type), T.name(right_type)) --[[SOL OUTPUT--]] 
+				report_error(stat, "[B] type clash: cannot assign to '%s' (type '%s') with '%s'", name, left_type, right_type) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			return obj_t --[[SOL OUTPUT--]] 
@@ -1535,9 +1519,7 @@ local function analyze(ast, filename, on_require, settings)
 						--var_t.members[name] = nil  -- TODO: makes compilation hang!
 						left_type = nil --[[SOL OUTPUT--]] 
 
-						if _G.g_spam then
-							report_spam(stat, "Replacing pre-analyzed type with refined type: '%s'", T.name(right_type)) --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
+						report_spam(stat, "Replacing pre-analyzed type with refined type: '%s'", right_type) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
 					if left_type then
@@ -1545,7 +1527,7 @@ local function analyze(ast, filename, on_require, settings)
 						left_type = T.broaden( left_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
 
 						if not T.could_be(right_type, left_type) then
-							report_error(stat, "[A] type clash: cannot assign to '%s' (type '%s') with '%s'", name, T.name(left_type), T.name(right_type)) --[[SOL OUTPUT--]] 
+							report_error(stat, "[A] type clash: cannot assign to '%s' (type '%s') with '%s'", name, left_type, right_type) --[[SOL OUTPUT--]] 
 							return false --[[SOL OUTPUT--]] 
 						else
 							return true --[[SOL OUTPUT--]] 
@@ -1580,7 +1562,7 @@ local function analyze(ast, filename, on_require, settings)
 					-- eg.   local foo = som_fun()   foo.var_ = ...
 					report_spam(stat, "[A] Trying to index type 'any' with '%s'", name) --[[SOL OUTPUT--]] 
 				else
-					report_warning(stat, "[A] Trying to index non-object of type '%s' with '%s'", T.name(base_t), name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[A] Trying to index non-object of type '%s' with '%s'", base_t, name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else
 				if not base_var.type or T.is_empty_table(base_var.type) then
@@ -1619,7 +1601,7 @@ local function analyze(ast, filename, on_require, settings)
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Trying to index non-object of type '%s' with '%s'", T.name(var_t), name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[B] Trying to index non-object of type '%s' with '%s'", var_t, name) --[[SOL OUTPUT--]] 
 					--D.break_()
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1645,7 +1627,7 @@ local function analyze(ast, filename, on_require, settings)
 			local problem_rope = {} --[[SOL OUTPUT--]] 
 			T.could_be(right_type, left_type, problem_rope) --[[SOL OUTPUT--]] 
 			local problem_str = table.concat(problem_rope, '\n') --[[SOL OUTPUT--]] 
-			report_error(stat, "[C] type clash: cannot assign to type '%s' with '%s': %s", T.name(left_type), T.name(right_type), problem_str) --[[SOL OUTPUT--]] 
+			report_error(stat, "[C] type clash: cannot assign to type '%s' with '%s': %s", left_type, right_type, problem_str) --[[SOL OUTPUT--]] 
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return true --[[SOL OUTPUT--]] 
@@ -1669,19 +1651,17 @@ local function analyze(ast, filename, on_require, settings)
 				report_error(stat, "type %s.%s already declared as '%s'", v.name, name, ns[name]) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			if _G.g_spam then
-				if stat.type then
-					report_spam(stat, "Declaring type %s.%s as '%s'", v.name, name, T.name(stat.type)) --[[SOL OUTPUT--]] 
-				else
-					report_spam(stat, "Forward-declaring type %s.%s", v.name, name) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
+			if stat.type then
+				report_spam(stat, "Declaring type %s.%s as '%s'", v.name, name, stat.type) --[[SOL OUTPUT--]] 
+			else
+				report_spam(stat, "Forward-declaring type %s.%s", v.name, name) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			ns[name] = stat.type --[[SOL OUTPUT--]] 
 		else
 			local old = scope:get_scoped_type(name) --[[SOL OUTPUT--]] 
 			if old then
-				report_error(stat, "type %q already declared as '%s'", name, T.name(old)) --[[SOL OUTPUT--]] 
+				report_error(stat, "type %q already declared as '%s'", name, old) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			scope:declare_type(name, stat.type, where_is(stat)) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1692,7 +1672,7 @@ local function analyze(ast, filename, on_require, settings)
 			local child_type = T.follow_identifiers(stat.type) --[[SOL OUTPUT--]] 
 
 			if child_type.tag ~= 'object' then
-				report_error(stat, "Only objects can have base-types (child: '%s')", T.name(child_type)) --[[SOL OUTPUT--]] 
+				report_error(stat, "Only objects can have base-types (child: '%s')", child_type) --[[SOL OUTPUT--]] 
 			else
 				for _,base in ipairs(stat.base_types) do
 					report_spam(stat, "%s inheriting %s", name, base.name) --[[SOL OUTPUT--]] 
@@ -1704,7 +1684,7 @@ local function analyze(ast, filename, on_require, settings)
 
 					local base_type = T.follow_identifiers(base) --[[SOL OUTPUT--]] 
 					if base_type.tag ~= 'object' then
-						--report_error(stat, "'%s' cannot inherit non-object '%s'", name, T.name(base_type))
+						--report_error(stat, "'%s' cannot inherit non-object '%s'", name, base_type)
 						report_error(stat, "'%s' cannot inherit non-object '%s'", name, expr2str(base)) --[[SOL OUTPUT--]] 
 						break --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
@@ -1747,9 +1727,9 @@ local function analyze(ast, filename, on_require, settings)
 				if rt == T.AnyTypeList then
 					-- Nothing to do
 				elseif nlhs > #rt then
-					report_error(stat, "Unequal number of variables and values: left hand side has %i variables, right hand side evaluates to %s", nlhs, T.name(rt)) --[[SOL OUTPUT--]] 
+					report_error(stat, "Unequal number of variables and values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt) --[[SOL OUTPUT--]] 
 				elseif nlhs < #rt then
-					report_warning(stat, "Assignment discards values: left hand side has %i variables, right hand side evaluates to %s", nlhs, T.name(rt)) --[[SOL OUTPUT--]] 
+					report_warning(stat, "Assignment discards values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt) --[[SOL OUTPUT--]] 
 				else
 					for i,v in ipairs(rt) do
 						do_assignment(stat, scope, stat.lhs[i], rt[i], is_pre_analyze) --[[SOL OUTPUT--]] 
@@ -1955,9 +1935,7 @@ local function analyze(ast, filename, on_require, settings)
 				--]]
 				fun_t.name = stat.var_name --[[SOL OUTPUT--]] 
 
-				if _G.g_spam then
-					report_spam(stat, "local function, name: %q", expr2str(stat.name)) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
+				report_spam(stat, "local function, name: %q", stat.name) --[[SOL OUTPUT--]] 
 
 				local v = declare_var(stat, scope, stat.var_name, stat.is_local) --[[SOL OUTPUT--]] 
 				v.type = fun_t --[[SOL OUTPUT--]] 
@@ -1968,7 +1946,7 @@ local function analyze(ast, filename, on_require, settings)
 
 				if stat.name.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
-					report_warning(stat, "non-local function, name: %q", expr2str(stat.name)) --[[SOL OUTPUT--]] 
+					report_warning(stat, "non-local function, name: %q", stat.name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
 				do_assignment(stat, scope, stat.name, fun_t, is_pre_analyze) --[[SOL OUTPUT--]] 
@@ -2111,7 +2089,7 @@ local function analyze(ast, filename, on_require, settings)
 						end --[[SOL OUTPUT--]] 
 					
 						if v.type then
-							report_error(stat, "Cannot forward declare '%s': it already has type '%s'", v.name, T.name(v.type)) --[[SOL OUTPUT--]] 
+							report_error(stat, "Cannot forward declare '%s': it already has type '%s'", v.name, v.type) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 
 						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
@@ -2119,9 +2097,7 @@ local function analyze(ast, filename, on_require, settings)
 
 						v.type = fun_t --[[SOL OUTPUT--]] 
 
-						if _G.g_spam then
-							report_spam(stat, "Forward-declared '%s' as '%s'", v.name, T.name(fun_t)) --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
+						report_spam(stat, "Forward-declared '%s' as '%s'", v.name, fun_t) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -2130,9 +2106,7 @@ local function analyze(ast, filename, on_require, settings)
 			assert(stat.scope.parent == scope) --[[SOL OUTPUT--]] 
 
 			if stat.name then
-				if _G.g_spam then
-					report_spam(stat, "Pre-analyzing function %s...", format_expr(stat.name)) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
+				report_spam(stat, "Pre-analyzing function %s...", stat.name) --[[SOL OUTPUT--]] 
 			else
 				return --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -2147,7 +2121,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			if stat.is_local then
 				-- e.g.  "local function foo(bar)"
-				report_warning(stat, "TODO: local function, name: %q", expr2str(stat.name)) --[[SOL OUTPUT--]] 
+				report_warning(stat, "TODO: local function, name: %q", stat.name) --[[SOL OUTPUT--]] 
 			else
 				-- function foo(arg)      -- global - not OK
 				-- or
@@ -2155,12 +2129,10 @@ local function analyze(ast, filename, on_require, settings)
 				-- function foo:bar(arg)  -- member - OK
 				if stat.name.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
-					report_warning(stat, "global function, name: %q", expr2str(stat.name)) --[[SOL OUTPUT--]] 
+					report_warning(stat, "global function, name: %q", stat.name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-				if stat.name and _G.g_spam then
-					report_spam(stat, "Pre-analyzed function head for %q as '%s'", format_expr(stat.name), T.name(fun_t)) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
+				report_spam(stat, "Pre-analyzed function head for %q as '%s'", stat.name, fun_t) --[[SOL OUTPUT--]] 
 
 				do_assignment(stat, scope, stat.name, fun_t, is_pre_analyze) --[[SOL OUTPUT--]] 
 
