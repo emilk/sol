@@ -119,7 +119,7 @@ end
 
 function U.is_array(val)
 	if type(val) ~= "table" then
-		return false;
+		return false
 	end
 
 	local max, n = 0, 0
@@ -172,7 +172,7 @@ function U.table_empty(t)
 end
 
 
-function U.shallow_clone(t)  -- TODO
+function U.shallow_clone(t)
 	if not t then return t end
 	local t2 = {}
 	for k,v in pairs(t) do

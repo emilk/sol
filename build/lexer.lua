@@ -324,7 +324,8 @@ function L.lex_sol(src, filename, settings)
 				--number const
 				local start = p
 				if c == '0' and peek(1) == 'x' then
-					get();get()
+					get()  -- 0
+					get()  -- x
 					while HexDigits[peek()] do get() end
 					if consume('Pp') then
 						consume('+-')

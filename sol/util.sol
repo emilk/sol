@@ -119,7 +119,7 @@ end
 
 function U.is_array(val) -> bool
 	if type(val) ~= "table" then
-		return false;
+		return false
 	end
 
 	local max, n = 0, 0
@@ -146,7 +146,7 @@ function U.bimap(tb: table) -> table
 end
 
 
-function U.table_join(out: table, in_table: table)
+function U.table_join(out: table, in_table: table) -> table
 	assert(out ~= in_table, "table_join: in and out array must be different")
 	for key, val in pairs(in_table) do
 		out[key] = val
@@ -156,7 +156,7 @@ end
 
 
 function U.list_concat(a: [any], b: [any]) -> [any]
-	local ret = {}
+	var<[any]> ret = {}
 	for _,v in ipairs(a) do
 		ret[#ret + 1] = v
 	end
@@ -172,9 +172,9 @@ function U.table_empty(t: table) -> bool
 end
 
 
-function U.shallow_clone(t: any) -> any  -- TODO
+function U.shallow_clone(t: table) -> table
 	if not t then return t end
-	local t2 = {}
+	var<table> t2 = {}
 	for k,v in pairs(t) do
 		t2[k] = v
 	end

@@ -94,6 +94,13 @@ P.SOL_SETTINGS = {
 
 
 
+
+
+
+
+
+
+
 function P.parse_sol(src, tok, filename, settings, module_scope)
 	filename = filename or ''
 	settings = settings or P.SOL_SETTINGS
@@ -190,8 +197,11 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 
 	-- is_mem_fun: we where declared like  foo:fun(args)  and thus have an implicit 'self'
-	local function parse_function_args_and_body(scope, token_list, is_mem_fun)
-		local start = where_am_i()
+	local function parse_function_args_and_body(scope, token_list, type)
+
+		
+local is_mem_fun = (type == 'mem_fun')
+		local where = where_am_i()
 
 		local func_scope = create_scope(scope)
 		if not tok:consume_symbol('(', token_list) then
@@ -264,7 +274,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 		--end
 		if not tok:consume_keyword('end', token_list) then
-			return false, report_error("`end` expected after function body at %s", start)
+			return false, report_error("`end` expected after function body at %s", where)
 		end
 
 		local node_func = {
@@ -276,6 +286,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 			vararg       = vararg,
 			return_types = return_types,
 			body         = body,
+			where        = where,
 		}
 
 		return true, node_func
@@ -284,6 +295,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 	parse_primary_expr = function(scope)
 		local token_list = {}
+		local where = where_am_i()
 
 		if tok:consume_symbol('(', token_list) then
 			local st, ex = parse_expr(scope)
@@ -292,26 +304,32 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 				return false, report_error("`)` Expected.")
 			end
 
-			local parens_exp = {}
-			parens_exp.ast_type   = 'ParenthesesExpr'
-			parens_exp.inner     = ex
-			parens_exp.tokens    = token_list
+			local parens_exp = {
+				ast_type = 'ParenthesesExpr';
+				inner    = ex;
+				tokens   = token_list;
+				where    = where;
+			}
 			return true, parens_exp
 
 		elseif tok:is('ident') then
 			local id = tok:get(token_list)
 
 			return true, {
-				ast_type = 'IdExpr',
-				name    = id.data,
-				tokens  = token_list
+				ast_type = 'IdExpr';
+				name     = id.data;
+				tokens   = token_list;
+				where    = where;
 			}
 		else
 			return false, report_error("primary expression expected")
 		end
 	end
 
-	parse_suffixed_expr = function(scope, only_dot_colon)
+
+	parse_suffixed_expr = function(scope, style)
+		local only_dot_colon = (style == 'only_dot_colon')
+
 		--base primary expression
 		local st, prim = parse_primary_expr(scope)
 		if not st then return false, prim end
@@ -413,44 +431,47 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 	parse_simple_expr = function(scope)
 		local token_list = {}
+		local       node       = nil
+		local            where      = where_am_i()
 
 		if tok:is('Number') then
-			local node_num = {}
-			node_num.ast_type = 'NumberExpr'
-			node_num.value   = tok:get(token_list)
-			node_num.tokens  = token_list
-			return true, node_num
+			node = {
+				ast_type = 'NumberExpr';
+				value    = tok:get(token_list);
+				tokens   = token_list;
+			}
 
 		elseif tok:is('String') then
-			local node_str = {}
-			node_str.ast_type = 'StringExpr'
-			node_str.value   = tok:get(token_list)
-			node_str.tokens  = token_list
-			return true, node_str
+			node = {
+				ast_type = 'StringExpr';
+				value    = tok:get(token_list);
+				tokens   = token_list;
+			}
 
 		elseif tok:consume_keyword('nil', token_list) then
-			local node_nil = {}
-			node_nil.ast_type = 'NilExpr'
-			node_nil.tokens  = token_list
-			return true, node_nil
+			node = {
+				ast_type = 'NilExpr';
+				tokens   = token_list;
+			}
 
 		elseif tok:is_keyword('false') or tok:is_keyword('true') then
-			local node_boolean = {}
-			node_boolean.ast_type = 'BooleanExpr'
-			node_boolean.value   = (tok:get(token_list).data == 'true')
-			node_boolean.tokens  = token_list
-			return true, node_boolean
+			node = {
+				ast_type = 'BooleanExpr';
+				value    = (tok:get(token_list).data == 'true');
+				tokens   = token_list;
+			}
 
 		elseif tok:consume_symbol('...', token_list) then
-			local node_dots = {}
-			node_dots.ast_type  = 'DotsExpr'
-			node_dots.tokens   = token_list
-			return true, node_dots
+			node = {
+				ast_type = 'DotsExpr';
+				tokens   = token_list;
+			}
 
 		elseif tok:consume_symbol('{', token_list) then
-			local v = {}
-			v.ast_type = 'ConstructorExpr'
-			v.entry_list = {}
+			node = {
+				ast_type = 'ConstructorExpr';
+				entry_list = {};
+			}
 			--
 			while true do
 				if tok:is_symbol('[', token_list) then
@@ -470,7 +491,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 					if not st then
 						return false, report_error("value expression Expected")
 					end
-					v.entry_list[#v.entry_list+1] = {
+					node.entry_list[#node.entry_list+1] = {
 						type  = 'key';
 						key   = key;
 						value = value;
@@ -489,8 +510,8 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 						if not st then
 							return false, report_error("value expression Expected")
 						end
-						v.entry_list[#v.entry_list+1] = {
-							type  = 'KeyString';
+						node.entry_list[#node.entry_list+1] = {
+							type  = 'ident_key';
 							key   = key.data;
 							value = value;
 						}
@@ -501,7 +522,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 						if not st then
 							return false, report_error("value Exected")
 						end
-						v.entry_list[#v.entry_list+1] = {
+						node.entry_list[#node.entry_list+1] = {
 							type = 'value';
 							value = value;
 						}
@@ -513,7 +534,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 				else
 					--value
 					local st, value = parse_expr(scope)
-					v.entry_list[#v.entry_list+1] = {
+					node.entry_list[#node.entry_list+1] = {
 						type = 'value';
 						value = value;
 					}
@@ -530,18 +551,21 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 					return false, report_error("`}` or table entry Expected")
 				end
 			end
-			v.tokens  = token_list
-			return true, v
+			node.tokens = token_list
 
 		elseif tok:consume_keyword('function', token_list) then
 			-- Parse lambda
-			local st, func = parse_function_args_and_body(scope, token_list)
-			if not st then return false, func end
+			local st, lambda_node = parse_function_args_and_body(scope, token_list)
+			if not st then return false, lambda_node end
 			--
-			func.ast_type = 'LambdaFunctionExpr'
-			func.is_local = true
-			return true, func
+			node = lambda_node
+			node.ast_type = 'LambdaFunctionExpr'
+			node.is_local = true
+		end
 
+		if node then
+			node.where = where
+			return true, node
 		else
 			return parse_suffixed_expr(scope)
 		end
@@ -576,12 +600,13 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 			local op = tok:get(token_list).data
 			st, exp = parse_sub_expr(scope, unopprio)
 			if not st then return false, exp end
-			local node_ex = {}
-			node_ex.ast_type = 'UnopExpr'
-			node_ex.rhs     = exp
-			node_ex.op      = op
-			node_ex.op_precedence = unopprio
-			node_ex.tokens  = token_list
+			local node_ex = {
+				ast_type = 'UnopExpr';
+				rhs     = exp;
+				op      = op;
+				op_precedence = unopprio;
+				tokens  = token_list;
+			}
 			exp = node_ex
 		else
 			st, exp = parse_simple_expr(scope)
@@ -596,19 +621,22 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 				local op = tok:get(token_list).data
 				local st, rhs = parse_sub_expr(scope, prio[2])
 				if not st then return false, rhs end
-				local node_ex = {}
-				node_ex.ast_type = 'BinopExpr'
-				node_ex.lhs     = exp
-				node_ex.op      = op
-				node_ex.op_precedence = prio[1]
-				node_ex.rhs     = rhs
-				node_ex.tokens  = token_list
+				local node_ex = {
+					ast_type = 'BinopExpr';
+					lhs     = exp;
+					op      = op;
+					op_precedence = prio[1];
+					rhs     = rhs;
+					tokens  = token_list;
+				}
 				--
 				exp = node_ex
 			else
 				break
 			end
 		end
+
+		exp.where = where_am_i()
 
 		return true, exp
 	end
@@ -640,13 +668,13 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 			if tok:consume_symbol('}') then
 				-- Empty object
 				return {
-					tag = 'object',
+					tag     = 'object',
 					members = {}
 				}
 			elseif tok:is('ident') and tok:peek(1).data == ':' then
 				-- key-value-pairs - an object
 				local obj = {
-					tag = 'object',
+					tag     = 'object',
 					members = {}
 				}
 				while true do
@@ -849,7 +877,6 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 
 	parse_type_list = function(scope)
-
 		if tok:peek().data == 'void' then
 			tok:get()
 			return T.Void
@@ -859,7 +886,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 		while true do
 			local type = parse_type(scope)
 			if not type then
-				return list;
+				return list
 			end
 
 			list = list or {}
@@ -876,7 +903,8 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 		if tok:consume_symbol('<') then
 			local list = parse_type_list(scope) or {}  -- Empty list OK
 			if not tok:consume_symbol('>') then
-				return nil, report_error("Missing '>'")
+				report_error("Missing '>'")
+				return nil
 			end
 			return list
 		else
@@ -953,9 +981,9 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 		end
 
 		local node = { 
-			ast_type   = 'Typedef',
+			ast_type  = 'Typedef',
 			scope     = scope,
-			type_name  = type_name,
+			type_name = type_name,
 			tokens    = {},
 			where     = where,
 			Global    = (type == 'global')
@@ -1026,6 +1054,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 			return true, func
 
 		elseif tok:is('ident') or angle_bracket then
+			local where = where_am_i()
 			local types = nil
 
 			if type == 'var' then
@@ -1055,14 +1084,16 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 				until not tok:consume_symbol(',', token_list)
 			end
 
-			local node_local = {}
-			node_local.ast_type  = 'VarDeclareStatement'
-			node_local.type_list = types
-			node_local.name_list = name_list
-			node_local.init_list = init_list
-			node_local.tokens    = token_list
-			node_local.is_local  = is_local
-			node_local.type      = type -- 'local' or 'global' or 'var'
+			local node_local = {
+				ast_type  = 'VarDeclareStatement';
+				type_list = types;
+				name_list = name_list;
+				init_list = init_list;
+				tokens    = token_list;
+				is_local  = is_local;
+				type      = type; -- 'local' or 'global' or 'var'
+				where     = where;
+			}
 			--
 			return true, node_local
 
@@ -1073,15 +1104,21 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 
 	local function parse_statement(scope)
-		local st = true  -- Success?
-		local stat = nil
+		local            st         = true -- Success?
+		local       stat       = nil
 		local token_list = {}
+		local            where      = where_am_i()
 
 		if tok:consume_keyword('if', token_list) then
 			--setup
-			local node_if_stat = {}
-			node_if_stat.ast_type = 'IfStatement'
-			node_if_stat.clauses = {}
+			local node_if_stat = {
+				ast_type = 'IfStatement'
+			}
+			local clauses 
+
+
+
+= {}
 
 			--clauses
 			repeat
@@ -1092,7 +1129,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 				end
 				local st, node_body = parse_statement_list(create_scope(scope))
 				if not st then return false, node_body end
-				node_if_stat.clauses[#node_if_stat.clauses+1] = {
+				clauses[#clauses+1] = {
 					condition = node_cond;
 					body = node_body;
 				}
@@ -1107,7 +1144,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 				local st, node_body = parse_statement_list(create_scope(scope))
 				if not st then return false, node_body end
-				node_if_stat.clauses[#node_if_stat.clauses+1] = {
+				clauses[#clauses+1] = {
 					body = node_body;
 				}
 			end
@@ -1117,6 +1154,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 				return false, report_error("`end` expected.")
 			end
 
+			node_if_stat.clauses = clauses
 			node_if_stat.tokens = token_list
 			stat = node_if_stat
 
@@ -1172,15 +1210,17 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 			if tok:consume_symbol('=', token_list) then
 				--numeric for
 				local for_scope = create_scope(scope)
-				--
+
 				local st, start_ex = parse_expr(scope)
 				if not st then return false, start_ex end
 				if not tok:consume_symbol(',', token_list) then
 					return false, report_error("`,` Expected")
 				end
+
 				local st, end_ex = parse_expr(scope)
 				if not st then return false, end_ex end
-				local st, step_ex;
+
+				local step_ex = nil
 				if tok:consume_symbol(',', token_list) then
 					st, step_ex = parse_expr(scope)
 					if not st then return false, step_ex end
@@ -1188,23 +1228,24 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 				if not tok:consume_keyword('do', token_list) then
 					return false, report_error("`do` expected")
 				end
-				--
+
 				local st, body = parse_statement_list(for_scope)
 				if not st then return false, body end
 				if not tok:consume_keyword('end', token_list) then
 					return false, report_error("`end` expected")
 				end
-				--
-				local node_for = {}
-				node_for.ast_type = 'NumericForStatement'
-				node_for.scope    = for_scope
-				node_for.var_name = base_var_name.data
-				node_for.start    = start_ex
-				node_for.end_     = end_ex
-				node_for.step     = step_ex
-				node_for.body     = body
-				node_for.tokens   = token_list
-				stat = node_for
+
+				stat = {
+					ast_type = 'NumericForStatement';
+					scope    = for_scope;
+					var_name = base_var_name.data;
+					start    = start_ex;
+					end_     = end_ex;
+					step     = step_ex;
+					body     = body;
+					tokens   = token_list;
+				}
+
 			else
 				--generic for
 				local for_scope = create_scope(scope)
@@ -1237,14 +1278,14 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 					return false, report_error("`end` expected.")
 				end
 				--
-				local node_for = {}
-				node_for.ast_type    = 'GenericForStatement'
-				node_for.scope      = for_scope
-				node_for.var_names   = var_names
-				node_for.generators = generators
-				node_for.body       = body
-				node_for.tokens     = token_list
-				stat = node_for
+				stat = {
+					ast_type   = 'GenericForStatement';
+					scope      = for_scope;
+					var_names  = var_names;
+					generators = generators;
+					body       = body;
+					tokens     = token_list;
+				}
 			end
 
 		elseif tok:consume_keyword('repeat', token_list) then
@@ -1271,11 +1312,11 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 			if not tok:is('ident') then
 				return false, report_error("Function name expected")
 			end
-			local st, name = parse_suffixed_expr(scope, true) --true => only dots and colons
+			local st, name = parse_suffixed_expr(scope, 'only_dot_colon')
 			if not st then return false, name end
 			--
 			local is_mem_fun = (name.ast_type == 'MemberExpr' and name.indexer == ':')
-			local st, func = parse_function_args_and_body(scope, token_list, is_mem_fun)
+			local st, func = parse_function_args_and_body(scope, token_list, is_mem_fun and 'mem_fun' or nil)
 			if not st then return false, func end
 			--
 			func.ast_type = 'FunctionDeclStatement'
@@ -1324,11 +1365,11 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 				end
 			end
 
-			local node_return = {}
-			node_return.ast_type   = 'ReturnStatement'
-			node_return.arguments = ex_list
-			node_return.tokens    = token_list
-			stat = node_return
+			stat = {
+				ast_type  = 'ReturnStatement';
+				arguments = ex_list;
+				tokens    = token_list;
+			}
 
 		elseif tok:consume_keyword('break', token_list) then
 			local node_break = {}
@@ -1341,12 +1382,11 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 				return false, report_error("label expected")
 			end
 			local label = tok:get(token_list).data
-			local node_goto = {}
-			node_goto.ast_type = 'GotoStatement'
-			node_goto.label   = label
-			node_goto.tokens  = token_list
-			stat = node_goto
-
+			stat = {
+				ast_type = 'GotoStatement';
+				label    = label;
+				tokens   = token_list;
+			}
 
 		elseif settings.is_sol and tok:consume_keyword('typedef') then
 			st,stat = parse_typedef(scope, 'local')
@@ -1388,23 +1428,23 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 				end
 
 				--done
-				local node_assign = {}
-				node_assign.ast_type = 'AssignmentStatement'
-				node_assign.lhs     = lhs
-				node_assign.rhs     = rhs
-				node_assign.tokens  = token_list
-				stat = node_assign
+				stat = {
+					ast_type = 'AssignmentStatement';
+					lhs     = lhs;
+					rhs     = rhs;
+					tokens  = token_list;
+				}
 
 			elseif suffixed.ast_type == 'CallExpr' or
 				   suffixed.ast_type == 'TableCallExpr' or
 				   suffixed.ast_type == 'StringCallExpr'
 			then
 				--it's a call statement
-				local node_call = {}
-				node_call.ast_type    = 'CallStatement'
-				node_call.expression = suffixed
-				node_call.tokens     = token_list
-				stat = node_call
+				stat = {
+					ast_type   = 'CallStatement';
+					expression = suffixed;
+					tokens     = token_list;
+				}
 			else
 				return false, report_error("Assignment Statement Expected")
 			end
@@ -1414,7 +1454,10 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 		assert(stat)
 
+		stat.where = where
+
 		if tok:is_symbol(';') then
+			report_warning("semicolon at the end of a statement is considered bad style")
 			stat.semicolon = tok:get( stat.tokens )
 		end
 
@@ -1426,31 +1469,33 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 	parse_statement_list = function(scope)
 		assert(scope)
-		local node_statlist   = {}
-		node_statlist.scope   = scope
-		node_statlist.ast_type = 'Statlist'
-		node_statlist.body    = { }
-		node_statlist.tokens  = { }
-		--
-		--local stats = {}
-		--
+		local node = {
+			ast_type = 'Statlist';
+			where    = where_am_i();
+			scope    = scope;
+			tokens   = { };
+		}
+
+		local stats = {}
+
 		while not stat_list_close_keywords[tok:peek().data] and not tok:is_eof() do
-			local st, node_statement = parse_statement(node_statlist.scope)
+			local st, node_statement = parse_statement(node.scope)
 			if not st then return false, node_statement end
-			--stats[#stats+1] = node_statement
-			node_statlist.body[#node_statlist.body + 1] = node_statement
+			stats[#stats + 1] = node_statement
 		end
 
 		if tok:is_eof() then
-			local node_eof = {}
-			node_eof.ast_type = 'Eof'
-			node_eof.tokens  = { tok:get() }
-			node_statlist.body[#node_statlist.body + 1] = node_eof
+			local node_eof = {
+				ast_type = 'Eof';
+				tokens   = { tok:get() };
+				where    = where_am_i();
+			}
+			stats[#stats + 1] = node_eof
 		end
 
-		--
-		--node_statlist.body = stats
-		return true, node_statlist
+		node.body = stats
+
+		return true, node
 	end
 
 

@@ -196,7 +196,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	if _G.g_spam then
 		U.printf("Module %q successfully deduced to type %s", path_in, T.name(type))
 	else
-		U.printf("Module %q successfully parsed and checked", module_name)
+		--U.printf("Module %q successfully parsed and checked", module_name)
 	end
 
 	local info = {
@@ -253,7 +253,9 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 			printf_err("Failed to open %q for writing", path_out)
 			os.exit(4)
 		else
-			U.printf("File written to %q", path_out)
+			if _G.g_spam then
+				U.printf("File written to %q", path_out)
+			end
 			U.write_protect(path_out)
 		end
 	end

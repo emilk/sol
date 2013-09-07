@@ -76,8 +76,8 @@ end
 
 
 local function analyze(ast, filename, on_require, settings)
-	local analyze_statlist, analyze_expr, analyze_expr_single;
-	local analyze_expr_unchecked;
+	local analyze_statlist, analyze_expr, analyze_expr_single
+	local analyze_expr_unchecked
 
 	local error_count = 0
 
@@ -680,7 +680,7 @@ local function analyze(ast, filename, on_require, settings)
 		D.assert(target_var)
 		local target_type = target_var.type
 
-		if not target_type then
+		if not target_type or target_type == T.Table then
 			target_type = { tag = 'object', members = {} }
 		end
 
@@ -936,7 +936,7 @@ local function analyze(ast, filename, on_require, settings)
 
 
 
-	local analyze_simple_expr_unchecked;
+	local analyze_simple_expr_unchecked
 
 
 	analyze_expr_unchecked = function(expr, scope)
@@ -1291,14 +1291,14 @@ local function analyze(ast, filename, on_require, settings)
 			--[[ v.entry_list contains entries on the form
 
 				{
-					type  : 'KeyString' or 'key' or 'value',
+					type  : 'ident_key' or 'key' or 'value',
 					key   : ident or expr or nil,
 					value : expr,
 				}
 
-				'key'        means   { [expr]  =  val }    -  For maps
-				'KeyString'  means   { ident   =  val }    -  For objects
-				'value'      means   { val            }    -  For lists
+				'key'       means:  { [expr] = val }   - For maps
+				'ident_key' means:  { ident  = val }   - For objects
+				'value'     means:  {      val     }   - For lists
 
 				Mixing is allowed in Lua, but not in Sol
 			--]]
@@ -1307,12 +1307,13 @@ local function analyze(ast, filename, on_require, settings)
 				--return T.EmptyTable
 				-- Assume empty object?
 				return { tag='object', members={} }
+				--return T.Table -- TODO
 			else
-				local key_type   = T.make_variant()  -- in maps
-				local value_type = T.make_variant()
-				local members = {}
+				local   key_type    = T.make_variant() -- in maps
+				local   value_type  = T.make_variant()
+				local obj_members = {}
 
-				local count = { ['key'] = 0, ['KeyString'] = 0, ['value'] = 0 }
+				local count = { ['key'] = 0, ['ident_key'] = 0, ['value'] = 0 }
 				for _,e in pairs(expr.entry_list) do
 					count[e.type] = count[e.type] + 1
 
@@ -1332,8 +1333,8 @@ local function analyze(ast, filename, on_require, settings)
 						key_type = T.extend_variant( key_type, this_key_type )
 					end
 
-					if e.type == 'KeyString' then
-						members[ e.key ] = this_val_type
+					if e.type == 'ident_key' then
+						obj_members[ e.key ] = this_val_type
 					end
 				end
 
@@ -1343,8 +1344,8 @@ local function analyze(ast, filename, on_require, settings)
 				if count['key'] == #expr.entry_list then
 					-- A map
 					return {
-						tag = 'map',
-						key_type = key_type,
+						tag        = 'map',
+						key_type   = key_type,
 						value_type = value_type
 					}
 
@@ -1355,10 +1356,10 @@ local function analyze(ast, filename, on_require, settings)
 						type = value_type
 					}
 
-				elseif count['KeyString'] == #expr.entry_list then
+				elseif count['ident_key'] == #expr.entry_list then
 					return {
-						tag = 'object',
-						members = members
+						tag     = 'object',
+						members = obj_members
 					}
 
 				else
@@ -1752,7 +1753,7 @@ local function analyze(ast, filename, on_require, settings)
 				end
 			end
 
-			local explicit_types = U.shallow_clone( stat.type_list )
+			local explicit_types = stat.type_list
 
 			-- Declare variables:
 			local is_local = (stat.type ~= 'global')

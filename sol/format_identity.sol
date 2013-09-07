@@ -104,7 +104,7 @@ local function format_identity(ast, filename: string, insert_new_lines : bool?) 
 		}
 
 		function t:append_next_token(str)
-			local tok = expr.tokens[it];
+			local tok = expr.tokens[it]
 			if str and tok.data ~= str then
 				report_error("Expected token '" .. str .. "'. tokens: " .. U.pretty(expr.tokens))
 			end
@@ -116,7 +116,7 @@ local function format_identity(ast, filename: string, insert_new_lines : bool?) 
 			it = it + 1
 		end
 		function t:append_white()
-			local tok = expr.tokens[it];
+			local tok = expr.tokens[it]
 			--if not tok then report_error("Missing token: %s", U.pretty(expr)) end
 			if not tok then report_error("Missing token") end
 			out:append_white( tok )
@@ -258,7 +258,7 @@ local function format_identity(ast, filename: string, insert_new_lines : bool?) 
 					format_expr(entry.value)
 				elseif entry.type == 'value' then
 					format_expr(entry.value)
-				elseif entry.type == 'KeyString' then
+				elseif entry.type == 'ident_key' then
 					t:append_str(entry.key)
 					t:append_next_token( "=" )
 					format_expr(entry.value)

@@ -300,7 +300,9 @@ function T.is_obj_obj(d: T.Object, b: T.Object, problem_rope: [string]?) -> bool
 			end
 		elseif not T.isa(d_type, b_type, problem_rope) then
 			if problem_rope then
-				table.insert(problem_rope, string.format("member '%s' of wrong type", id))
+				table.insert(problem_rope,
+					string.format("member '%s' of wrong type (got %s, expected %s)",
+						id, d_type, b_type))
 			end
 			return false
 		end

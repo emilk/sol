@@ -11,7 +11,7 @@ local M = {}
 
 local function is_array(val)
 	if type(val) ~= "table" then
-		return false;
+		return false
 	end
 
 	local max, n = 0, 0

@@ -76,8 +76,8 @@ typedef OnRequireT = function(string, string) -> T.Type
 
 
 local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
-	local analyze_statlist, analyze_expr, analyze_expr_single;
-	local analyze_expr_unchecked;
+	local analyze_statlist, analyze_expr, analyze_expr_single
+	local analyze_expr_unchecked
 
 	local error_count = 0
 
@@ -163,11 +163,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 
-	local function declare_local(node, scope, name: string) -> S.Variable
+	local function declare_local(node, scope, name: string) -> Variable
 		D.assert(node and scope and name)
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
-		var<S.Variable?> old = scope:get_scoped(name)
+		var<Variable?> old = scope:get_scoped(name)
 
 		if old and old.forward_declared then
 			old.forward_declared = false -- Properly declared now
@@ -188,7 +188,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		return scope:create_local(name, where_is(node))
 	end
 
-	local function declare_global(node, scope, name: string) -> S.Variable
+	local function declare_global(node, scope, name: string) -> Variable
 		D.assert(node and scope and scope.parent)
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
@@ -198,7 +198,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 		end
 
-		var<S.Variable?> old = scope:get_var(name)
+		var<Variable?> old = scope:get_var(name)
 
 		if old and old.forward_declared then
 			old.forward_declared = false -- Properly declared now
@@ -217,7 +217,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		return scope:create_global(name, where_is(node))
 	end
 
-	local function declare_var(node, scope, name: string, is_local: bool) -> S.Variable
+	local function declare_var(node, scope, name: string, is_local: bool) -> Variable
 		if is_local then
 			return declare_local(node, scope, name)
 		else
@@ -239,7 +239,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 	end
 
-	analyze_expr = function(expr, scope: S.Scope)
+	analyze_expr = function(expr, scope: Scope)
 		local type, var_
 
 		if true then
@@ -270,7 +270,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	-- Will make sure to return a single type, never void or multiple returns
-	analyze_expr_single = function(expr, scope: S.Scope) -> T.Type, S.Variable?
+	analyze_expr_single = function(expr, scope: Scope) -> T.Type, Variable?
 		local t,v = analyze_expr(expr, scope)
 		if t == T.AnyTypeList then
 			return T.Any, v
@@ -307,7 +307,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function analyze_expr_single_custom(expr, scope: S.Scope, is_pre_analyze: bool) -> T.Type, S.Variable?
+	local function analyze_expr_single_custom(expr, scope: Scope, is_pre_analyze: bool) -> T.Type, Variable?
 		if not is_pre_analyze then
 			return analyze_expr_single(expr, scope)
 		end
@@ -329,7 +329,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	 
 	-- analyze a function declaration head - either a named one or a lambda function
-	local analyze_function_head = function(node: P.Node, scope: S.Scope, is_pre_analyze: bool) -> T.Function
+	local analyze_function_head = function(node: P.Node, scope: Scope, is_pre_analyze: bool) -> T.Function
 		assert(node.return_types == nil or T.is_type_list(node.return_types))
 
 		var<T.Function> fun_t = {
@@ -680,7 +680,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		D.assert(target_var)
 		local target_type = target_var.type
 
-		if not target_type then
+		if not target_type or target_type == T.Table then
 			target_type = { tag = 'object', members = {} }
 		end
 
@@ -797,7 +797,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 	-- Returns a list of types
-	local function call_function(expr, scope: S.Scope) -> T.Typelist
+	local function call_function(expr, scope: Scope) -> T.Typelist
 		--------------------------------------------------------
 		-- Pick out function type:
 		report_spam(expr, "Analyzing function base...")
@@ -904,7 +904,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	-- for k,v in some_expr
 	-- this functions returns a list of types for k,v in the example above
-	local function extract_iterator_type(expr, scope: S.Scope) -> [T.Type]
+	local function extract_iterator_type(expr, scope: Scope) -> [T.Type]
 		report_spam(expr, "extract_iterator_type...")
 
 		local gen_t = analyze_expr_single(expr, scope)
@@ -936,10 +936,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 
-	local analyze_simple_expr_unchecked;
+	local analyze_simple_expr_unchecked
 
 
-	analyze_expr_unchecked = function(expr, scope: S.Scope) -> T.Typelist or T.Type, S.Variable?
+	analyze_expr_unchecked = function(expr, scope: Scope) -> T.Typelist or T.Type, Variable?
 		assert(expr)
 		assert(type(expr) == 'table')
 		if not expr.ast_type then
@@ -955,7 +955,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_error(expr, "You may not read from discard variable '_'")
 			end
 
-			var<S.Variable?> var_ = scope:get_var( expr.name )
+			var<Variable?> var_ = scope:get_var( expr.name )
 
 			if var_ then
 				if var_.forward_declared then
@@ -1019,7 +1019,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	-- Return type
-	analyze_simple_expr_unchecked = function(expr, scope: S.Scope) -> T.Typelist or T.Type
+	analyze_simple_expr_unchecked = function(expr, scope: Scope) -> T.Typelist or T.Type
 		if expr.ast_type == 'NumberExpr' then
 			-- TODO: 0xff, 42 is int,  42.0 is num
 			local str = expr.value.data
@@ -1291,14 +1291,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--[[ v.entry_list contains entries on the form
 
 				{
-					type  : 'KeyString' or 'key' or 'value',
+					type  : 'ident_key' or 'key' or 'value',
 					key   : ident or expr or nil,
 					value : expr,
 				}
 
-				'key'        means   { [expr]  =  val }    -  For maps
-				'KeyString'  means   { ident   =  val }    -  For objects
-				'value'      means   { val            }    -  For lists
+				'key'       means:  { [expr] = val }   - For maps
+				'ident_key' means:  { ident  = val }   - For objects
+				'value'     means:  {      val     }   - For lists
 
 				Mixing is allowed in Lua, but not in Sol
 			--]]
@@ -1307,12 +1307,13 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				--return T.EmptyTable
 				-- Assume empty object?
 				return { tag='object', members={} }
+				--return T.Table -- TODO
 			else
-				var<T.Type> key_type   = T.make_variant()  -- in maps
-				var<T.Type> value_type = T.make_variant()
-				local members = {}
+				var<T.Type>   key_type    = T.make_variant() -- in maps
+				var<T.Type>   value_type  = T.make_variant()
+				var<[T.Type]> obj_members = {}
 
-				local count = { ['key'] = 0, ['KeyString'] = 0, ['value'] = 0 }
+				local count = { ['key'] = 0, ['ident_key'] = 0, ['value'] = 0 }
 				for _,e in pairs(expr.entry_list) do
 					count[e.type] = count[e.type] + 1
 
@@ -1332,8 +1333,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						key_type = T.extend_variant( key_type, this_key_type )
 					end
 
-					if e.type == 'KeyString' then
-						members[ e.key ] = this_val_type
+					if e.type == 'ident_key' then
+						obj_members[ e.key ] = this_val_type
 					end
 				end
 
@@ -1343,8 +1344,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				if count['key'] == #expr.entry_list then
 					-- A map
 					return {
-						tag = 'map',
-						key_type = key_type,
+						tag        = 'map',
+						key_type   = key_type,
 						value_type = value_type
 					}
 
@@ -1355,10 +1356,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						type = value_type
 					}
 
-				elseif count['KeyString'] == #expr.entry_list then
+				elseif count['ident_key'] == #expr.entry_list then
 					return {
-						tag = 'object',
-						members = members
+						tag     = 'object',
+						members = obj_members
 					}
 
 				else
@@ -1390,7 +1391,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	-- eg:  check_condition(stat, 'while', some_expr, scope)
 	-- examples:   if some_expr then ...
 	-- examples:   while true then ...
-	local check_condition = function(stat, name, expr, scope: S.Scope)
+	local check_condition = function(stat, name, expr, scope: Scope)
 		if expr.ast_type == 'BooleanExpr' then
 			-- 'true' or 'false' as explici argument - that's OK
 			-- e.g. for   while true do  ... break ... end
@@ -1618,7 +1619,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function analyze_typedef(stat, scope: S.Scope)
+	local function analyze_typedef(stat, scope: Scope)
 		local name = stat.type_name
 
 		if stat.namespace_name then
@@ -1697,7 +1698,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	-- Iff it is a return statement, will returns a list of types
 	-- Else nil
 	-- 'scope_fun' contains info about the enclosing function
-	local analyze_statement = function(stat, scope: S.Scope, scope_fun: T.Function)
+	local analyze_statement = function(stat, scope: Scope, scope_fun: T.Function)
 		assert(scope)
 		var is_pre_analyze = false
 
@@ -1752,11 +1753,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 			end
 
-			local explicit_types = U.shallow_clone( stat.type_list )
+			local explicit_types = stat.type_list
 
 			-- Declare variables:
 			var is_local = (stat.type ~= 'global')
-			var<[S.Variable]> vars = {}
+			var<[Variable]> vars = {}
 			for _,name in ipairs(stat.name_list) do
 				report_spam(stat, "Declaration: %s %s", stat.type, name)
 				local v = declare_var(stat, scope, name, is_local)
@@ -2054,7 +2055,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 						local var_name = stat.lhs[1].name
 
-						var<S.Variable?> v = nil
+						var<Variable?> v = nil
 
 						if true then
 							v = scope:get_var( var_name )
