@@ -74,15 +74,22 @@ function cp(source, dest)
 end
 
 
+-- Allow user to pass in things like -s (spam) and -d (debug):
+local solc_args = ''
+for _,a in ipairs(arg) do
+	solc_args = solc_args .. ' ' .. a
+end
+
+
 print "----------------------------------------"
 print "BUILD 1/3: old solc compiling new solc"
 print "----------------------------------------"
-run_lua "install/solc.lua -o build sol/*.sol"
+run_lua( "install/solc.lua "..solc_args.." -o build sol/*.sol" )
 
 print "----------------------------------------"
 print "BUILD 2/3: new solc compiling new solc"
 print "----------------------------------------"
-run_lua "build/solc.lua -d -o build sol/*.sol"
+run_lua( "build/solc.lua " ..solc_args.." -o build sol/*.sol" )
 
 print "----------------------------------------"
 print "BUILD 3/3: last santiy check"
