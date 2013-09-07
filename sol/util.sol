@@ -13,6 +13,12 @@ local U = {}
 
 local PLATFORM = os.getenv("windir") and "win" or "unix"
 
+------------------------------------------------------
+
+function U.trim(str: string) -> string
+	return str:gsub("^%s*(.-)%s*$", "%1")	
+end
+
 
 function U.pretty(arg)
 	return pretty.serialize(arg)
@@ -52,6 +58,17 @@ end
 ------------------------------------------------------
 -- Files:
 
+
+function U.file_exists(path: string) -> bool
+	local f = io.open(path, "rb")
+	if f then
+		f:close()
+		return true
+	else
+		return false
+	end
+end
+
 function U.write_protect(path: string) -> bool
 	if PLATFORM == "unix" then
 		return 0 == os.execute("chmod -w " .. path)
@@ -62,30 +79,12 @@ end
 
 
 function U.write_unprotect(path: string) -> bool
-	if PLATFORM == "unix" then
-		return 0 == os.execute("chmod +w " .. path)
-	else
-		return 0 == os.execute("attrib -R " .. path)
-	end
-end
-
-
-function U.bimap(tb: table) -> table
-	for k, v in pairs(tb) do
-		assert(k, "bimap with 'false' is dangerous")
-		tb[v] = k
-	end
-	return tb
-end
-
-
-function U.file_exists(path: string) -> bool
-	local f = io.open(path, "rb")
-	if f then
-		f:close()
-		return true
-	else
-		return false
+	if U.file_exists(path) then
+		if PLATFORM == "unix" then
+			return 0 == os.execute("chmod +w " .. path)
+		else
+			return 0 == os.execute("attrib -R " .. path)
+		end
 	end
 end
 
@@ -114,6 +113,10 @@ function U.write_file(path: string, contents: string) -> bool
 end
 
 
+------------------------------------------------------
+-- Tables and arrays etc:
+
+
 function U.is_array(val) -> bool
 	if type(val) ~= "table" then
 		return false;
@@ -134,12 +137,26 @@ function U.is_array(val) -> bool
 end
 
 
-function U.table_join(out, in_table)
+function U.bimap(tb: table) -> table
+	for k, v in pairs(tb) do
+		assert(k, "bimap with 'false' is dangerous")
+		tb[v] = k
+	end
+	return tb
+end
+
+
+function U.table_join(out: table, in_table: table)
 	assert(out ~= in_table, "table_join: in and out array must be different")
 	for key, val in pairs(in_table) do
 		out[key] = val
 	end
 	return out
+end
+
+
+function U.table_empty(t: table) -> bool
+	return next(t) == nil
 end
 
 
@@ -153,9 +170,6 @@ function U.shallow_clone(t: any) -> any  -- TODO
 end
 
 
-function U.trim(str: string) -> string
-	return str:gsub("^%s*(.-)%s*$", "%1")	
-end
-
+------------------------------------------------------
 
 return U

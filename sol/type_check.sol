@@ -412,13 +412,17 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function do_indexing(node, type, name) -> T.Type?
+	local function do_indexing(node: P.Node, type: T.Type, name: string) -> T.Type?
+		if _G.g_spam then
+			--report_spam(node, "Looking for member %q in %s", name, T.name(type))
+		end
+
 		type = T.follow_identifiers(type)
 
 		if type.tag == 'variant' then
 			local indexed_type = nil
 
-			for _,v in pairs(type.variants) do
+			for _,v in ipairs(type.variants) do
 				indexed_type = T.variant(indexed_type, do_indexing(node, v, name))
 			end
 
@@ -426,6 +430,25 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		elseif type.tag == 'object' then
 			var<T.Object> obj = type
 			local indexed_type = obj.members[name]
+
+			if not indexed_type and obj.metatable then
+				local indexer = obj.metatable.members['__index']
+				if indexer then
+					if indexer.tag == 'function' then
+						report_spam(node, "metatable has __index function")
+						if indexer.rets and #indexer.rets>0 then
+							return indexer.rets[1]
+						else
+							-- TODO: warnings should be written on __index set
+							report_error(node, "Unexpected __index function - no returns values")
+							return T.Any
+						end
+					else
+						report_spam(node, "Looking up member %q in metatbale __index", name)
+						return do_indexing(node, indexer, name)
+					end
+				end
+			end
 
 			indexed_type = T.broaden( indexed_type ) -- Previous value may have been 'false' - we should allow 'true' now:
 
@@ -555,7 +578,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		-- check arguments:
 		local i = 1
 		while true do
-			report_spam(expr, "Checking argument %i", i)
+			--report_spam(expr, "Checking argument %i", i)
 
 			if i <= #fun_t.args then
 				if fun_t.args[i].name == 'self' and i ~= 1 then
@@ -573,7 +596,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					end
 
 					if _G.g_spam then
-						report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, T.name(given), T.name(expected))
+						--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, T.name(given), T.name(expected))
 					end
 
 					if T.is_variant(given) then
@@ -638,7 +661,46 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function analyze_fun_call(expr, typ: T.Type, arg_ts: [T.Type], report_errors: bool) -> T.Typelist?
+	local function handle_setmetatable(expr: P.Node, args: [P.Node], arg_ts: [T.Type])
+		if #args ~= 2 then
+			return
+		end
+
+		if args[1].ast_type ~= 'IdExpr' then
+			report_warning(expr, "setmetatable: first argument must be an identifier, got %s", args[1].ast_type)
+			return
+		end
+
+		if arg_ts[2].tag ~= 'object' then
+			report_warning(expr, "setmetatable: second argument must be an object")
+			return
+		end
+
+		local target_var = args[1].variable
+		D.assert(target_var)
+		local target_type = target_var.type
+
+		if not target_type then
+			target_type = { tag = 'object', members = {} }
+		end
+
+		if target_type.tag ~= 'object' then
+			report_error(expr, "setmetatable: first argument must name an object; got: %s", target_type.tag)
+			return
+		end
+
+		target_type = U.shallow_clone(target_type)
+		target_type.metatable = arg_ts[2]
+
+		if _G.g_spam then
+			report_spam(expr, "Setting metatable")
+		end
+
+		target_var.type = target_type
+	end
+
+
+	local function analyze_fun_call(expr: P.Node, typ: T.Type, args: [P.Node], arg_ts: [T.Type], report_errors: bool) -> T.Typelist?
 		if _G.g_spam then
 			report_spam(expr, "analyze_fun_call, typ: '%s'", T.name(typ))
 			report_spam(expr, "analyze_fun_call, arg_ts: '%s'", T.name(arg_ts))
@@ -661,7 +723,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			var<T.Typelist?> ret = nil
 
 			for _,v in ipairs(typ.variants) do
-				ret = T.combine_type_lists(ret, analyze_fun_call(expr, v, arg_ts, report_errors))
+				ret = T.combine_type_lists(ret, analyze_fun_call(expr, v, args, arg_ts, report_errors))
 			end
 
 			D.assert( T.is_type_list(ret) )
@@ -691,6 +753,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 		end
 
+		--------------------------------------------------------
+
 		if fun_t.intrinsic_name == 'pairs' or fun_t.intrinsic_name == 'ipairs' then
 			-- generators returns function that returns 'it_types':
 			local it_types = generator_types(expr, fun_t, arg_ts)
@@ -707,6 +771,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				rets   = it_types,
 			}
 			return { ret }
+		end
+
+		--------------------------------------------------------
+
+		if fun_t.intrinsic_name == 'setmetatable' then
+			handle_setmetatable(expr, args, arg_ts)
 		end
 
 		--------------------------------------------------------
@@ -732,7 +802,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		-- Pick out function type:
 		report_spam(expr, "Analyzing function base...")
 		local fun_type = analyze_expr_single(expr.base, scope)
-		report_spam(expr, "Done")
+		report_spam(expr, "function base analyzed.")
 
 		--------------------------------------------------------
 		-- get argument types (they will be evaluated regardless of function type):
@@ -782,7 +852,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					--report_info(expr, "expr.base.indexer: " .. expr2str(expr.base.indexer))
 				end
 
-				local rets = analyze_fun_call(expr, fun_t, arg_ts, report_errors)
+				local rets = analyze_fun_call(expr, fun_t, args, arg_ts, report_errors)
 				D.assert( rets==nil or T.is_type_list(rets) )
 				return rets
 			elseif typ.tag == 'variant' then
@@ -864,37 +934,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 		assert(expr.ast_type)
 
-		report_spam(expr, "analyze_expr %s", expr.ast_type)
+		report_spam(expr, "Analyzing %s...", expr.ast_type)
 
-
-		local function handle_var(var_: S.Variable) -> T.Type, S.Variable
-			local type = var_.type or T.Any
-			if var_.namespace then
-				var_.type = var_.type or T.Object
-				type = var_.type
-
-				if type.tag == 'object' then
-					if type.namespace then
-						assert(type.namespace == var_.namespace)
-					else
-						type = U.shallow_clone(type)
-						type.namespace = var_.namespace
-						var_.type = type
-					end
-				else
-					report_error(expr, "Variable '%s' used as namespace but is not an object (it's '%s')", var_.name, T.name(type))
-					var_.namespace = nil -- Only warn once
-				end
-			end
-			
-			if _G.g_spam then
-				report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, T.name(type))
-			end
-
-			D.assert(T.is_type(type)  or  T.is_type_list(type))
-
-			return type, var_
-		end
 
 		if expr.ast_type == 'IdExpr' then
 			if expr.name == '_' then
@@ -921,7 +962,35 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_spam(expr, "IdExpr '%s': var_.type: '%s'", var_.name, T.name(var_.type))
 			end
 
-			return handle_var(var_)
+			local type = var_.type or T.Any
+			if var_.namespace then
+				var_.type = var_.type or T.Object
+				type = var_.type
+
+				if type.tag == 'object' then
+					if type.namespace then
+						assert(type.namespace == var_.namespace)
+					else
+						type = U.shallow_clone(type)
+						type.namespace = var_.namespace
+						var_.type = type
+					end
+				else
+					report_error(expr, "Variable '%s' used as namespace but is not an object (it's '%s')", var_.name, T.name(type))
+					var_.namespace = nil -- Only warn once
+				end
+			end
+			
+			if _G.g_spam then
+				report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, T.name(type))
+			end
+
+			D.assert(T.is_type(type)  or  T.is_type_list(type))
+
+			-- Store for quick access later on:
+			expr.variable = var_
+
+			return type, var_
 
 		else
 			local type = analyze_simple_expr_unchecked(expr, scope)
@@ -1764,7 +1833,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if stat.type == 'var' and not explicit_types then
 				for _,v in ipairs(vars) do
 					if v.type==nil or T.is_any(v.type) then
-						report_error(stat, "Undeducible type")
+						report_error(stat, "Undeducible type - the type of a 'var' must be compile-time deducible")
 					end
 				end
 			end

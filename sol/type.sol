@@ -88,7 +88,8 @@ typedef T.Object : T.Type = {
 	tag       : 'object',
 	members   : { string => T.Type },
 	namespace : { string => T.Identifier } ?,
-	derived   : [ T.Identifier ] or nil  -- Things that inherit us
+	derived   : [ T.Identifier ] or nil,  -- Things that inherit us
+	metatable : T.Object?
 }
 
 -- Very special: represents an unknown number of values, each of the encapsuled type
@@ -770,10 +771,13 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 	elseif typ.tag == 'object' then
 		var<T.Object> obj = typ
 
-		if next(obj.members) == nil then  -- can't use # on non-array
+		if not obj.namespace
+		   and not obj.metatable
+		   and U.table_empty(obj.members)
+		then
 			return '{ }'
 		else
-			local str = '{\n'
+			local str = ''
 			if obj.namespace then
 				str = str .. next_indent .. '-- Types:\n'
 
@@ -786,19 +790,13 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 				for _,m in ipairs(type_list) do
 					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. T.name(m.type, next_indent, verbose) .. ",\n"
 				end
-
-				if next(obj.members) then
-				--if #obj.members ~= 0 then
-					str = str .. '\n' .. next_indent .. '-- Members:\n'
-				end
 			end
 
-
-			if false then
-				for k,v in pairs(obj.members) do
-					str = str .. next_indent .. k .. ": " .. T.name(v, next_indent, verbose) .. ",\n"
+			if not U.table_empty(obj.members) then
+				if str ~= '' then
+					str = str .. '\n' .. next_indent .. '-- Members:\n'
 				end
-			else
+
 				var<[{name:string, type:T.Type}]> mem_list = {}
 				var widest_name = 0
 				for k,v in pairs(obj.members) do
@@ -818,7 +816,16 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 				end
 			end
 
-			return str .. indent ..'}'
+			if obj.metatable then
+				if str ~= '' then
+					--str = str .. '\n' .. next_indent .. '-- metatable:\n'
+					str = str .. '\n'
+				end
+
+				str = str .. next_indent .. "!! metatable: " .. T.name(obj.metatable, next_indent, verbose) .. '\n'
+			end
+
+			return '{\n' .. str .. indent ..'}'
 		end
 
 	elseif typ.tag == 'list' then

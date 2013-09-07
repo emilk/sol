@@ -125,6 +125,7 @@ T
 
 
 
+
 .Any  = { tag = 'any'  }  -- Single unknown value
 T.AnyTypeList = {}   -- Unkown number of unknown values
 
@@ -770,10 +771,13 @@ function T.name(typ, indent, verbose)
 	elseif typ.tag == 'object' then
 		local obj = typ
 
-		if next(obj.members) == nil then  -- can't use # on non-array
+		if not obj.namespace
+		   and not obj.metatable
+		   and U.table_empty(obj.members)
+		then
 			return '{ }'
 		else
-			local str = '{\n'
+			local str = ''
 			if obj.namespace then
 				str = str .. next_indent .. '-- Types:\n'
 
@@ -786,19 +790,13 @@ function T.name(typ, indent, verbose)
 				for _,m in ipairs(type_list) do
 					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. T.name(m.type, next_indent, verbose) .. ",\n"
 				end
-
-				if next(obj.members) then
-				--if #obj.members ~= 0 then
-					str = str .. '\n' .. next_indent .. '-- Members:\n'
-				end
 			end
 
-
-			if false then
-				for k,v in pairs(obj.members) do
-					str = str .. next_indent .. k .. ": " .. T.name(v, next_indent, verbose) .. ",\n"
+			if not U.table_empty(obj.members) then
+				if str ~= '' then
+					str = str .. '\n' .. next_indent .. '-- Members:\n'
 				end
-			else
+
 				local mem_list = {}
 				local widest_name = 0
 				for k,v in pairs(obj.members) do
@@ -818,7 +816,16 @@ function T.name(typ, indent, verbose)
 				end
 			end
 
-			return str .. indent ..'}'
+			if obj.metatable then
+				if str ~= '' then
+					--str = str .. '\n' .. next_indent .. '-- metatable:\n'
+					str = str .. '\n'
+				end
+
+				str = str .. next_indent .. "!! metatable: " .. T.name(obj.metatable, next_indent, verbose) .. '\n'
+			end
+
+			return '{\n' .. str .. indent ..'}'
 		end
 
 	elseif typ.tag == 'list' then

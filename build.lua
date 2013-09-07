@@ -4,6 +4,16 @@ local lfs = require 'lfs'
 local interpreter = ('"'..arg[-1]..'"'  or  'luajit')
 local PLATFORM = os.getenv("windir") and "win" or "unix"
 
+function file_exists(path)
+	local f = io.open(path, "rb")
+	if f then
+		f:close()
+		return true
+	else
+		return false
+	end
+end
+
 function write_protect(path)
 	if PLATFORM == "unix" then
 		return 0 == os.execute("chmod -w " .. path)
@@ -13,10 +23,12 @@ function write_protect(path)
 end
 
 function write_unprotect(path)
-	if PLATFORM == "unix" then
-		return 0 == os.execute("chmod +w " .. path)
-	else
-		return 0 == os.execute("attrib -R " .. path)
+	if file_exists(path) then
+		if PLATFORM == "unix" then
+			return 0 == os.execute("chmod +w " .. path)
+		else
+			return 0 == os.execute("attrib -R " .. path)
+		end
 	end
 end
 
@@ -82,7 +94,9 @@ cp("build", "install")
 print "----------------------------------------"
 print "Build successed, copied to install/"
 
+--[-
 print "----------------------------------------"
 print " Running tests..."
 print ""
 run_lua "run_tests.lua"
+--]]
