@@ -5,6 +5,8 @@ A type can either be a particular value (number or string) or one of the followi
 local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 
+local const = U.const --[[SOL OUTPUT--]] 
+
 --[[
 FIXME: recursive dependency
 local S    = require 'scope'
@@ -44,6 +46,9 @@ T
 	U.printf_err( "%s", msg ) --[[SOL OUTPUT--]] 
 	error(msg, 2) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+
+------------------------------------------------------------------
+-- Prototypes for commong stuff:
 
 
 -- Any: implicit convert to and from anything.
@@ -129,45 +134,44 @@ T
 .Any  = { tag = 'any'  } --[[SOL OUTPUT--]]   -- Single unknown value
 T.AnyTypeList = {} --[[SOL OUTPUT--]]    -- Unkown number of unknown values
 
-T.Nil      = { tag = 'nil'    } --[[SOL OUTPUT--]] 
-T.True     = { tag = 'true'   } --[[SOL OUTPUT--]] 
-T.False    = { tag = 'false'  } --[[SOL OUTPUT--]] 
-T.String   = { tag = 'string' } --[[SOL OUTPUT--]] 
-T.Num      = { tag = 'num'    } --[[SOL OUTPUT--]] 
-T.Int      = { tag = 'int'    } --[[SOL OUTPUT--]] 
-T.Empty    = { tag = 'variant', variants = {} } --[[SOL OUTPUT--]] 
+T.Nil      = const{ tag = 'nil'    } --[[SOL OUTPUT--]] 
+T.True     = const{ tag = 'true'   } --[[SOL OUTPUT--]] 
+T.False    = const{ tag = 'false'  } --[[SOL OUTPUT--]] 
+T.String   = const{ tag = 'string' } --[[SOL OUTPUT--]] 
+T.Num      = const{ tag = 'num'    } --[[SOL OUTPUT--]] 
+T.Int      = const{ tag = 'int'    } --[[SOL OUTPUT--]] 
+T.Empty    = const{ tag = 'variant', variants = {} } --[[SOL OUTPUT--]] 
+
 --T.Void     = T.Empty
 T.Void     = {} --[[SOL OUTPUT--]]  -- empty type-list
 T.Nilable  = T.Any --[[SOL OUTPUT--]]   -- TODO
 
 T.Uint = T.Int --[[SOL OUTPUT--]]                -- TODO
-T.Bool = { tag = 'variant',  variants = { T.False, T.True } } --[[SOL OUTPUT--]] 
+T.Bool = const{ tag = 'variant',  variants = { T.False, T.True } } --[[SOL OUTPUT--]] 
 
---[[
-T.EmptyTable = {
-	tag      = 'object',
-	members = {}
-}
---]]
-function T.is_empty_table(t)
-	return t.tag == 'object' and next(t.members) == nil --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
 
 -- General table - could be an object, list or map:
-T.Table = { tag = 'table' } --[[SOL OUTPUT--]] 
+T.Table = const{ tag = 'table' } --[[SOL OUTPUT--]] 
 
 -- Supertype of all objects:
-T.Object = { tag = 'object', members = {} } --[[SOL OUTPUT--]] 
+T.Object = const{ tag = 'object', members = {} } --[[SOL OUTPUT--]] 
 
 -- Supertype of all lists:
-T.List = { tag = 'list', type = T.Any } --[[SOL OUTPUT--]] 
+T.List = const{ tag = 'list', type = T.Any } --[[SOL OUTPUT--]] 
 
 -- Supertype of all maps:
-T.Map = { tag = 'map', key_type = T.Any, value_type = T.Any } --[[SOL OUTPUT--]] 
+T.Map = const{ tag = 'map', key_type = T.Any, value_type = T.Any } --[[SOL OUTPUT--]] 
 
+------------------------------------------------------------------
 
 function T.is_type(x)
 	return type(x) == 'table' and type(x.tag) == 'string' --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
+-- TODO: remove
+function T.is_empty_table(t)
+	return t.tag == 'object' and next(t.members) == nil --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -221,7 +225,7 @@ function T.follow_identifiers(t, forgiving)
 		end --[[SOL OUTPUT--]] 
 
 		-- No more need to write to it:
-		U.write_protect_table(t) --[[SOL OUTPUT--]]  -- TODO
+		U.make_const(t) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	return T.follow_identifiers(t.type) --[[SOL OUTPUT--]] 
@@ -429,7 +433,9 @@ function T.isa_raw(d, b, problem_rope)
 	end --[[SOL OUTPUT--]] 
 
 	if T.is_empty_table(d) then
-		return b.tag == 'list' or b.tag == 'map' --[[SOL OUTPUT--]] 
+		-- TODO: remove
+		return b.tag == 'list' or b.tag == 'map' or b.tag == 'table' or
+		       (b.tag == 'object' and U.table_empty(b.members) and b.derived == nil and b.metatable == nil) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	if d.tag == 'false' then
@@ -720,7 +726,7 @@ function T.as_type_list(t)
 end --[[SOL OUTPUT--]] 
 
 
--- indent      - indent on any _subsequent_ line
+-- indent - indent on any _subsequent_ line
 function T.name(typ, indent, verbose)
 	indent     = indent or "" --[[SOL OUTPUT--]] 
 	if verbose == nil then verbose = false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 

@@ -998,8 +998,9 @@ local function analyze(ast, filename, on_require, settings)
 			-- TODO: 0xff, 42 is int,  42.0 is num
 			local str = expr.value.data --[[SOL OUTPUT--]] 
 			local t = T.from_num_literal( str ) --[[SOL OUTPUT--]] 
-			if t then return t --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-			if not t then
+			if t then
+				return t --[[SOL OUTPUT--]] 
+			else
 				report_error(expr, 'Failed to parse number: %q', str) --[[SOL OUTPUT--]] 
 				return T.Num --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 

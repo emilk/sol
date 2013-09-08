@@ -45,7 +45,7 @@ P.SOL_SETTINGS = {
 		'return', 'then',  'true', 'until',    'while',
 
 		-- Sol specific:
-		'typedef', 'global', 'var',
+		'typedef', 'global', 'var', 'class',
 	};
 
 
@@ -665,6 +665,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		if tok:consume_symbol('{') then
 			-- Object or map?
 			if tok:consume_symbol('}') then
+				-- TODO: remove and replace with 'table'
 				-- Empty object
 				return {
 					tag     = 'object',
@@ -710,22 +711,38 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				end --[[SOL OUTPUT--]] 
 				return obj --[[SOL OUTPUT--]] 
 			else
-				-- a map?
+				-- a map or a set
 				local key_type   = parse_type(scope) --[[SOL OUTPUT--]] 
 				local sep        = tok:consume_symbol('=>') --[[SOL OUTPUT--]] 
-				local value_type = parse_type(scope) --[[SOL OUTPUT--]] 
-				local closing    = tok:consume_symbol('}') --[[SOL OUTPUT--]] 
 
-				if not (key_type and sep and value_type and closing) then
-					report_error("Expected map type on the form: {key_type => value_type}") --[[SOL OUTPUT--]] 
-					return T.Any --[[SOL OUTPUT--]] 
+				if sep then
+					local value_type = parse_type(scope) --[[SOL OUTPUT--]] 
+					local closing    = tok:consume_symbol('}') --[[SOL OUTPUT--]] 
+
+					if not (key_type and sep and value_type and closing) then
+						report_error("Expected map type on the form: {key_type => value_type}") --[[SOL OUTPUT--]] 
+						return T.Any --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
+					return {
+						tag        = 'map',
+						key_type   = key_type,
+						value_type = value_type
+					} --[[SOL OUTPUT--]] 
+				else
+					local closing = tok:consume_symbol('}') --[[SOL OUTPUT--]] 
+
+					if not (key_type and closing) then
+						report_error("Expected set on the form { key_type } or a map on the form: {key_type => value_type}") --[[SOL OUTPUT--]] 
+						return T.Any --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
+					return {
+						tag        = 'map',
+						key_type   = key_type,
+						value_type = T.True
+					} --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-
-				return {
-					tag        = 'map',
-					key_type   = key_type,
-					value_type = value_type
-				} --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -794,8 +811,9 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		if tok:is('Number') then
 			local str = tok:get().data --[[SOL OUTPUT--]] 
 			local t = T.from_num_literal( str ) --[[SOL OUTPUT--]] 
-			if t then return t --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-			if not t then
+			if t then
+				return t --[[SOL OUTPUT--]] 
+			else
 				report_error('Failed to parse number: %q', str) --[[SOL OUTPUT--]] 
 				return T.Num --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1102,6 +1120,35 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 	end --[[SOL OUTPUT--]] 
 
 
+	local function parse_class(scope, token_list, scoping)
+		--[[
+		A class definition defines both a table (the class table, Foo)
+		and a class type.
+		It is implied that the class table 'Foo' is the __index for an instance type, which is also defined.
+
+		The typename 'Foo' will refer to the *instance type*.
+		There is no way to refer to the class type.
+
+		class Foo = expr
+
+		-- Extends the class 'Foo':
+		function Foo.static_fun()
+			Foo.static_var = 42
+		end
+
+		function Foo:init()
+			-- The next line extends the instance type
+			self.member_var = 32 
+		end
+
+		function Foo:member_fun()
+			return self.member_var
+		end
+		--]]
+		return false, "TODO" --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+
 	local function parse_statement(scope)
 		local            st         = true --[[SOL OUTPUT--]]  -- Success?
 		local       stat       = nil --[[SOL OUTPUT--]] 
@@ -1335,6 +1382,9 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 		elseif tok:consume_keyword('var', token_list) then
 			st, stat = parse_declaration(scope, token_list, 'var') --[[SOL OUTPUT--]] 
+
+		elseif tok:consume_keyword('class', token_list) then
+			st, stat = parse_class(scope, token_list, 'local') --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_symbol('::', token_list) then
 			if not tok:is('ident') then

@@ -283,7 +283,7 @@ end
 
 
 function U.table_empty(t: table) -> bool
-	return next(t) == nil
+	return next(t) == nil and getmetatable(t) == nil
 end
 
 
@@ -304,14 +304,27 @@ end
 
 
 ------------------------------------------------------
+-- TODO: only in debug/development
+
+-- Returns a write-protected version of the input table
+function U.const(table: {}) -> table
+	assert(getmetatable(table) == nil)
+
+	return setmetatable({}, {
+		__index    = table,
+		__newindex = function(table, key, value)
+			D.error("Attempt to modify read-only table")
+		end,
+		__metatable = 'This is a read-only table' -- disallow further meta-tabling
+	})
+end
 
 -- Write-protects existing table against all modification
-function U.write_protect_table(table: {}) -> void
-	-- TODO: only in debug/development
+function U.make_const(table: {}) -> void
+	assert(getmetatable(table) == nil)
 
 	local clone = U.shallow_clone(table)
 
-	assert(getmetatable(table) == nil)
 	U.table_clear(table)
 
 	setmetatable(table, {

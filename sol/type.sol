@@ -5,6 +5,8 @@ A type can either be a particular value (number or string) or one of the followi
 local U = require 'util'
 local D = require 'sol_debug'
 
+local const = U.const
+
 --[[
 FIXME: recursive dependency
 local S    = require 'scope'
@@ -123,51 +125,53 @@ typedef T.Identifier : T.Type = {
 	type        : T.Type?,   -- Filled in by TypeCheck on declaration/assignement on typedef or declaration of 'var_' if any
 }
 
+------------------------------------------------------------------
+-- Prototypes for commong stuff:
+
 
 -- Any: implicit convert to and from anything.
 -- Used for interaction with Lua code.
 T.Any  = { tag = 'any'  }  -- Single unknown value
 T.AnyTypeList = {}   -- Unkown number of unknown values
 
-T.Nil      = { tag = 'nil'    }
-T.True     = { tag = 'true'   }
-T.False    = { tag = 'false'  }
-T.String   = { tag = 'string' }
-T.Num      = { tag = 'num'    }
-T.Int      = { tag = 'int'    }
-T.Empty    = { tag = 'variant', variants = {} }
+T.Nil      = const{ tag = 'nil'    }
+T.True     = const{ tag = 'true'   }
+T.False    = const{ tag = 'false'  }
+T.String   = const{ tag = 'string' }
+T.Num      = const{ tag = 'num'    }
+T.Int      = const{ tag = 'int'    }
+T.Empty    = const{ tag = 'variant', variants = {} }
+
 --T.Void     = T.Empty
 T.Void     = {} -- empty type-list
 T.Nilable  = T.Any  -- TODO
 
 T.Uint = T.Int               -- TODO
-T.Bool = { tag = 'variant',  variants = { T.False, T.True } }
+T.Bool = const{ tag = 'variant',  variants = { T.False, T.True } }
 
---[[
-T.EmptyTable = {
-	tag      = 'object',
-	members = {}
-}
---]]
-function T.is_empty_table(t: T.Type) -> bool
-	return t.tag == 'object' and next(t.members) == nil
-end
 
 -- General table - could be an object, list or map:
-T.Table = { tag = 'table' }
+T.Table = const{ tag = 'table' }
 
 -- Supertype of all objects:
-T.Object = { tag = 'object', members = {} }
+T.Object = const{ tag = 'object', members = {} }
 
 -- Supertype of all lists:
-T.List = { tag = 'list', type = T.Any }
+T.List = const{ tag = 'list', type = T.Any }
 
 -- Supertype of all maps:
-T.Map = { tag = 'map', key_type = T.Any, value_type = T.Any }
+T.Map = const{ tag = 'map', key_type = T.Any, value_type = T.Any }
 
+------------------------------------------------------------------
 
 function T.is_type(x) -> bool
 	return type(x) == 'table' and type(x.tag) == 'string'
+end
+
+
+-- TODO: remove
+function T.is_empty_table(t: T.Type) -> bool
+	return t.tag == 'object' and next(t.members) == nil
 end
 
 
@@ -221,7 +225,7 @@ function T.follow_identifiers(t : T.Type, forgiving: bool?) -> T.Type
 		end
 
 		-- No more need to write to it:
-		U.write_protect_table(t) -- TODO
+		U.make_const(t)
 	end
 
 	return T.follow_identifiers(t.type)
@@ -429,7 +433,9 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	end
 
 	if T.is_empty_table(d) then
-		return b.tag == 'list' or b.tag == 'map'
+		-- TODO: remove
+		return b.tag == 'list' or b.tag == 'map' or b.tag == 'table' or
+		       (b.tag == 'object' and U.table_empty(b.members) and b.derived == nil and b.metatable == nil)
 	end
 
 	if d.tag == 'false' then
@@ -720,7 +726,7 @@ function T.as_type_list(t: T.Type or [T.Type])
 end
 
 
--- indent      - indent on any _subsequent_ line
+-- indent - indent on any _subsequent_ line
 function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 	indent     = indent or ""
 	if verbose == nil then verbose = false end

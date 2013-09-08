@@ -283,7 +283,7 @@ end --[[SOL OUTPUT--]]
 
 
 function U.table_empty(t)
-	return next(t) == nil --[[SOL OUTPUT--]] 
+	return next(t) == nil and getmetatable(t) == nil --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -304,14 +304,27 @@ end --[[SOL OUTPUT--]]
 
 
 ------------------------------------------------------
+-- TODO: only in debug/development
+
+-- Returns a write-protected version of the input table
+function U.const(table)
+	assert(getmetatable(table) == nil) --[[SOL OUTPUT--]] 
+
+	return setmetatable({}, {
+		__index    = table,
+		__newindex = function(table, key, value)
+			D.error("Attempt to modify read-only table") --[[SOL OUTPUT--]] 
+		end,
+		__metatable = 'This is a read-only table' -- disallow further meta-tabling
+	}) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 -- Write-protects existing table against all modification
-function U.write_protect_table(table)
-	-- TODO: only in debug/development
+function U.make_const(table)
+	assert(getmetatable(table) == nil) --[[SOL OUTPUT--]] 
 
 	local clone = U.shallow_clone(table) --[[SOL OUTPUT--]] 
 
-	assert(getmetatable(table) == nil) --[[SOL OUTPUT--]] 
 	U.table_clear(table) --[[SOL OUTPUT--]] 
 
 	setmetatable(table, {

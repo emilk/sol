@@ -2,7 +2,6 @@ local D = {}
 
 D.active = false
 
-
 function D.get_lib() -> any
 	if D.active then
 		local DEBUG_LIB = "debugger"

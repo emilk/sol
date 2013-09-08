@@ -45,7 +45,7 @@ P.SOL_SETTINGS = {
 		'return', 'then',  'true', 'until',    'while',
 
 		-- Sol specific:
-		'typedef', 'global', 'var',
+		'typedef', 'global', 'var', 'class',
 	};
 
 
@@ -665,6 +665,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		if tok:consume_symbol('{') then
 			-- Object or map?
 			if tok:consume_symbol('}') then
+				-- TODO: remove and replace with 'table'
 				-- Empty object
 				return {
 					tag     = 'object',
@@ -710,22 +711,38 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				end
 				return obj
 			else
-				-- a map?
+				-- a map or a set
 				local key_type   = parse_type(scope)
 				local sep        = tok:consume_symbol('=>')
-				local value_type = parse_type(scope)
-				local closing    = tok:consume_symbol('}')
 
-				if not (key_type and sep and value_type and closing) then
-					report_error("Expected map type on the form: {key_type => value_type}")
-					return T.Any
+				if sep then
+					local value_type = parse_type(scope)
+					local closing    = tok:consume_symbol('}')
+
+					if not (key_type and sep and value_type and closing) then
+						report_error("Expected map type on the form: {key_type => value_type}")
+						return T.Any
+					end
+
+					return {
+						tag        = 'map',
+						key_type   = key_type,
+						value_type = value_type
+					}
+				else
+					local closing = tok:consume_symbol('}')
+
+					if not (key_type and closing) then
+						report_error("Expected set on the form { key_type } or a map on the form: {key_type => value_type}")
+						return T.Any
+					end
+
+					return {
+						tag        = 'map',
+						key_type   = key_type,
+						value_type = T.True
+					}
 				end
-
-				return {
-					tag        = 'map',
-					key_type   = key_type,
-					value_type = value_type
-				}
 			end
 		end
 
@@ -794,8 +811,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		if tok:is('Number') then
 			local str = tok:get().data
 			local t = T.from_num_literal( str )
-			if t then return t end
-			if not t then
+			if t then
+				return t
+			else
 				report_error('Failed to parse number: %q', str)
 				return T.Num
 			end
@@ -1102,6 +1120,35 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
+	local function parse_class(scope: Scope, token_list: TokenList, scoping: 'local' or 'global') -> bool, StatNode_or_error
+		--[[
+		A class definition defines both a table (the class table, Foo)
+		and a class type.
+		It is implied that the class table 'Foo' is the __index for an instance type, which is also defined.
+
+		The typename 'Foo' will refer to the *instance type*.
+		There is no way to refer to the class type.
+
+		class Foo = expr
+
+		-- Extends the class 'Foo':
+		function Foo.static_fun()
+			Foo.static_var = 42
+		end
+
+		function Foo:init()
+			-- The next line extends the instance type
+			self.member_var = 32 
+		end
+
+		function Foo:member_fun()
+			return self.member_var
+		end
+		--]]
+		return false, "TODO"
+	end
+
+
 	local function parse_statement(scope) -> bool, StatNode_or_error
 		var            st         = true -- Success?
 		var<{}?>       stat       = nil
@@ -1335,6 +1382,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		elseif tok:consume_keyword('var', token_list) then
 			st, stat = parse_declaration(scope, token_list, 'var')
+
+		elseif tok:consume_keyword('class', token_list) then
+			st, stat = parse_class(scope, token_list, 'local')
 
 		elseif tok:consume_symbol('::', token_list) then
 			if not tok:is('ident') then
