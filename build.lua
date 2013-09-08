@@ -74,7 +74,7 @@ function cp(source, dest)
 end
 
 
--- Allow user to pass in things like -s (spam) and -d (debug):
+-- Allow user to pass in things like -s (spam) and -d (debug), -e0  (force build)
 local solc_args = ''
 for _,a in ipairs(arg) do
 	solc_args = solc_args .. ' ' .. a
