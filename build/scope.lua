@@ -47,9 +47,9 @@ local S = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]
 
 local Scope = {} --[[SOL OUTPUT--]] 
 
-function Scope:new(parent)
+function Scope.new(parent)
 	local s = {} --[[SOL OUTPUT--]] 	
-	setmetatable(s, { __index = self }) --[[SOL OUTPUT--]] 
+	setmetatable(s, { __index = Scope }) --[[SOL OUTPUT--]] 
 	s:init(parent) --[[SOL OUTPUT--]] 
 	return s --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
@@ -59,7 +59,7 @@ require 'class'
 local Scope = sol_class("Scope")
 --class Scope
 
-function Scope:new(parent: S.Scope?) -> S.Scope
+function Scope.new(parent: S.Scope?) -> S.Scope
 	return Scope(parent)
 end
 --]]
@@ -88,7 +88,7 @@ end --[[SOL OUTPUT--]]
 
 function Scope:create_module_scope()
 	local top_scope = self:get_global_scope() --[[SOL OUTPUT--]] 
-	return Scope:new( top_scope ) --[[SOL OUTPUT--]] 
+	return Scope.new( top_scope ) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -99,7 +99,7 @@ end --[[SOL OUTPUT--]]
 
 
 function Scope:create_global_scope()
-	local s = Scope:new() --[[SOL OUTPUT--]] 
+	local s = Scope.new() --[[SOL OUTPUT--]] 
 	local where = "[intrinsic]" --[[SOL OUTPUT--]]   -- var.where
 
 

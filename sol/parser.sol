@@ -177,8 +177,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 	local VarDigits = {'_', 'a', 'b', 'c', 'd'}
 	local function create_scope(parent)
-		local scope = S.Scope:new(parent)
-		scope.print = function() return "<Scope>" end
+		local scope = S.Scope.new(parent)
 		--report_spam("New scope %s, parent: %s", tostring(scope), tostring(parent))
 		return scope
 	end

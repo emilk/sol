@@ -47,9 +47,9 @@ typedef S.Variable = Variable
 --[-[
 local Scope = {}
 
-function Scope:new(parent: S.Scope?) -> S.Scope
+function Scope.new(parent: S.Scope?) -> S.Scope
 	local s = {}	
-	setmetatable(s, { __index = self })
+	setmetatable(s, { __index = Scope })
 	s:init(parent)
 	return s
 end
@@ -59,7 +59,7 @@ require 'class'
 local Scope = sol_class("Scope")
 --class Scope
 
-function Scope:new(parent: S.Scope?) -> S.Scope
+function Scope.new(parent: S.Scope?) -> S.Scope
 	return Scope(parent)
 end
 --]]
@@ -88,7 +88,7 @@ end
 
 function Scope:create_module_scope() -> S.Scope
 	local top_scope = self:get_global_scope()
-	return Scope:new( top_scope )
+	return Scope.new( top_scope )
 end
 
 
@@ -99,7 +99,7 @@ end
 
 
 function Scope:create_global_scope() -> S.Scope
-	local s = Scope:new()
+	local s = Scope.new()
 	local where = "[intrinsic]"  -- var.where
 
 

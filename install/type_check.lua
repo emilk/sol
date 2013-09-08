@@ -1402,7 +1402,8 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
-	local function assign_to_obj_member(stat, scope, is_pre_analyze, is_declare,
+	local function assign_to_obj_member(stat, scope,
+		                                 is_pre_analyze, is_declare, extend_class,
 		                                 obj_t, name, right_type)
 	 											--> T.Type -- TODO: have this here
 
@@ -1448,9 +1449,6 @@ local function analyze(ast, filename, on_require, settings)
 				report_spam(stat, "Adding member") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			obj_t = U.shallow_clone( obj_t ) --[[SOL OUTPUT--]] 
-			obj_t.members = U.shallow_clone( obj_t.members ) --[[SOL OUTPUT--]] 
-
 			--[[
 			We do not broaden the type here, to make sure the following code works:
 
@@ -1462,7 +1460,15 @@ local function analyze(ast, filename, on_require, settings)
 				return ret
 			end
 			--]]
-			obj_t.members[name] = right_type --[[SOL OUTPUT--]] 
+
+			if extend_class then
+				report_info(stat, "Extending class with %q", name) --[[SOL OUTPUT--]] 
+				obj_t.members[name] = right_type --[[SOL OUTPUT--]] 
+			else
+				obj_t = U.shallow_clone( obj_t ) --[[SOL OUTPUT--]] 
+				obj_t.members = U.shallow_clone( obj_t.members ) --[[SOL OUTPUT--]] 
+				obj_t.members[name] = right_type --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 
 			return obj_t --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1486,10 +1492,54 @@ local function analyze(ast, filename, on_require, settings)
 
 			local base_t, base_var = analyze_expr_single_custom(left_expr.base, scope, is_pre_analyze) --[[SOL OUTPUT--]] 
 
-			if not base_var then
-			--if true then  -- TODO: always use this path
+			if base_var then
+				-- self.foo = 32 will actually add the member 'foo' to the class definition!
+				-- think ctors and the like
+				local extend_class = (base_var.name == 'self') --[[SOL OUTPUT--]] 
+
+
+				if not base_var.type or T.is_empty_table(base_var.type) then
+					report_spam(stat, "New object") --[[SOL OUTPUT--]] 
+					base_var.type = { tag = 'object', members = {} } --[[SOL OUTPUT--]] 
+					extend_class = false --[[SOL OUTPUT--]]  -- bad idea
+				end --[[SOL OUTPUT--]] 
+
+				report_spam(stat, "Assigning to %s.%s", base_var.name, name) --[[SOL OUTPUT--]] 
+
+				local var_t = T.follow_identifiers(base_var.type) --[[SOL OUTPUT--]] 
+
+				if var_t.tag == 'variant' then
+					extend_class = false --[[SOL OUTPUT--]] 
+
+					local variant = T.clone_variant(var_t) --[[SOL OUTPUT--]] 
+
+					-- TODO: recurse
+					for i,v in ipairs(variant.variants) do
+						if v.tag == 'object' then
+							variant.variants[i] = assign_to_obj_member(stat, scope,
+								                                        is_pre_analyze, is_declare, extend_class,
+								                                        v, name, right_type) --[[SOL OUTPUT--]] 	
+						end --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				elseif var_t.tag == 'object' then
+					base_var.type = assign_to_obj_member(stat, scope,
+						                                 is_pre_analyze, is_declare, extend_class,
+						                                 var_t, name, right_type) --[[SOL OUTPUT--]] 	
+					return --[[SOL OUTPUT--]] 
+				elseif T.is_any(var_t) then
+					-- not an object? then no need to extend the type
+					-- eg.   local foo = som_fun()   foo.var_ = ...
+					report_warning(stat, "[B] Trying to index type 'any' with '%s'", name) --[[SOL OUTPUT--]] 
+				else
+					-- not an object? then no need to extend the type
+					-- eg.   local foo = som_fun()   foo.var_ = ...
+					report_warning(stat, "[B] Trying to index non-object of type '%s' with '%s'", var_t, name) --[[SOL OUTPUT--]] 
+					--D.break_()
+				end --[[SOL OUTPUT--]] 
+
+			else -- no variable we can update the type of
 				-- e.g.:   foo.bar.baz
-				report_info(stat, "do_assignment: tried to index non-variable") --[[SOL OUTPUT--]] 
+				report_warning(stat, "do_assignment: tried to index non-variable") --[[SOL OUTPUT--]] 
 				assert(base_t) --[[SOL OUTPUT--]] 
 				base_t = T.follow_identifiers(base_t) --[[SOL OUTPUT--]] 
 				--assert(base_t ~= T.EmptyTable)
@@ -1528,6 +1578,7 @@ local function analyze(ast, filename, on_require, settings)
 						end --[[SOL OUTPUT--]] 
 
 						report_spam(stat, "Adding member") --[[SOL OUTPUT--]] 
+						report_warning(stat, "Adding member %q to %q", name, base_t) --[[SOL OUTPUT--]] 
 
 						--[[
 						We do not broaden the type here, to make sure the following code works:
@@ -1546,49 +1597,9 @@ local function analyze(ast, filename, on_require, settings)
 				elseif T.is_any(base_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_spam(stat, "[A] Trying to index type 'any' with '%s'", name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[A] Trying to index type 'any' with '%s'", name) --[[SOL OUTPUT--]] 
 				else
 					report_warning(stat, "[A] Trying to index non-object of type '%s' with '%s'", base_t, name) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			else
-				if not base_var.type or T.is_empty_table(base_var.type) then
-					report_spam(stat, "New object") --[[SOL OUTPUT--]] 
-					base_var.type = { tag = 'object', members = {} } --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				report_spam(stat, "Assigning to %s.%s", base_var.name, name) --[[SOL OUTPUT--]] 
-
-				local var_t = T.follow_identifiers(base_var.type) --[[SOL OUTPUT--]] 
-
-				-- HACK: do more nicely:
-				if var_t.tag == 'variant' then
-					local variant = T.clone_variant(var_t) --[[SOL OUTPUT--]] 
-
-					for i,v in ipairs(variant.variants) do
-						if v.tag == 'object' then
-							variant.variants[i] = assign_to_obj_member(stat, scope, is_pre_analyze, is_declare,
-								                                        v, name, right_type) --[[SOL OUTPUT--]] 	
-						end --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-
-					--[[
-					local obj_t = T.find(var_t, T.Object)
-					if obj_t then
-						var_t = T.follow_identifiers( obj_t )
-					end
-					]]
-				elseif var_t.tag == 'object' then
-					base_var.type = assign_to_obj_member(stat, scope, is_pre_analyze, is_declare, var_t, name, right_type) --[[SOL OUTPUT--]] 	
-					return --[[SOL OUTPUT--]] 
-				elseif T.is_any(var_t) then
-					-- not an object? then no need to extend the type
-					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_spam(stat, "[B] Trying to index type 'any' with '%s'", name) --[[SOL OUTPUT--]] 
-				else
-					-- not an object? then no need to extend the type
-					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Trying to index non-object of type '%s' with '%s'", var_t, name) --[[SOL OUTPUT--]] 
-					--D.break_()
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

@@ -670,7 +670,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return
 		end
 
-		local target_var = args[1].variable
+		var<Variable> target_var = args[1].variable
 		D.assert(target_var)
 		local target_type = target_var.type
 
@@ -1402,7 +1402,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function assign_to_obj_member(stat: P.Node, scope: Scope, is_pre_analyze: bool, is_declare: bool,
+	local function assign_to_obj_member(stat: P.Node, scope: Scope,
+		                                 is_pre_analyze: bool, is_declare: bool, extend_class: bool,
 		                                 obj_t: T.Object, name: string, right_type: T.Type) -> T.Type
 	 											--> T.Type -- TODO: have this here
 
@@ -1448,9 +1449,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_spam(stat, "Adding member")
 			end
 
-			obj_t = U.shallow_clone( obj_t )
-			obj_t.members = U.shallow_clone( obj_t.members )
-
 			--[[
 			We do not broaden the type here, to make sure the following code works:
 
@@ -1462,7 +1460,15 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				return ret
 			end
 			--]]
-			obj_t.members[name] = right_type
+
+			if extend_class then
+				report_info(stat, "Extending class with %q", name)
+				obj_t.members[name] = right_type
+			else
+				obj_t = U.shallow_clone( obj_t )
+				obj_t.members = U.shallow_clone( obj_t.members )
+				obj_t.members[name] = right_type
+			end
 
 			return obj_t
 		end
@@ -1486,10 +1492,54 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			local base_t, base_var = analyze_expr_single_custom(left_expr.base, scope, is_pre_analyze)
 
-			if not base_var then
-			--if true then  -- TODO: always use this path
+			if base_var then
+				-- self.foo = 32 will actually add the member 'foo' to the class definition!
+				-- think ctors and the like
+				var extend_class = (base_var.name == 'self')
+
+
+				if not base_var.type or T.is_empty_table(base_var.type) then
+					report_spam(stat, "New object")
+					base_var.type = { tag = 'object', members = {} }
+					extend_class = false -- bad idea
+				end
+
+				report_spam(stat, "Assigning to %s.%s", base_var.name, name)
+
+				local var_t = T.follow_identifiers(base_var.type)
+
+				if var_t.tag == 'variant' then
+					extend_class = false
+
+					var variant = T.clone_variant(var_t)
+
+					-- TODO: recurse
+					for i,v in ipairs(variant.variants) do
+						if v.tag == 'object' then
+							variant.variants[i] = assign_to_obj_member(stat, scope,
+								                                        is_pre_analyze, is_declare, extend_class,
+								                                        v, name, right_type)	
+						end
+					end
+				elseif var_t.tag == 'object' then
+					base_var.type = assign_to_obj_member(stat, scope,
+						                                 is_pre_analyze, is_declare, extend_class,
+						                                 var_t, name, right_type)	
+					return
+				elseif T.is_any(var_t) then
+					-- not an object? then no need to extend the type
+					-- eg.   local foo = som_fun()   foo.var_ = ...
+					report_warning(stat, "[B] Trying to index type 'any' with '%s'", name)
+				else
+					-- not an object? then no need to extend the type
+					-- eg.   local foo = som_fun()   foo.var_ = ...
+					report_warning(stat, "[B] Trying to index non-object of type '%s' with '%s'", var_t, name)
+					--D.break_()
+				end
+
+			else -- no variable we can update the type of
 				-- e.g.:   foo.bar.baz
-				report_info(stat, "do_assignment: tried to index non-variable")
+				report_warning(stat, "do_assignment: tried to index non-variable")
 				assert(base_t)
 				base_t = T.follow_identifiers(base_t)
 				--assert(base_t ~= T.EmptyTable)
@@ -1528,6 +1578,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						end
 
 						report_spam(stat, "Adding member")
+						report_warning(stat, "Adding member %q to %q", name, base_t)
 
 						--[[
 						We do not broaden the type here, to make sure the following code works:
@@ -1546,49 +1597,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				elseif T.is_any(base_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_spam(stat, "[A] Trying to index type 'any' with '%s'", name)
+					report_warning(stat, "[A] Trying to index type 'any' with '%s'", name)
 				else
 					report_warning(stat, "[A] Trying to index non-object of type '%s' with '%s'", base_t, name)
-				end
-			else
-				if not base_var.type or T.is_empty_table(base_var.type) then
-					report_spam(stat, "New object")
-					base_var.type = { tag = 'object', members = {} }
-				end
-
-				report_spam(stat, "Assigning to %s.%s", base_var.name, name)
-
-				local var_t = T.follow_identifiers(base_var.type)
-
-				-- HACK: do more nicely:
-				if var_t.tag == 'variant' then
-					var variant = T.clone_variant(var_t)
-
-					for i,v in ipairs(variant.variants) do
-						if v.tag == 'object' then
-							variant.variants[i] = assign_to_obj_member(stat, scope, is_pre_analyze, is_declare,
-								                                        v, name, right_type)	
-						end
-					end
-
-					--[[
-					local obj_t = T.find(var_t, T.Object)
-					if obj_t then
-						var_t = T.follow_identifiers( obj_t )
-					end
-					]]
-				elseif var_t.tag == 'object' then
-					base_var.type = assign_to_obj_member(stat, scope, is_pre_analyze, is_declare, var_t, name, right_type)	
-					return
-				elseif T.is_any(var_t) then
-					-- not an object? then no need to extend the type
-					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_spam(stat, "[B] Trying to index type 'any' with '%s'", name)
-				else
-					-- not an object? then no need to extend the type
-					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Trying to index non-object of type '%s' with '%s'", var_t, name)
-					--D.break_()
 				end
 			end
 		end

@@ -18,13 +18,14 @@ local L = {}
 
 typedef TokID = 'Keyword' or 'ident' or 'Number' or 'String' or 'Symbol' or 'Eof'
 
-typedef L.Token = {
+typedef Token = {
 	type : TokID,
-	data : string,
-	line : int,
-	char : int,
+	data : string?,
+	line : int?,
+	char : int?,
 }
 
+typedef L.Token = Token
 typedef L.TokenList = [L.Token]
 
 
@@ -187,9 +188,6 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 							line        = line,
 							char        = char
 						}
-						token.print = function()
-							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.data .." >"
-						end
 						table.insert(leading_tokens, token)
 					end
 
@@ -227,9 +225,6 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 							line        = line,
 							char        = char,
 						}
-						token.print = function()
-							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.data .." >"
-						end
 						table.insert(leading_tokens, token)
 					end
 
@@ -299,7 +294,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			local c = peek()
 
 			--symbol to emit
-			local to_emit = nil
+			var<Token?> to_emit = nil
 
 			--branch on type
 			if c == '' then
@@ -435,7 +430,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			end
 
 			--add the emitted symbol, after adding some common data
-			to_emit.leading_white = leading_tokens -- table of leading whitespace/comments
+			to_emit.leading_white     = leading_tokens -- table of leading whitespace/comments
 			to_emit.all_leading_white = all_leading_white
 			--for k, tok in pairs(leading_tokens) do
 			--  tokens[#tokens + 1] = tok
@@ -443,9 +438,6 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 
 			to_emit.line = this_line
 			to_emit.char = this_char
-			to_emit.print = function()
-				return "<" .. to_emit.type .. string.rep(' ', 7-#to_emit.type) .. "  " .. (to_emit.data or '') .. " >"
-			end
 			tokens[#tokens+1] = to_emit
 
 			--halt after eof has been emitted

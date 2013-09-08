@@ -14,10 +14,11 @@ local Digits       = bimap{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'} --[
 local HexDigits    = bimap{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                            'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'} --[[SOL OUTPUT--]] 
 
-local L = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+local L = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 -- The settings are found in Parser.sol
+
 
 
 
@@ -187,9 +188,6 @@ function L.lex_sol(src, filename, settings)
 							line        = line,
 							char        = char
 						} --[[SOL OUTPUT--]] 
-						token.print = function()
-							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.data .." >" --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
 						table.insert(leading_tokens, token) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
@@ -227,9 +225,6 @@ function L.lex_sol(src, filename, settings)
 							line        = line,
 							char        = char,
 						} --[[SOL OUTPUT--]] 
-						token.print = function()
-							return "<"..(token.type .. string.rep(' ', 7-#token.type)).."  ".. token.data .." >" --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
 						table.insert(leading_tokens, token) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
@@ -435,7 +430,7 @@ function L.lex_sol(src, filename, settings)
 			end --[[SOL OUTPUT--]] 
 
 			--add the emitted symbol, after adding some common data
-			to_emit.leading_white = leading_tokens --[[SOL OUTPUT--]]  -- table of leading whitespace/comments
+			to_emit.leading_white     = leading_tokens --[[SOL OUTPUT--]]  -- table of leading whitespace/comments
 			to_emit.all_leading_white = all_leading_white --[[SOL OUTPUT--]] 
 			--for k, tok in pairs(leading_tokens) do
 			--  tokens[#tokens + 1] = tok
@@ -443,9 +438,6 @@ function L.lex_sol(src, filename, settings)
 
 			to_emit.line = this_line --[[SOL OUTPUT--]] 
 			to_emit.char = this_char --[[SOL OUTPUT--]] 
-			to_emit.print = function()
-				return "<" .. to_emit.type .. string.rep(' ', 7-#to_emit.type) .. "  " .. (to_emit.data or '') .. " >" --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
 			tokens[#tokens+1] = to_emit --[[SOL OUTPUT--]] 
 
 			--halt after eof has been emitted

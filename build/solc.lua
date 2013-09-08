@@ -40,7 +40,9 @@ else
 	sol_dir = lfs.currentdir() .. '/' .. sol_dir .. '/' --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
---print("solc: sol_dir: " .. sol_dir)
+
+print("solc: sol_dir: " .. sol_dir) --[[SOL OUTPUT--]] 
+print("path.abspath(''): " .. path.dirname(path.abspath('') .. arg[0])) --[[SOL OUTPUT--]] 
 
 -- Ensure the local includes work:
 package.path = sol_dir..'?.lua;' .. package.path --[[SOL OUTPUT--]] 
