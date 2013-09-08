@@ -4,8 +4,7 @@ Util.lua
 Provides some common utilities shared throughout the project.
 --]]
 
-local pretty = require 'pretty'
-local D      = require 'sol_debug'
+local D = require 'sol_debug'
 
 ------------------------------------------------
 
@@ -14,14 +13,125 @@ local U = {}
 local PLATFORM = os.getenv("windir") and "win" or "unix"
 
 ------------------------------------------------------
+--[[
+	Lua pretty-printing of anything as lua-code.
+	Only supports DAG:s.
+--]]
 
-function U.trim(str: string) -> string
-	return str:gsub("^%s*(.-)%s*$", "%1")	
+
+local function is_identifier(key: string) -> bool
+	return key:match('^[_%a][_%w]*$')
+end
+
+
+local function is_keyword(key: string) -> bool
+	return key == "and"
+	or     key == "break"
+	or     key == "do"
+	or     key == "else"
+	or     key == "elseif"
+	or     key == "end"
+	or     key == "false"
+	or     key == "for"
+	or     key == "function"
+	or     key == "if"
+	or     key == "in"
+	or     key == "local"
+	or     key == "nil"
+	or     key == "not"
+	or     key == "or"
+	or     key == "repeat"
+	or     key == "return"
+	or     key == "then"
+	or     key == "true"
+	or     key == "until"
+	or     key == "while"
+end
+
+
+local function is_safe_key(key: string) -> bool
+	return is_identifier(key) and not is_keyword(key)
+end
+
+
+-- val         - value to serialize
+-- ignore_set   - ignore these key:s
+-- indent      - indent on any _subsequent_ line
+-- discovered  - set of tables already processed (used to discover loops)
+function U.serialize_to_rope(rope, val, ignore_set, indent: string?, discovered: {table => bool}?) -> void
+	if val == nil then
+		rope[#rope+1] = "nil"
+		return
+	end
+
+	ignore_set = ignore_set or {}
+	indent     = indent     or ""
+	discovered = discovered or {}
+	
+	if type(val) == "table" then
+		if discovered[val] then
+			--error("serialize: loop discovered")
+			rope[#rope+1] = 'LOOP'
+			return
+		end
+		discovered[val] = true
+
+		local scope_indent = indent .. "   "
+		rope[#rope+1] = "{\n"
+		if U.is_array(val) then
+			for _,v in ipairs(val) do
+				rope[#rope+1] = scope_indent
+				U.serialize_to_rope(rope, v, ignore_set, scope_indent, discovered)
+				rope[#rope+1] = ",\n"
+			end
+		else
+			for k,v in pairs(val) do
+				--if not ignore_set[k] then
+				if true then
+					local key = is_safe_key(k) and k or string.format("[%q]", k)
+
+					rope[#rope+1] = scope_indent
+					rope[#rope+1] = key
+					rope[#rope+1] = " = "
+
+					if ignore_set[k] then
+						rope[#rope+1] = 'ignored'
+					else
+						U.serialize_to_rope(rope, v, ignore_set, scope_indent, discovered)
+					end
+
+					rope[#rope+1] = ",\n"
+				end
+			end
+		end
+		rope[#rope+1] = indent .. "}"
+	elseif type(val) == "string" then
+		rope[#rope+1] = string.format("%q", val)
+	elseif type(val) == "number" or type(val) == "boolean" then
+		rope[#rope+1] = tostring(val)
+	else
+		--error("serialize: Can't serialize something of type " .. type(val))
+		rope[#rope+1] = tostring(val)
+	end
+end
+
+
+function U.serialize(val, ignore_set) -> string
+	local rope = {}
+	U.serialize_to_rope(rope, val, ignore_set, nil, nil)
+	local str = table.concat(rope)
+	return str
 end
 
 
 function U.pretty(arg)
-	return pretty.serialize(arg)
+	return U.serialize(arg)
+end
+
+------------------------------------------------------
+
+function U.trim(str: string) -> string
+	return str:gsub("^%s*(.-)%s*$", "%1")	
 end
 
 

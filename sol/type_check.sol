@@ -1,13 +1,12 @@
 --[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
 --[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
-local U      = require 'util'
-local bimap  = U.bimap
-local pretty = require 'pretty'
-local T      = require 'type'
-local L      = require 'lexer'
-local P      = require 'parser'
-local S      = require 'scope'
-local D      = require 'sol_debug'
+local U     = require 'util'
+local bimap = U.bimap
+local T     = require 'type'
+local L     = require 'lexer'
+local P     = require 'parser'
+local S     = require 'scope'
+local D     = require 'sol_debug'
 
 
 typedef Scope    = S.Scope
@@ -59,7 +58,7 @@ end
 
 local function expr2str(e: P.ExprNode) 
 	local ignore_set = U.bimap{'var_', 'scope', 'tokens'}
-	return pretty.serialize(e, ignore_set)
+	return U.serialize(e, ignore_set)
 end
 
 

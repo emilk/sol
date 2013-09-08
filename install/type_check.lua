@@ -1,13 +1,12 @@
 --[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol --]] --[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
 --[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
-local U      = require 'util' --[[SOL OUTPUT--]] 
-local bimap  = U.bimap --[[SOL OUTPUT--]] 
-local pretty = require 'pretty' --[[SOL OUTPUT--]] 
-local T      = require 'type' --[[SOL OUTPUT--]] 
-local L      = require 'lexer' --[[SOL OUTPUT--]] 
-local P      = require 'parser' --[[SOL OUTPUT--]] 
-local S      = require 'scope' --[[SOL OUTPUT--]] 
-local D      = require 'sol_debug' --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+local U     = require 'util' --[[SOL OUTPUT--]] 
+local bimap = U.bimap --[[SOL OUTPUT--]] 
+local T     = require 'type' --[[SOL OUTPUT--]] 
+local L     = require 'lexer' --[[SOL OUTPUT--]] 
+local P     = require 'parser' --[[SOL OUTPUT--]] 
+local S     = require 'scope' --[[SOL OUTPUT--]] 
+local D     = require 'sol_debug' --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 
@@ -59,7 +58,7 @@ end --[[SOL OUTPUT--]]
 
 local function expr2str(e) 
 	local ignore_set = U.bimap{'var_', 'scope', 'tokens'} --[[SOL OUTPUT--]] 
-	return pretty.serialize(e, ignore_set) --[[SOL OUTPUT--]] 
+	return U.serialize(e, ignore_set) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
