@@ -308,7 +308,7 @@ function T.is_obj_obj(d, b, problem_rope)
 			if problem_rope then
 				table.insert(problem_rope,
 					string.format("member '%s' of wrong type (got %s, expected %s)",
-						id, d_type, b_type)) --[[SOL OUTPUT--]] 
+					              id, T.name(d_type), T.name(b_type))) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

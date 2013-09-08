@@ -308,7 +308,7 @@ function T.is_obj_obj(d: T.Object, b: T.Object, problem_rope: [string]?) -> bool
 			if problem_rope then
 				table.insert(problem_rope,
 					string.format("member '%s' of wrong type (got %s, expected %s)",
-						id, d_type, b_type))
+					              id, T.name(d_type), T.name(b_type)))
 			end
 			return false
 		end
