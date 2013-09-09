@@ -251,22 +251,19 @@ function U.is_array(val) -> bool
 end
 
 
-function U.bimap(tb: table) -> table
-	for k, v in pairs(tb) do
-		D.assert(k, "bimap with 'false' is dangerous")
-		--D.assert(not tb[v], "bimap clashes") since we iterate over outselves, this is a bad idea
-		tb[v] = k
+function U.set(tb: [string]) -> {string}
+	var<{string}> set = {}
+	for ix,v in ipairs(tb) do
+		set[v] = true
 	end
-	return tb
+	return set
 end
 
 
-function U.table_join(out: table, in_table: table) -> table
-	assert(out ~= in_table, "table_join: in and out array must be different")
-	for key, val in pairs(in_table) do
-		out[key] = val
+function U.list_join(out: [any], in_table: [any])
+	for ix,val in ipairs(in_table) do
+		out[#out + 1] = val
 	end
-	return out
 end
 
 

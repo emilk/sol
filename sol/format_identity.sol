@@ -96,6 +96,9 @@ local function format_identity(ast, filename: string, insert_new_lines : bool?) 
 
 	local format_statlist, format_expr
 
+	var COMMA_SEMICOLON = U.set{",", ";"}
+	var COMMA           = U.set{","}
+
 	-- returns a structure for iterating over tokens
 	local function tokens(expr)
 		local it = 1
@@ -136,14 +139,14 @@ local function format_identity(ast, filename: string, insert_new_lines : bool?) 
 		end
 		function t:append_comma(mandatory, seperators)
 			if true then
-				seperators = seperators or { "," }
-				seperators = U.bimap( seperators )
-				if not mandatory and not seperators[self:peek()] then
+				seperators = seperators or COMMA
+				local peeked = self:peek()
+				if not mandatory and not seperators[peeked] then
 					return
 				end
-				if not seperators[self:peek()] then
+				if not seperators[peeked] then
 					report_error("Missing comma or semicolon; next token is: %s, token iterator: %i, tokens: %s",
-						U.pretty( self:peek() ), it, U.pretty( expr.tokens ))
+						U.pretty( peeked ), it, U.pretty( expr.tokens ))
 				end
 				self:append_next_token()
 			else
@@ -263,7 +266,7 @@ local function format_identity(ast, filename: string, insert_new_lines : bool?) 
 					t:append_next_token( "=" )
 					format_expr(entry.value)
 				end
-				t:append_comma( i ~= #expr.entry_list, { ",", ";" } )
+				t:append_comma( i ~= #expr.entry_list, COMMA_SEMICOLON )
 			end
 			t:append_next_token( "}" )
 

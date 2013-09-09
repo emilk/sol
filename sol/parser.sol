@@ -12,16 +12,16 @@ local T = require 'type' -- For intrinsic functions
 local U = require 'util'
 
 local printf_err = U.printf_err
-local bimap      = U.bimap
+local set        = U.set
 
 
 local P = {}
 
 P.LUA_SETTINGS = {
 	-- Lexer:
-	symbols = bimap{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#'};
+	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#'};
 
-	keywords = bimap{
+	keywords = set{
 		'and',    'break', 'do',   'else',     'elseif',
 		'end',    'false', 'for',  'function', 'goto', 'if',
 		'in',     'local', 'nil',  'not',      'or',   'repeat',
@@ -36,9 +36,9 @@ P.LUA_SETTINGS = {
 
 P.SOL_SETTINGS = {
 	-- Lexer:
-	symbols = bimap{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#', '?', ':'};
+	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#', '?', ':'};
 
-	keywords = bimap{
+	keywords = set{
 		'and',    'break', 'do',   'else',     'elseif',
 		'end',    'false', 'for',  'function', 'goto', 'if',
 		'in',     'local', 'nil',  'not',      'or',   'repeat',
@@ -53,6 +53,9 @@ P.SOL_SETTINGS = {
 	is_sol         = true;
 	function_types = true;  -- Support  foo(arg : int) -> int
 }
+
+
+local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'}
 
 
 --------------------------------------------------------
@@ -571,9 +574,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
-	local unops = bimap{'-', 'not', '#'}
-	local unopprio = 8
-	local priority = {
+	var unops = set{'-', 'not', '#'}
+	var unopprio = 8
+	var priority = {
 		['+']   = {6,6};
 		['-']   = {6,6};
 		['%']   = {7,7};
@@ -1509,8 +1512,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		return true, stat
 	end
 
-
-	local stat_list_close_keywords = bimap{'end', 'else', 'elseif', 'until'}
 
 	parse_statement_list = function(scope) -> bool, P.Statlist or string
 		assert(scope)

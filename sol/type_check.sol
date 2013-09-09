@@ -1,22 +1,22 @@
 --[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
 --[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
-local U     = require 'util'
-local bimap = U.bimap
-local T     = require 'type'
-local L     = require 'lexer'
-local P     = require 'parser'
-local S     = require 'scope'
-local D     = require 'sol_debug'
+local U   = require 'util'
+local set = U.set
+local T   = require 'type'
+local L   = require 'lexer'
+local P   = require 'parser'
+local S   = require 'scope'
+local D   = require 'sol_debug'
 
 
 typedef Scope    = S.Scope
 typedef Variable = S. Variable
 
 
-local NumOps = bimap{
+var NumOps = set{
 	'+', '-', '*', '/', '%', '^'
 }
-local NumCompOps = bimap{
+var NumCompOps = set{
 	'<', '<=', '>', '>='
 }
 
@@ -57,7 +57,7 @@ end
 
 
 local function expr2str(e: P.ExprNode) 
-	local ignore_set = U.bimap{'var_', 'scope', 'tokens'}
+	var ignore_set = U.set{'var_', 'scope', 'tokens'}
 	return U.serialize(e, ignore_set)
 end
 
@@ -246,7 +246,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		if T.could_be(expr_type, expected_type) then
 			return true
 		else
-			local error_rope = {}
+			var<[string]> error_rope = {}
 			T.could_be(expr_type, expected_type, error_rope)
 			local error_msg = table.concat(error_rope, '\n')
 			var reporter = (severity == 'error' and report_error or report_warning)
@@ -477,7 +477,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				local function pairs_type(typ, error_rope: [string]) -> T.Typelist?
 					typ = T.follow_identifiers(typ)
 
-					if typ == T.Any or typ == T.Table then
+					if typ == T.Any or typ.tag == 'table' then
 						return { T.Any, T.Any }
 					elseif typ.tag == 'object' then
 						return { T.String, T.Any }
@@ -529,7 +529,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 					if typ == T.Any then
 						return {T.Uint, T.Any}
-					elseif typ == T.Table or T.is_empty_table(typ) then
+					elseif typ.tag == 'table' or T.is_empty_table(typ) then
 						report_warning(expr, "Calling 'ipairs' on unknown table")
 						return {T.Uint, T.Any} -- Presumably a list?
 					elseif typ.tag == 'list' then
@@ -678,7 +678,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			target_type = T.follow_identifiers( target_type )
 		end
 
-		if not target_type or target_type == T.Table then
+		if not target_type or target_type.tag == 'table' then
 			target_type = { tag = 'object', members = {} }
 		end
 
@@ -856,7 +856,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			elseif typ.tag == 'object' and typ.metatable and typ.metatable.members['__call'] then
 				report_spam(expr, "__call")
-				var call_t = typ.metatable.members['__call']
+				var<T.Type> call_t = typ.metatable.members['__call']
 
 				var ext_args   = U.list_concat({expr.base}, args)
 				var ext_arg_ts = U.list_concat({fun_type}, arg_ts)
@@ -962,6 +962,13 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if var_.namespace then
 				var_.type = var_.type or T.Object
 				type = var_.type
+
+				if T.is_empty_table(type) then
+					type = {
+						tag     = 'object';
+						members = {};
+					}
+				end
 
 				if type.tag == 'object' then
 					if type.namespace then
@@ -1213,35 +1220,35 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				-- Indexing what? We don't know
 				report_warning(expr, 'Indexing unkown table')
 				return T.Any
-			else
-				local list = T.find(base_t, T.List) -- TODO: find all lists and variant the reuslts
-				if list then
-					report_spam(expr, "List index")
-					check_type_is_a("List index", expr.index, index_t, T.Uint, 'error')
-					if list.type then
-						report_spam(expr, "List index: indexing %s, element type is %s", list, list.type)
-						return list.type
-					else
-						return T.Any -- FIXME
-					end
-				end
+			end
 
-				local map = T.find(base_t, T.Map) -- TODO: find all maps and variant the results
-				if map then
-					report_spam(expr, "Map index")
-					check_type_is_a("Map index", expr.index, index_t, map.key_type, 'error')
-					return T.variant(map.value_type, T.Nil)  -- Nil on not found
+			local list = T.find(base_t, T.List) -- TODO: find all lists and variant the reuslts
+			if list then
+				report_spam(expr, "List index")
+				check_type_is_a("List index", expr.index, index_t, T.Uint, 'error')
+				if list.type then
+					report_spam(expr, "List index: indexing %s, element type is %s", list, list.type)
+					return list.type
+				else
+					return T.Any -- FIXME
 				end
+			end
 
-				if T.find(base_t, T.Table) then
-					report_spam(expr, "Table index")
-					return T.Any
-				end
+			local map = T.find(base_t, T.Map) -- TODO: find all maps and variant the results
+			if map then
+				report_spam(expr, "Map index")
+				check_type_is_a("Map index", expr.index, index_t, map.key_type, 'error')
+				return T.variant(map.value_type, T.Nil)  -- Nil on not found
+			end
 
-				report_error(expr, 'Cannot index type %s with %s - not a list, table or map', base_t, index_t)
-				--error("FATAL")
+			if T.find(base_t, T.Table) then
+				report_spam(expr, "Table index")
 				return T.Any
 			end
+
+			report_error(expr, 'Cannot index type %s with %s - not a list, table or map', base_t, index_t)
+			--error("FATAL")
+			return T.Any
 
 
 		elseif expr.ast_type == 'MemberExpr' then
@@ -1289,6 +1296,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if #expr.entry_list == 0 then
 				-- {}
 				-- Assume empty object?
+				--report_warning(expr, "Explicit type missing - is this an empty table, list, map, object - what?")
+				report_spam(expr, "Explicit type missing - is this an empty table, list, map, object - what?")
 				return T.create_empty_table()
 			else
 				var<T.Type>   key_type    = T.make_variant() -- in maps
@@ -1380,7 +1389,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		else
 			local t = analyze_expr_single(expr, scope)
 			if not T.is_useful_boolean(t) then
-				report_warning(expr, "Not a useful boolean expression in %q, type is '%s'", name, t)
+				report_error(expr, "Not a useful boolean expression in %q, type is '%s'", name, t)
 			end
 		end
 	end

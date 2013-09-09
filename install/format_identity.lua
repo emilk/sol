@@ -96,6 +96,9 @@ local function format_identity(ast, filename, insert_new_lines)
 
 	local format_statlist, format_expr --[[SOL OUTPUT--]] 
 
+	local COMMA_SEMICOLON = U.set{",", ";"} --[[SOL OUTPUT--]] 
+	local COMMA           = U.set{","} --[[SOL OUTPUT--]] 
+
 	-- returns a structure for iterating over tokens
 	local function tokens(expr)
 		local it = 1 --[[SOL OUTPUT--]] 
@@ -136,14 +139,14 @@ local function format_identity(ast, filename, insert_new_lines)
 		end --[[SOL OUTPUT--]] 
 		function t:append_comma(mandatory, seperators)
 			if true then
-				seperators = seperators or { "," } --[[SOL OUTPUT--]] 
-				seperators = U.bimap( seperators ) --[[SOL OUTPUT--]] 
-				if not mandatory and not seperators[self:peek()] then
+				seperators = seperators or COMMA --[[SOL OUTPUT--]] 
+				local peeked = self:peek() --[[SOL OUTPUT--]] 
+				if not mandatory and not seperators[peeked] then
 					return --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				if not seperators[self:peek()] then
+				if not seperators[peeked] then
 					report_error("Missing comma or semicolon; next token is: %s, token iterator: %i, tokens: %s",
-						U.pretty( self:peek() ), it, U.pretty( expr.tokens )) --[[SOL OUTPUT--]] 
+						U.pretty( peeked ), it, U.pretty( expr.tokens )) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				self:append_next_token() --[[SOL OUTPUT--]] 
 			else
@@ -263,7 +266,7 @@ local function format_identity(ast, filename, insert_new_lines)
 					t:append_next_token( "=" ) --[[SOL OUTPUT--]] 
 					format_expr(entry.value) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				t:append_comma( i ~= #expr.entry_list, { ",", ";" } ) --[[SOL OUTPUT--]] 
+				t:append_comma( i ~= #expr.entry_list, COMMA_SEMICOLON ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			t:append_next_token( "}" ) --[[SOL OUTPUT--]] 
 

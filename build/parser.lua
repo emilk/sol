@@ -12,16 +12,16 @@ local T = require 'type' --[[SOL OUTPUT--]]  -- For intrinsic functions
 local U = require 'util' --[[SOL OUTPUT--]] 
 
 local printf_err = U.printf_err --[[SOL OUTPUT--]] 
-local bimap      = U.bimap --[[SOL OUTPUT--]] 
+local set        = U.set --[[SOL OUTPUT--]] 
 
 
 local P = {} --[[SOL OUTPUT--]] 
 
 P.LUA_SETTINGS = {
 	-- Lexer:
-	symbols = bimap{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#'};
+	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#'};
 
-	keywords = bimap{
+	keywords = set{
 		'and',    'break', 'do',   'else',     'elseif',
 		'end',    'false', 'for',  'function', 'goto', 'if',
 		'in',     'local', 'nil',  'not',      'or',   'repeat',
@@ -36,9 +36,9 @@ P.LUA_SETTINGS = {
 
 P.SOL_SETTINGS = {
 	-- Lexer:
-	symbols = bimap{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#', '?', ':'};
+	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#', '?', ':'};
 
-	keywords = bimap{
+	keywords = set{
 		'and',    'break', 'do',   'else',     'elseif',
 		'end',    'false', 'for',  'function', 'goto', 'if',
 		'in',     'local', 'nil',  'not',      'or',   'repeat',
@@ -52,7 +52,10 @@ P.SOL_SETTINGS = {
 	-- Parser:
 	is_sol         = true;
 	function_types = true;  -- Support  foo(arg : int) -> int
-} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+} --[[SOL OUTPUT--]] 
+
+
+local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 --------------------------------------------------------
@@ -571,7 +574,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 	end --[[SOL OUTPUT--]] 
 
 
-	local unops = bimap{'-', 'not', '#'} --[[SOL OUTPUT--]] 
+	local unops = set{'-', 'not', '#'} --[[SOL OUTPUT--]] 
 	local unopprio = 8 --[[SOL OUTPUT--]] 
 	local priority = {
 		['+']   = {6,6};
@@ -1509,8 +1512,6 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		return true, stat --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-
-	local stat_list_close_keywords = bimap{'end', 'else', 'elseif', 'until'} --[[SOL OUTPUT--]] 
 
 	parse_statement_list = function(scope)
 		assert(scope) --[[SOL OUTPUT--]] 

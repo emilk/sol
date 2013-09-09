@@ -351,7 +351,7 @@ end
 
 function Scope:get_global_vars(list: [Variable] or nil) -> [Variable]
 	list = list or {}
-	U.table_join(list, self.globals)
+	U.list_join(list, self.globals)
 	for _,c in ipairs(self.children) do
 		c:get_global_vars(list)
 	end

@@ -351,7 +351,7 @@ end --[[SOL OUTPUT--]]
 
 function Scope:get_global_vars(list)
 	list = list or {} --[[SOL OUTPUT--]] 
-	U.table_join(list, self.globals) --[[SOL OUTPUT--]] 
+	U.list_join(list, self.globals) --[[SOL OUTPUT--]] 
 	for _,c in ipairs(self.children) do
 		c:get_global_vars(list) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

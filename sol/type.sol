@@ -168,16 +168,21 @@ function T.is_type(x) -> bool
 	return type(x) == 'table' and type(x.tag) == 'string'
 end
 
+T._empty_table = { tag = 'table' }
 
--- TODO: remove
+-- TODO: disallow=
 function T.create_empty_table() -> T.Type
-	return { tag='object', members={} }
-	--return T.Table
+	--return { tag='object', members={} }
+	return T.Table
+	--return T._empty_table
 end
 
+-- TODO: remove
 function T.is_empty_table(t: T.Type) -> bool
-	return t.tag == 'object' and next(t.members) == nil
+	--return t.tag == 'object' and next(t.members) == nil
 	--return t.tag == 'table'
+	return T.follow_identifiers(t).tag == 'table'
+	--return t == T._empty_table
 end
 
 
