@@ -170,8 +170,14 @@ end --[[SOL OUTPUT--]]
 
 
 -- TODO: remove
+function T.create_empty_table()
+	return { tag='object', members={} } --[[SOL OUTPUT--]] 
+	--return T.Table
+end --[[SOL OUTPUT--]] 
+
 function T.is_empty_table(t)
 	return t.tag == 'object' and next(t.members) == nil --[[SOL OUTPUT--]] 
+	--return t.tag == 'table'
 end --[[SOL OUTPUT--]] 
 
 
@@ -397,14 +403,6 @@ function T.isa_raw(d, b, problem_rope)
 	end --[[SOL OUTPUT--]] 
 
 
-	if b.tag == 'table' then
-		return d.tag == 'table'
-		    or d.tag == 'list'
-		    or d.tag == 'map'
-		    or d.tag == 'object' --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-
 	if d.tag == 'int_literal' then
 		if (b.tag == 'int_literal' or b.tag == 'num_literal') and b.value == d.value then
 			-- Same value
@@ -430,6 +428,14 @@ function T.isa_raw(d, b, problem_rope)
 		end --[[SOL OUTPUT--]] 
 
 		return b.tag == 'string' --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+
+	if b.tag == 'table' then
+		return d.tag == 'table'
+		    or d.tag == 'list'
+		    or d.tag == 'map'
+		    or d.tag == 'object' --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	if T.is_empty_table(d) then

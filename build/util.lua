@@ -305,35 +305,42 @@ end --[[SOL OUTPUT--]]
 
 ------------------------------------------------------
 -- TODO: only in debug/development
+local DEBUG = false --[[SOL OUTPUT--]] 
 
 -- Returns a write-protected version of the input table
 function U.const(table)
-	assert(getmetatable(table) == nil) --[[SOL OUTPUT--]] 
+	if DEBUG then
+		assert(getmetatable(table) == nil) --[[SOL OUTPUT--]] 
 
-	return setmetatable({}, {
-		__index    = table,
-		__newindex = function(table, key, value)
-			D.error("Attempt to modify read-only table") --[[SOL OUTPUT--]] 
-		end,
-		__metatable = 'This is a read-only table' -- disallow further meta-tabling
-	}) --[[SOL OUTPUT--]] 
+		return setmetatable({}, {
+			__index    = table,
+			__newindex = function(table, key, value)
+				D.error("Attempt to modify read-only table") --[[SOL OUTPUT--]] 
+			end,
+			__metatable = 'This is a read-only table' -- disallow further meta-tabling
+		}) --[[SOL OUTPUT--]] 
+	else
+		return table --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 -- Write-protects existing table against all modification
 function U.make_const(table)
-	assert(getmetatable(table) == nil) --[[SOL OUTPUT--]] 
+	if DEBUG then
+		assert(getmetatable(table) == nil) --[[SOL OUTPUT--]] 
 
-	local clone = U.shallow_clone(table) --[[SOL OUTPUT--]] 
+		local clone = U.shallow_clone(table) --[[SOL OUTPUT--]] 
 
-	U.table_clear(table) --[[SOL OUTPUT--]] 
+		U.table_clear(table) --[[SOL OUTPUT--]] 
 
-	setmetatable(table, {
-		__index    = clone,
-		__newindex = function(table, key, value)
-			D.error("Attempt to modify read-only table") --[[SOL OUTPUT--]] 
-		end,
-		__metatable = 'This is a read-only table' -- disallow further meta-tabling
-	}) --[[SOL OUTPUT--]] 
+		setmetatable(table, {
+			__index    = clone,
+			__newindex = function(table, key, value)
+				D.error("Attempt to modify read-only table") --[[SOL OUTPUT--]] 
+			end,
+			__metatable = 'This is a read-only table' -- disallow further meta-tabling
+		}) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 ------------------------------------------------------

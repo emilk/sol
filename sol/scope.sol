@@ -207,7 +207,7 @@ function Scope:create_global_scope() -> S.Scope
 	s:declare_type( 'table',  T.Table,  where )
 	--s:declare_type( 'list',   T.List,   where ) -- use: [any]
 	--s:declare_type( 'map',    T.Map,    where ) -- use: {any => any}
-	--s:declare_type( 'object', T.Object, where ) -- use: {}
+	s:declare_type( 'object', T.Object, where )
 
 	-- keywords are handles explicitly during parsing
 	--s:declare_type( 'nil',     T.Nil)    -- for e.g.:   foo or bar or nil

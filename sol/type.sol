@@ -170,8 +170,14 @@ end
 
 
 -- TODO: remove
+function T.create_empty_table() -> T.Type
+	return { tag='object', members={} }
+	--return T.Table
+end
+
 function T.is_empty_table(t: T.Type) -> bool
 	return t.tag == 'object' and next(t.members) == nil
+	--return t.tag == 'table'
 end
 
 
@@ -397,14 +403,6 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	end
 
 
-	if b.tag == 'table' then
-		return d.tag == 'table'
-		    or d.tag == 'list'
-		    or d.tag == 'map'
-		    or d.tag == 'object'
-	end
-
-
 	if d.tag == 'int_literal' then
 		if (b.tag == 'int_literal' or b.tag == 'num_literal') and b.value == d.value then
 			-- Same value
@@ -430,6 +428,14 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 		end
 
 		return b.tag == 'string'
+	end
+
+
+	if b.tag == 'table' then
+		return d.tag == 'table'
+		    or d.tag == 'list'
+		    or d.tag == 'map'
+		    or d.tag == 'object'
 	end
 
 	if T.is_empty_table(d) then

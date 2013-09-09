@@ -674,12 +674,16 @@ local function analyze(ast, filename, on_require, settings)
 		D.assert(target_var) --[[SOL OUTPUT--]] 
 		local target_type = target_var.type --[[SOL OUTPUT--]] 
 
+		if target_type then
+			target_type = T.follow_identifiers( target_type ) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
 		if not target_type or target_type == T.Table then
 			target_type = { tag = 'object', members = {} } --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if target_type.tag ~= 'object' then
-			report_error(expr, "setmetatable: first argument must name an object; got: %s", target_type.tag) --[[SOL OUTPUT--]] 
+			report_error(expr, "setmetatable: first argument must name an object; got: %s", target_type) --[[SOL OUTPUT--]] 
 			return --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -1284,10 +1288,8 @@ local function analyze(ast, filename, on_require, settings)
 			--]]
 			if #expr.entry_list == 0 then
 				-- {}
-				--return T.EmptyTable
 				-- Assume empty object?
-				return { tag='object', members={} } --[[SOL OUTPUT--]] 
-				--return T.Table -- TODO
+				return T.create_empty_table() --[[SOL OUTPUT--]] 
 			else
 				local   key_type    = T.make_variant() --[[SOL OUTPUT--]]  -- in maps
 				local   value_type  = T.make_variant() --[[SOL OUTPUT--]] 

@@ -430,7 +430,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 	parse_simple_expr = function(scope) -> bool, ExprNode_or_error
 		var<TokenList> token_list = {}
-		var<{}?>       node       = nil
+		var<object?>   node       = nil
 		var            where      = where_am_i()
 
 		if tok:is('Number') then
@@ -592,8 +592,8 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	}
 
 	parse_sub_expr = function(scope, level) -> bool, ExprNode_or_error
-		var<bool> st = false
-		var<{}?> exp = nil
+		var<bool>    st  = false
+		var<object?> exp = nil
 
 		--base item, possibly with unop prefix
 		if unops[tok:peek().data] then
@@ -665,12 +665,8 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		if tok:consume_symbol('{') then
 			-- Object or map?
 			if tok:consume_symbol('}') then
-				-- TODO: remove and replace with 'table'
-				-- Empty object
-				return {
-					tag     = 'object',
-					members = {}
-				}
+				report_error("Use 'object'")
+				return T.create_empty_table()
 			elseif tok:is('ident') and tok:peek(1).data == ':' then
 				-- key-value-pairs - an object
 				var<T.Object> obj = {
@@ -1151,7 +1147,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 	local function parse_statement(scope) -> bool, StatNode_or_error
 		var            st         = true -- Success?
-		var<{}?>       stat       = nil
+		var<object?>   stat       = nil
 		var<TokenList> token_list = {}
 		var            where      = where_am_i()
 

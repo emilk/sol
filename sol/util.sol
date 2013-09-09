@@ -305,35 +305,42 @@ end
 
 ------------------------------------------------------
 -- TODO: only in debug/development
+local DEBUG = false
 
 -- Returns a write-protected version of the input table
-function U.const(table: {}) -> table
-	assert(getmetatable(table) == nil)
+function U.const(table: table) -> object
+	if DEBUG then
+		assert(getmetatable(table) == nil)
 
-	return setmetatable({}, {
-		__index    = table,
-		__newindex = function(table, key, value)
-			D.error("Attempt to modify read-only table")
-		end,
-		__metatable = 'This is a read-only table' -- disallow further meta-tabling
-	})
+		return setmetatable({}, {
+			__index    = table,
+			__newindex = function(table, key, value)
+				D.error("Attempt to modify read-only table")
+			end,
+			__metatable = 'This is a read-only table' -- disallow further meta-tabling
+		})
+	else
+		return table
+	end
 end
 
 -- Write-protects existing table against all modification
-function U.make_const(table: {}) -> void
-	assert(getmetatable(table) == nil)
+function U.make_const(table: object) -> void
+	if DEBUG then
+		assert(getmetatable(table) == nil)
 
-	local clone = U.shallow_clone(table)
+		local clone = U.shallow_clone(table)
 
-	U.table_clear(table)
+		U.table_clear(table)
 
-	setmetatable(table, {
-		__index    = clone,
-		__newindex = function(table, key, value)
-			D.error("Attempt to modify read-only table")
-		end,
-		__metatable = 'This is a read-only table' -- disallow further meta-tabling
-	})
+		setmetatable(table, {
+			__index    = clone,
+			__newindex = function(table, key, value)
+				D.error("Attempt to modify read-only table")
+			end,
+			__metatable = 'This is a read-only table' -- disallow further meta-tabling
+		})
+	end
 end
 
 ------------------------------------------------------

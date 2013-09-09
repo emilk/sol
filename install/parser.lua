@@ -430,7 +430,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 	parse_simple_expr = function(scope)
 		local token_list = {} --[[SOL OUTPUT--]] 
-		local       node       = nil --[[SOL OUTPUT--]] 
+		local   node       = nil --[[SOL OUTPUT--]] 
 		local            where      = where_am_i() --[[SOL OUTPUT--]] 
 
 		if tok:is('Number') then
@@ -592,7 +592,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 	} --[[SOL OUTPUT--]] 
 
 	parse_sub_expr = function(scope, level)
-		local st = false --[[SOL OUTPUT--]] 
+		local    st  = false --[[SOL OUTPUT--]] 
 		local exp = nil --[[SOL OUTPUT--]] 
 
 		--base item, possibly with unop prefix
@@ -665,12 +665,8 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		if tok:consume_symbol('{') then
 			-- Object or map?
 			if tok:consume_symbol('}') then
-				-- TODO: remove and replace with 'table'
-				-- Empty object
-				return {
-					tag     = 'object',
-					members = {}
-				} --[[SOL OUTPUT--]] 
+				report_error("Use 'object'") --[[SOL OUTPUT--]] 
+				return T.create_empty_table() --[[SOL OUTPUT--]] 
 			elseif tok:is('ident') and tok:peek(1).data == ':' then
 				-- key-value-pairs - an object
 				local obj = {
@@ -1151,7 +1147,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 	local function parse_statement(scope)
 		local            st         = true --[[SOL OUTPUT--]]  -- Success?
-		local       stat       = nil --[[SOL OUTPUT--]] 
+		local   stat       = nil --[[SOL OUTPUT--]] 
 		local token_list = {} --[[SOL OUTPUT--]] 
 		local            where      = where_am_i() --[[SOL OUTPUT--]] 
 
