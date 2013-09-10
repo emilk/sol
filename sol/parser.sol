@@ -65,6 +65,7 @@ typedef P.ExprType = 'IdExpr' or 'NumberExpr' or 'StringExpr' or 'BooleanExpr' o
                   or 'CallExpr' or 'TableCallExpr' or 'StringCallExpr'
                   or 'IndexExpr' or 'MemberExpr' or 'LambdaFunctionExpr'
                   or 'ConstructorExpr' or 'ParenthesesExpr'
+                  or 'CastExpr'
 
 typedef P.StatType = 'AssignmentStatement' or 'CallStatement' or 'VarDeclareStatement'
                   or 'IfStatement' or 'WhileStatement' or 'DoStatement' or 'RepeatStatement'
@@ -594,7 +595,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		['or']  = {1,1};
 	}
 
-	parse_sub_expr = function(scope, level) -> bool, ExprNode_or_error
+	parse_sub_expr = function(scope: Scope, prio_level: int) -> bool, ExprNode_or_error
 		var<bool>    st  = false
 		var<object?> exp = nil
 
@@ -619,7 +620,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		--next items in chain
 		while true do
 			local prio = priority[tok:peek().data]
-			if prio and prio[1] > level then
+			if prio and prio[1] > prio_level then
 				local token_list = {}
 				local op = tok:get(token_list).data
 				local st, rhs = parse_sub_expr(scope, prio[2])
@@ -1042,8 +1043,30 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
-	parse_expr = function(scope) -> bool, ExprNode_or_error
-		return parse_sub_expr(scope, 0)
+	parse_expr = function(scope: Scope) -> bool, ExprNode_or_error
+		var st,expr = parse_sub_expr(scope, 0)
+		if not st then return false, expr end
+
+		if tok:consume_symbol(':') then
+			-- A cast
+
+			var where = where_am_i()
+
+			var type = parse_type(scope)
+			if not type then
+				return false, report_error("Bad cast, expected  'expr : type'")
+			end
+
+			return true, {
+				ast_type = 'CastExpr',
+				where    = where,
+				tokens   = {},
+				expr     = expr,
+				type     = type,
+			}
+		else
+			return true, expr
+		end
 	end
 
 

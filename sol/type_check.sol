@@ -1373,6 +1373,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local t = analyze_expr_single( expr.inner, scope )
 			return t
 
+		elseif expr.ast_type == 'CastExpr' then
+			local expr_type = analyze_expr_single( expr.expr, scope )
+			local cast_to   = expr.type
+			check_type_is_a("Cast", expr, expr_type, cast_to, 'error')
+			return cast_to
+
 		else
 			print("Unknown expression AST type: ", expr.ast_type)
 		end

@@ -201,13 +201,14 @@ end
 
 -- Constructor
 function Scope:init(parent: Scope?)
-	self.parent          = parent
-	self.children        = { }
-	self.locals          = { }
-	self.globals         = { }
-	self.typedefs        = { } -- string -> T.Type     - simple typedefs:
-	self.global_typedefs = { }
-	self.fixed           = false
+	self.parent          = parent 
+	self.children        = {}     : [Scope]
+	self.locals          = {}     : [Variable]
+	self.globals         = {}     : [Variable]
+	self.typedefs        = {}     : { string => T.Type }
+	self.global_typedefs = {}     : { string => T.Type }
+	self.vararg          = nil    : Variable?
+	self.fixed           = false  
 	
 	if parent then
 		table.insert(parent.children, self)

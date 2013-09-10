@@ -275,6 +275,9 @@ local function output(ast, filename, insert_new_lines)
 			format_expr(expr.inner) --[[SOL OUTPUT--]] 
 			t:append_next_token( ")" ) --[[SOL OUTPUT--]] 
 
+		elseif expr.ast_type == 'CastExpr' then
+			format_expr(expr.expr) --[[SOL OUTPUT--]] 
+
 		else
 			printf_err("Unknown expr AST type: '%s'", expr.ast_type) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

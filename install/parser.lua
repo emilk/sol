@@ -104,6 +104,7 @@ local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'} --[[SOL O
 
 
 
+
 function P.parse_sol(src, tok, filename, settings, module_scope)
 	filename = filename or '' --[[SOL OUTPUT--]] 
 	settings = settings or P.SOL_SETTINGS --[[SOL OUTPUT--]] 
@@ -594,7 +595,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		['or']  = {1,1};
 	} --[[SOL OUTPUT--]] 
 
-	parse_sub_expr = function(scope, level)
+	parse_sub_expr = function(scope, prio_level)
 		local    st  = false --[[SOL OUTPUT--]] 
 		local exp = nil --[[SOL OUTPUT--]] 
 
@@ -619,7 +620,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		--next items in chain
 		while true do
 			local prio = priority[tok:peek().data] --[[SOL OUTPUT--]] 
-			if prio and prio[1] > level then
+			if prio and prio[1] > prio_level then
 				local token_list = {} --[[SOL OUTPUT--]] 
 				local op = tok:get(token_list).data --[[SOL OUTPUT--]] 
 				local st, rhs = parse_sub_expr(scope, prio[2]) --[[SOL OUTPUT--]] 
@@ -1043,7 +1044,29 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 
 	parse_expr = function(scope)
-		return parse_sub_expr(scope, 0) --[[SOL OUTPUT--]] 
+		local st,expr = parse_sub_expr(scope, 0) --[[SOL OUTPUT--]] 
+		if not st then return false, expr --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+
+		if tok:consume_symbol(':') then
+			-- A cast
+
+			local where = where_am_i() --[[SOL OUTPUT--]] 
+
+			local type = parse_type(scope) --[[SOL OUTPUT--]] 
+			if not type then
+				return false, report_error("Bad cast, expected  'expr : type'") --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			return true, {
+				ast_type = 'CastExpr',
+				where    = where,
+				tokens   = {},
+				expr     = expr,
+				type     = type,
+			} --[[SOL OUTPUT--]] 
+		else
+			return true, expr --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
