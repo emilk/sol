@@ -62,7 +62,7 @@ local function test_dir(dir)
 				failed_to_pass = failed_to_pass + 1
 				print("Test should have passed but didn't: " .. file)
 				print(DIVISION)
-				os.execute( interpreter .. ' -d -o tests_built ' .. file_path ) -- Standard
+				os.execute( interpreter .. ' -o tests_built ' .. file_path ) -- Standard
 				print(DIVISION)
 				if spam then
 					os.execute( interpreter .. ' -d -o tests_built -s ' .. dir .. '/' .. file ) -- Extra spam

@@ -71,7 +71,7 @@ typedef P.StatType = 'AssignmentStatement' or 'CallStatement' or 'VarDeclareStat
                   or 'GenericForStatement' or 'NumericForStatement'
                   or 'ReturnStatement' or 'BreakStatement' or 'LabelStatement' or 'GotoStatement'
                   or 'FunctionDeclStatement'
-                  or 'Typedef'
+                  or 'Typedef' or 'ClassDeclStatement'
                   or 'Eof'
 
 typedef P.NodeType = P.ExprType or P.StatType or 'Statlist'
@@ -955,7 +955,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		local where = where_am_i()
 
-
 		if not tok:is('ident') then
 			return false, report_error("Name expected")
 		end
@@ -1002,7 +1001,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			type_name = type_name,
 			tokens    = {},
 			where     = where,
-			Global    = (type == 'global')
+			global_   = (type == 'global')
 		}
 
 		if not tok:consume_symbol('.') then
@@ -1144,7 +1143,35 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			return self.member_var
 		end
 		--]]
-		return false, "TODO"
+
+		local where = where_am_i()
+
+		if not tok:is('ident') then
+			return false, report_error("Name expected")
+		end
+		local name = tok:get(token_list).data
+
+		if not tok:consume_symbol('=', token_list) then
+			return false, report_error("Expected '='")
+		end
+
+		assert(#token_list == 3)
+
+		local st, rhs = parse_expr(scope)
+		
+		if not st then return false, rhs end
+
+		local node = { 
+			ast_type  = 'ClassDeclStatement',
+			scope     = scope,
+			name      = name,
+			rhs       = rhs,
+			tokens    = token_list,
+			where     = where,
+			is_local  = (scoping == 'local')
+		}
+
+		return true, node
 	end
 
 

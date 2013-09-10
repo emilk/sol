@@ -10,7 +10,7 @@ local function debug_printf(...)
 end
 
 --
--- format_identity.lua
+-- output.lua
 --
 -- Returns the exact source code that was used to create an AST, preserving all
 -- comments and whitespace.
@@ -39,7 +39,7 @@ assert(count_line_breaks("hello\n") == 1)
 assert(count_line_breaks("hello\nyou\ntoo") == 2)
 
 
-local function format_identity(ast, filename: string, insert_new_lines : bool?) -> string
+local function output(ast, filename: string, insert_new_lines : bool?) -> string
 	if insert_new_lines == nil then
 		insert_new_lines = true
 	end
@@ -328,6 +328,17 @@ local function format_identity(ast, filename: string, insert_new_lines : bool?) 
 				end
 			end
 
+		elseif stat.ast_type == 'ClassDeclStatement' then
+			if stat.is_local then
+				t:append_str( "local" )
+			else
+				t:skip_next_token() -- skip 'global'
+				t:skip_next_token() -- skip 'class'
+			end
+			t:append_str( stat.name )
+			t:append_next_token( "=" )
+			format_expr(stat.rhs)
+
 		elseif stat.ast_type == 'IfStatement' then
 			t:append_next_token( "if" )
 			format_expr( stat.clauses[1].condition )
@@ -484,4 +495,4 @@ local function format_identity(ast, filename: string, insert_new_lines : bool?) 
 	return table.concat(out.rope)
 end
 
-return format_identity
+return output

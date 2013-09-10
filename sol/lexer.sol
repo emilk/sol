@@ -2,17 +2,17 @@ local U = require 'util'
 local D = require 'sol_debug'
 local set = U.set
 
-var WhiteChars = set{' ', '\n', '\t', '\r'}
-var           EscapeLookup = {['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'"}
-var LowerChars = set{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-                     'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-                     's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
-var UpperChars = set{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-                     'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-                     'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}
-var  Digits    = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
-var HexDigits  = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                     'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'}
+var WhiteChars   = set{' ', '\n', '\t', '\r'}
+var EscapeLookup = {['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'"}
+var LowerChars   = set{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+                       'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+                       's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
+var UpperChars   = set{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+                       'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
+                       'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}
+var Digits       = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
+var HexDigits    = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                       'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'}
 
 local L = {}
 

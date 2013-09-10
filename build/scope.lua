@@ -1,6 +1,22 @@
 --[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol --]] local T = require 'type' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
-local U = require 'util' --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+local U = require 'util' --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+
+
+--[[
+typedef Scope = {
+	parent   : Scope?,
+	children : [Scope],
+	locals   : [Variable],
+	globals  : [Variable],
+	typedefs : { string => T.Type },
+	vararg   : Variable?,  -- if non-nil, points to a variable named '...' with the type of T.VarArgs
+
+	--get_scoped_type : function(self, name: string) -> T.Type?
+}
+local Scope = {}
+--]]
+local Scope 
 
 
 
@@ -22,30 +38,9 @@ local U = require 'util' --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT-
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-local S = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+= {} --[[SOL OUTPUT--]] 
 
 --[-[
-
-
-
-local Scope = {} --[[SOL OUTPUT--]] 
 
 function Scope.new(parent)
 	local s = {} --[[SOL OUTPUT--]] 	
@@ -59,46 +54,28 @@ require 'class'
 local Scope = sol_class("Scope")
 --class Scope
 
-function Scope.new(parent: S.Scope?) -> S.Scope
+function Scope.new(parent: Scope?) -> Scope
 	return Scope(parent)
 end
 --]]
 
--- Constructor
-function Scope:init(parent)
-	self.parent          = parent --[[SOL OUTPUT--]] 
-	self.children        = { } --[[SOL OUTPUT--]] 
-	self.locals          = { } --[[SOL OUTPUT--]] 
-	self.globals         = { } --[[SOL OUTPUT--]] 
-	self.typedefs        = { } --[[SOL OUTPUT--]]  -- string -> T.Type     - simple typedefs:
-	self.global_typedefs = { } --[[SOL OUTPUT--]] 
-	self.fixed           = false --[[SOL OUTPUT--]] 
-	
-	if parent then
-		table.insert(parent.children, self) --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
+--------------------------------------------------
+-- Static members:
 
 -- Created the global top-level scope
-function Scope:get_global_scope()
-	Scope.global_scope = Scope.global_scope or Scope:create_global_scope() --[[SOL OUTPUT--]] 
+function Scope.get_global_scope()
+	Scope.global_scope = Scope.global_scope or Scope.create_global_scope() --[[SOL OUTPUT--]] 
 	return Scope.global_scope --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
-function Scope:create_module_scope()
-	local top_scope = self:get_global_scope() --[[SOL OUTPUT--]] 
+function Scope.create_module_scope()
+	local top_scope = Scope.get_global_scope() --[[SOL OUTPUT--]] 
 	return Scope.new( top_scope ) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
-function Scope:is_module_level()
-	-- parent should be global scope, and so should have no parent
-	return self.parent and self.parent.parent == nil --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
-
-
-function Scope:create_global_scope()
+function Scope.create_global_scope()
 	local s = Scope.new() --[[SOL OUTPUT--]] 
 	local where = "[intrinsic]" --[[SOL OUTPUT--]]   -- var.where
 
@@ -218,6 +195,29 @@ function Scope:create_global_scope()
 	s.fixed = true --[[SOL OUTPUT--]] 
 
 	return s --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+--------------------------------------------------
+
+-- Constructor
+function Scope:init(parent)
+	self.parent          = parent --[[SOL OUTPUT--]] 
+	self.children        = { } --[[SOL OUTPUT--]] 
+	self.locals          = { } --[[SOL OUTPUT--]] 
+	self.globals         = { } --[[SOL OUTPUT--]] 
+	self.typedefs        = { } --[[SOL OUTPUT--]]  -- string -> T.Type     - simple typedefs:
+	self.global_typedefs = { } --[[SOL OUTPUT--]] 
+	self.fixed           = false --[[SOL OUTPUT--]] 
+	
+	if parent then
+		table.insert(parent.children, self) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
+function Scope:is_module_level()
+	-- parent should be global scope, and so should have no parent
+	return self.parent and self.parent.parent == nil --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -364,6 +364,9 @@ function Scope:get_global_typedefs(list)
 end --[[SOL OUTPUT--]] 
 
 
-S.Scope = Scope --[[SOL OUTPUT--]] 
+local S = {} --[[SOL OUTPUT--]] 
+S.Scope = Scope --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+
+
 return S --[[SOL OUTPUT--]] 
  --[[SOL OUTPUT--]] 

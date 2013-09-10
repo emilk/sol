@@ -4,8 +4,7 @@ D.active = false --[[SOL OUTPUT--]]
 
 function D.get_lib()
 	if D.active then
-		local DEBUG_LIB = "debugger" --[[SOL OUTPUT--]] 
-		return require(DEBUG_LIB) --[[SOL OUTPUT--]] 
+		return require("debugger") --[[SOL OUTPUT--]] 
 	else
 		return nil --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

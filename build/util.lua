@@ -141,12 +141,13 @@ end --[[SOL OUTPUT--]]
 
 
 function U.ellipsis(msg, max_len)
-	max_len = max_len or 1024 --[[SOL OUTPUT--]] 
+	max_len = max_len or 2048 --[[SOL OUTPUT--]] 
 
 	if #msg <= max_len then
 		return msg --[[SOL OUTPUT--]] 
 	else
-		return msg:sub(1, max_len/2) .. ' [...] ' .. msg:sub(-max_len/2) --[[SOL OUTPUT--]] 
+		--return msg:sub(1, max_len/2) .. ' [...] ' .. msg:sub(-max_len/2)
+		return msg:sub(1, max_len/2) .. '\n[...]\n' .. msg:sub(-max_len/2) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 

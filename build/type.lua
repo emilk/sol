@@ -794,6 +794,8 @@ function T.name(typ, indent, verbose)
 		end --[[SOL OUTPUT--]] 
 
 	elseif typ.tag == 'object' then
+		verbose = false --[[SOL OUTPUT--]]  -- FIXME 
+
 		local obj = typ --[[SOL OUTPUT--]] 
 
 		if not obj.namespace
@@ -847,10 +849,28 @@ function T.name(typ, indent, verbose)
 					str = str .. '\n' --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-				str = str .. next_indent .. "!! metatable: " .. T.name(obj.metatable, next_indent, verbose) .. '\n' --[[SOL OUTPUT--]] 
+				str = str .. next_indent .. "!! metatable:     " .. T.name(obj.metatable, next_indent, verbose) .. '\n' --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			return '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
+			if obj.class_type then
+				if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+				str = str .. next_indent .. "!! class_type:    " .. T.name(obj.class_type, next_indent, verbose) .. '\n' --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			if obj.instance_type then
+				if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+				str = str .. next_indent .. "!! instance_type: " .. T.name(obj.instance_type, next_indent, verbose) .. '\n' --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			local full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
+
+			if obj.class_type then
+				return '[instance] ' .. full --[[SOL OUTPUT--]] 
+			elseif obj.instance_type then
+				return '[class] ' .. full --[[SOL OUTPUT--]] 
+			else
+				return full --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 	elseif typ.tag == 'list' then
@@ -899,12 +919,8 @@ function T.name(typ, indent, verbose)
 			return string.format('%s', typ.name) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-	--elseif typ.tag then
-	elseif true then
-		return typ.tag --[[SOL OUTPUT--]] 
-
 	else
-		return string.format("[UNKNOWN TYPE: %q]", U.pretty(typ)) --[[SOL OUTPUT--]] 
+		return typ.tag --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 

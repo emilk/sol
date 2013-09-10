@@ -2,17 +2,17 @@
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
-local WhiteChars = set{' ', '\n', '\t', '\r'} --[[SOL OUTPUT--]] 
-local           EscapeLookup = {['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'"} --[[SOL OUTPUT--]] 
-local LowerChars = set{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-                     'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-                     's', 't', 'u', 'v', 'w', 'x', 'y', 'z'} --[[SOL OUTPUT--]] 
-local UpperChars = set{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-                     'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-                     'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'} --[[SOL OUTPUT--]] 
-local  Digits    = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'} --[[SOL OUTPUT--]] 
-local HexDigits  = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                     'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'} --[[SOL OUTPUT--]] 
+local WhiteChars   = set{' ', '\n', '\t', '\r'} --[[SOL OUTPUT--]] 
+local EscapeLookup = {['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'"} --[[SOL OUTPUT--]] 
+local LowerChars   = set{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+                       'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+                       's', 't', 'u', 'v', 'w', 'x', 'y', 'z'} --[[SOL OUTPUT--]] 
+local UpperChars   = set{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+                       'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
+                       'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'} --[[SOL OUTPUT--]] 
+local Digits       = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'} --[[SOL OUTPUT--]] 
+local HexDigits    = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                       'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'} --[[SOL OUTPUT--]] 
 
 local L = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 

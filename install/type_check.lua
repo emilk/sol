@@ -63,9 +63,9 @@ end --[[SOL OUTPUT--]]
 
 
 local function format_expr(e)
-	local format_identity = require 'format_identity' --[[SOL OUTPUT--]] 
+	local output = require 'output' --[[SOL OUTPUT--]] 
 	local insert_new_lines = false --[[SOL OUTPUT--]] 
-	local str = format_identity(e, '', insert_new_lines) --[[SOL OUTPUT--]] 
+	local str = output(e, '', insert_new_lines) --[[SOL OUTPUT--]] 
 	str = U.trim(str) --[[SOL OUTPUT--]] 
 	return str --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
@@ -304,7 +304,7 @@ local function analyze(ast, filename, on_require, settings)
 				local problem_rope = {} --[[SOL OUTPUT--]] 
 				T.could_be_tl(does_return, should_return, problem_rope) --[[SOL OUTPUT--]] 
 				local problem_str = table.concat(problem_rope, '\n') --[[SOL OUTPUT--]] 
-				report_warning(node, "Return statement does not match function return type declaration, returns: '%s', expected: '%s'. %s", does_return, should_return, problem_str) --[[SOL OUTPUT--]] 
+				report_error(node, "Return statement does not match function return type declaration, returns: '%s', expected: '%s'. %s", does_return, should_return, problem_str) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -345,6 +345,10 @@ local function analyze(ast, filename, on_require, settings)
 			local name = node.name --[[SOL OUTPUT--]] 
 			assert(name.ast_type == 'MemberExpr' and name.indexer == ':') --[[SOL OUTPUT--]] 
 			local self_type = analyze_expr_single_custom(name.base, scope, is_pre_analyze) --[[SOL OUTPUT--]] 
+			if self_type.instance_type then
+				report_spam(node, "Class method detected - setting 'self' type as the instance type") --[[SOL OUTPUT--]] 
+				self_type = self_type.instance_type --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 			table.insert(fun_t.args, {name = 'self', type = self_type}) --[[SOL OUTPUT--]] 
 
 			node.self_var_type = self_type --[[SOL OUTPUT--]]   -- Assign a type to the local 'self' variable
@@ -1717,6 +1721,48 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
+	local function analyze_class_decl(stat, scope)
+		local name     = stat.name --[[SOL OUTPUT--]] 
+		local is_local = stat.is_local --[[SOL OUTPUT--]] 
+
+		report_spam(stat, "Declaring class %q", name) --[[SOL OUTPUT--]] 
+
+		-------------------------------------------------
+		-- Start with declaring the type:
+
+		local old = scope:get_scoped_type(name) --[[SOL OUTPUT--]] 
+		if old then
+			report_error(stat, "class type %q already declared as '%s'", name, old) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+		local class_type = {
+			tag     = 'object',
+			members = {},
+		} --[[SOL OUTPUT--]] 
+
+		local instance_type = {
+			tag        = 'object',
+			members    = {},
+			class_type = class_type,
+		} --[[SOL OUTPUT--]] 
+
+		class_type.instance_type = instance_type --[[SOL OUTPUT--]] 
+
+		-- The name refers to the *instance* type.
+		scope:declare_type(name, instance_type, where_is(stat)) --[[SOL OUTPUT--]] 
+
+		-------------------------------------------------
+
+		local rhs_type = analyze_expr_single(stat.rhs, scope) --[[SOL OUTPUT--]] 
+		check_type_is_a("Class declaration", stat, rhs_type, T.Table, 'error') --[[SOL OUTPUT--]] 
+
+		-------------------------------------------------
+		-- Now for the variable:
+
+		local v = declare_var(stat, scope, name, is_local) --[[SOL OUTPUT--]] 
+		v.type = class_type --[[SOL OUTPUT--]]   -- The variable represents the class - not an instance of it!
+	end --[[SOL OUTPUT--]] 
+
+
 	-- Iff it is a return statement, will returns a list of types
 	-- Else nil
 	-- 'scope_fun' contains info about the enclosing function
@@ -2030,6 +2076,9 @@ local function analyze(ast, filename, on_require, settings)
 		elseif stat.ast_type == 'Typedef' then
 			analyze_typedef( stat, scope ) --[[SOL OUTPUT--]] 
 
+		elseif stat.ast_type == 'ClassDeclStatement' then
+			analyze_class_decl( stat, scope ) --[[SOL OUTPUT--]] 
+
 		else
 			print("Unknown AST type: ", stat.ast_type) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -2043,6 +2092,10 @@ local function analyze(ast, filename, on_require, settings)
 
 		if stat.ast_type == 'Typedef' then
 			--analyze_typedef( stat, scope )
+
+		elseif stat.ast_type == 'ClassDeclStatement' then
+			local v = declare_var(stat, scope, stat.name, stat.is_local) --[[SOL OUTPUT--]] 
+			v.forward_declared = true --[[SOL OUTPUT--]] 
 
 		elseif stat.ast_type == 'VarDeclareStatement' then
 			-- HACK for forward-declaring namespaces:

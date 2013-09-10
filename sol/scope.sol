@@ -13,9 +13,6 @@ User declared globals goes into the 'module_scope' and are marked as 'global'.
 --]]
 
 
-typedef Scope;
-
-
 typedef Variable = {
 	--scope : Scope,  TODO
 	scope      : any,
@@ -27,6 +24,8 @@ typedef Variable = {
 	where      : string,
 }
 
+
+--[[
 typedef Scope = {
 	parent   : Scope?,
 	children : [Scope],
@@ -37,17 +36,13 @@ typedef Scope = {
 
 	--get_scoped_type : function(self, name: string) -> T.Type?
 }
-
-
-local S = {}
-
-typedef S.Scope    = Scope
-typedef S.Variable = Variable
+local Scope = {}
+--]]
+class Scope = {}
 
 --[-[
-local Scope = {}
 
-function Scope.new(parent: S.Scope?) -> S.Scope
+function Scope.new(parent: Scope?) -> Scope
 	local s = {}	
 	setmetatable(s, { __index = Scope })
 	s:init(parent)
@@ -59,46 +54,28 @@ require 'class'
 local Scope = sol_class("Scope")
 --class Scope
 
-function Scope.new(parent: S.Scope?) -> S.Scope
+function Scope.new(parent: Scope?) -> Scope
 	return Scope(parent)
 end
 --]]
 
--- Constructor
-function Scope:init(parent: Scope?)
-	self.parent          = parent
-	self.children        = { }
-	self.locals          = { }
-	self.globals         = { }
-	self.typedefs        = { } -- string -> T.Type     - simple typedefs:
-	self.global_typedefs = { }
-	self.fixed           = false
-	
-	if parent then
-		table.insert(parent.children, self)
-	end
-end
+--------------------------------------------------
+-- Static members:
 
 -- Created the global top-level scope
-function Scope:get_global_scope() -> S.Scope
-	Scope.global_scope = Scope.global_scope or Scope:create_global_scope()
+function Scope.get_global_scope() -> Scope
+	Scope.global_scope = Scope.global_scope or Scope.create_global_scope()
 	return Scope.global_scope
 end
 
 
-function Scope:create_module_scope() -> S.Scope
-	local top_scope = self:get_global_scope()
+function Scope.create_module_scope() -> Scope
+	local top_scope = Scope.get_global_scope()
 	return Scope.new( top_scope )
 end
 
 
-function Scope:is_module_level() -> bool
-	-- parent should be global scope, and so should have no parent
-	return self.parent and self.parent.parent == nil
-end
-
-
-function Scope:create_global_scope() -> S.Scope
+function Scope.create_global_scope() -> Scope
 	local s = Scope.new()
 	local where = "[intrinsic]"  -- var.where
 
@@ -220,6 +197,29 @@ function Scope:create_global_scope() -> S.Scope
 	return s
 end
 
+--------------------------------------------------
+
+-- Constructor
+function Scope:init(parent: Scope?)
+	self.parent          = parent
+	self.children        = { }
+	self.locals          = { }
+	self.globals         = { }
+	self.typedefs        = { } -- string -> T.Type     - simple typedefs:
+	self.global_typedefs = { }
+	self.fixed           = false
+	
+	if parent then
+		table.insert(parent.children, self)
+	end
+end
+
+
+function Scope:is_module_level() -> bool
+	-- parent should be global scope, and so should have no parent
+	return self.parent and self.parent.parent == nil
+end
+
 
 function Scope:declare_type(name: string, type: T.Type, where: string)
 	D.assert(not self.fixed)
@@ -228,7 +228,7 @@ function Scope:declare_type(name: string, type: T.Type, where: string)
 end
 
 
-function Scope:create_local(name: string, where: string) -> S.Variable
+function Scope:create_local(name: string, where: string) -> Variable
 	D.assert(not self.fixed)
 
 	local v = {
@@ -252,7 +252,7 @@ function Scope:add_global(v)
 end
 
 
-function Scope:create_global(name: string, where: string, type: T.Type) -> S.Variable
+function Scope:create_global(name: string, where: string, type: T.Type) -> Variable
 	assert(not self.fixed)
 
 	local v = {
@@ -285,7 +285,7 @@ end
 
 
 -- Will only check local scope
-function Scope:get_scoped(name: string) -> S.Variable?
+function Scope:get_scoped(name: string) -> Variable?
 	for _,v in ipairs(self.locals) do
 		if v.name == name then return v end
 	end
@@ -295,7 +295,7 @@ end
 
 
 -- Will check locals and parents
-function Scope:get_local(name: string) -> S.Variable?
+function Scope:get_local(name: string) -> Variable?
 	local v = self:get_scoped(name)
 	if v then return v end
 	
@@ -306,14 +306,14 @@ end
 
 
 -- Global declared in this scope
-function Scope:get_scoped_global(name: string) -> S.Variable ?
+function Scope:get_scoped_global(name: string) -> Variable ?
 	for k, v in ipairs(self.globals) do
 		if v.name == name then return v end
 	end
 end
 
 
-function Scope:get_global(name: string) -> S.Variable ?
+function Scope:get_global(name: string) -> Variable ?
 	local v = self:get_scoped_global(name)
 	if v then return v end
 	
@@ -324,12 +324,12 @@ end
 
 
 -- Var declared in this scope
-function Scope:get_scoped_var(name: string) -> S.Variable ?
+function Scope:get_scoped_var(name: string) -> Variable ?
 	return self:get_scoped(name) or self:get_scoped_global(name)
 end
 
 
-function Scope:get_var(name: string) -> S.Variable ?
+function Scope:get_var(name: string) -> Variable ?
 	return self:get_local(name) or self:get_global(name)
 end
 
@@ -364,5 +364,8 @@ function Scope:get_global_typedefs(list: [Variable] or nil) -> [Variable]
 end
 
 
+local S = {}
 S.Scope = Scope
+typedef S.Scope    = Scope
+typedef S.Variable = Variable
 return S

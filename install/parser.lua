@@ -955,7 +955,6 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
 
-
 		if not tok:is('ident') then
 			return false, report_error("Name expected") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1002,7 +1001,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			type_name = type_name,
 			tokens    = {},
 			where     = where,
-			Global    = (type == 'global')
+			global_   = (type == 'global')
 		} --[[SOL OUTPUT--]] 
 
 		if not tok:consume_symbol('.') then
@@ -1144,7 +1143,35 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			return self.member_var
 		end
 		--]]
-		return false, "TODO" --[[SOL OUTPUT--]] 
+
+		local where = where_am_i() --[[SOL OUTPUT--]] 
+
+		if not tok:is('ident') then
+			return false, report_error("Name expected") --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+		local name = tok:get(token_list).data --[[SOL OUTPUT--]] 
+
+		if not tok:consume_symbol('=', token_list) then
+			return false, report_error("Expected '='") --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		assert(#token_list == 3) --[[SOL OUTPUT--]] 
+
+		local st, rhs = parse_expr(scope) --[[SOL OUTPUT--]] 
+		
+		if not st then return false, rhs --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+
+		local node = { 
+			ast_type  = 'ClassDeclStatement',
+			scope     = scope,
+			name      = name,
+			rhs       = rhs,
+			tokens    = token_list,
+			where     = where,
+			is_local  = (scoping == 'local')
+		} --[[SOL OUTPUT--]] 
+
+		return true, node --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 

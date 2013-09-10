@@ -24,13 +24,13 @@ package.path = sol_dir..'?.lua;' .. package.path
 
 ------------------------------------------------
 
-local format_identity  = require 'format_identity'
-local Lexer           = require 'lexer'
-local Parser          = require 'parser'
-local S               = require 'scope'
-local T               = require 'type'
-local TypeCheck       = require 'type_check'
-local U            = require 'util'
+local output     = require 'output'
+local Lexer      = require 'lexer'
+local Parser     = require 'parser'
+local S          = require 'scope'
+local T          = require 'type'
+local TypeCheck  = require 'type_check'
+local U          = require 'util'
 local printf_err = U.printf_err
 
 
@@ -44,7 +44,7 @@ local function compile_sol(source_text: string) -> string or nil
 		return nil
 	end
 
-	local module_scope = S.Scope:create_module_scope()
+	local module_scope = S.Scope.create_module_scope()
 
 	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope)
 	if not st then
@@ -63,7 +63,7 @@ local function compile_sol(source_text: string) -> string or nil
 		return nil
 	end
 
-	local str = format_identity(ast, filename)
+	local str = output(ast, filename)
 
 	return str
 end

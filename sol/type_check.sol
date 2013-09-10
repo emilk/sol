@@ -63,9 +63,9 @@ end
 
 
 local function format_expr(e: P.ExprNode)
-	local format_identity = require 'format_identity'
+	local output = require 'output'
 	local insert_new_lines = false
-	local str = format_identity(e, '', insert_new_lines)
+	local str = output(e, '', insert_new_lines)
 	str = U.trim(str)
 	return str
 end
@@ -179,7 +179,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 
-	local function declare_local(node, scope, name: string) -> Variable
+	local function declare_local(node: P.Node, scope: Scope, name: string) -> Variable
 		D.assert(node and scope and name)
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
@@ -233,7 +233,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		return scope:create_global(name, where_is(node))
 	end
 
-	local function declare_var(node, scope, name: string, is_local: bool) -> Variable
+	local function declare_var(node: P.Node, scope: Scope, name: string, is_local: bool) -> Variable
 		if is_local then
 			return declare_local(node, scope, name)
 		else
@@ -304,7 +304,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				var<[string]> problem_rope = {}
 				T.could_be_tl(does_return, should_return, problem_rope)
 				local problem_str = table.concat(problem_rope, '\n')
-				report_warning(node, "Return statement does not match function return type declaration, returns: '%s', expected: '%s'. %s", does_return, should_return, problem_str)
+				report_error(node, "Return statement does not match function return type declaration, returns: '%s', expected: '%s'. %s", does_return, should_return, problem_str)
 			end
 		end
 	end
@@ -345,6 +345,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local name = node.name
 			assert(name.ast_type == 'MemberExpr' and name.indexer == ':')
 			local self_type = analyze_expr_single_custom(name.base, scope, is_pre_analyze)
+			if self_type.instance_type then
+				report_spam(node, "Class method detected - setting 'self' type as the instance type")
+				self_type = self_type.instance_type
+			end
 			table.insert(fun_t.args, {name = 'self', type = self_type})
 
 			node.self_var_type = self_type  -- Assign a type to the local 'self' variable
@@ -1643,7 +1647,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function analyze_typedef(stat, scope: Scope)
+	local function analyze_typedef(stat: P.Node, scope: Scope)
 		local name = stat.type_name
 
 		if stat.namespace_name then
@@ -1714,6 +1718,48 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 			end
 		end
+	end
+
+
+	local function analyze_class_decl(stat: P.Node, scope: Scope)
+		local name     = stat.name
+		local is_local = stat.is_local
+
+		report_spam(stat, "Declaring class %q", name)
+
+		-------------------------------------------------
+		-- Start with declaring the type:
+
+		local old = scope:get_scoped_type(name)
+		if old then
+			report_error(stat, "class type %q already declared as '%s'", name, old)
+		end
+		var class_type = {
+			tag     = 'object',
+			members = {},
+		}
+
+		var instance_type = {
+			tag        = 'object',
+			members    = {},
+			class_type = class_type,
+		}
+
+		class_type.instance_type = instance_type
+
+		-- The name refers to the *instance* type.
+		scope:declare_type(name, instance_type, where_is(stat))
+
+		-------------------------------------------------
+
+		local rhs_type = analyze_expr_single(stat.rhs, scope)
+		check_type_is_a("Class declaration", stat, rhs_type, T.Table, 'error')
+
+		-------------------------------------------------
+		-- Now for the variable:
+
+		local v = declare_var(stat, scope, name, is_local)
+		v.type = class_type  -- The variable represents the class - not an instance of it!
 	end
 
 
@@ -2030,6 +2076,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		elseif stat.ast_type == 'Typedef' then
 			analyze_typedef( stat, scope )
 
+		elseif stat.ast_type == 'ClassDeclStatement' then
+			analyze_class_decl( stat, scope )
+
 		else
 			print("Unknown AST type: ", stat.ast_type)
 		end
@@ -2043,6 +2092,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		if stat.ast_type == 'Typedef' then
 			--analyze_typedef( stat, scope )
+
+		elseif stat.ast_type == 'ClassDeclStatement' then
+			var v = declare_var(stat, scope, stat.name, stat.is_local)
+			v.forward_declared = true
 
 		elseif stat.ast_type == 'VarDeclareStatement' then
 			-- HACK for forward-declaring namespaces:

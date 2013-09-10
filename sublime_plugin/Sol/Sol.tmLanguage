@@ -324,7 +324,7 @@
 		<key>keyword</key>
 		<dict>
 			<key>match</key>
-			<string>\b(break|do|else|for|if|elseif|return|then|repeat|while|until|end|function|local|in|typedef|global|var)\b</string>
+			<string>\b(break|do|else|for|if|elseif|return|then|repeat|while|until|end|function|local|in|typedef|global|var|class)\b</string>
 			<key>name</key>
 			<string>keyword.control.sol</string>
 		</dict>

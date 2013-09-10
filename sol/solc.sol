@@ -50,15 +50,15 @@ package.path = sol_dir..'?.lua;' .. package.path
 ------------------------------------------------
 
 
-local D               = require 'sol_debug'
-local format_identity = require 'format_identity'
-local Lexer           = require 'lexer'
-local Parser          = require 'parser'
-local S               = require 'scope'
-local T               = require 'type'
-local TypeCheck       = require 'type_check'
-local U               = require 'util'
-local printf_err      = U.printf_err
+local D          = require 'sol_debug'
+local output     = require 'output'
+local Lexer      = require 'lexer'
+local Parser     = require 'parser'
+local S          = require 'scope'
+local T          = require 'type'
+local TypeCheck  = require 'type_check'
+local U          = require 'util'
+local printf_err = U.printf_err
 
 ------------------------------------------------
 
@@ -68,7 +68,7 @@ _G.g_ignore_errors = false
 
 
 typedef parse_info = {
-	ast  : any,  -- For format_identity
+	ast  : any,  -- For output
 	type : any,  -- What the module returns
 }
 
@@ -126,7 +126,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 		return FAIL_INFO
 	end
 
-	local module_scope = S.Scope:create_module_scope()
+	local module_scope = S.Scope.create_module_scope()
 
 	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope)
 	if not st then
@@ -254,7 +254,7 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 		U.write_unprotect(path_out) -- Ensure we can write over it
 
 		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] '
-		out_text = out_text .. format_identity(info.ast, path_in)
+		out_text = out_text .. output(info.ast, path_in)
 		if not U.write_file(path_out, out_text) then
 			printf_err("Failed to open %q for writing", path_out)
 			os.exit(4)

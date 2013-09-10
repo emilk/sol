@@ -24,13 +24,13 @@ package.path = sol_dir..'?.lua;' .. package.path --[[SOL OUTPUT--]]
 
 ------------------------------------------------
 
-local format_identity  = require 'format_identity' --[[SOL OUTPUT--]] 
-local Lexer           = require 'lexer' --[[SOL OUTPUT--]] 
-local Parser          = require 'parser' --[[SOL OUTPUT--]] 
-local S               = require 'scope' --[[SOL OUTPUT--]] 
-local T               = require 'type' --[[SOL OUTPUT--]] 
-local TypeCheck       = require 'type_check' --[[SOL OUTPUT--]] 
-local U            = require 'util' --[[SOL OUTPUT--]] 
+local output     = require 'output' --[[SOL OUTPUT--]] 
+local Lexer      = require 'lexer' --[[SOL OUTPUT--]] 
+local Parser     = require 'parser' --[[SOL OUTPUT--]] 
+local S          = require 'scope' --[[SOL OUTPUT--]] 
+local T          = require 'type' --[[SOL OUTPUT--]] 
+local TypeCheck  = require 'type_check' --[[SOL OUTPUT--]] 
+local U          = require 'util' --[[SOL OUTPUT--]] 
 local printf_err = U.printf_err --[[SOL OUTPUT--]] 
 
 
@@ -44,7 +44,7 @@ local function compile_sol(source_text)
 		return nil --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local module_scope = S.Scope:create_module_scope() --[[SOL OUTPUT--]] 
+	local module_scope = S.Scope.create_module_scope() --[[SOL OUTPUT--]] 
 
 	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope) --[[SOL OUTPUT--]] 
 	if not st then
@@ -63,7 +63,7 @@ local function compile_sol(source_text)
 		return nil --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local str = format_identity(ast, filename) --[[SOL OUTPUT--]] 
+	local str = output(ast, filename) --[[SOL OUTPUT--]] 
 
 	return str --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 

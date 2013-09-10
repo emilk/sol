@@ -50,15 +50,15 @@ package.path = sol_dir..'?.lua;' .. package.path --[[SOL OUTPUT--]]
 ------------------------------------------------
 
 
-local D               = require 'sol_debug' --[[SOL OUTPUT--]] 
-local format_identity = require 'format_identity' --[[SOL OUTPUT--]] 
-local Lexer           = require 'lexer' --[[SOL OUTPUT--]] 
-local Parser          = require 'parser' --[[SOL OUTPUT--]] 
-local S               = require 'scope' --[[SOL OUTPUT--]] 
-local T               = require 'type' --[[SOL OUTPUT--]] 
-local TypeCheck       = require 'type_check' --[[SOL OUTPUT--]] 
-local U               = require 'util' --[[SOL OUTPUT--]] 
-local printf_err      = U.printf_err --[[SOL OUTPUT--]] 
+local D          = require 'sol_debug' --[[SOL OUTPUT--]] 
+local output     = require 'output' --[[SOL OUTPUT--]] 
+local Lexer      = require 'lexer' --[[SOL OUTPUT--]] 
+local Parser     = require 'parser' --[[SOL OUTPUT--]] 
+local S          = require 'scope' --[[SOL OUTPUT--]] 
+local T          = require 'type' --[[SOL OUTPUT--]] 
+local TypeCheck  = require 'type_check' --[[SOL OUTPUT--]] 
+local U          = require 'util' --[[SOL OUTPUT--]] 
+local printf_err = U.printf_err --[[SOL OUTPUT--]] 
 
 ------------------------------------------------
 
@@ -126,7 +126,7 @@ local function parse_module_str(chain, path_in, source_text)
 		return FAIL_INFO --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local module_scope = S.Scope:create_module_scope() --[[SOL OUTPUT--]] 
+	local module_scope = S.Scope.create_module_scope() --[[SOL OUTPUT--]] 
 
 	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope) --[[SOL OUTPUT--]] 
 	if not st then
@@ -254,7 +254,7 @@ local function output_module(info, path_in, path_out)
 		U.write_unprotect(path_out) --[[SOL OUTPUT--]]  -- Ensure we can write over it
 
 		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] ' --[[SOL OUTPUT--]] 
-		out_text = out_text .. format_identity(info.ast, path_in) --[[SOL OUTPUT--]] 
+		out_text = out_text .. output(info.ast, path_in) --[[SOL OUTPUT--]] 
 		if not U.write_file(path_out, out_text) then
 			printf_err("Failed to open %q for writing", path_out) --[[SOL OUTPUT--]] 
 			os.exit(4) --[[SOL OUTPUT--]] 

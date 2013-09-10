@@ -794,6 +794,8 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 		end
 
 	elseif typ.tag == 'object' then
+		verbose = false -- FIXME 
+
 		var<T.Object> obj = typ
 
 		if not obj.namespace
@@ -847,10 +849,28 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 					str = str .. '\n'
 				end
 
-				str = str .. next_indent .. "!! metatable: " .. T.name(obj.metatable, next_indent, verbose) .. '\n'
+				str = str .. next_indent .. "!! metatable:     " .. T.name(obj.metatable, next_indent, verbose) .. '\n'
 			end
 
-			return '{\n' .. str .. indent ..'}'
+			if obj.class_type then
+				if str ~= '' then str = str .. '\n' end
+				str = str .. next_indent .. "!! class_type:    " .. T.name(obj.class_type, next_indent, verbose) .. '\n'
+			end
+
+			if obj.instance_type then
+				if str ~= '' then str = str .. '\n' end
+				str = str .. next_indent .. "!! instance_type: " .. T.name(obj.instance_type, next_indent, verbose) .. '\n'
+			end
+
+			local full = '{\n' .. str .. indent ..'}'
+
+			if obj.class_type then
+				return '[instance] ' .. full
+			elseif obj.instance_type then
+				return '[class] ' .. full
+			else
+				return full
+			end
 		end
 
 	elseif typ.tag == 'list' then
@@ -899,12 +919,8 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 			return string.format('%s', typ.name)
 		end
 
-	--elseif typ.tag then
-	elseif true then
-		return typ.tag
-
 	else
-		return string.format("[UNKNOWN TYPE: %q]", U.pretty(typ))
+		return typ.tag
 	end
 end
 

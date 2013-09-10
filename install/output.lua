@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/format_identity.sol --]] require 'parser' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/output.sol --]] require 'parser' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
 local printf_err = U.printf_err --[[SOL OUTPUT--]] 
@@ -10,7 +10,7 @@ local function debug_printf(...)
 end --[[SOL OUTPUT--]] 
 
 --
--- format_identity.lua
+-- output.lua
 --
 -- Returns the exact source code that was used to create an AST, preserving all
 -- comments and whitespace.
@@ -39,7 +39,7 @@ assert(count_line_breaks("hello\n") == 1) --[[SOL OUTPUT--]]
 assert(count_line_breaks("hello\nyou\ntoo") == 2) --[[SOL OUTPUT--]] 
 
 
-local function format_identity(ast, filename, insert_new_lines)
+local function output(ast, filename, insert_new_lines)
 	if insert_new_lines == nil then
 		insert_new_lines = true --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -328,6 +328,17 @@ local function format_identity(ast, filename, insert_new_lines)
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
+		elseif stat.ast_type == 'ClassDeclStatement' then
+			if stat.is_local then
+				t:append_str( "local" ) --[[SOL OUTPUT--]] 
+			else
+				t:skip_next_token() --[[SOL OUTPUT--]]  -- skip 'global'
+				t:skip_next_token() --[[SOL OUTPUT--]]  -- skip 'class'
+			end --[[SOL OUTPUT--]] 
+			t:append_str( stat.name ) --[[SOL OUTPUT--]] 
+			t:append_next_token( "=" ) --[[SOL OUTPUT--]] 
+			format_expr(stat.rhs) --[[SOL OUTPUT--]] 
+
 		elseif stat.ast_type == 'IfStatement' then
 			t:append_next_token( "if" ) --[[SOL OUTPUT--]] 
 			format_expr( stat.clauses[1].condition ) --[[SOL OUTPUT--]] 
@@ -484,5 +495,5 @@ local function format_identity(ast, filename, insert_new_lines)
 	return table.concat(out.rope) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
-return format_identity --[[SOL OUTPUT--]] 
+return output --[[SOL OUTPUT--]] 
  --[[SOL OUTPUT--]] 
