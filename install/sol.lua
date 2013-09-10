@@ -118,9 +118,8 @@ if #arg == 0 then
 	os.exit(-1) --[[SOL OUTPUT--]] 
 else
 	local g_write_lua = true --[[SOL OUTPUT--]] 
-	local g_out_dir = 'build/' --[[SOL OUTPUT--]]   -- TODO: use penlight for this
-	local ix = 1 --[[SOL OUTPUT--]] 
-	local num_files = 0 --[[SOL OUTPUT--]] 
+	local ix          = 1 --[[SOL OUTPUT--]] 
+	local num_files   = 0 --[[SOL OUTPUT--]] 
 
 	while ix <= #arg do
 		local a = arg[ix] --[[SOL OUTPUT--]] 

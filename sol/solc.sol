@@ -68,6 +68,7 @@ _G.g_ignore_errors = false
 
 
 typedef parse_info = {
+	name : string,
 	ast  : any,  -- For output
 	type : any,  -- What the module returns
 }
@@ -206,6 +207,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	end
 
 	local info = {
+		name            = module_name;
 		ast             = ast;
 		type            = type;
 		global_vars     = module_scope:get_global_vars();
@@ -249,7 +251,7 @@ parse_module = function(chain: [string], path_in: string) -> parse_info
 end
 
 
-local function output_module(info: parse_info, path_in: string, path_out: string?)
+local function output_module(info: parse_info, path_in: string, path_out: string?, header_path_out: string?)
 	if info.ast and path_out then
 		U.write_unprotect(path_out) -- Ensure we can write over it
 
@@ -266,14 +268,16 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 		end
 	end
 
-	if info.type and path_out then
-		-- TODO: output .solh file with type deductions
-		--U.write_file(path_out .. '.h', T.name(info.type) .. '\n')
+	if info.type and header_path_out then
+		D.break_()
+		local type_name = T.name(info.type)
+		var out_text = '-- Compiled from ' .. path_in .. '\n' .. type_name
+		U.write_file(header_path_out, out_text)
 	end
 end
 
 
-local function compile_file(path_in: string, path_out: string?)
+local function compile_file(path_in: string, lua_path_out: string?, header_path_out: string?)
 	local settings = (function()
 		if path.extension(path_in):lower() == '.sol' then
 			return Parser.SOL_SETTINGS
@@ -283,7 +287,7 @@ local function compile_file(path_in: string, path_out: string?)
 	end)()
 
 	local info = parse_module({}, path_in)
-	output_module(info, path_in, path_out)
+	output_module(info, path_in, lua_path_out, header_path_out)
 end
 
 
@@ -310,7 +314,10 @@ local function print_help()
 				print this help text
 
 			-o output_dir
-				Write compiled .lua files here rather than the default '.'
+				Write compiled .lua files here
+
+			-ho header_output_dir
+				Write header files here
 
 			-p
 				Parse mode: Compile but do not write any Lua. This is useful for syntax checking.
@@ -340,10 +347,11 @@ if #arg == 0 then
 	print_help()
 	os.exit(-1)
 else
-	local g_write_lua = true
-	local g_out_dir = ''
-	local ix = 1
-	local num_files = 0
+	var g_write_lua    = true
+	var g_out_dir      = ''
+	var g_header_out_dir = nil : string?
+	var ix             = 1
+	var num_files      = 0
 
 	while ix <= #arg do
 		local a = arg[ix]
@@ -356,6 +364,12 @@ else
 			g_out_dir = arg[ix] .. '/'
 			ix = ix + 1
 			print('Files will be written to ' .. g_out_dir)
+
+		elseif a == '-ho' then
+			g_header_out_dir = arg[ix] .. '/'
+			ix = ix + 1
+			print('Header files will be written to ' .. g_header_out_dir)
+			path.mkdir( g_header_out_dir ) -- Ensure we can write there
 
 		elseif a == '-p' or a == '--parse' then
 			-- e.g. for syntax checking
@@ -407,11 +421,10 @@ else
 
 			if g_write_lua then
 				path.mkdir( g_out_dir ) -- Ensure we can write there
-
 				local dir, fn  = path.splitpath(path_in)
-				local path_out = g_out_dir .. path.splitext(fn) .. '.lua'
-				--local path_out = path_in .. '.lua'
-				compile_file(path_in, path_out)
+				local lua_path_out = g_out_dir .. path.splitext(fn) .. '.lua'
+				local header_path_out = g_header_out_dir and (g_header_out_dir .. path.splitext(fn) .. '.sol')
+				compile_file(path_in, lua_path_out, header_path_out)
 			else
 				compile_file(path_in)
 			end

@@ -754,6 +754,8 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 	elseif T.is_type_list(typ) then
 		if #typ == 0 then
 			return "void [EMPTY TYPE-LIST]"
+		elseif #typ == 1 then
+			return T.name(typ[1], indent, verbose)
 		else
 			local str=''
 			for i,t in ipairs(typ) do
@@ -774,6 +776,8 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 	elseif typ.tag == 'variant' then
 		if #typ.variants == 0 then
 			return "void"
+		elseif #typ.variants == 1 then
+			return T.name(typ.variants[1], indent, verbose)
 		else
 			if #typ.variants == 2
 				and typ.variants[2] == T.Nil 
@@ -877,7 +881,13 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 		return '[' .. T.name(typ.type, next_indent, verbose) .. ']'
 
 	elseif typ.tag == 'map' then
-		return '{' .. T.name(typ.key_type, next_indent, verbose) .. ' => ' .. T.name(typ.value_type, next_indent, verbose) .. '}'
+		if typ.value_type == T.True then
+			-- A set
+			return '{' .. T.name(typ.key_type, next_indent, verbose) .. '}'
+		else
+			-- A map
+			return '{' .. T.name(typ.key_type, next_indent, verbose) .. ' => ' .. T.name(typ.value_type, next_indent, verbose) .. '}'
+		end
 
 	elseif typ.tag == 'function' then
 		local str = 'function('

@@ -754,6 +754,8 @@ function T.name(typ, indent, verbose)
 	elseif T.is_type_list(typ) then
 		if #typ == 0 then
 			return "void [EMPTY TYPE-LIST]" --[[SOL OUTPUT--]] 
+		elseif #typ == 1 then
+			return T.name(typ[1], indent, verbose) --[[SOL OUTPUT--]] 
 		else
 			local str='' --[[SOL OUTPUT--]] 
 			for i,t in ipairs(typ) do
@@ -774,6 +776,8 @@ function T.name(typ, indent, verbose)
 	elseif typ.tag == 'variant' then
 		if #typ.variants == 0 then
 			return "void" --[[SOL OUTPUT--]] 
+		elseif #typ.variants == 1 then
+			return T.name(typ.variants[1], indent, verbose) --[[SOL OUTPUT--]] 
 		else
 			if #typ.variants == 2
 				and typ.variants[2] == T.Nil 
@@ -877,7 +881,13 @@ function T.name(typ, indent, verbose)
 		return '[' .. T.name(typ.type, next_indent, verbose) .. ']' --[[SOL OUTPUT--]] 
 
 	elseif typ.tag == 'map' then
-		return '{' .. T.name(typ.key_type, next_indent, verbose) .. ' => ' .. T.name(typ.value_type, next_indent, verbose) .. '}' --[[SOL OUTPUT--]] 
+		if typ.value_type == T.True then
+			-- A set
+			return '{' .. T.name(typ.key_type, next_indent, verbose) .. '}' --[[SOL OUTPUT--]] 
+		else
+			-- A map
+			return '{' .. T.name(typ.key_type, next_indent, verbose) .. ' => ' .. T.name(typ.value_type, next_indent, verbose) .. '}' --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
 	elseif typ.tag == 'function' then
 		local str = 'function(' --[[SOL OUTPUT--]] 

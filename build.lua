@@ -84,7 +84,7 @@ end
 print "----------------------------------------"
 print "BUILD 1/3: old solc compiling new solc"
 print "----------------------------------------"
-run_lua( "install/solc.lua "..solc_args.." -o build sol/*.sol" )
+run_lua( "install/solc.lua "..solc_args.."  -o build  -ho headers  sol/*.sol" )
 
 print "----------------------------------------"
 print "BUILD 2/3: new solc compiling new solc"

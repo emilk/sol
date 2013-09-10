@@ -73,6 +73,7 @@ _G.g_ignore_errors = false --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPU
 
 
 
+
 local CURRENTLY_PARSING = false --[[SOL OUTPUT--]] 
 
 -- type is CURRENTLY_PARSING during parsing.
@@ -206,6 +207,7 @@ local function parse_module_str(chain, path_in, source_text)
 	end --[[SOL OUTPUT--]] 
 
 	local info = {
+		name            = module_name;
 		ast             = ast;
 		type            = type;
 		global_vars     = module_scope:get_global_vars();
@@ -249,7 +251,7 @@ parse_module = function(chain, path_in)
 end --[[SOL OUTPUT--]] 
 
 
-local function output_module(info, path_in, path_out)
+local function output_module(info, path_in, path_out, header_path_out)
 	if info.ast and path_out then
 		U.write_unprotect(path_out) --[[SOL OUTPUT--]]  -- Ensure we can write over it
 
@@ -266,14 +268,16 @@ local function output_module(info, path_in, path_out)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	if info.type and path_out then
-		-- TODO: output .solh file with type deductions
-		--U.write_file(path_out .. '.h', T.name(info.type) .. '\n')
+	if info.type and header_path_out then
+		D.break_() --[[SOL OUTPUT--]] 
+		local type_name = T.name(info.type) --[[SOL OUTPUT--]] 
+		local out_text = '-- Compiled from ' .. path_in .. '\n' .. type_name --[[SOL OUTPUT--]] 
+		U.write_file(header_path_out, out_text) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
-local function compile_file(path_in, path_out)
+local function compile_file(path_in, lua_path_out, header_path_out)
 	local settings = (function()
 		if path.extension(path_in):lower() == '.sol' then
 			return Parser.SOL_SETTINGS --[[SOL OUTPUT--]] 
@@ -283,7 +287,7 @@ local function compile_file(path_in, path_out)
 	end)() --[[SOL OUTPUT--]] 
 
 	local info = parse_module({}, path_in) --[[SOL OUTPUT--]] 
-	output_module(info, path_in, path_out) --[[SOL OUTPUT--]] 
+	output_module(info, path_in, lua_path_out, header_path_out) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -310,7 +314,10 @@ local function print_help()
 				print this help text
 
 			-o output_dir
-				Write compiled .lua files here rather than the default '.'
+				Write compiled .lua files here
+
+			-ho header_output_dir
+				Write header files here
 
 			-p
 				Parse mode: Compile but do not write any Lua. This is useful for syntax checking.
@@ -340,10 +347,11 @@ if #arg == 0 then
 	print_help() --[[SOL OUTPUT--]] 
 	os.exit(-1) --[[SOL OUTPUT--]] 
 else
-	local g_write_lua = true --[[SOL OUTPUT--]] 
-	local g_out_dir = '' --[[SOL OUTPUT--]] 
-	local ix = 1 --[[SOL OUTPUT--]] 
-	local num_files = 0 --[[SOL OUTPUT--]] 
+	local g_write_lua    = true --[[SOL OUTPUT--]] 
+	local g_out_dir      = '' --[[SOL OUTPUT--]] 
+	local g_header_out_dir = nil --[[SOL OUTPUT--]] 
+	local ix             = 1 --[[SOL OUTPUT--]] 
+	local num_files      = 0 --[[SOL OUTPUT--]] 
 
 	while ix <= #arg do
 		local a = arg[ix] --[[SOL OUTPUT--]] 
@@ -356,6 +364,12 @@ else
 			g_out_dir = arg[ix] .. '/' --[[SOL OUTPUT--]] 
 			ix = ix + 1 --[[SOL OUTPUT--]] 
 			print('Files will be written to ' .. g_out_dir) --[[SOL OUTPUT--]] 
+
+		elseif a == '-ho' then
+			g_header_out_dir = arg[ix] .. '/' --[[SOL OUTPUT--]] 
+			ix = ix + 1 --[[SOL OUTPUT--]] 
+			print('Header files will be written to ' .. g_header_out_dir) --[[SOL OUTPUT--]] 
+			path.mkdir( g_header_out_dir ) --[[SOL OUTPUT--]]  -- Ensure we can write there
 
 		elseif a == '-p' or a == '--parse' then
 			-- e.g. for syntax checking
@@ -407,11 +421,10 @@ else
 
 			if g_write_lua then
 				path.mkdir( g_out_dir ) --[[SOL OUTPUT--]]  -- Ensure we can write there
-
 				local dir, fn  = path.splitpath(path_in) --[[SOL OUTPUT--]] 
-				local path_out = g_out_dir .. path.splitext(fn) .. '.lua' --[[SOL OUTPUT--]] 
-				--local path_out = path_in .. '.lua'
-				compile_file(path_in, path_out) --[[SOL OUTPUT--]] 
+				local lua_path_out = g_out_dir .. path.splitext(fn) .. '.lua' --[[SOL OUTPUT--]] 
+				local header_path_out = g_header_out_dir and (g_header_out_dir .. path.splitext(fn) .. '.sol') --[[SOL OUTPUT--]] 
+				compile_file(path_in, lua_path_out, header_path_out) --[[SOL OUTPUT--]] 
 			else
 				compile_file(path_in) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 

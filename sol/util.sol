@@ -58,7 +58,7 @@ end
 -- ignore_set   - ignore these key:s
 -- indent      - indent on any _subsequent_ line
 -- discovered  - set of tables already processed (used to discover loops)
-function U.serialize_to_rope(rope, val, ignore_set, indent: string?, discovered: {table => bool}?) -> void
+function U.serialize_to_rope(rope, val, ignore_set, indent: string?, discovered: {table}?) -> void
 	if val == nil then
 		rope[#rope+1] = "nil"
 		return

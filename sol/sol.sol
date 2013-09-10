@@ -118,9 +118,8 @@ if #arg == 0 then
 	os.exit(-1)
 else
 	local g_write_lua = true
-	local g_out_dir = 'build/'  -- TODO: use penlight for this
-	local ix = 1
-	local num_files = 0
+	local ix          = 1
+	local num_files   = 0
 
 	while ix <= #arg do
 		local a = arg[ix]

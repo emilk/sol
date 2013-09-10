@@ -201,23 +201,14 @@ end --[[SOL OUTPUT--]]
 
 -- Constructor
 function Scope:init(parent)
---[[
-	parent   : Scope?,
-	children : [Scope],
-	locals   : [Variable],
-	globals  : [Variable],
-	typedefs : { string => T.Type },
-	vararg   : Variable?,  -- if non-nil, points to a variable named '...' with the type of T.VarArgs
---]]
-
-	self.parent          = parent --[[SOL OUTPUT--]] 
-	self.children        = { } --[[SOL OUTPUT--]] 
-	self.locals          = { } --[[SOL OUTPUT--]] 
-	self.globals         = { } --[[SOL OUTPUT--]] 
-	self.typedefs        = { } --[[SOL OUTPUT--]] 
-	self.global_typedefs = { } --[[SOL OUTPUT--]] 
-	self.fixed           = false --[[SOL OUTPUT--]] 
+	self.parent          = parent --[[SOL OUTPUT--]]  
+	self.children        = {} --[[SOL OUTPUT--]] 
+	self.locals          = {} --[[SOL OUTPUT--]] 
+	self.globals         = {} --[[SOL OUTPUT--]] 
+	self.typedefs        = {} --[[SOL OUTPUT--]] 
+	self.global_typedefs = {} --[[SOL OUTPUT--]] 
 	self.vararg          = nil --[[SOL OUTPUT--]] 
+	self.fixed           = false --[[SOL OUTPUT--]]   
 	
 	if parent then
 		table.insert(parent.children, self) --[[SOL OUTPUT--]] 
