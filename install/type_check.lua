@@ -1484,7 +1484,7 @@ local function analyze(ast, filename, on_require, settings)
 			--]]
 
 			if extend_class then
-				report_info(stat, "Extending class with %q", name) --[[SOL OUTPUT--]] 
+				report_spam(stat, "Extending class with %q", name) --[[SOL OUTPUT--]] 
 				obj_t.members[name] = right_type --[[SOL OUTPUT--]] 
 			else
 				obj_t = U.shallow_clone( obj_t ) --[[SOL OUTPUT--]] 

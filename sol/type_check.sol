@@ -1484,7 +1484,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--]]
 
 			if extend_class then
-				report_info(stat, "Extending class with %q", name)
+				report_spam(stat, "Extending class with %q", name)
 				obj_t.members[name] = right_type
 			else
 				obj_t = U.shallow_clone( obj_t )
