@@ -563,7 +563,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			--
 			node = lambda_node
 			node.ast_type = 'LambdaFunctionExpr'
-			node.is_local = true
 		end
 
 		if node then
@@ -1070,74 +1069,77 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
-	local function parse_declaration(scope: S.Scope, token_list: L.TokenList,
-		                              type: 'local' or 'global' or 'var') -> bool, StatNode_or_error
+	local function parse_function_decl(scope: S.Scope, token_list: L.TokenList,
+		                                scoping: 'local' or 'global') -> bool, StatNode_or_error
 
-		local angle_bracket = (tok:peek().data == '<')
-
-		local is_local = (type ~= 'global')
-
-		if tok:consume_keyword('function', token_list) then
-			if not tok:is('ident') then
-				return false, report_error("Function name expected")
-			end
-
-			local var_name = tok:get(token_list).data
-			local st, func = parse_function_args_and_body(scope, token_list)
-			if not st then return false, func end
-
-			func.ast_type = 'FunctionDeclStatement'
-			func.var_name = var_name
-			func.is_local = is_local
-			return true, func
-
-		elseif tok:is('ident') or angle_bracket then
-			var where = where_am_i()
-			local types = nil
-
-			if type == 'var' then
-				types = parse_type_args(scope)
-			elseif parse_type_args(scope) then
-				return false, report_error("%s cannot have type list - did you want 'var' ?", type)
-			end
-
-			if types and #types == 0 then
-				return false, report_error("Empty type list")
-			end
-
-			local name_list = { tok:get(token_list).data }
-			while tok:consume_symbol(',', token_list) do
-				if not tok:is('ident') then
-					return false, report_error("local variable name expected")
-				end
-				name_list[#name_list+1] = tok:get(token_list).data
-			end
-
-			var<[P.ExprNode]> init_list = {}
-			if tok:consume_symbol('=', token_list) then
-				repeat
-					local st, ex = parse_expr(scope)
-					if not st then return false, ex end
-					init_list[#init_list+1] = ex
-				until not tok:consume_symbol(',', token_list)
-			end
-
-			local node_local = {
-				ast_type  = 'VarDeclareStatement';
-				type_list = types;
-				name_list = name_list;
-				init_list = init_list;
-				tokens    = token_list;
-				is_local  = is_local;
-				type      = type; -- 'local' or 'global' or 'var'
-				where     = where;
-			}
-			--
-			return true, node_local
-
-		else
-			return false, report_error("local var_ or function def expected")
+		if not tok:is('ident') then
+			return false, report_error("Function name expected")
 		end
+
+		local var_name = tok:get(token_list).data
+		local st, func = parse_function_args_and_body(scope, token_list)
+		if not st then return false, func end
+
+		func.ast_type = 'FunctionDeclStatement'
+		func.var_name = var_name
+		func.is_local = (scoping == 'local')
+		func.scoping  = scoping
+		return true, func
+	end
+
+
+	local function parse_declaration(scope: S.Scope, token_list: L.TokenList,
+		                              scoping: 'local' or 'global' or 'var') -> bool, StatNode_or_error
+
+		var is_local = (scoping ~= 'global')
+		var angle_bracket = (tok:peek().data == '<')
+
+		var where = where_am_i()
+		local types = nil
+
+		if scoping == 'var' then
+			types = parse_type_args(scope)
+		elseif parse_type_args(scope) then
+			return false, report_error("%s cannot have type list - did you want 'var' ?")
+		end
+
+		if types and #types == 0 then
+			return false, report_error("Empty type list")
+		end
+
+		if not tok:is('ident') then
+			return false, report_error("Variable name expected")
+		end
+
+		local name_list = { tok:get(token_list).data }
+		while tok:consume_symbol(',', token_list) do
+			if not tok:is('ident') then
+				return false, report_error("local variable name expected")
+			end
+			name_list[#name_list+1] = tok:get(token_list).data
+		end
+
+		var<[P.ExprNode]> init_list = {}
+		if tok:consume_symbol('=', token_list) then
+			repeat
+				local st, ex = parse_expr(scope)
+				if not st then return false, ex end
+				init_list[#init_list+1] = ex
+			until not tok:consume_symbol(',', token_list)
+		end
+
+		local node_local = {
+			ast_type  = 'VarDeclareStatement';
+			type_list = types;
+			name_list = name_list;
+			init_list = init_list;
+			tokens    = token_list;
+			is_local  = is_local;
+			scoping   = scoping; -- 'local' or 'global' or 'var'
+			where     = where;
+		}
+		--
+		return true, node_local
 	end
 
 
@@ -1396,7 +1398,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			if not st then return false, cond end
 			--
 			local node_repeat = {}
-			node_repeat.ast_type   = 'RepeatStatement'
+			node_repeat.ast_type  = 'RepeatStatement'
 			node_repeat.condition = cond
 			node_repeat.body      = body
 			node_repeat.tokens    = token_list
@@ -1410,21 +1412,36 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			local st, name = parse_suffixed_expr(scope, 'only_dot_colon')
 			if not st then return false, name end
 			--
-			local is_mem_fun = (name.ast_type == 'MemberExpr' and name.indexer == ':')
+			var is_aggregate = (name.ast_type == 'MemberExpr')
+			var is_mem_fun = (name.ast_type == 'MemberExpr' and name.indexer == ':')
 			local st, func = parse_function_args_and_body(scope, token_list, is_mem_fun and 'mem_fun' or nil)
 			if not st then return false, func end
-			--
-			func.ast_type = 'FunctionDeclStatement'
-			func.is_local = false
-			func.name     = name
+
+			-- 'function foo()' is local in sol, global in lua
+
+			func.ast_type     = 'FunctionDeclStatement'
+			if not is_aggregate then
+				func.is_local  = settings.sol
+			end
+			func.scoping      = ''
+			func.is_aggregate = is_aggregate
+			func.name         = name
 			stat = func
 
 		elseif tok:consume_keyword('local', token_list) then
-			st, stat = parse_declaration(scope, token_list, 'local')
+			if tok:consume_keyword('function', token_list) then
+				st, stat = parse_function_decl(scope, token_list, 'local')
+			else
+				st, stat = parse_declaration(scope, token_list, 'local')
+			end
 
 		elseif settings.is_sol and tok:consume_keyword('global', token_list) then
 			if tok:consume_keyword('typedef') then
 				st, stat = parse_typedef(scope, 'global')
+			elseif tok:consume_keyword('class') then
+				st, stat = parse_class(scope, token_list, 'global')
+			elseif tok:consume_keyword('function', token_list) then
+				st, stat = parse_function_decl(scope, token_list, 'global')
 			else
 				st, stat = parse_declaration(scope, token_list, 'global')
 			end

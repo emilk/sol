@@ -1830,7 +1830,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local explicit_types = stat.type_list
 
 			-- Declare variables:
-			var is_local = (stat.type ~= 'global')
+			var is_local = (stat.scoping ~= 'global')
 			var<[Variable]> vars = {}
 			for _,name in ipairs(stat.name_list) do
 				report_spam(stat, "Declaration: %s %s", stat.type, name)
@@ -1863,7 +1863,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if #stat.init_list == 0 then
 				-- local a,b
-				if stat.type == 'var' then
+				if stat.scoping == 'var' then
 					report_error(stat, "'var' must be initialized at declaration")
 				elseif explicit_types then
 					for _,v in ipairs(vars) do
@@ -1918,7 +1918,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 			end
 
-			if stat.type == 'var' and not explicit_types then
+			if stat.scoping == 'var' and not explicit_types then
 				for _,v in ipairs(vars) do
 					if v.type==nil or T.is_any(v.type) then
 						report_error(stat, "Undeducible type - the type of a 'var' must be compile-time deducible")
@@ -1989,28 +1989,27 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--[[ Assign type before recursing on body.
 			     This is so that recursive function can typecheck the calls to itself
 			]]--
-			if stat.var_name then
-				--[[ e.g:
-					"local function foo(bar)"
-					"global function foo(bar)"
-				--]]
-				fun_t.name = stat.var_name
-
-				report_spam(stat, "local function, name: %q", stat.name)
-
-				var v = declare_var(stat, scope, stat.var_name, stat.is_local)
-				v.type = fun_t
-			else
+			if stat.is_aggregate then
 				-- function foo:bar(arg)
 				D.assert(stat.name)
 				fun_t.name = format_expr(stat.name)
 
 				if stat.name.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
-					report_warning(stat, "non-local function, name: %q", stat.name)
+					report_warning(stat, "non-local function, name: %q", fun_t.name)
 				end
-
 				do_assignment(stat, scope, stat.name, fun_t, is_pre_analyze)
+			else
+				--[[ e.g:
+					"local function foo(bar)"
+					"global function foo(bar)"
+				--]]
+				fun_t.name = stat.var_name
+
+				report_spam(stat, "local function, name: %q", fun_t.name)
+
+				var v = declare_var(stat, scope, stat.var_name, stat.is_local)
+				v.type = fun_t
 			end
 
 			-- Now analyze body:
@@ -2174,37 +2173,39 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			assert(stat.scope.parent == scope)
 
 			if stat.name then
-				report_spam(stat, "Pre-analyzing function %s...", stat.name)
+				report_spam(stat, "Pre-analyzing function %q...", stat.name)
 			else
-				return
+				report_spam(stat, "Pre-analyzing function %q...", stat.var_name)
 			end
 
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze )
 			fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
-			if stat.var_name then
-				fun_t.name = stat.var_name
+			if stat.is_aggregate then
+				fun_t.name = format_expr(stat.name)
 			else
-				fun_t.name = 'its_complicated' -- TODO
+				fun_t.name = stat.var_name
 			end
 
-			if stat.is_local then
-				-- e.g.  "local function foo(bar)"
-				report_warning(stat, "TODO: local function, name: %q", stat.name)
-			else
-				-- function foo(arg)      -- global - not OK
-				-- or
+			if stat.is_aggregate then
 				-- function foo.bar(arg)  -- namespaced - OK
 				-- function foo:bar(arg)  -- member - OK
-				if stat.name.ast_type ~= 'MemberExpr' then
-					-- e.g.  "function foo(bar)"
-					report_warning(stat, "global function, name: %q", stat.name)
-				end
-
 				report_spam(stat, "Pre-analyzed function head for %q as '%s'", stat.name, fun_t)
-
 				do_assignment(stat, scope, stat.name, fun_t, is_pre_analyze)
-
 				report_spam(stat, "Assigned.")
+			else
+				--[[
+				local function foo()
+				global function foo()
+
+				No need to forward declare these -
+				they cannot in any code that is parsed before their declaration!
+				]]
+				--[[
+				report_spam(stat, "Pre-declaring function %q", fun_t.name)
+				var v = declare_var(stat, scope, stat.var_name, stat.is_local)
+				v.forward_declared = true
+				v.type = fun_t
+				--]]
 			end
 		end
 	end

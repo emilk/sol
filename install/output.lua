@@ -132,6 +132,9 @@ local function output(ast, filename, insert_new_lines)
 			self:append_white() --[[SOL OUTPUT--]] 
 			out:append_str(str) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
+		function t:inject_str(str)
+			out:append_str(str) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 		function t:peek()
 			if it <= #expr.tokens then
 				return expr.tokens[it].data --[[SOL OUTPUT--]] 
@@ -333,7 +336,7 @@ local function output(ast, filename, insert_new_lines)
 
 		elseif stat.ast_type == 'ClassDeclStatement' then
 			if stat.is_local then
-				t:append_str( "local" ) --[[SOL OUTPUT--]] 
+				t:append_str( "local" ) --[[SOL OUTPUT--]]  -- replaces 'class'
 			else
 				t:skip_next_token() --[[SOL OUTPUT--]]  -- skip 'global'
 				t:skip_next_token() --[[SOL OUTPUT--]]  -- skip 'class'
@@ -391,13 +394,15 @@ local function output(ast, filename, insert_new_lines)
 		elseif stat.ast_type == 'FunctionDeclStatement' then
 			--print(U.pretty(stat))
 
-			if stat.is_local then
+			if stat.scoping == 'local' then
 				t:append_next_token( "local" ) --[[SOL OUTPUT--]] 
-			elseif t:peek() == "global" then
+			elseif stat.scoping == 'global' then
 				t:skip_next_token() --[[SOL OUTPUT--]] 
+			elseif not stat.is_aggregate then
+				t:inject_str(' local') --[[SOL OUTPUT--]]  -- turn global function into local
 			end --[[SOL OUTPUT--]] 
 			t:append_next_token( "function" ) --[[SOL OUTPUT--]] 
-			if stat.name then
+			if stat.is_aggregate then
 				format_expr( stat.name ) --[[SOL OUTPUT--]] 
 			else
 				t:append_str( stat.var_name ) --[[SOL OUTPUT--]] 

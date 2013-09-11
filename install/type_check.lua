@@ -1830,7 +1830,7 @@ local function analyze(ast, filename, on_require, settings)
 			local explicit_types = stat.type_list --[[SOL OUTPUT--]] 
 
 			-- Declare variables:
-			local is_local = (stat.type ~= 'global') --[[SOL OUTPUT--]] 
+			local is_local = (stat.scoping ~= 'global') --[[SOL OUTPUT--]] 
 			local vars = {} --[[SOL OUTPUT--]] 
 			for _,name in ipairs(stat.name_list) do
 				report_spam(stat, "Declaration: %s %s", stat.type, name) --[[SOL OUTPUT--]] 
@@ -1863,7 +1863,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			if #stat.init_list == 0 then
 				-- local a,b
-				if stat.type == 'var' then
+				if stat.scoping == 'var' then
 					report_error(stat, "'var' must be initialized at declaration") --[[SOL OUTPUT--]] 
 				elseif explicit_types then
 					for _,v in ipairs(vars) do
@@ -1918,7 +1918,7 @@ local function analyze(ast, filename, on_require, settings)
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			if stat.type == 'var' and not explicit_types then
+			if stat.scoping == 'var' and not explicit_types then
 				for _,v in ipairs(vars) do
 					if v.type==nil or T.is_any(v.type) then
 						report_error(stat, "Undeducible type - the type of a 'var' must be compile-time deducible") --[[SOL OUTPUT--]] 
@@ -1989,28 +1989,27 @@ local function analyze(ast, filename, on_require, settings)
 			--[[ Assign type before recursing on body.
 			     This is so that recursive function can typecheck the calls to itself
 			]]--
-			if stat.var_name then
-				--[[ e.g:
-					"local function foo(bar)"
-					"global function foo(bar)"
-				--]]
-				fun_t.name = stat.var_name --[[SOL OUTPUT--]] 
-
-				report_spam(stat, "local function, name: %q", stat.name) --[[SOL OUTPUT--]] 
-
-				local v = declare_var(stat, scope, stat.var_name, stat.is_local) --[[SOL OUTPUT--]] 
-				v.type = fun_t --[[SOL OUTPUT--]] 
-			else
+			if stat.is_aggregate then
 				-- function foo:bar(arg)
 				D.assert(stat.name) --[[SOL OUTPUT--]] 
 				fun_t.name = format_expr(stat.name) --[[SOL OUTPUT--]] 
 
 				if stat.name.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
-					report_warning(stat, "non-local function, name: %q", stat.name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "non-local function, name: %q", fun_t.name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-
 				do_assignment(stat, scope, stat.name, fun_t, is_pre_analyze) --[[SOL OUTPUT--]] 
+			else
+				--[[ e.g:
+					"local function foo(bar)"
+					"global function foo(bar)"
+				--]]
+				fun_t.name = stat.var_name --[[SOL OUTPUT--]] 
+
+				report_spam(stat, "local function, name: %q", fun_t.name) --[[SOL OUTPUT--]] 
+
+				local v = declare_var(stat, scope, stat.var_name, stat.is_local) --[[SOL OUTPUT--]] 
+				v.type = fun_t --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			-- Now analyze body:
@@ -2174,37 +2173,39 @@ local function analyze(ast, filename, on_require, settings)
 			assert(stat.scope.parent == scope) --[[SOL OUTPUT--]] 
 
 			if stat.name then
-				report_spam(stat, "Pre-analyzing function %s...", stat.name) --[[SOL OUTPUT--]] 
+				report_spam(stat, "Pre-analyzing function %q...", stat.name) --[[SOL OUTPUT--]] 
 			else
-				return --[[SOL OUTPUT--]] 
+				report_spam(stat, "Pre-analyzing function %q...", stat.var_name) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
 			fun_t.pre_analyzed = true --[[SOL OUTPUT--]]  -- Rmember that this is a temporary 'guess'
-			if stat.var_name then
-				fun_t.name = stat.var_name --[[SOL OUTPUT--]] 
+			if stat.is_aggregate then
+				fun_t.name = format_expr(stat.name) --[[SOL OUTPUT--]] 
 			else
-				fun_t.name = 'its_complicated' --[[SOL OUTPUT--]]  -- TODO
+				fun_t.name = stat.var_name --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			if stat.is_local then
-				-- e.g.  "local function foo(bar)"
-				report_warning(stat, "TODO: local function, name: %q", stat.name) --[[SOL OUTPUT--]] 
-			else
-				-- function foo(arg)      -- global - not OK
-				-- or
+			if stat.is_aggregate then
 				-- function foo.bar(arg)  -- namespaced - OK
 				-- function foo:bar(arg)  -- member - OK
-				if stat.name.ast_type ~= 'MemberExpr' then
-					-- e.g.  "function foo(bar)"
-					report_warning(stat, "global function, name: %q", stat.name) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
 				report_spam(stat, "Pre-analyzed function head for %q as '%s'", stat.name, fun_t) --[[SOL OUTPUT--]] 
-
 				do_assignment(stat, scope, stat.name, fun_t, is_pre_analyze) --[[SOL OUTPUT--]] 
-
 				report_spam(stat, "Assigned.") --[[SOL OUTPUT--]] 
+			else
+				--[[
+				local function foo()
+				global function foo()
+
+				No need to forward declare these -
+				they cannot in any code that is parsed before their declaration!
+				]]
+				--[[
+				report_spam(stat, "Pre-declaring function %q", fun_t.name)
+				var v = declare_var(stat, scope, stat.var_name, stat.is_local)
+				v.forward_declared = true
+				v.type = fun_t
+				--]]
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

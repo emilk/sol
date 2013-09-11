@@ -132,6 +132,9 @@ local function output(ast, filename: string, insert_new_lines : bool?) -> string
 			self:append_white()
 			out:append_str(str)
 		end
+		function t:inject_str(str)
+			out:append_str(str)
+		end
 		function t:peek()
 			if it <= #expr.tokens then
 				return expr.tokens[it].data
@@ -333,7 +336,7 @@ local function output(ast, filename: string, insert_new_lines : bool?) -> string
 
 		elseif stat.ast_type == 'ClassDeclStatement' then
 			if stat.is_local then
-				t:append_str( "local" )
+				t:append_str( "local" ) -- replaces 'class'
 			else
 				t:skip_next_token() -- skip 'global'
 				t:skip_next_token() -- skip 'class'
@@ -391,13 +394,15 @@ local function output(ast, filename: string, insert_new_lines : bool?) -> string
 		elseif stat.ast_type == 'FunctionDeclStatement' then
 			--print(U.pretty(stat))
 
-			if stat.is_local then
+			if stat.scoping == 'local' then
 				t:append_next_token( "local" )
-			elseif t:peek() == "global" then
+			elseif stat.scoping == 'global' then
 				t:skip_next_token()
+			elseif not stat.is_aggregate then
+				t:inject_str(' local') -- turn global function into local
 			end
 			t:append_next_token( "function" )
-			if stat.name then
+			if stat.is_aggregate then
 				format_expr( stat.name )
 			else
 				t:append_str( stat.var_name )
