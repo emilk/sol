@@ -403,7 +403,7 @@ local function output(ast, filename, insert_new_lines)
 			end --[[SOL OUTPUT--]] 
 			t:append_next_token( "function" ) --[[SOL OUTPUT--]] 
 			if stat.is_aggregate then
-				format_expr( stat.name ) --[[SOL OUTPUT--]] 
+				format_expr( stat.name_expr ) --[[SOL OUTPUT--]] 
 			else
 				t:append_str( stat.var_name ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 

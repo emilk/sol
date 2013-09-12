@@ -342,9 +342,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		}
 
 		if node.is_mem_fun then
-			local name = node.name
-			assert(name.ast_type == 'MemberExpr' and name.indexer == ':')
-			local self_type = analyze_expr_single_custom(name.base, scope, is_pre_analyze)
+			local name_expr = node.name_expr
+			assert(name_expr.ast_type == 'MemberExpr' and name_expr.indexer == ':')
+			local self_type = analyze_expr_single_custom(name_expr.base, scope, is_pre_analyze)
 			if self_type.instance_type then
 				report_spam(node, "Class method detected - setting 'self' type as the instance type")
 				self_type = self_type.instance_type
@@ -1991,14 +1991,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			]]--
 			if stat.is_aggregate then
 				-- function foo:bar(arg)
-				D.assert(stat.name)
-				fun_t.name = format_expr(stat.name)
+				D.assert(stat.name_expr)
+				fun_t.name = format_expr(stat.name_expr)
 
-				if stat.name.ast_type ~= 'MemberExpr' then
+				if stat.name_expr.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
 					report_warning(stat, "non-local function, name: %q", fun_t.name)
 				end
-				do_assignment(stat, scope, stat.name, fun_t, is_pre_analyze)
+				do_assignment(stat, scope, stat.name_expr, fun_t, is_pre_analyze)
 			else
 				--[[ e.g:
 					"local function foo(bar)"
@@ -2172,8 +2172,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		elseif stat.ast_type == 'FunctionDeclStatement' then
 			assert(stat.scope.parent == scope)
 
-			if stat.name then
-				report_spam(stat, "Pre-analyzing function %q...", stat.name)
+			if stat.name_expr then
+				report_spam(stat, "Pre-analyzing function %q...", stat.name_expr)
 			else
 				report_spam(stat, "Pre-analyzing function %q...", stat.var_name)
 			end
@@ -2181,7 +2181,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze )
 			fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
 			if stat.is_aggregate then
-				fun_t.name = format_expr(stat.name)
+				fun_t.name = format_expr(stat.name_expr)
 			else
 				fun_t.name = stat.var_name
 			end
@@ -2189,8 +2189,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if stat.is_aggregate then
 				-- function foo.bar(arg)  -- namespaced - OK
 				-- function foo:bar(arg)  -- member - OK
-				report_spam(stat, "Pre-analyzed function head for %q as '%s'", stat.name, fun_t)
-				do_assignment(stat, scope, stat.name, fun_t, is_pre_analyze)
+				report_spam(stat, "Pre-analyzed function head for %q as '%s'", fun_t.name, fun_t)
+				do_assignment(stat, scope, stat.name_expr, fun_t, is_pre_analyze)
 				report_spam(stat, "Assigned.")
 			else
 				--[[

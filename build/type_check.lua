@@ -342,9 +342,9 @@ local function analyze(ast, filename, on_require, settings)
 		} --[[SOL OUTPUT--]] 
 
 		if node.is_mem_fun then
-			local name = node.name --[[SOL OUTPUT--]] 
-			assert(name.ast_type == 'MemberExpr' and name.indexer == ':') --[[SOL OUTPUT--]] 
-			local self_type = analyze_expr_single_custom(name.base, scope, is_pre_analyze) --[[SOL OUTPUT--]] 
+			local name_expr = node.name_expr --[[SOL OUTPUT--]] 
+			assert(name_expr.ast_type == 'MemberExpr' and name_expr.indexer == ':') --[[SOL OUTPUT--]] 
+			local self_type = analyze_expr_single_custom(name_expr.base, scope, is_pre_analyze) --[[SOL OUTPUT--]] 
 			if self_type.instance_type then
 				report_spam(node, "Class method detected - setting 'self' type as the instance type") --[[SOL OUTPUT--]] 
 				self_type = self_type.instance_type --[[SOL OUTPUT--]] 
@@ -1991,14 +1991,14 @@ local function analyze(ast, filename, on_require, settings)
 			]]--
 			if stat.is_aggregate then
 				-- function foo:bar(arg)
-				D.assert(stat.name) --[[SOL OUTPUT--]] 
-				fun_t.name = format_expr(stat.name) --[[SOL OUTPUT--]] 
+				D.assert(stat.name_expr) --[[SOL OUTPUT--]] 
+				fun_t.name = format_expr(stat.name_expr) --[[SOL OUTPUT--]] 
 
-				if stat.name.ast_type ~= 'MemberExpr' then
+				if stat.name_expr.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
 					report_warning(stat, "non-local function, name: %q", fun_t.name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				do_assignment(stat, scope, stat.name, fun_t, is_pre_analyze) --[[SOL OUTPUT--]] 
+				do_assignment(stat, scope, stat.name_expr, fun_t, is_pre_analyze) --[[SOL OUTPUT--]] 
 			else
 				--[[ e.g:
 					"local function foo(bar)"
@@ -2172,8 +2172,8 @@ local function analyze(ast, filename, on_require, settings)
 		elseif stat.ast_type == 'FunctionDeclStatement' then
 			assert(stat.scope.parent == scope) --[[SOL OUTPUT--]] 
 
-			if stat.name then
-				report_spam(stat, "Pre-analyzing function %q...", stat.name) --[[SOL OUTPUT--]] 
+			if stat.name_expr then
+				report_spam(stat, "Pre-analyzing function %q...", stat.name_expr) --[[SOL OUTPUT--]] 
 			else
 				report_spam(stat, "Pre-analyzing function %q...", stat.var_name) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -2181,7 +2181,7 @@ local function analyze(ast, filename, on_require, settings)
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
 			fun_t.pre_analyzed = true --[[SOL OUTPUT--]]  -- Rmember that this is a temporary 'guess'
 			if stat.is_aggregate then
-				fun_t.name = format_expr(stat.name) --[[SOL OUTPUT--]] 
+				fun_t.name = format_expr(stat.name_expr) --[[SOL OUTPUT--]] 
 			else
 				fun_t.name = stat.var_name --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -2189,8 +2189,8 @@ local function analyze(ast, filename, on_require, settings)
 			if stat.is_aggregate then
 				-- function foo.bar(arg)  -- namespaced - OK
 				-- function foo:bar(arg)  -- member - OK
-				report_spam(stat, "Pre-analyzed function head for %q as '%s'", stat.name, fun_t) --[[SOL OUTPUT--]] 
-				do_assignment(stat, scope, stat.name, fun_t, is_pre_analyze) --[[SOL OUTPUT--]] 
+				report_spam(stat, "Pre-analyzed function head for %q as '%s'", fun_t.name, fun_t) --[[SOL OUTPUT--]] 
+				do_assignment(stat, scope, stat.name_expr, fun_t, is_pre_analyze) --[[SOL OUTPUT--]] 
 				report_spam(stat, "Assigned.") --[[SOL OUTPUT--]] 
 			else
 				--[[

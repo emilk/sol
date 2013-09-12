@@ -1409,11 +1409,11 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			if not tok:is('ident') then
 				return false, report_error("Function name expected")
 			end
-			local st, name = parse_suffixed_expr(scope, 'only_dot_colon')
-			if not st then return false, name end
+			local st, name_expr = parse_suffixed_expr(scope, 'only_dot_colon')
+			if not st then return false, name_expr end
 			--
-			var is_aggregate = (name.ast_type == 'MemberExpr')
-			var is_mem_fun = (name.ast_type == 'MemberExpr' and name.indexer == ':')
+			var is_aggregate = (name_expr.ast_type == 'MemberExpr')
+			var is_mem_fun = (name_expr.ast_type == 'MemberExpr' and name_expr.indexer == ':')
 			local st, func = parse_function_args_and_body(scope, token_list, is_mem_fun and 'mem_fun' or nil)
 			if not st then return false, func end
 
@@ -1425,7 +1425,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			end
 			func.scoping      = ''
 			func.is_aggregate = is_aggregate
-			func.name         = name
+			func.name_expr    = name_expr
 			stat = func
 
 		elseif tok:consume_keyword('local', token_list) then

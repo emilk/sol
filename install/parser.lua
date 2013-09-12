@@ -1409,11 +1409,11 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			if not tok:is('ident') then
 				return false, report_error("Function name expected") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			local st, name = parse_suffixed_expr(scope, 'only_dot_colon') --[[SOL OUTPUT--]] 
-			if not st then return false, name --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			local st, name_expr = parse_suffixed_expr(scope, 'only_dot_colon') --[[SOL OUTPUT--]] 
+			if not st then return false, name_expr --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			--
-			local is_aggregate = (name.ast_type == 'MemberExpr') --[[SOL OUTPUT--]] 
-			local is_mem_fun = (name.ast_type == 'MemberExpr' and name.indexer == ':') --[[SOL OUTPUT--]] 
+			local is_aggregate = (name_expr.ast_type == 'MemberExpr') --[[SOL OUTPUT--]] 
+			local is_mem_fun = (name_expr.ast_type == 'MemberExpr' and name_expr.indexer == ':') --[[SOL OUTPUT--]] 
 			local st, func = parse_function_args_and_body(scope, token_list, is_mem_fun and 'mem_fun' or nil) --[[SOL OUTPUT--]] 
 			if not st then return false, func --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
@@ -1425,7 +1425,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			end --[[SOL OUTPUT--]] 
 			func.scoping      = '' --[[SOL OUTPUT--]] 
 			func.is_aggregate = is_aggregate --[[SOL OUTPUT--]] 
-			func.name         = name --[[SOL OUTPUT--]] 
+			func.name_expr    = name_expr --[[SOL OUTPUT--]] 
 			stat = func --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_keyword('local', token_list) then

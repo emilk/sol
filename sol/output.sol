@@ -403,7 +403,7 @@ local function output(ast, filename: string, insert_new_lines : bool?) -> string
 			end
 			t:append_next_token( "function" )
 			if stat.is_aggregate then
-				format_expr( stat.name )
+				format_expr( stat.name_expr )
 			else
 				t:append_str( stat.var_name )
 			end
