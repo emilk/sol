@@ -296,6 +296,21 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
+	local function parse_id_expr() -> ExprNode_or_error
+		assert(tok:is('ident'))
+
+		local token_list = {}
+		var where = where_am_i()
+		local id = tok:get(token_list)
+
+		return {
+			ast_type = 'IdExpr';
+			name     = id.data;
+			tokens   = token_list;
+			where    = where;
+		}
+	end
+
 	parse_primary_expr = function(scope: Scope) -> bool, ExprNode_or_error
 		local token_list = {}
 		var where = where_am_i()
@@ -316,14 +331,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			return true, parens_exp
 
 		elseif tok:is('ident') then
-			local id = tok:get(token_list)
-
-			return true, {
-				ast_type = 'IdExpr';
-				name     = id.data;
-				tokens   = token_list;
-				where    = where;
-			}
+			return true, parse_id_expr()
 		else
 			return false, report_error("primary expression expected")
 		end
@@ -1076,14 +1084,15 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			return false, report_error("Function name expected")
 		end
 
-		local var_name = tok:get(token_list).data
+		local name_expr = parse_id_expr()
 		local st, func = parse_function_args_and_body(scope, token_list)
 		if not st then return false, func end
 
-		func.ast_type = 'FunctionDeclStatement'
-		func.var_name = var_name
-		func.is_local = (scoping == 'local')
-		func.scoping  = scoping
+		func.ast_type     = 'FunctionDeclStatement'
+		func.name_expr    = name_expr
+		func.is_aggregate = false
+		func.is_local     = (scoping == 'local')
+		func.scoping      = scoping
 		return true, func
 	end
 

@@ -206,6 +206,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	local function declare_global(node, scope, name: string) -> Variable
 		D.assert(node and scope and scope.parent)
+		D.assert(type(name) == 'string')
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
 		if name ~= '_' then
@@ -1985,15 +1986,13 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			assert(stat.scope.parent == scope)
 			var is_pre_analyze = false
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze )
+			fun_t.name = format_expr(stat.name_expr)
 
 			--[[ Assign type before recursing on body.
 			     This is so that recursive function can typecheck the calls to itself
 			]]--
 			if stat.is_aggregate then
 				-- function foo:bar(arg)
-				D.assert(stat.name_expr)
-				fun_t.name = format_expr(stat.name_expr)
-
 				if stat.name_expr.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
 					report_warning(stat, "non-local function, name: %q", fun_t.name)
@@ -2004,11 +2003,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					"local function foo(bar)"
 					"global function foo(bar)"
 				--]]
-				fun_t.name = stat.var_name
+				report_spam(stat, "free function, name: %q", fun_t.name)
 
-				report_spam(stat, "local function, name: %q", fun_t.name)
-
-				var v = declare_var(stat, scope, stat.var_name, stat.is_local)
+				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local)
 				v.type = fun_t
 			end
 
@@ -2180,11 +2177,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze )
 			fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
-			if stat.is_aggregate then
-				fun_t.name = format_expr(stat.name_expr)
-			else
-				fun_t.name = stat.var_name
-			end
+			fun_t.name = format_expr(stat.name_expr)
 
 			if stat.is_aggregate then
 				-- function foo.bar(arg)  -- namespaced - OK
@@ -2202,7 +2195,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				]]
 				--[[
 				report_spam(stat, "Pre-declaring function %q", fun_t.name)
-				var v = declare_var(stat, scope, stat.var_name, stat.is_local)
+				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local)
 				v.forward_declared = true
 				v.type = fun_t
 				--]]

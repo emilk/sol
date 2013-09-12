@@ -399,14 +399,10 @@ local function output(ast, filename: string, insert_new_lines : bool?) -> string
 			elseif stat.scoping == 'global' then
 				t:skip_next_token()
 			elseif not stat.is_aggregate then
-				t:inject_str(' local') -- turn global function into local
+				t:inject_str(' local ') -- turn global function into local
 			end
 			t:append_next_token( "function" )
-			if stat.is_aggregate then
-				format_expr( stat.name_expr )
-			else
-				t:append_str( stat.var_name )
-			end
+			format_expr( stat.name_expr )
 
 			t:append_next_token( "(" )
 			if #stat.arguments > 0 then

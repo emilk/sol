@@ -1,4 +1,4 @@
-local function foo()
+function foo()
 end
-local function bar(arg)
+function bar(arg)
 end

@@ -206,6 +206,7 @@ local function analyze(ast, filename, on_require, settings)
 
 	local function declare_global(node, scope, name)
 		D.assert(node and scope and scope.parent) --[[SOL OUTPUT--]] 
+		D.assert(type(name) == 'string') --[[SOL OUTPUT--]] 
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
 		if name ~= '_' then
@@ -1985,15 +1986,13 @@ local function analyze(ast, filename, on_require, settings)
 			assert(stat.scope.parent == scope) --[[SOL OUTPUT--]] 
 			local is_pre_analyze = false --[[SOL OUTPUT--]] 
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
+			fun_t.name = format_expr(stat.name_expr) --[[SOL OUTPUT--]] 
 
 			--[[ Assign type before recursing on body.
 			     This is so that recursive function can typecheck the calls to itself
 			]]--
 			if stat.is_aggregate then
 				-- function foo:bar(arg)
-				D.assert(stat.name_expr) --[[SOL OUTPUT--]] 
-				fun_t.name = format_expr(stat.name_expr) --[[SOL OUTPUT--]] 
-
 				if stat.name_expr.ast_type ~= 'MemberExpr' then
 					-- e.g.  "function foo(bar)"
 					report_warning(stat, "non-local function, name: %q", fun_t.name) --[[SOL OUTPUT--]] 
@@ -2004,11 +2003,9 @@ local function analyze(ast, filename, on_require, settings)
 					"local function foo(bar)"
 					"global function foo(bar)"
 				--]]
-				fun_t.name = stat.var_name --[[SOL OUTPUT--]] 
+				report_spam(stat, "free function, name: %q", fun_t.name) --[[SOL OUTPUT--]] 
 
-				report_spam(stat, "local function, name: %q", fun_t.name) --[[SOL OUTPUT--]] 
-
-				local v = declare_var(stat, scope, stat.var_name, stat.is_local) --[[SOL OUTPUT--]] 
+				local v = declare_var(stat, scope, stat.name_expr.name, stat.is_local) --[[SOL OUTPUT--]] 
 				v.type = fun_t --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -2180,11 +2177,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
 			fun_t.pre_analyzed = true --[[SOL OUTPUT--]]  -- Rmember that this is a temporary 'guess'
-			if stat.is_aggregate then
-				fun_t.name = format_expr(stat.name_expr) --[[SOL OUTPUT--]] 
-			else
-				fun_t.name = stat.var_name --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+			fun_t.name = format_expr(stat.name_expr) --[[SOL OUTPUT--]] 
 
 			if stat.is_aggregate then
 				-- function foo.bar(arg)  -- namespaced - OK
@@ -2202,7 +2195,7 @@ local function analyze(ast, filename, on_require, settings)
 				]]
 				--[[
 				report_spam(stat, "Pre-declaring function %q", fun_t.name)
-				var v = declare_var(stat, scope, stat.var_name, stat.is_local)
+				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local)
 				v.forward_declared = true
 				v.type = fun_t
 				--]]

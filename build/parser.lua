@@ -296,6 +296,21 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 	end --[[SOL OUTPUT--]] 
 
 
+	local function parse_id_expr()
+		assert(tok:is('ident')) --[[SOL OUTPUT--]] 
+
+		local token_list = {} --[[SOL OUTPUT--]] 
+		local where = where_am_i() --[[SOL OUTPUT--]] 
+		local id = tok:get(token_list) --[[SOL OUTPUT--]] 
+
+		return {
+			ast_type = 'IdExpr';
+			name     = id.data;
+			tokens   = token_list;
+			where    = where;
+		} --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
 	parse_primary_expr = function(scope)
 		local token_list = {} --[[SOL OUTPUT--]] 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
@@ -316,14 +331,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			return true, parens_exp --[[SOL OUTPUT--]] 
 
 		elseif tok:is('ident') then
-			local id = tok:get(token_list) --[[SOL OUTPUT--]] 
-
-			return true, {
-				ast_type = 'IdExpr';
-				name     = id.data;
-				tokens   = token_list;
-				where    = where;
-			} --[[SOL OUTPUT--]] 
+			return true, parse_id_expr() --[[SOL OUTPUT--]] 
 		else
 			return false, report_error("primary expression expected") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1076,14 +1084,15 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			return false, report_error("Function name expected") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		local var_name = tok:get(token_list).data --[[SOL OUTPUT--]] 
+		local name_expr = parse_id_expr() --[[SOL OUTPUT--]] 
 		local st, func = parse_function_args_and_body(scope, token_list) --[[SOL OUTPUT--]] 
 		if not st then return false, func --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-		func.ast_type = 'FunctionDeclStatement' --[[SOL OUTPUT--]] 
-		func.var_name = var_name --[[SOL OUTPUT--]] 
-		func.is_local = (scoping == 'local') --[[SOL OUTPUT--]] 
-		func.scoping  = scoping --[[SOL OUTPUT--]] 
+		func.ast_type     = 'FunctionDeclStatement' --[[SOL OUTPUT--]] 
+		func.name_expr    = name_expr --[[SOL OUTPUT--]] 
+		func.is_aggregate = false --[[SOL OUTPUT--]] 
+		func.is_local     = (scoping == 'local') --[[SOL OUTPUT--]] 
+		func.scoping      = scoping --[[SOL OUTPUT--]] 
 		return true, func --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 

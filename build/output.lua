@@ -399,14 +399,10 @@ local function output(ast, filename, insert_new_lines)
 			elseif stat.scoping == 'global' then
 				t:skip_next_token() --[[SOL OUTPUT--]] 
 			elseif not stat.is_aggregate then
-				t:inject_str(' local') --[[SOL OUTPUT--]]  -- turn global function into local
+				t:inject_str(' local ') --[[SOL OUTPUT--]]  -- turn global function into local
 			end --[[SOL OUTPUT--]] 
 			t:append_next_token( "function" ) --[[SOL OUTPUT--]] 
-			if stat.is_aggregate then
-				format_expr( stat.name_expr ) --[[SOL OUTPUT--]] 
-			else
-				t:append_str( stat.var_name ) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+			format_expr( stat.name_expr ) --[[SOL OUTPUT--]] 
 
 			t:append_next_token( "(" ) --[[SOL OUTPUT--]] 
 			if #stat.arguments > 0 then
