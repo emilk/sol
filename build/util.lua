@@ -140,9 +140,11 @@ function U.trim(str)
 	return str:gsub("^%s*(.-)%s*$", "%1") --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
+--	U.INDENTATION = '   '
+U.INDENTATION = '\t' --[[SOL OUTPUT--]] 
+
 function U.indent(str)
-	local indentation = "   " --[[SOL OUTPUT--]] 
-	return indentation..str:gsub("\n", "\n"..indentation) --[[SOL OUTPUT--]] 
+	return U.INDENTATION .. str:gsub("\n", "\n" .. U.INDENTATION) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 function U.quote_or_indent(str)

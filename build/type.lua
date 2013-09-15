@@ -5,8 +5,6 @@ A type can either be a particular value (number or string) or one of the followi
 local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 
-local const = U.const --[[SOL OUTPUT--]] 
-
 --[[
 FIXME: recursive dependency
 local S = require 'scope'
@@ -131,33 +129,33 @@ T
 .Any  = { tag = 'any'  } --[[SOL OUTPUT--]]   -- Single unknown value
 T.AnyTypeList = {} --[[SOL OUTPUT--]]    -- Unkown number of unknown values
 
-T.Nil      = const{ tag = 'nil'    } --[[SOL OUTPUT--]] 
-T.True     = const{ tag = 'true'   } --[[SOL OUTPUT--]] 
-T.False    = const{ tag = 'false'  } --[[SOL OUTPUT--]] 
-T.String   = const{ tag = 'string' } --[[SOL OUTPUT--]] 
-T.Num      = const{ tag = 'num'    } --[[SOL OUTPUT--]] 
-T.Int      = const{ tag = 'int'    } --[[SOL OUTPUT--]] 
-T.Empty    = const{ tag = 'variant', variants = {} } --[[SOL OUTPUT--]] 
+T.Nil      = { tag = 'nil'    } --[[SOL OUTPUT--]] 
+T.True     = { tag = 'true'   } --[[SOL OUTPUT--]] 
+T.False    = { tag = 'false'  } --[[SOL OUTPUT--]] 
+T.String   = { tag = 'string' } --[[SOL OUTPUT--]] 
+T.Num      = { tag = 'num'    } --[[SOL OUTPUT--]] 
+T.Int      = { tag = 'int'    } --[[SOL OUTPUT--]] 
+--T.Empty    = { tag = 'variant', variants = {} }
 
 --T.Void     = T.Empty
 T.Void     = {} --[[SOL OUTPUT--]]  -- empty type-list
 T.Nilable  = T.Any --[[SOL OUTPUT--]]   -- TODO
 
 T.Uint = T.Int --[[SOL OUTPUT--]]                -- TODO
-T.Bool = const{ tag = 'variant',  variants = { T.False, T.True } } --[[SOL OUTPUT--]] 
+T.Bool = { tag = 'variant',  variants = { T.False, T.True } } --[[SOL OUTPUT--]] 
 
 
 -- General table - could be an object, list or map:
-T.Table = const{ tag = 'table' } --[[SOL OUTPUT--]] 
+T.Table = { tag = 'table' } --[[SOL OUTPUT--]] 
 
 -- Supertype of all objects:
-T.Object = const{ tag = 'object', members = {} } --[[SOL OUTPUT--]] 
+T.Object = { tag = 'object', members = {} } --[[SOL OUTPUT--]] 
 
 -- Supertype of all lists:
-T.List = const{ tag = 'list', type = T.Any } --[[SOL OUTPUT--]] 
+T.List = { tag = 'list', type = T.Any } --[[SOL OUTPUT--]] 
 
 -- Supertype of all maps:
-T.Map = const{ tag = 'map', key_type = T.Any, value_type = T.Any } --[[SOL OUTPUT--]] 
+T.Map = { tag = 'map', key_type = T.Any, value_type = T.Any } --[[SOL OUTPUT--]] 
 
 ------------------------------------------------------------------
 
@@ -791,15 +789,18 @@ function T.is_simple(t: T.Type) -> bool
 end
 --]=]
 
+function T.table_id(t)
+	return tostring(t):gsub("table: ", "") --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
 function T.format_type(root, verbose)
 	if verbose == nil then verbose = false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
 	local written_objs = {} --[[SOL OUTPUT--]] 
-	local INDENTATION = '   ' --[[SOL OUTPUT--]] 
 	local output_types, output_obj --[[SOL OUTPUT--]] 
 
 	local function output(typ, indent)
-		local next_indent = indent .. INDENTATION --[[SOL OUTPUT--]] 
+		local next_indent = indent .. U.INDENTATION --[[SOL OUTPUT--]] 
 
 		if typ.tag == 'any' then
 			return 'any' --[[SOL OUTPUT--]] 
@@ -814,7 +815,8 @@ function T.format_type(root, verbose)
 			end --[[SOL OUTPUT--]] 
 
 			if #typ.variants == 0 then
-				return "void" --[[SOL OUTPUT--]] 
+				D.break_() --[[SOL OUTPUT--]] 
+				return "void [EMPTY VARIANTS]" --[[SOL OUTPUT--]] 
 			elseif #typ.variants == 1 then
 				return output(typ.variants[1], indent) --[[SOL OUTPUT--]] 
 			else
@@ -842,7 +844,7 @@ function T.format_type(root, verbose)
 			local obj = typ --[[SOL OUTPUT--]] 
 
 			if written_objs[obj] then
-				return '<RECURSION '..tostring(obj)..'>' --[[SOL OUTPUT--]] 
+				return '<RECURSION '..T.table_id(obj)..'>' --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			written_objs[obj] = true --[[SOL OUTPUT--]] 
@@ -887,6 +889,8 @@ function T.format_type(root, verbose)
 			str = str .. ')' --[[SOL OUTPUT--]] 
 			if typ.rets then
 				str = str .. ' -> ' .. output_types(typ.rets, next_indent) --[[SOL OUTPUT--]] 
+			else
+				--str = str .. ' -> ...'
 			end --[[SOL OUTPUT--]] 
 			return str --[[SOL OUTPUT--]] 
 
@@ -911,14 +915,14 @@ function T.format_type(root, verbose)
 
 
 	output_obj = function(obj, indent)
-		local next_indent = indent .. INDENTATION --[[SOL OUTPUT--]] 
+		local next_indent = indent .. U.INDENTATION --[[SOL OUTPUT--]] 
 
 		if not obj.namespace
 		   and not obj.metatable
 		   and U.table_empty(obj.members)
 		then
 			return '{ }' --[[SOL OUTPUT--]] 
-			--return '['..tostring(obj)..'] { }' -- great for debugging
+			--return '['..T.table_id(obj)..'] { }' -- great for debugging
 		else
 			local str = '' --[[SOL OUTPUT--]] 
 			if obj.namespace then
@@ -947,7 +951,17 @@ function T.format_type(root, verbose)
 					widest_name = math.max(widest_name, #k) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				table.sort(mem_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
+
+				local type_indent = next_indent --[[SOL OUTPUT--]] 
+				for i = 1,widest_name+2 do
+					type_indent = type_indent..' ' --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
 				for _,m in ipairs(mem_list) do
+					if m.name == 'Bool' then
+						D.break_() --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
 					str = str .. next_indent .. m.name .. ": " --[[SOL OUTPUT--]] 
 
 					-- Align:
@@ -955,7 +969,7 @@ function T.format_type(root, verbose)
 						str = str .. ' ' --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
-					str = str .. output(m.type, next_indent) .. ";\n" --[[SOL OUTPUT--]] 
+					str = str .. output(m.type, type_indent) .. ";\n" --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -980,7 +994,7 @@ function T.format_type(root, verbose)
 
 			local full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
 
-			full = '<'..tostring(obj)..'>'..full --[[SOL OUTPUT--]]  -- great for debugging
+			full = '<'..T.table_id(obj)..'>'..full --[[SOL OUTPUT--]]  -- great for debugging
 
 			if obj.class_type then
 				return '<instance>' .. full --[[SOL OUTPUT--]] 
@@ -995,7 +1009,7 @@ function T.format_type(root, verbose)
 
 	output_types = function(typelist, indent)
 		if #typelist == 0 then
-			return "void [EMPTY TYPE-LIST]" --[[SOL OUTPUT--]] 
+			return "void" --[[SOL OUTPUT--]] 
 		elseif #typelist == 1 then
 			return output(typelist[1], indent) --[[SOL OUTPUT--]] 
 		else
@@ -1016,7 +1030,7 @@ end --[[SOL OUTPUT--]]
 
 function T.names(typ, verbose)
 	if #typ == 0 then
-		return "void [EMPTY TYPE-LIST]" --[[SOL OUTPUT--]] 
+		return "void" --[[SOL OUTPUT--]] 
 	else
 		local str='' --[[SOL OUTPUT--]] 
 		for i,t in ipairs(typ) do
@@ -1049,205 +1063,6 @@ function T.name(typ, verbose)
 	D.assert( T.is_type(typ) ) --[[SOL OUTPUT--]] 
 
 	return T.format_type(typ, verbose) --[[SOL OUTPUT--]] 
-	--return T.name_old(typ, '', verbose)
-end --[[SOL OUTPUT--]] 
-
-
--- indent - indent on any _subsequent_ line
-function T.name_old(typ, indent, verbose)
-	indent     = indent or "" --[[SOL OUTPUT--]] 
-	if verbose == nil then verbose = false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-
-	local next_indent = indent .. '   ' --[[SOL OUTPUT--]] 
-
-	if typ == nil then
-		return 'NIL' --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-	
-	if typ == T.AnyTypeList then
-		return "..." --[[SOL OUTPUT--]] 
-
-	elseif T.is_type_list(typ) then
-		if #typ == 0 then
-			return "void [EMPTY TYPE-LIST]" --[[SOL OUTPUT--]] 
-		elseif #typ == 1 then
-			return T.name_old(typ[1], indent, verbose) --[[SOL OUTPUT--]] 
-		else
-			local str='' --[[SOL OUTPUT--]] 
-			for i,t in ipairs(typ) do
-				str = str .. T.name_old(t, next_indent, verbose) --[[SOL OUTPUT--]] 
-				if i ~= #typ then
-					str = str .. ', ' --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-			return str --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-	D.assert( T.is_type(typ) ) --[[SOL OUTPUT--]] 
-
-	if typ.tag == 'any' then
-		return 'any' --[[SOL OUTPUT--]] 
-
-	elseif typ.tag == 'variant' then
-		if #typ.variants == 0 then
-			return "void" --[[SOL OUTPUT--]] 
-		elseif #typ.variants == 1 then
-			return T.name_old(typ.variants[1], indent, verbose) --[[SOL OUTPUT--]] 
-		else
-			if #typ.variants == 2
-				and typ.variants[2] == T.Nil 
-				and typ.variants[1].tag ~= 'variant'
-			then
-				return T.name_old(typ.variants[1], next_indent, verbose) .. '?' --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			local str = '' --[[SOL OUTPUT--]] 
-			for i,t in ipairs(typ.variants) do
-				str = str .. T.name_old(t, next_indent, verbose) --[[SOL OUTPUT--]] 
-				if i ~= #typ.variants then
-					--str = str .. '|'
-					str = str .. ' or ' --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-			return str --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
-	elseif typ.tag == 'object' then
-		verbose = false --[[SOL OUTPUT--]]  -- FIXME 
-
-		local obj = typ --[[SOL OUTPUT--]] 
-
-		if not obj.namespace
-		   and not obj.metatable
-		   and U.table_empty(obj.members)
-		then
-			return '{ }' --[[SOL OUTPUT--]] 
-		else
-			local str = '' --[[SOL OUTPUT--]] 
-			if obj.namespace then
-				str = str .. next_indent .. '-- Types:\n' --[[SOL OUTPUT--]] 
-
-				local type_list = {} --[[SOL OUTPUT--]] 
-				for k,v in pairs(obj.namespace) do
-					table.insert(type_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-				table.sort(type_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
-				--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
-				for _,m in ipairs(type_list) do
-					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. T.name_old(m.type, next_indent, verbose) .. ";\n" --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			if not U.table_empty(obj.members) then
-				if str ~= '' then
-					str = str .. '\n' .. next_indent .. '-- Members:\n' --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				local mem_list = {} --[[SOL OUTPUT--]] 
-				local widest_name = 0 --[[SOL OUTPUT--]] 
-				for k,v in pairs(obj.members) do
-					table.insert(mem_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
-					widest_name = math.max(widest_name, #k) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-				table.sort(mem_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
-				for _,m in ipairs(mem_list) do
-					str = str .. next_indent .. m.name .. ": " --[[SOL OUTPUT--]] 
-
-					-- Align:
-					for i = #m.name, widest_name - 1 do
-						str = str .. ' ' --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-
-					str = str .. T.name_old(m.type, next_indent, verbose) .. ";\n" --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			if obj.metatable then
-				if str ~= '' then
-					--str = str .. '\n' .. next_indent .. '-- metatable:\n'
-					str = str .. '\n' --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				str = str .. next_indent .. "!! metatable:     " .. T.name_old(obj.metatable, next_indent, verbose) .. '\n' --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			if obj.class_type then
-				if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-				str = str .. next_indent .. "!! class_type:    " .. T.name_old(obj.class_type, next_indent, verbose) .. '\n' --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			if obj.instance_type then
-				if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-				str = str .. next_indent .. "!! instance_type: " .. T.name_old(obj.instance_type, next_indent, verbose) .. '\n' --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			local full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
-
-			if obj.class_type then
-				return '<instance> ' .. full --[[SOL OUTPUT--]] 
-			elseif obj.instance_type then
-				return '<class> ' .. full --[[SOL OUTPUT--]] 
-			else
-				return full --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
-	elseif typ.tag == 'list' then
-		return '[' .. T.name_old(typ.type, next_indent, verbose) .. ']' --[[SOL OUTPUT--]] 
-
-	elseif typ.tag == 'map' then
-		if typ.value_type == T.True then
-			-- A set
-			return '{' .. T.name_old(typ.key_type, next_indent, verbose) .. '}' --[[SOL OUTPUT--]] 
-		else
-			-- A map
-			return '{' .. T.name_old(typ.key_type, next_indent, verbose) .. ' => ' .. T.name_old(typ.value_type, next_indent, verbose) .. '}' --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
-	elseif typ.tag == 'function' then
-		local str = 'function(' --[[SOL OUTPUT--]] 
-		for i,arg in ipairs(typ.args) do
-			if arg.name then
-				str = str .. arg.name --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-			if arg.type and not T.is_any(arg.type) then
-				if arg.name ~= 'self' then -- Potential recursion (object has function taking object as arg...)
-					str = str .. ": " .. T.name_old(arg.type, next_indent, verbose) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-			if i ~= #typ.args or typ.vararg then
-				str = str .. ", " --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-		if typ.vararg then
-			str = str .. "..." --[[SOL OUTPUT--]] 
-			if not T.is_any(typ.vararg) then
-				str = str .. " : " .. T.name_old(typ.vararg, next_indent, verbose) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-		str = str .. ')' --[[SOL OUTPUT--]] 
-		if typ.rets then
-			str = str .. ' -> ' .. T.name_old(typ.rets, next_indent, verbose) --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-		return str --[[SOL OUTPUT--]] 
-
-	elseif typ.tag == 'int_literal' or typ.tag == 'num_literal' then
-		return '' .. typ.value --[[SOL OUTPUT--]] 
-
-	elseif typ.tag == 'string_literal' then
-		return string.format('%q', typ.value) --[[SOL OUTPUT--]] 
-
-	elseif typ.tag == 'identifier' then
-		if verbose and typ.type then
-			return string.format('%s (%s)', typ.name, T.name_old(typ.type, next_indent, verbose)) --[[SOL OUTPUT--]] 
-		else
-			return string.format('%s', typ.name) --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
-	else
-		return typ.tag --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 

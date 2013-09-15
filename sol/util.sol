@@ -140,9 +140,11 @@ function U.trim(str: string) -> string
 	return str:gsub("^%s*(.-)%s*$", "%1")
 end
 
+--	U.INDENTATION = '   '
+U.INDENTATION = '\t'
+
 function U.indent(str: string) -> string
-	local indentation = "   "
-	return indentation..str:gsub("\n", "\n"..indentation)
+	return U.INDENTATION .. str:gsub("\n", "\n" .. U.INDENTATION)
 end
 
 function U.quote_or_indent(str: string)

@@ -5,8 +5,6 @@ A type can either be a particular value (number or string) or one of the followi
 local U = require 'util'
 local D = require 'sol_debug'
 
-local const = U.const
-
 --[[
 FIXME: recursive dependency
 local S = require 'scope'
@@ -131,33 +129,33 @@ typedef T.Identifier : T.Type = {
 T.Any  = { tag = 'any'  }  -- Single unknown value
 T.AnyTypeList = {}   -- Unkown number of unknown values
 
-T.Nil      = const{ tag = 'nil'    }
-T.True     = const{ tag = 'true'   }
-T.False    = const{ tag = 'false'  }
-T.String   = const{ tag = 'string' }
-T.Num      = const{ tag = 'num'    }
-T.Int      = const{ tag = 'int'    }
-T.Empty    = const{ tag = 'variant', variants = {} }
+T.Nil      = { tag = 'nil'    }
+T.True     = { tag = 'true'   }
+T.False    = { tag = 'false'  }
+T.String   = { tag = 'string' }
+T.Num      = { tag = 'num'    }
+T.Int      = { tag = 'int'    }
+--T.Empty    = { tag = 'variant', variants = {} }
 
 --T.Void     = T.Empty
 T.Void     = {} -- empty type-list
 T.Nilable  = T.Any  -- TODO
 
 T.Uint = T.Int               -- TODO
-T.Bool = const{ tag = 'variant',  variants = { T.False, T.True } }
+T.Bool = { tag = 'variant',  variants = { T.False, T.True } }
 
 
 -- General table - could be an object, list or map:
-T.Table = const{ tag = 'table' }
+T.Table = { tag = 'table' }
 
 -- Supertype of all objects:
-T.Object = const{ tag = 'object', members = {} }
+T.Object = { tag = 'object', members = {} }
 
 -- Supertype of all lists:
-T.List = const{ tag = 'list', type = T.Any }
+T.List = { tag = 'list', type = T.Any }
 
 -- Supertype of all maps:
-T.Map = const{ tag = 'map', key_type = T.Any, value_type = T.Any }
+T.Map = { tag = 'map', key_type = T.Any, value_type = T.Any }
 
 ------------------------------------------------------------------
 
@@ -791,15 +789,18 @@ function T.is_simple(t: T.Type) -> bool
 end
 --]=]
 
+function T.table_id(t: table) -> string
+	return tostring(t):gsub("table: ", "")
+end
+
 function T.format_type(root: T.Type, verbose: bool?)
 	if verbose == nil then verbose = false end
 
 	var written_objs = {} : {T.Object}
-	local INDENTATION = '   '
 	local output_types, output_obj
 
 	local function output(typ: T.Type, indent: string) -> string
-		local next_indent = indent .. INDENTATION
+		local next_indent = indent .. U.INDENTATION
 
 		if typ.tag == 'any' then
 			return 'any'
@@ -814,7 +815,8 @@ function T.format_type(root: T.Type, verbose: bool?)
 			end
 
 			if #typ.variants == 0 then
-				return "void"
+				D.break_()
+				return "void [EMPTY VARIANTS]"
 			elseif #typ.variants == 1 then
 				return output(typ.variants[1], indent)
 			else
@@ -842,7 +844,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 			var<T.Object> obj = typ
 
 			if written_objs[obj] then
-				return '<RECURSION '..tostring(obj)..'>'
+				return '<RECURSION '..T.table_id(obj)..'>'
 			end
 
 			written_objs[obj] = true
@@ -887,6 +889,8 @@ function T.format_type(root: T.Type, verbose: bool?)
 			str = str .. ')'
 			if typ.rets then
 				str = str .. ' -> ' .. output_types(typ.rets, next_indent)
+			else
+				--str = str .. ' -> ...'
 			end
 			return str
 
@@ -911,14 +915,14 @@ function T.format_type(root: T.Type, verbose: bool?)
 
 
 	output_obj = function(obj: T.Object, indent: string) -> string
-		local next_indent = indent .. INDENTATION
+		local next_indent = indent .. U.INDENTATION
 
 		if not obj.namespace
 		   and not obj.metatable
 		   and U.table_empty(obj.members)
 		then
 			return '{ }'
-			--return '['..tostring(obj)..'] { }' -- great for debugging
+			--return '['..T.table_id(obj)..'] { }' -- great for debugging
 		else
 			local str = ''
 			if obj.namespace then
@@ -947,7 +951,17 @@ function T.format_type(root: T.Type, verbose: bool?)
 					widest_name = math.max(widest_name, #k)
 				end
 				table.sort(mem_list, function(a,b) return a.name < b.name end)
+
+				var type_indent = next_indent
+				for i = 1,widest_name+2 do
+					type_indent = type_indent..' '
+				end
+
 				for _,m in ipairs(mem_list) do
+					if m.name == 'Bool' then
+						D.break_()
+					end
+
 					str = str .. next_indent .. m.name .. ": "
 
 					-- Align:
@@ -955,7 +969,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 						str = str .. ' '
 					end
 
-					str = str .. output(m.type, next_indent) .. ";\n"
+					str = str .. output(m.type, type_indent) .. ";\n"
 				end
 			end
 
@@ -980,7 +994,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 
 			local full = '{\n' .. str .. indent ..'}'
 
-			full = '<'..tostring(obj)..'>'..full -- great for debugging
+			full = '<'..T.table_id(obj)..'>'..full -- great for debugging
 
 			if obj.class_type then
 				return '<instance>' .. full
@@ -995,7 +1009,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 
 	output_types = function(typelist: [T.Type], indent: string)
 		if #typelist == 0 then
-			return "void [EMPTY TYPE-LIST]"
+			return "void"
 		elseif #typelist == 1 then
 			return output(typelist[1], indent)
 		else
@@ -1016,7 +1030,7 @@ end
 
 function T.names(typ: [T.Type], verbose: bool?) -> string
 	if #typ == 0 then
-		return "void [EMPTY TYPE-LIST]"
+		return "void"
 	else
 		local str=''
 		for i,t in ipairs(typ) do
@@ -1049,205 +1063,6 @@ function T.name(typ: T.Type or [T.Type] or nil, verbose: bool?) -> string
 	D.assert( T.is_type(typ) )
 
 	return T.format_type(typ, verbose)
-	--return T.name_old(typ, '', verbose)
-end
-
-
--- indent - indent on any _subsequent_ line
-function T.name_old(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?) -> string
-	indent     = indent or ""
-	if verbose == nil then verbose = false end
-
-	local next_indent = indent .. '   '
-
-	if typ == nil then
-		return 'NIL'
-	end
-	
-	if typ == T.AnyTypeList then
-		return "..."
-
-	elseif T.is_type_list(typ) then
-		if #typ == 0 then
-			return "void [EMPTY TYPE-LIST]"
-		elseif #typ == 1 then
-			return T.name_old(typ[1], indent, verbose)
-		else
-			local str=''
-			for i,t in ipairs(typ) do
-				str = str .. T.name_old(t, next_indent, verbose)
-				if i ~= #typ then
-					str = str .. ', '
-				end
-			end
-			return str
-		end
-	end
-
-	D.assert( T.is_type(typ) )
-
-	if typ.tag == 'any' then
-		return 'any'
-
-	elseif typ.tag == 'variant' then
-		if #typ.variants == 0 then
-			return "void"
-		elseif #typ.variants == 1 then
-			return T.name_old(typ.variants[1], indent, verbose)
-		else
-			if #typ.variants == 2
-				and typ.variants[2] == T.Nil 
-				and typ.variants[1].tag ~= 'variant'
-			then
-				return T.name_old(typ.variants[1], next_indent, verbose) .. '?'
-			end
-
-			local str = ''
-			for i,t in ipairs(typ.variants) do
-				str = str .. T.name_old(t, next_indent, verbose)
-				if i ~= #typ.variants then
-					--str = str .. '|'
-					str = str .. ' or '
-				end
-			end
-			return str
-		end
-
-	elseif typ.tag == 'object' then
-		verbose = false -- FIXME 
-
-		var<T.Object> obj = typ
-
-		if not obj.namespace
-		   and not obj.metatable
-		   and U.table_empty(obj.members)
-		then
-			return '{ }'
-		else
-			local str = ''
-			if obj.namespace then
-				str = str .. next_indent .. '-- Types:\n'
-
-				var<T.Typelist> type_list = {}
-				for k,v in pairs(obj.namespace) do
-					table.insert(type_list, {name = k, type = v})
-				end
-				table.sort(type_list, function(a,b) return a.name < b.name end)
-				--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
-				for _,m in ipairs(type_list) do
-					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. T.name_old(m.type, next_indent, verbose) .. ";\n"
-				end
-			end
-
-			if not U.table_empty(obj.members) then
-				if str ~= '' then
-					str = str .. '\n' .. next_indent .. '-- Members:\n'
-				end
-
-				var<[{name:string, type:T.Type}]> mem_list = {}
-				var widest_name = 0
-				for k,v in pairs(obj.members) do
-					table.insert(mem_list, {name = k, type = v})
-					widest_name = math.max(widest_name, #k)
-				end
-				table.sort(mem_list, function(a,b) return a.name < b.name end)
-				for _,m in ipairs(mem_list) do
-					str = str .. next_indent .. m.name .. ": "
-
-					-- Align:
-					for i = #m.name, widest_name - 1 do
-						str = str .. ' '
-					end
-
-					str = str .. T.name_old(m.type, next_indent, verbose) .. ";\n"
-				end
-			end
-
-			if obj.metatable then
-				if str ~= '' then
-					--str = str .. '\n' .. next_indent .. '-- metatable:\n'
-					str = str .. '\n'
-				end
-
-				str = str .. next_indent .. "!! metatable:     " .. T.name_old(obj.metatable, next_indent, verbose) .. '\n'
-			end
-
-			if obj.class_type then
-				if str ~= '' then str = str .. '\n' end
-				str = str .. next_indent .. "!! class_type:    " .. T.name_old(obj.class_type, next_indent, verbose) .. '\n'
-			end
-
-			if obj.instance_type then
-				if str ~= '' then str = str .. '\n' end
-				str = str .. next_indent .. "!! instance_type: " .. T.name_old(obj.instance_type, next_indent, verbose) .. '\n'
-			end
-
-			local full = '{\n' .. str .. indent ..'}'
-
-			if obj.class_type then
-				return '<instance> ' .. full
-			elseif obj.instance_type then
-				return '<class> ' .. full
-			else
-				return full
-			end
-		end
-
-	elseif typ.tag == 'list' then
-		return '[' .. T.name_old(typ.type, next_indent, verbose) .. ']'
-
-	elseif typ.tag == 'map' then
-		if typ.value_type == T.True then
-			-- A set
-			return '{' .. T.name_old(typ.key_type, next_indent, verbose) .. '}'
-		else
-			-- A map
-			return '{' .. T.name_old(typ.key_type, next_indent, verbose) .. ' => ' .. T.name_old(typ.value_type, next_indent, verbose) .. '}'
-		end
-
-	elseif typ.tag == 'function' then
-		local str = 'function('
-		for i,arg in ipairs(typ.args) do
-			if arg.name then
-				str = str .. arg.name
-			end
-			if arg.type and not T.is_any(arg.type) then
-				if arg.name ~= 'self' then -- Potential recursion (object has function taking object as arg...)
-					str = str .. ": " .. T.name_old(arg.type, next_indent, verbose)
-				end
-			end
-			if i ~= #typ.args or typ.vararg then
-				str = str .. ", "
-			end
-		end
-		if typ.vararg then
-			str = str .. "..."
-			if not T.is_any(typ.vararg) then
-				str = str .. " : " .. T.name_old(typ.vararg, next_indent, verbose)
-			end
-		end
-		str = str .. ')'
-		if typ.rets then
-			str = str .. ' -> ' .. T.name_old(typ.rets, next_indent, verbose)
-		end
-		return str
-
-	elseif typ.tag == 'int_literal' or typ.tag == 'num_literal' then
-		return '' .. typ.value
-
-	elseif typ.tag == 'string_literal' then
-		return string.format('%q', typ.value)
-
-	elseif typ.tag == 'identifier' then
-		if verbose and typ.type then
-			return string.format('%s (%s)', typ.name, T.name_old(typ.type, next_indent, verbose))
-		else
-			return string.format('%s', typ.name)
-		end
-
-	else
-		return typ.tag
-	end
 end
 
 
