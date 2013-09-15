@@ -17,6 +17,16 @@ var NumCompOps = set{
 }
 
 
+local function rope_to_msg(rope: [string]) -> string
+	local str = U.trim( table.concat(rope, '\n') )
+	if str == '' then
+		return str
+	else
+		return U.quote_or_indent(str)
+	end
+end
+
+
 local function loose_lookup(table, id: string) -> string?
 	D.assert(type(id) == 'string')
 
@@ -93,9 +103,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		for i = 1, select( '#', ... ) do
 			local a = select( i, ... )
 			if type(a) == 'table' and a.ast_type then
-				a = '\n'..U.indent( format_expr(a) )..'\n'
+				a = U.quote_or_indent( format_expr(a) )
 			elseif T.is_type(a) or T.is_type_list(a) then
-				a = '\n'..U.indent( T.name(a) )..'\n'
+				a = U.quote_or_indent( T.name(a) )
 			elseif type( a ) ~= 'string' and type( a ) ~= 'number' then
 				-- bool/table
 				a = tostring( a )
@@ -247,9 +257,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		else
 			var<[string]> error_rope = {}
 			T.could_be(expr_type, expected_type, error_rope)
-			local error_msg = table.concat(error_rope, '\n')
+			local error_msg = rope_to_msg(error_rope)
 			var reporter = (severity == 'error' and report_error or report_warning)
-			reporter(expr, "%s: Expected type '%s', got '%s': %s", msg, T.name(expected_type), T.name(expr_type), error_msg)
+			reporter(expr, "%s: Expected type %s, got %s: %s", msg, T.name(expected_type), T.name(expr_type), error_msg)
 			return false
 		end
 	end
@@ -302,8 +312,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if not T.could_be_tl(does_return, should_return) then
 				var<[string]> problem_rope = {}
 				T.could_be_tl(does_return, should_return, problem_rope)
-				local problem_str = table.concat(problem_rope, '\n')
-				report_error(node, "Return statement does not match function return type declaration, returns: '%s', expected: '%s'. %s", does_return, should_return, problem_str)
+				local problem_str = rope_to_msg(problem_rope)
+				report_error(node, "Return statement does not match function return type declaration, returns: %s, expected: %s.\n%s", does_return, should_return, problem_str)
 			end
 		end
 	end
@@ -399,7 +409,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		if fun_t.rets then
 			if not T.could_be_tl(ret_t, fun_t.rets) then
-				report_error(node, "Return statement(s) does not match function return type declaration, returns: '%s', expected: '%s'",
+				report_error(node, "Return statement(s) does not match function return type declaration, returns: %s, expected: %s",
 					T.name(ret_t), T.name(fun_t.rets))
 			end
 		else
@@ -521,7 +531,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					assert(#types == 2)
 					return types
 				else
-					report_error(expr, "'pairs' called on incompatible type: " .. table.concat(error_rope, '\n'))
+					report_error(expr, "'pairs' called on incompatible type: " .. rope_to_msg(error_rope))
 					return { T.Any, T.Any }
 				end
 			end
@@ -565,7 +575,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					assert(#types == 2)
 					return types
 				else
-					report_error(expr, "'ipairs' called on incompatible type: " .. table.concat(error_rope, ', '))
+					report_error(expr, "'ipairs' called on incompatible type: " .. rope_to_msg(error_rope))
 					return { T.Uint, T.Any }
 				end
 			end
@@ -615,7 +625,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					if not T.could_be(given, expected) then
 						local problem_rope = {}
 						T.could_be(given, expected, problem_rope)
-						local err_msg = table.concat(problem_rope, '\n')
+						local err_msg = rope_to_msg(problem_rope)
 						report_error(expr, "%s argument %i: could not convert from '%s' to '%s': %s",
 						                    fun_name, i, T.name_verbose(given), T.name_verbose(expected), err_msg)
 					end
@@ -1557,6 +1567,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					end
 				elseif var_t.tag == 'object' then
 					--var extend_object = extend_existing_type or T.is_class(var_t) or T.is_instance(var_t)
+					--var extend_object = extend_existing_type or T.is_instance(var_t)
 					var extend_object = extend_existing_type -- TODO: the above
 
 					base_var.type = assign_to_obj_member(stat, scope,
@@ -1660,7 +1671,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		if not T.could_be(right_type, left_type) then
 			local problem_rope = {}
 			T.could_be(right_type, left_type, problem_rope)
-			local problem_str = table.concat(problem_rope, '\n')
+			local problem_str = rope_to_msg(problem_rope)
 			report_error(stat, "[C] type clash: cannot assign to type '%s' with '%s': %s", left_type, right_type, problem_str)
 			return false
 		end

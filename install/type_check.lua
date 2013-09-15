@@ -17,6 +17,16 @@ local NumCompOps = set{
 } --[[SOL OUTPUT--]] 
 
 
+local function rope_to_msg(rope)
+	local str = U.trim( table.concat(rope, '\n') ) --[[SOL OUTPUT--]] 
+	if str == '' then
+		return str --[[SOL OUTPUT--]] 
+	else
+		return U.quote_or_indent(str) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
 local function loose_lookup(table, id)
 	D.assert(type(id) == 'string') --[[SOL OUTPUT--]] 
 
@@ -93,9 +103,9 @@ local function analyze(ast, filename, on_require, settings)
 		for i = 1, select( '#', ... ) do
 			local a = select( i, ... ) --[[SOL OUTPUT--]] 
 			if type(a) == 'table' and a.ast_type then
-				a = '\n'..U.indent( format_expr(a) )..'\n' --[[SOL OUTPUT--]] 
+				a = U.quote_or_indent( format_expr(a) ) --[[SOL OUTPUT--]] 
 			elseif T.is_type(a) or T.is_type_list(a) then
-				a = '\n'..U.indent( T.name(a) )..'\n' --[[SOL OUTPUT--]] 
+				a = U.quote_or_indent( T.name(a) ) --[[SOL OUTPUT--]] 
 			elseif type( a ) ~= 'string' and type( a ) ~= 'number' then
 				-- bool/table
 				a = tostring( a ) --[[SOL OUTPUT--]] 
@@ -247,9 +257,9 @@ local function analyze(ast, filename, on_require, settings)
 		else
 			local error_rope = {} --[[SOL OUTPUT--]] 
 			T.could_be(expr_type, expected_type, error_rope) --[[SOL OUTPUT--]] 
-			local error_msg = table.concat(error_rope, '\n') --[[SOL OUTPUT--]] 
+			local error_msg = rope_to_msg(error_rope) --[[SOL OUTPUT--]] 
 			local reporter = (severity == 'error' and report_error or report_warning) --[[SOL OUTPUT--]] 
-			reporter(expr, "%s: Expected type '%s', got '%s': %s", msg, T.name(expected_type), T.name(expr_type), error_msg) --[[SOL OUTPUT--]] 
+			reporter(expr, "%s: Expected type %s, got %s: %s", msg, T.name(expected_type), T.name(expr_type), error_msg) --[[SOL OUTPUT--]] 
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -302,8 +312,8 @@ local function analyze(ast, filename, on_require, settings)
 			if not T.could_be_tl(does_return, should_return) then
 				local problem_rope = {} --[[SOL OUTPUT--]] 
 				T.could_be_tl(does_return, should_return, problem_rope) --[[SOL OUTPUT--]] 
-				local problem_str = table.concat(problem_rope, '\n') --[[SOL OUTPUT--]] 
-				report_error(node, "Return statement does not match function return type declaration, returns: '%s', expected: '%s'. %s", does_return, should_return, problem_str) --[[SOL OUTPUT--]] 
+				local problem_str = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
+				report_error(node, "Return statement does not match function return type declaration, returns: %s, expected: %s.\n%s", does_return, should_return, problem_str) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -399,7 +409,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		if fun_t.rets then
 			if not T.could_be_tl(ret_t, fun_t.rets) then
-				report_error(node, "Return statement(s) does not match function return type declaration, returns: '%s', expected: '%s'",
+				report_error(node, "Return statement(s) does not match function return type declaration, returns: %s, expected: %s",
 					T.name(ret_t), T.name(fun_t.rets)) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		else
@@ -521,7 +531,7 @@ local function analyze(ast, filename, on_require, settings)
 					assert(#types == 2) --[[SOL OUTPUT--]] 
 					return types --[[SOL OUTPUT--]] 
 				else
-					report_error(expr, "'pairs' called on incompatible type: " .. table.concat(error_rope, '\n')) --[[SOL OUTPUT--]] 
+					report_error(expr, "'pairs' called on incompatible type: " .. rope_to_msg(error_rope)) --[[SOL OUTPUT--]] 
 					return { T.Any, T.Any } --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -565,7 +575,7 @@ local function analyze(ast, filename, on_require, settings)
 					assert(#types == 2) --[[SOL OUTPUT--]] 
 					return types --[[SOL OUTPUT--]] 
 				else
-					report_error(expr, "'ipairs' called on incompatible type: " .. table.concat(error_rope, ', ')) --[[SOL OUTPUT--]] 
+					report_error(expr, "'ipairs' called on incompatible type: " .. rope_to_msg(error_rope)) --[[SOL OUTPUT--]] 
 					return { T.Uint, T.Any } --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -615,7 +625,7 @@ local function analyze(ast, filename, on_require, settings)
 					if not T.could_be(given, expected) then
 						local problem_rope = {} --[[SOL OUTPUT--]] 
 						T.could_be(given, expected, problem_rope) --[[SOL OUTPUT--]] 
-						local err_msg = table.concat(problem_rope, '\n') --[[SOL OUTPUT--]] 
+						local err_msg = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
 						report_error(expr, "%s argument %i: could not convert from '%s' to '%s': %s",
 						                    fun_name, i, T.name_verbose(given), T.name_verbose(expected), err_msg) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
@@ -1557,6 +1567,7 @@ local function analyze(ast, filename, on_require, settings)
 					end --[[SOL OUTPUT--]] 
 				elseif var_t.tag == 'object' then
 					--var extend_object = extend_existing_type or T.is_class(var_t) or T.is_instance(var_t)
+					--var extend_object = extend_existing_type or T.is_instance(var_t)
 					local extend_object = extend_existing_type --[[SOL OUTPUT--]]  -- TODO: the above
 
 					base_var.type = assign_to_obj_member(stat, scope,
@@ -1660,7 +1671,7 @@ local function analyze(ast, filename, on_require, settings)
 		if not T.could_be(right_type, left_type) then
 			local problem_rope = {} --[[SOL OUTPUT--]] 
 			T.could_be(right_type, left_type, problem_rope) --[[SOL OUTPUT--]] 
-			local problem_str = table.concat(problem_rope, '\n') --[[SOL OUTPUT--]] 
+			local problem_str = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
 			report_error(stat, "[C] type clash: cannot assign to type '%s' with '%s': %s", left_type, right_type, problem_str) --[[SOL OUTPUT--]] 
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

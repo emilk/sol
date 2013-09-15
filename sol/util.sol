@@ -145,6 +145,15 @@ function U.indent(str: string) -> string
 	return indentation..str:gsub("\n", "\n"..indentation)
 end
 
+function U.quote_or_indent(str: string)
+	str = U.trim(str)
+	if str:find('\n') then
+		return '\n\n' .. U.indent( str ) .. '\n\n'
+	else
+		return "'"..str.."'"
+	end
+end
+
 
 function U.printf(fmt: string, ...)
 	print(string.format(fmt, ...))

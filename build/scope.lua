@@ -28,6 +28,7 @@ User declared globals goes into the 'module_scope' and are marked as 'global'.
 
 
 function Scope.new(parent)
+	--var s = {} : Scope
 	local s = {} --[[SOL OUTPUT--]] 
 	setmetatable(s, { __index = Scope }) --[[SOL OUTPUT--]] 
 	s:init(parent) --[[SOL OUTPUT--]] 

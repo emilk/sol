@@ -145,6 +145,15 @@ function U.indent(str)
 	return indentation..str:gsub("\n", "\n"..indentation) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
+function U.quote_or_indent(str)
+	str = U.trim(str) --[[SOL OUTPUT--]] 
+	if str:find('\n') then
+		return '\n\n' .. U.indent( str ) .. '\n\n' --[[SOL OUTPUT--]] 
+	else
+		return "'"..str.."'" --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
 
 function U.printf(fmt, ...)
 	print(string.format(fmt, ...)) --[[SOL OUTPUT--]] 

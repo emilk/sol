@@ -220,7 +220,7 @@ function T.follow_identifiers(t : T.Type, forgiving: bool?) -> T.Type
 			else
 				t.type = var_.namespace[t.name]
 				if not t.type then
-					T.on_error("%s: type '%s' not found in namespace '%s'", t.first_usage, t.name, var_.name)
+					T.on_error("%s: type %s not found in namespace '%s'", t.first_usage, t.name, var_.name)
 					t.type = T.Any
 				end
 			end
@@ -319,8 +319,8 @@ function T.is_obj_obj(d: T.Object, b: T.Object, problem_rope: [string]?) -> bool
 		elseif not T.isa(d_type, b_type, problem_rope) then
 			if problem_rope then
 				table.insert(problem_rope,
-					string.format("member '%s' of wrong type (got:\n%s\nexpected:\n%s)",
-					              id, U.indent(T.name(d_type)), U.indent(T.name(b_type))))
+					string.format("member '%s' of wrong type (got: %s, expected: %s)",
+					              id, U.quote_or_indent(T.name(d_type)), U.quote_or_indent(T.name(b_type))))
 			end
 			return false
 		end

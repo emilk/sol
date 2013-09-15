@@ -1,4 +1,4 @@
--- Compiled from sol/sol_debug.sol at 2013 Sep 15  17:05:59
+-- Compiled from sol/sol_debug.sol at 2013 Sep 15  18:52:24
 
 return {
    activate: function() -> void [EMPTY TYPE-LIST];

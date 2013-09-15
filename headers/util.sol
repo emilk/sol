@@ -1,4 +1,4 @@
--- Compiled from sol/util.sol at 2013 Sep 15  17:05:59
+-- Compiled from sol/util.sol at 2013 Sep 15  18:52:24
 
 return {
    const:             function(table: table) -> object;
@@ -12,6 +12,7 @@ return {
    pretty:            function(arg) -> string;
    printf:            function(fmt: string, ... : varargs) -> void [EMPTY TYPE-LIST];
    printf_err:        function(fmt: string, ... : varargs) -> void [EMPTY TYPE-LIST];
+   quote_or_indent:   function(str: string) -> string;
    read_entire_file:  function(path: string) -> string?;
    read_entire_stdin: function() -> string?;
    serialize:         function(val, ignore_set) -> string;
