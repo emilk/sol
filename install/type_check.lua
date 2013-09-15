@@ -631,8 +631,8 @@ local function analyze(ast, filename, on_require, settings)
 						local problem_rope = {} --[[SOL OUTPUT--]] 
 						T.could_be(given, expected, problem_rope) --[[SOL OUTPUT--]] 
 						local err_msg = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
-						report_error(expr, "%s argument %i: could not convert from '%s' to '%s': %s",
-						                    fun_name, i, T.name_verbose(given), T.name_verbose(expected), err_msg) --[[SOL OUTPUT--]] 
+						report_error(expr, "%s argument %i: could not convert from %s to %s: %s",
+						                    fun_name, i, given, expected, err_msg) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
 					if i == 1 and fun_t.args[i].name == 'self' then
@@ -661,7 +661,8 @@ local function analyze(ast, filename, on_require, settings)
 					end --[[SOL OUTPUT--]] 
 
 					if not T.could_be(given, expected) then
-						report_error(expr, "%s argument %i: could not convert from '%s' to '%s' (varargs)", fun_name, i, given, expected) --[[SOL OUTPUT--]] 
+						report_error(expr, "%s argument %i: could not convert from %s to varargs %s",
+							                 fun_name, i, given, expected) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
 					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args) --[[SOL OUTPUT--]] 
@@ -1523,12 +1524,15 @@ local function analyze(ast, filename, on_require, settings)
 				--[[
 				var foo = Foo:new()
 				if ... then
-					foo.name = "hello"   
-					-- Don't change 'Foo' to *require* a  name: string
-					-- Just add an optional               name: string?
+					foo.name = "hello"
 				end
+
+				-- Don't change 'Foo' to having a member:  name: string
+				-- Just add an optional member:            name: string?
 				--]]
-				right_type = T.make_nilable(right_type) --[[SOL OUTPUT--]] 
+				if not T.is_class(right_type) then
+					right_type = T.make_nilable(right_type) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 
 				obj_t.members[name] = right_type --[[SOL OUTPUT--]] 
 			else

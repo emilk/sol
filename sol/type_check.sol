@@ -631,8 +631,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						local problem_rope = {}
 						T.could_be(given, expected, problem_rope)
 						local err_msg = rope_to_msg(problem_rope)
-						report_error(expr, "%s argument %i: could not convert from '%s' to '%s': %s",
-						                    fun_name, i, T.name_verbose(given), T.name_verbose(expected), err_msg)
+						report_error(expr, "%s argument %i: could not convert from %s to %s: %s",
+						                    fun_name, i, given, expected, err_msg)
 					end
 				else
 					if i == 1 and fun_t.args[i].name == 'self' then
@@ -661,7 +661,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					end
 
 					if not T.could_be(given, expected) then
-						report_error(expr, "%s argument %i: could not convert from '%s' to '%s' (varargs)", fun_name, i, given, expected)
+						report_error(expr, "%s argument %i: could not convert from %s to varargs %s",
+							                 fun_name, i, given, expected)
 					end
 				else
 					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args)
@@ -1523,12 +1524,15 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				--[[
 				var foo = Foo:new()
 				if ... then
-					foo.name = "hello"   
-					-- Don't change 'Foo' to *require* a  name: string
-					-- Just add an optional               name: string?
+					foo.name = "hello"
 				end
+
+				-- Don't change 'Foo' to having a member:  name: string
+				-- Just add an optional member:            name: string?
 				--]]
-				right_type = T.make_nilable(right_type)
+				if not T.is_class(right_type) then
+					right_type = T.make_nilable(right_type)
+				end
 
 				obj_t.members[name] = right_type
 			else

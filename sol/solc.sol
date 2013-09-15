@@ -65,7 +65,7 @@ local printf_err = U.printf_err
 _G.g_local_parse    = false -- If true, ignore 'require'
 _G.g_spam           = false
 _G.g_ignore_errors  = false
-_G.g_break_on_error = true
+_G.g_break_on_error = false
 
 
 typedef parse_info = {

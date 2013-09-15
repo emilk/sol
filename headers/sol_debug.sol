@@ -1,6 +1,6 @@
--- Compiled from sol/sol_debug.sol at 2013 Sep 15  22:21:02
+-- Compiled from sol/sol_debug.sol at 2013 Sep 15  22:46:00
 
-return <table: 0x00596040>{
+return <table: 0x00591fd0>{
    activate: function() -> void [EMPTY TYPE-LIST];
    active:   false;
    assert:   function(bool_expr, fmt: string?, ... : varargs) -> void [EMPTY TYPE-LIST];

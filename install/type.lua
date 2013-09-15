@@ -550,11 +550,6 @@ function T.isa_typelists(d, b, problem_rope)
 end --[[SOL OUTPUT--]] 
 
 
-function T.make_nilable(a)
-	return T.make_variant(a, T.Nil) --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
-
-
 function T.is_nilable(a)
 	a = T.follow_identifiers(a) --[[SOL OUTPUT--]] 
 	if a == T.Any then return true --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
@@ -578,6 +573,20 @@ function T.is_nilable(a)
 
 	return false
 	--]]
+end --[[SOL OUTPUT--]] 
+
+
+function T.make_nilable(a)
+	if false then
+		if T.is_nilable(a) then
+			return a --[[SOL OUTPUT--]] 
+		else
+			return T.variant(a, T.Nil) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	else
+		--return T.make_variant(a, T.Nil)  -- FIXME: produces  Foo or nil or nil
+		return T.variant(a, T.Nil) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -796,6 +805,14 @@ function T.format_type(root, verbose)
 			return 'any' --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'variant' then
+			local function output_packaged(typ, indent)
+				if typ.tag == 'function' and typ.rets then
+					return '('..output(typ, indent)..')' --[[SOL OUTPUT--]] 
+				else
+					return output(typ, indent) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
 			if #typ.variants == 0 then
 				return "void" --[[SOL OUTPUT--]] 
 			elseif #typ.variants == 1 then
@@ -804,15 +821,15 @@ function T.format_type(root, verbose)
 				if #typ.variants == 2
 					and typ.variants[2] == T.Nil 
 					and typ.variants[1].tag ~= 'variant'
+					and typ.variants[1].tag ~= 'function'
 				then
-					return output(typ.variants[1], next_indent) .. '?' --[[SOL OUTPUT--]] 
+					return output_packaged(typ.variants[1], next_indent) .. '?' --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
 				local str = '' --[[SOL OUTPUT--]] 
 				for i,t in ipairs(typ.variants) do
-					str = str .. output(t, next_indent) --[[SOL OUTPUT--]] 
+					str = str .. output_packaged(t, next_indent) --[[SOL OUTPUT--]] 
 					if i ~= #typ.variants then
-						--str = str .. '|'
 						str = str .. ' or ' --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -825,7 +842,7 @@ function T.format_type(root, verbose)
 			local obj = typ --[[SOL OUTPUT--]] 
 
 			if written_objs[obj] then
-				return '<!RECURSION!>' --[[SOL OUTPUT--]] 
+				return '<RECURSION '..tostring(obj)..'>' --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			written_objs[obj] = true --[[SOL OUTPUT--]] 

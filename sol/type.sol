@@ -550,11 +550,6 @@ function T.isa_typelists(d: [T.Type]?, b: [T.Type]?, problem_rope: [string]?) ->
 end
 
 
-function T.make_nilable(a: T.Type) -> T.Type
-	return T.make_variant(a, T.Nil)
-end
-
-
 function T.is_nilable(a: T.Type) -> bool
 	a = T.follow_identifiers(a)
 	if a == T.Any then return true end
@@ -578,6 +573,20 @@ function T.is_nilable(a: T.Type) -> bool
 
 	return false
 	--]]
+end
+
+
+function T.make_nilable(a: T.Type) -> T.Type
+	if false then
+		if T.is_nilable(a) then
+			return a
+		else
+			return T.variant(a, T.Nil)
+		end
+	else
+		--return T.make_variant(a, T.Nil)  -- FIXME: produces  Foo or nil or nil
+		return T.variant(a, T.Nil)
+	end
 end
 
 
@@ -796,6 +805,14 @@ function T.format_type(root: T.Type, verbose: bool?)
 			return 'any'
 
 		elseif typ.tag == 'variant' then
+			local function output_packaged(typ: T.Type, indent: string)
+				if typ.tag == 'function' and typ.rets then
+					return '('..output(typ, indent)..')'
+				else
+					return output(typ, indent)
+				end
+			end
+
 			if #typ.variants == 0 then
 				return "void"
 			elseif #typ.variants == 1 then
@@ -804,15 +821,15 @@ function T.format_type(root: T.Type, verbose: bool?)
 				if #typ.variants == 2
 					and typ.variants[2] == T.Nil 
 					and typ.variants[1].tag ~= 'variant'
+					and typ.variants[1].tag ~= 'function'
 				then
-					return output(typ.variants[1], next_indent) .. '?'
+					return output_packaged(typ.variants[1], next_indent) .. '?'
 				end
 
 				local str = ''
 				for i,t in ipairs(typ.variants) do
-					str = str .. output(t, next_indent)
+					str = str .. output_packaged(t, next_indent)
 					if i ~= #typ.variants then
-						--str = str .. '|'
 						str = str .. ' or '
 					end
 				end
@@ -825,7 +842,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 			var<T.Object> obj = typ
 
 			if written_objs[obj] then
-				return '<!RECURSION!>'
+				return '<RECURSION '..tostring(obj)..'>'
 			end
 
 			written_objs[obj] = true
