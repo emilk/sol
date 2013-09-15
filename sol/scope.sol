@@ -12,9 +12,10 @@ When parsign a module, there is a 'module_scope' whose parent is the 'global_sco
 User declared globals goes into the 'module_scope' and are marked as 'global'.
 --]]
 
+global class Scope = {}
 
-typedef Variable = {
-	--scope : Scope,  TODO
+global typedef Variable = {
+	scope      : Scope,
 	scope      : any,
 	name       : string,
 	type       : T.Type?,
@@ -25,30 +26,12 @@ typedef Variable = {
 }
 
 
---[[
-typedef Scope = {
-	parent   : Scope?,
-	children : [Scope],
-	locals   : [Variable],
-	globals  : [Variable],
-	typedefs : { string => T.Type },
-	vararg   : Variable?,  -- if non-nil, points to a variable named '...' with the type of T.VarArgs
-
-	--get_scoped_type : function(self, name: string) -> T.Type?
-}
-local Scope = {}
---]]
-class Scope = {}
-
---[-[
-
 function Scope.new(parent: Scope?) -> Scope
 	local s = {}	
 	setmetatable(s, { __index = Scope })
 	s:init(parent)
 	return s
 end
---]]
 --[[
 require 'class'
 local Scope = sol_class("Scope")
@@ -174,17 +157,18 @@ function Scope.create_global_scope() -> Scope
 	}
 
 
+	var is_local = true
 	--s:declare_type( 'void',    T.Void ) -- Not a valid type, only allowed as a typelist
-	s:declare_type( 'bool',   T.Bool,   where )
-	s:declare_type( 'int',    T.Int,    where )
-	s:declare_type( 'uint',   T.Uint,   where )
-	s:declare_type( 'number', T.Num,    where )
-	s:declare_type( 'string', T.String, where )
-	s:declare_type( 'any',    T.Any,    where )
-	s:declare_type( 'table',  T.Table,  where )
-	--s:declare_type( 'list',   T.List,   where ) -- use: [any]
-	--s:declare_type( 'map',    T.Map,    where ) -- use: {any => any}
-	s:declare_type( 'object', T.Object, where )
+	s:declare_type( 'bool',   T.Bool,   where, is_local )
+	s:declare_type( 'int',    T.Int,    where, is_local )
+	s:declare_type( 'uint',   T.Uint,   where, is_local )
+	s:declare_type( 'number', T.Num,    where, is_local )
+	s:declare_type( 'string', T.String, where, is_local )
+	s:declare_type( 'any',    T.Any,    where, is_local )
+	s:declare_type( 'table',  T.Table,  where, is_local )
+	--s:declare_type( 'list',   T.List,   where, is_local ) -- use: [any]
+	--s:declare_type( 'map',    T.Map,    where, is_local ) -- use: {any => any}
+	s:declare_type( 'object', T.Object, where, is_local )
 
 	-- keywords are handles explicitly during parsing
 	--s:declare_type( 'nil',     T.Nil)    -- for e.g.:   foo or bar or nil
@@ -222,10 +206,22 @@ function Scope:is_module_level() -> bool
 end
 
 
-function Scope:declare_type(name: string, type: T.Type, where: string)
+function Scope:declare_type(name: string, typ: T.Type, where: string, is_local: bool)
 	D.assert(not self.fixed)
-	D.assert(name) D.assert(where)
-	self.typedefs[name] = type
+	D.assert(type(name) == 'string')
+	D.assert(type(where) == 'string')
+	D.assert(type(is_local) == 'boolean')
+
+	if is_local then
+		self.typedefs[name] = typ
+	else
+		self.global_typedefs[name] = typ
+	end
+end
+
+
+function Scope:add_global_type(name: string, typ: T.Type)
+	self.global_typedefs[name] = typ
 end
 
 
@@ -277,11 +273,26 @@ function Scope:get_scoped_type(name: string) -> T.Type?
 end
 
 
-function Scope:get_type(name) -> T.Type?
+function Scope:get_local_type(name: string) -> T.Type?
 	local t = self:get_scoped_type(name)
 	if t then return t end
 	if self.parent then return self.parent:get_type(name) end
 	return nil
+end
+
+
+function Scope:get_type(name: string) -> T.Type?
+	return self:get_local_type(name) or self:get_global_type(name)
+end
+
+
+function Scope:get_global_type(name: string) -> T.Type ?
+	local t = self.global_typedefs[name]
+	if t then return t end
+	
+	if self.parent then
+		return self.parent:get_global_type(name)
+	end
 end
 
 
@@ -322,6 +333,7 @@ function Scope:get_global(name: string) -> Variable ?
 		return self.parent:get_global(name)
 	end
 end
+
 
 
 -- Var declared in this scope
@@ -365,8 +377,4 @@ function Scope:get_global_typedefs(list: [Variable] or nil) -> [Variable]
 end
 
 
-local S = {}
-S.Scope = Scope
-typedef S.Scope    = Scope
-typedef S.Variable = Variable
-return S
+return {}

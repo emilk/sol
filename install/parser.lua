@@ -55,11 +55,10 @@ P.SOL_SETTINGS = {
 } --[[SOL OUTPUT--]] 
 
 
-local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 --------------------------------------------------------
-
 
 
 
@@ -181,7 +180,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 	local VarDigits = {'_', 'a', 'b', 'c', 'd'} --[[SOL OUTPUT--]] 
 	local function create_scope(parent)
-		local scope = S.Scope.new(parent) --[[SOL OUTPUT--]] 
+		local scope = Scope.new(parent) --[[SOL OUTPUT--]] 
 		--report_spam("New scope %s, parent: %s", tostring(scope), tostring(parent))
 		return scope --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -672,7 +671,6 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			} --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		-- TODO:  if tok:consume_symbol('\\(')   -- Function
 		if tok:consume_symbol('{') then
 			-- Object or map?
 			if tok:consume_symbol('}') then
@@ -828,7 +826,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		elseif tok:is('String') then
 			return T.from_string_literal( tok:get().data ) --[[SOL OUTPUT--]] 
 
-		-- HACK: Handle keywords explicitly:
+		-- Handle keywords explicitly:
 		elseif tok:consume_keyword('nil') then
 			return T.Nil --[[SOL OUTPUT--]] 
 
@@ -937,7 +935,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 	end --[[SOL OUTPUT--]] 
 
 
-	local function parse_typedef(scope, type)
+	local function parse_typedef(scope, scoping)
 		--[[ We allow:
 		typedef foo = ...    -- Normal local typedef
 		typedef M.bar = ...  -- namespaced typedef
@@ -968,54 +966,19 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		end --[[SOL OUTPUT--]] 
 		local type_name = tok:get().data --[[SOL OUTPUT--]] 
 
-
-		local function parse_bases()
-			-- Check for inheritance
-			local base_types = {} --[[SOL OUTPUT--]] 
-			if tok:consume_symbol(':') then
-				repeat
-					local t = parse_type(scope) --[[SOL OUTPUT--]] 
-					if not t then
-						report_error("base type expected") --[[SOL OUTPUT--]] 
-						return nil --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-					table.insert(base_types, t) --[[SOL OUTPUT--]] 
-				until not tok:consume_symbol(',') --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			return base_types --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
-
-		local function parse_type_assignment()
-			if not tok:consume_symbol('=') then
-				report_error("Expected '='") --[[SOL OUTPUT--]] 
-				return nil --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			local type = parse_type(scope) --[[SOL OUTPUT--]] 
-
-			if not type then
-				report_error("Expected type") --[[SOL OUTPUT--]]  
-				return nil --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			return type --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
 		local node = { 
 			ast_type  = 'Typedef',
 			scope     = scope,
 			type_name = type_name,
 			tokens    = {},
 			where     = where,
-			global_   = (type == 'global')
+			is_local  = (scoping ~= 'global'),
 		} --[[SOL OUTPUT--]] 
 
 		if not tok:consume_symbol('.') then
 			node.type_name  = type_name --[[SOL OUTPUT--]] 
 		else
-			if type == 'global' then
+			if scoping == 'global' then
 				return false, report_error("global typedef cannot have namespaced name") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -1039,10 +1002,43 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 		-- Are we a forward-declare?
 		if not tok:consume_symbol(';') then
+			local function parse_bases()
+				-- Check for inheritance
+				local base_types = {} --[[SOL OUTPUT--]] 
+				if tok:consume_symbol(':') then
+					repeat
+						local t = parse_type(scope) --[[SOL OUTPUT--]] 
+						if not t then
+							report_error("base type expected") --[[SOL OUTPUT--]] 
+							return nil --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+						table.insert(base_types, t) --[[SOL OUTPUT--]] 
+					until not tok:consume_symbol(',') --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+				return base_types --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			local function parse_type_assignment()
+				if not tok:consume_symbol('=') then
+					report_error("Expected '='") --[[SOL OUTPUT--]] 
+					return nil --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+				local type = parse_type(scope) --[[SOL OUTPUT--]] 
+
+				if not type then
+					report_error("Expected type") --[[SOL OUTPUT--]]  
+					return nil --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+				return type --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
 			node.base_types = parse_bases() --[[SOL OUTPUT--]] 
 			if not node.base_types then return false, report_error("base type(s) expected") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-			node.type  = parse_type_assignment() --[[SOL OUTPUT--]] 
+			node.type = parse_type_assignment() --[[SOL OUTPUT--]] 
 			if not node.type then return false, report_error("type assignment expected") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -1188,8 +1184,6 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		if not tok:consume_symbol('=', token_list) then
 			return false, report_error("Expected '='") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-
-		assert(#token_list == 3) --[[SOL OUTPUT--]] 
 
 		local st, rhs = parse_expr(scope) --[[SOL OUTPUT--]] 
 		
@@ -1447,7 +1441,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		elseif settings.is_sol and tok:consume_keyword('global', token_list) then
 			if tok:consume_keyword('typedef') then
 				st, stat = parse_typedef(scope, 'global') --[[SOL OUTPUT--]] 
-			elseif tok:consume_keyword('class') then
+			elseif tok:consume_keyword('class', token_list) then
 				st, stat = parse_class(scope, token_list, 'global') --[[SOL OUTPUT--]] 
 			elseif tok:consume_keyword('function', token_list) then
 				st, stat = parse_function_decl(scope, token_list, 'global') --[[SOL OUTPUT--]] 

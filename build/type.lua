@@ -9,19 +9,13 @@ local const = U.const --[[SOL OUTPUT--]]
 
 --[[
 FIXME: recursive dependency
-local S    = require 'scope'
-typedef Scope    = S.Scope
-typedef Variable = S.Variable
+local S = require 'scope'
 --]]
-local S = {} --[[SOL OUTPUT--]] 
-local T = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
-
+local T = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 
 T
-
-
 
 
 
@@ -819,7 +813,7 @@ function T.name(typ, indent, verbose)
 				table.sort(type_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
 				--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
 				for _,m in ipairs(type_list) do
-					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. T.name(m.type, next_indent, verbose) .. ",\n" --[[SOL OUTPUT--]] 
+					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. T.name(m.type, next_indent, verbose) .. ";\n" --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -843,7 +837,7 @@ function T.name(typ, indent, verbose)
 						str = str .. ' ' --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
-					str = str .. T.name(m.type, next_indent, verbose) .. ",\n" --[[SOL OUTPUT--]] 
+					str = str .. T.name(m.type, next_indent, verbose) .. ";\n" --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 

@@ -1,22 +1,18 @@
 --[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol --]] local T = require 'type' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
-local U = require 'util' --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+local U = require 'util' --[[SOL OUTPUT--]] 
 
 
 --[[
-typedef Scope = {
-	parent   : Scope?,
-	children : [Scope],
-	locals   : [Variable],
-	globals  : [Variable],
-	typedefs : { string => T.Type },
-	vararg   : Variable?,  -- if non-nil, points to a variable named '...' with the type of T.VarArgs
+Scopes:
 
-	--get_scoped_type : function(self, name: string) -> T.Type?
-}
-local Scope = {}
+At the top there is the shared and immutable 'global_scope'. This contains the lua-wide globals.
+When parsign a module, there is a 'module_scope' whose parent is the 'global_scope'.
+
+User declared globals goes into the 'module_scope' and are marked as 'global'.
 --]]
-local Scope 
+
+  Scope = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 
@@ -29,18 +25,6 @@ local Scope
 
 
 
-
-
-
-
-
-
-
-
-
-= {} --[[SOL OUTPUT--]] 
-
---[-[
 
 function Scope.new(parent)
 	local s = {} --[[SOL OUTPUT--]] 	
@@ -48,7 +32,6 @@ function Scope.new(parent)
 	s:init(parent) --[[SOL OUTPUT--]] 
 	return s --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
---]]
 --[[
 require 'class'
 local Scope = sol_class("Scope")
@@ -174,17 +157,18 @@ function Scope.create_global_scope()
 	} --[[SOL OUTPUT--]] 
 
 
+	local is_local = true --[[SOL OUTPUT--]] 
 	--s:declare_type( 'void',    T.Void ) -- Not a valid type, only allowed as a typelist
-	s:declare_type( 'bool',   T.Bool,   where ) --[[SOL OUTPUT--]] 
-	s:declare_type( 'int',    T.Int,    where ) --[[SOL OUTPUT--]] 
-	s:declare_type( 'uint',   T.Uint,   where ) --[[SOL OUTPUT--]] 
-	s:declare_type( 'number', T.Num,    where ) --[[SOL OUTPUT--]] 
-	s:declare_type( 'string', T.String, where ) --[[SOL OUTPUT--]] 
-	s:declare_type( 'any',    T.Any,    where ) --[[SOL OUTPUT--]] 
-	s:declare_type( 'table',  T.Table,  where ) --[[SOL OUTPUT--]] 
-	--s:declare_type( 'list',   T.List,   where ) -- use: [any]
-	--s:declare_type( 'map',    T.Map,    where ) -- use: {any => any}
-	s:declare_type( 'object', T.Object, where ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'bool',   T.Bool,   where, is_local ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'int',    T.Int,    where, is_local ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'uint',   T.Uint,   where, is_local ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'number', T.Num,    where, is_local ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'string', T.String, where, is_local ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'any',    T.Any,    where, is_local ) --[[SOL OUTPUT--]] 
+	s:declare_type( 'table',  T.Table,  where, is_local ) --[[SOL OUTPUT--]] 
+	--s:declare_type( 'list',   T.List,   where, is_local ) -- use: [any]
+	--s:declare_type( 'map',    T.Map,    where, is_local ) -- use: {any => any}
+	s:declare_type( 'object', T.Object, where, is_local ) --[[SOL OUTPUT--]] 
 
 	-- keywords are handles explicitly during parsing
 	--s:declare_type( 'nil',     T.Nil)    -- for e.g.:   foo or bar or nil
@@ -222,10 +206,22 @@ function Scope:is_module_level()
 end --[[SOL OUTPUT--]] 
 
 
-function Scope:declare_type(name, type, where)
+function Scope:declare_type(name, typ, where, is_local)
 	D.assert(not self.fixed) --[[SOL OUTPUT--]] 
-	D.assert(name) --[[SOL OUTPUT--]]  D.assert(where) --[[SOL OUTPUT--]] 
-	self.typedefs[name] = type --[[SOL OUTPUT--]] 
+	D.assert(type(name) == 'string') --[[SOL OUTPUT--]] 
+	D.assert(type(where) == 'string') --[[SOL OUTPUT--]] 
+	D.assert(type(is_local) == 'boolean') --[[SOL OUTPUT--]] 
+
+	if is_local then
+		self.typedefs[name] = typ --[[SOL OUTPUT--]] 
+	else
+		self.global_typedefs[name] = typ --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
+function Scope:add_global_type(name, typ)
+	self.global_typedefs[name] = typ --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -277,11 +273,26 @@ function Scope:get_scoped_type(name)
 end --[[SOL OUTPUT--]] 
 
 
-function Scope:get_type(name)
+function Scope:get_local_type(name)
 	local t = self:get_scoped_type(name) --[[SOL OUTPUT--]] 
 	if t then return t --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	if self.parent then return self.parent:get_type(name) --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	return nil --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
+function Scope:get_type(name)
+	return self:get_local_type(name) or self:get_global_type(name) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
+function Scope:get_global_type(name)
+	local t = self.global_typedefs[name] --[[SOL OUTPUT--]] 
+	if t then return t --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	
+	if self.parent then
+		return self.parent:get_global_type(name) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -322,6 +333,7 @@ function Scope:get_global(name)
 		return self.parent:get_global(name) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
+
 
 
 -- Var declared in this scope
@@ -365,9 +377,4 @@ function Scope:get_global_typedefs(list)
 end --[[SOL OUTPUT--]] 
 
 
-local S = {} --[[SOL OUTPUT--]] 
-S.Scope = Scope --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
-
-
-return S --[[SOL OUTPUT--]] 
- --[[SOL OUTPUT--]] 
+return {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 

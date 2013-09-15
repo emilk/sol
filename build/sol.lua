@@ -44,7 +44,7 @@ local function compile_sol(source_text)
 		return nil --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local module_scope = S.Scope.create_module_scope() --[[SOL OUTPUT--]] 
+	local module_scope = Scope.create_module_scope() --[[SOL OUTPUT--]] 
 
 	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope) --[[SOL OUTPUT--]] 
 	if not st then

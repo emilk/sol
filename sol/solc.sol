@@ -127,7 +127,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 		return FAIL_INFO
 	end
 
-	local module_scope = S.Scope.create_module_scope()
+	var module_scope = Scope.create_module_scope()
 
 	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope)
 	if not st then
@@ -171,6 +171,23 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 						U.printf("Adding global '%s'", v.name)
 					end
 					module_scope:add_global(v)
+				end
+			end
+
+			for name,type in pairs(mod_info.global_typedefs) do
+				--D.break_();
+				local existing = module_scope:get_global_type( name )
+				if existing and existing ~= type then
+					printf_err("Global clash when including module '%s' at %s:"
+						     .. "Global type '%s' re-declared at %s, previously declared in %s",
+						mod_name, req_where, name, type.where, existing.where)
+				end
+
+				if not existing then
+					if _G.g_spam then
+						U.printf("Adding global '%s'", name)
+					end
+					module_scope:add_global_type( name, type )
 				end
 			end
 
@@ -269,7 +286,6 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 	end
 
 	if info.type and header_path_out then
-		D.break_()
 		local type_name = T.name(info.type)
 		var out_text = '-- Compiled from ' .. path_in .. '\n' .. type_name
 		U.write_file(header_path_out, out_text)

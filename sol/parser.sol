@@ -98,8 +98,7 @@ typedef P.StatNode : P.Node = {
 
 typedef ExprNode_or_error = P.ExprNode or string or nil
 typedef StatNode_or_error = P.StatNode or string or nil
-
-typedef Scope     = S.Scope
+ 
 typedef TokenList = L.TokenList
 
 
@@ -181,7 +180,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 	local VarDigits = {'_', 'a', 'b', 'c', 'd'}
 	local function create_scope(parent)
-		local scope = S.Scope.new(parent)
+		local scope = Scope.new(parent)
 		--report_spam("New scope %s, parent: %s", tostring(scope), tostring(parent))
 		return scope
 	end
@@ -672,7 +671,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			}
 		end
 
-		-- TODO:  if tok:consume_symbol('\\(')   -- Function
 		if tok:consume_symbol('{') then
 			-- Object or map?
 			if tok:consume_symbol('}') then
@@ -828,7 +826,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		elseif tok:is('String') then
 			return T.from_string_literal( tok:get().data )
 
-		-- HACK: Handle keywords explicitly:
+		-- Handle keywords explicitly:
 		elseif tok:consume_keyword('nil') then
 			return T.Nil
 
@@ -937,7 +935,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
-	local function parse_typedef(scope: S.Scope, type: 'local' or 'global') -> bool, StatNode_or_error
+	local function parse_typedef(scope: Scope, scoping: 'local' or 'global') -> bool, StatNode_or_error
 		--[[ We allow:
 		typedef foo = ...    -- Normal local typedef
 		typedef M.bar = ...  -- namespaced typedef
@@ -968,54 +966,19 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		end
 		local type_name = tok:get().data
 
-
-		local function parse_bases()
-			-- Check for inheritance
-			local base_types = {}
-			if tok:consume_symbol(':') then
-				repeat
-					local t = parse_type(scope)
-					if not t then
-						report_error("base type expected")
-						return nil
-					end
-					table.insert(base_types, t)
-				until not tok:consume_symbol(',')
-			end
-
-			return base_types
-		end
-
-
-		local function parse_type_assignment()
-			if not tok:consume_symbol('=') then
-				report_error("Expected '='")
-				return nil
-			end
-
-			local type = parse_type(scope)
-
-			if not type then
-				report_error("Expected type") 
-				return nil
-			end
-
-			return type
-		end
-
 		local node = { 
 			ast_type  = 'Typedef',
 			scope     = scope,
 			type_name = type_name,
 			tokens    = {},
 			where     = where,
-			global_   = (type == 'global')
+			is_local  = (scoping ~= 'global'),
 		}
 
 		if not tok:consume_symbol('.') then
 			node.type_name  = type_name
 		else
-			if type == 'global' then
+			if scoping == 'global' then
 				return false, report_error("global typedef cannot have namespaced name")
 			end
 
@@ -1039,10 +1002,43 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		-- Are we a forward-declare?
 		if not tok:consume_symbol(';') then
+			local function parse_bases()
+				-- Check for inheritance
+				local base_types = {}
+				if tok:consume_symbol(':') then
+					repeat
+						local t = parse_type(scope)
+						if not t then
+							report_error("base type expected")
+							return nil
+						end
+						table.insert(base_types, t)
+					until not tok:consume_symbol(',')
+				end
+
+				return base_types
+			end
+
+			local function parse_type_assignment()
+				if not tok:consume_symbol('=') then
+					report_error("Expected '='")
+					return nil
+				end
+
+				local type = parse_type(scope)
+
+				if not type then
+					report_error("Expected type") 
+					return nil
+				end
+
+				return type
+			end
+
 			node.base_types = parse_bases()
 			if not node.base_types then return false, report_error("base type(s) expected") end
 
-			node.type  = parse_type_assignment()
+			node.type = parse_type_assignment()
 			if not node.type then return false, report_error("type assignment expected") end
 		end
 
@@ -1077,7 +1073,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
-	local function parse_function_decl(scope: S.Scope, token_list: L.TokenList,
+	local function parse_function_decl(scope: Scope, token_list: L.TokenList,
 		                                scoping: 'local' or 'global') -> bool, StatNode_or_error
 
 		if not tok:is('ident') then
@@ -1097,7 +1093,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
-	local function parse_declaration(scope: S.Scope, token_list: L.TokenList,
+	local function parse_declaration(scope: Scope, token_list: L.TokenList,
 		                              scoping: 'local' or 'global' or 'var') -> bool, StatNode_or_error
 
 		var is_local = (scoping ~= 'global')
@@ -1188,8 +1184,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		if not tok:consume_symbol('=', token_list) then
 			return false, report_error("Expected '='")
 		end
-
-		assert(#token_list == 3)
 
 		local st, rhs = parse_expr(scope)
 		
@@ -1447,7 +1441,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		elseif settings.is_sol and tok:consume_keyword('global', token_list) then
 			if tok:consume_keyword('typedef') then
 				st, stat = parse_typedef(scope, 'global')
-			elseif tok:consume_keyword('class') then
+			elseif tok:consume_keyword('class', token_list) then
 				st, stat = parse_class(scope, token_list, 'global')
 			elseif tok:consume_keyword('function', token_list) then
 				st, stat = parse_function_decl(scope, token_list, 'global')

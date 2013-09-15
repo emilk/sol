@@ -6,14 +6,10 @@ local T   = require 'type' --[[SOL OUTPUT--]]
 local L   = require 'lexer' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
 local S   = require 'scope' --[[SOL OUTPUT--]] 
-local D   = require 'sol_debug' --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+local D   = require 'sol_debug' --[[SOL OUTPUT--]] 
 
 
-local NumOps 
-
-
-
-= set{
+local NumOps = set{
 	'+', '-', '*', '/', '%', '^'
 } --[[SOL OUTPUT--]] 
 local NumCompOps = set{
@@ -1183,7 +1179,7 @@ local function analyze(ast, filename, on_require, settings)
 
 
 		elseif expr.ast_type == 'DotsExpr' then
-			local t = scope:get_var_args() --[[SOL OUTPUT--]] 
+			local t = scope:get_var_args() --[[SOL OUTPUT--]]  -- TODO: var
 			if t then
 				assert(t.tag == 'varargs') --[[SOL OUTPUT--]] 
 				return t --[[SOL OUTPUT--]] 
@@ -1683,7 +1679,7 @@ local function analyze(ast, filename, on_require, settings)
 			if old then
 				report_error(stat, "type %q already declared as '%s'", name, old) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			scope:declare_type(name, stat.type, where_is(stat)) --[[SOL OUTPUT--]] 
+			scope:declare_type(name, stat.type, where_is(stat), stat.is_local) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if stat.base_types and #stat.base_types > 0 then
@@ -1755,7 +1751,7 @@ local function analyze(ast, filename, on_require, settings)
 		class_type.instance_type = instance_type --[[SOL OUTPUT--]] 
 
 		-- The name refers to the *instance* type.
-		scope:declare_type(name, instance_type, where_is(stat)) --[[SOL OUTPUT--]] 
+		scope:declare_type(name, instance_type, where_is(stat), is_local) --[[SOL OUTPUT--]] 
 
 		-------------------------------------------------
 

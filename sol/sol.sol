@@ -44,7 +44,7 @@ local function compile_sol(source_text: string) -> string or nil
 		return nil
 	end
 
-	local module_scope = S.Scope.create_module_scope()
+	var module_scope = Scope.create_module_scope()
 
 	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope)
 	if not st then

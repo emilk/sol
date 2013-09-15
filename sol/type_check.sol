@@ -9,10 +9,6 @@ local S   = require 'scope'
 local D   = require 'sol_debug'
 
 
-typedef Scope    = S.Scope
-typedef Variable = S. Variable
-
-
 var NumOps = set{
 	'+', '-', '*', '/', '%', '^'
 }
@@ -929,7 +925,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local analyze_simple_expr_unchecked
 
 
-	analyze_expr_unchecked = function(expr, scope: Scope) -> T.Typelist or T.Type, Variable?
+	analyze_expr_unchecked = function(expr: P.Node, scope: Scope) -> T.Typelist or T.Type, Variable?
 		assert(expr)
 		assert(type(expr) == 'table')
 		if not expr.ast_type then
@@ -1183,7 +1179,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif expr.ast_type == 'DotsExpr' then
-			local t = scope:get_var_args()
+			local t = scope:get_var_args() -- TODO: var
 			if t then
 				assert(t.tag == 'varargs')
 				return t
@@ -1683,7 +1679,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if old then
 				report_error(stat, "type %q already declared as '%s'", name, old)
 			end
-			scope:declare_type(name, stat.type, where_is(stat))
+			scope:declare_type(name, stat.type, where_is(stat), stat.is_local)
 		end
 
 		if stat.base_types and #stat.base_types > 0 then
@@ -1755,7 +1751,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		class_type.instance_type = instance_type
 
 		-- The name refers to the *instance* type.
-		scope:declare_type(name, instance_type, where_is(stat))
+		scope:declare_type(name, instance_type, where_is(stat), is_local)
 
 		-------------------------------------------------
 

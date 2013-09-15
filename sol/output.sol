@@ -86,11 +86,10 @@ local function output(ast, filename: string, insert_new_lines : bool?) -> string
 	}
 
 	local function report_error(fmt: string, ...)
-		printf_err( "%s", table.concat(out.rope) )
-
 		local msg = string.format(fmt, ...)
-		local full = string.format('%s:%d: %s', filename, out.line, msg)
-		D.error(full)
+		local error_msg = string.format('%s:%d: %s', filename, out.line, msg)
+		printf_err( "%s\n%s", table.concat(out.rope), error_msg )
+		D.error(error_msg)
 	end
 
 
@@ -108,6 +107,7 @@ local function output(ast, filename: string, insert_new_lines : bool?) -> string
 
 		function t:append_next_token(str)
 			local tok = expr.tokens[it]
+			if not tok then report_error("Missing token") end
 			if str and tok.data ~= str then
 				report_error("Expected token '" .. str .. "'. tokens: " .. U.pretty(expr.tokens))
 			end
@@ -392,8 +392,6 @@ local function output(ast, filename: string, insert_new_lines : bool?) -> string
 			format_expr(stat.condition)
 
 		elseif stat.ast_type == 'FunctionDeclStatement' then
-			--print(U.pretty(stat))
-
 			if stat.scoping == 'local' then
 				t:append_next_token( "local" )
 			elseif stat.scoping == 'global' then

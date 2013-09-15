@@ -9,16 +9,13 @@ local const = U.const
 
 --[[
 FIXME: recursive dependency
-local S    = require 'scope'
-typedef Scope    = S.Scope
-typedef Variable = S.Variable
+local S = require 'scope'
 --]]
-local S = {}
 local T = {}
 
 
-typedef S.Variable = {
-	scope      : S.Scope,
+typedef Variable = {
+	scope      : Scope,
 	name       : string,
 	type       : T.Type?,
 	is_global  : bool,
@@ -26,18 +23,15 @@ typedef S.Variable = {
 	namespace  : { string => T.Type } ?,
 }
 
-typedef S.Scope = {
-	parent   : S.Scope?,
-	locals   : [S.Variable],
-	globals  : [S.Variable],
+typedef Scope = {
+	parent   : Scope?,
+	locals   : [Variable],
+	globals  : [Variable],
 	typedefs : { string => T.Type },
-	vararg   : S.Variable?,  -- if non-nil, points to a variable named '...' with the type of T.VarArgs
+	vararg   : Variable?,  -- if non-nil, points to a variable named '...' with the type of T.VarArgs
 
 	--get_scoped_type : function(self, name: string) -> T.Type?
 }
-typedef Scope    = S.Scope
-typedef Variable = S.Variable
-
 
 
 
@@ -819,7 +813,7 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 				table.sort(type_list, function(a,b) return a.name < b.name end)
 				--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
 				for _,m in ipairs(type_list) do
-					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. T.name(m.type, next_indent, verbose) .. ",\n"
+					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. T.name(m.type, next_indent, verbose) .. ";\n"
 				end
 			end
 
@@ -843,7 +837,7 @@ function T.name(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bool?)
 						str = str .. ' '
 					end
 
-					str = str .. T.name(m.type, next_indent, verbose) .. ",\n"
+					str = str .. T.name(m.type, next_indent, verbose) .. ";\n"
 				end
 			end
 
