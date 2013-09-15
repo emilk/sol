@@ -197,6 +197,7 @@ local function analyze(ast, filename, on_require, settings)
 			assert(not old.is_global) --[[SOL OUTPUT--]] 
 			assert(old.scope == scope) --[[SOL OUTPUT--]] 
 			old.where = where_is(node) --[[SOL OUTPUT--]]  -- Update position of forward-declare
+			old.type  = typ or old.type --[[SOL OUTPUT--]] 
 			return old --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -231,6 +232,7 @@ local function analyze(ast, filename, on_require, settings)
 			assert(old.is_global) --[[SOL OUTPUT--]] 
 			assert(old.scope == scope) --[[SOL OUTPUT--]] 
 			old.where = where_is(node) --[[SOL OUTPUT--]]  -- Update position of forward-declare
+			old.type  = typ or old.type --[[SOL OUTPUT--]] 
 			return old --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -710,7 +712,7 @@ local function analyze(ast, filename, on_require, settings)
 			return --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		if not T.is_instance(target_type) then
+		if not T.should_extend_in_situ(target_type) then
 			target_type = U.shallow_clone(target_type) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		target_type.metatable = arg_ts[2] --[[SOL OUTPUT--]] 
@@ -814,10 +816,6 @@ local function analyze(ast, filename, on_require, settings)
 
 	-- Returns a list of types
 	local function call_function(expr, scope)
-		if expr.where:match("type_check.sol:192") then
-			--D.break_() -- TODO
-		end --[[SOL OUTPUT--]] 
-
 		--------------------------------------------------------
 		-- Pick out function type:
 		report_spam(expr, "Analyzing function base...") --[[SOL OUTPUT--]] 
@@ -997,9 +995,13 @@ local function analyze(ast, filename, on_require, settings)
 					if type.namespace then
 						assert(type.namespace == var_.namespace) --[[SOL OUTPUT--]] 
 					else
-						type = U.shallow_clone(type) --[[SOL OUTPUT--]] 
-						type.namespace = var_.namespace --[[SOL OUTPUT--]] 
-						var_.type = type --[[SOL OUTPUT--]] 
+						if T.should_extend_in_situ(type) then
+							type.namespace = var_.namespace --[[SOL OUTPUT--]] 
+						else
+							type = U.shallow_clone(type) --[[SOL OUTPUT--]] 
+							type.namespace = var_.namespace --[[SOL OUTPUT--]] 
+							var_.type = type --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
 					report_error(expr, "Variable '%s' used as namespace but is not an object (it's '%s')", var_.name, type) --[[SOL OUTPUT--]] 
@@ -1201,7 +1203,7 @@ local function analyze(ast, filename, on_require, settings)
 
 
 		elseif expr.ast_type == 'DotsExpr' then
-			local t = scope:get_var_args() --[[SOL OUTPUT--]]  -- TODO: var
+			local t = scope:get_var_args() --[[SOL OUTPUT--]] 
 			if t then
 				assert(t.tag == 'varargs') --[[SOL OUTPUT--]] 
 				return t --[[SOL OUTPUT--]] 
@@ -1275,10 +1277,6 @@ local function analyze(ast, filename, on_require, settings)
 
 
 		elseif expr.ast_type == 'MemberExpr' then
-			if expr.where:match("type_check.sol:192") then
-				--D.break_()  -- TODO
-			end --[[SOL OUTPUT--]] 
-
 			-- .  or  :
 			local base_t = analyze_expr_single(expr.base, scope) --[[SOL OUTPUT--]] 
 			local name = expr.ident.data --[[SOL OUTPUT--]] 
@@ -1520,7 +1518,7 @@ local function analyze(ast, filename, on_require, settings)
 			--extend_existing_type = true -- HACK FIXME TODO osv
 
 			if extend_existing_type then
-				report_spam(stat, "Extending class with %q", name) --[[SOL OUTPUT--]] 
+				report_spam(stat, "Extending class with %q - class: %s", name, tostring(obj_t)) --[[SOL OUTPUT--]] 
 
 				--[[
 				var foo = Foo:new()
@@ -1534,6 +1532,7 @@ local function analyze(ast, filename, on_require, settings)
 
 				obj_t.members[name] = right_type --[[SOL OUTPUT--]] 
 			else
+				D.assert(not T.should_extend_in_situ(obj_t)) --[[SOL OUTPUT--]] 
 				obj_t = U.shallow_clone( obj_t ) --[[SOL OUTPUT--]] 
 				obj_t.members = U.shallow_clone( obj_t.members ) --[[SOL OUTPUT--]] 
 				obj_t.members[name] = right_type --[[SOL OUTPUT--]] 
@@ -1816,6 +1815,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		-- The variable represents the class - not an instance of it!
 		local v = declare_var(stat, scope, name, is_local, class_type) --[[SOL OUTPUT--]] 
+		D.assert(v.type == class_type) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 

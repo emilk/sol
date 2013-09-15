@@ -189,7 +189,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		D.assert(node and scope and name)
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
-		var<Variable?> old = scope:get_scoped(name)
+		var old = scope:get_scoped(name)
 
 		if old and old.forward_declared then
 			old.forward_declared = false -- Properly declared now
@@ -197,6 +197,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			assert(not old.is_global)
 			assert(old.scope == scope)
 			old.where = where_is(node) -- Update position of forward-declare
+			old.type  = typ or old.type
 			return old
 		end
 
@@ -231,6 +232,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			assert(old.is_global)
 			assert(old.scope == scope)
 			old.where = where_is(node) -- Update position of forward-declare
+			old.type  = typ or old.type
 			return old
 		end
 
@@ -710,7 +712,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return
 		end
 
-		if not T.is_instance(target_type) then
+		if not T.should_extend_in_situ(target_type) then
 			target_type = U.shallow_clone(target_type)
 		end
 		target_type.metatable = arg_ts[2]
@@ -814,10 +816,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	-- Returns a list of types
 	local function call_function(expr: P.Node, scope: Scope) -> T.Typelist
-		if expr.where:match("type_check.sol:192") then
-			--D.break_() -- TODO
-		end
-
 		--------------------------------------------------------
 		-- Pick out function type:
 		report_spam(expr, "Analyzing function base...")
@@ -997,9 +995,13 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					if type.namespace then
 						assert(type.namespace == var_.namespace)
 					else
-						type = U.shallow_clone(type)
-						type.namespace = var_.namespace
-						var_.type = type
+						if T.should_extend_in_situ(type) then
+							type.namespace = var_.namespace
+						else
+							type = U.shallow_clone(type)
+							type.namespace = var_.namespace
+							var_.type = type
+						end
 					end
 				else
 					report_error(expr, "Variable '%s' used as namespace but is not an object (it's '%s')", var_.name, type)
@@ -1201,7 +1203,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif expr.ast_type == 'DotsExpr' then
-			local t = scope:get_var_args() -- TODO: var
+			var t = scope:get_var_args()
 			if t then
 				assert(t.tag == 'varargs')
 				return t
@@ -1275,10 +1277,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif expr.ast_type == 'MemberExpr' then
-			if expr.where:match("type_check.sol:192") then
-				--D.break_()  -- TODO
-			end
-
 			-- .  or  :
 			local base_t = analyze_expr_single(expr.base, scope)
 			local name = expr.ident.data
@@ -1520,7 +1518,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--extend_existing_type = true -- HACK FIXME TODO osv
 
 			if extend_existing_type then
-				report_spam(stat, "Extending class with %q", name)
+				report_spam(stat, "Extending class with %q - class: %s", name, tostring(obj_t))
 
 				--[[
 				var foo = Foo:new()
@@ -1534,6 +1532,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 				obj_t.members[name] = right_type
 			else
+				D.assert(not T.should_extend_in_situ(obj_t))
 				obj_t = U.shallow_clone( obj_t )
 				obj_t.members = U.shallow_clone( obj_t.members )
 				obj_t.members[name] = right_type
@@ -1707,7 +1706,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		local name = stat.type_name
 
 		if stat.namespace_name then
-			var<Variable?> v = scope:get_var( stat.namespace_name ) -- TODO: var
+			var v = scope:get_var( stat.namespace_name ) -- TODO: var
 
 			if not v then
 				report_error(stat, "namespaced typedef: %s is not a previously defined variable", stat.namespace_name)
@@ -1816,6 +1815,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		-- The variable represents the class - not an instance of it!
 		local v = declare_var(stat, scope, name, is_local, class_type)
+		D.assert(v.type == class_type)
 	end
 
 

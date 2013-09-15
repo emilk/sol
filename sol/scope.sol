@@ -250,7 +250,7 @@ function Scope:add_global(v)
 end
 
 
-function Scope:create_global(name: string, where: string, type: T.Type?) -> Variable
+function Scope:create_global(name: string, where: string, typ: T.Type?) -> Variable
 	assert(not self.fixed)
 
 	local v = {
@@ -259,7 +259,7 @@ function Scope:create_global(name: string, where: string, type: T.Type?) -> Vari
 		is_global  = true,
 		references = 1,
 		where      = where,
-		type       = type,
+		type       = typ,
 	}
 
 	self:add_global(v)

@@ -785,22 +785,12 @@ end
 function T.format_type(root: T.Type, verbose: bool?)
 	if verbose == nil then verbose = false end
 
-	var rope = {} : [string]
-	var named = {} : {table => string}
 	var written_objs = {} : {T.Object}
-
-	local function table_name(t: table)
-		return tostring(t):gsub("%W", "_")
-	end
-
-	local output_types
+	local INDENTATION = '   '
+	local output_types, output_obj
 
 	local function output(typ: T.Type, indent: string) -> string
-		if named[typ] then
-			return named[typ]
-		end
-
-		local next_indent = indent .. '   '
+		local next_indent = indent .. INDENTATION
 
 		if typ.tag == 'any' then
 			return 'any'
@@ -837,85 +827,12 @@ function T.format_type(root: T.Type, verbose: bool?)
 			if written_objs[obj] then
 				return '<!RECURSION!>'
 			end
+
 			written_objs[obj] = true
+			var ret = output_obj(obj, indent)
+			written_objs[obj] = nil
 
-			if not obj.namespace
-			   and not obj.metatable
-			   and U.table_empty(obj.members)
-			then
-				return '{ }'
-				--return '['..tostring(obj)..'] { }' -- great for debugging
-			else
-				local str = ''
-				if obj.namespace then
-					str = str .. next_indent .. '-- Types:\n'
-
-					var<T.Typelist> type_list = {}
-					for k,v in pairs(obj.namespace) do
-						table.insert(type_list, {name = k, type = v})
-					end
-					table.sort(type_list, function(a,b) return a.name < b.name end)
-					--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
-					for _,m in ipairs(type_list) do
-						str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n"
-					end
-				end
-
-				if not U.table_empty(obj.members) then
-					if str ~= '' then
-						str = str .. '\n' .. next_indent .. '-- Members:\n'
-					end
-
-					var<[{name:string, type:T.Type}]> mem_list = {}
-					var widest_name = 0
-					for k,v in pairs(obj.members) do
-						table.insert(mem_list, {name = k, type = v})
-						widest_name = math.max(widest_name, #k)
-					end
-					table.sort(mem_list, function(a,b) return a.name < b.name end)
-					for _,m in ipairs(mem_list) do
-						str = str .. next_indent .. m.name .. ": "
-
-						-- Align:
-						for i = #m.name, widest_name - 1 do
-							str = str .. ' '
-						end
-
-						str = str .. output(m.type, next_indent) .. ";\n"
-					end
-				end
-
-				if obj.metatable then
-					if str ~= '' then
-						--str = str .. '\n' .. next_indent .. '-- metatable:\n'
-						str = str .. '\n'
-					end
-
-					str = str .. next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n'
-				end
-
-				if obj.class_type then
-					if str ~= '' then str = str .. '\n' end
-					str = str .. next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n'
-				end
-
-				if obj.instance_type then
-					if str ~= '' then str = str .. '\n' end
-					str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n'
-				end
-
-				local full = '{\n' .. str .. indent ..'}'
-
-				full = '<'..tostring(obj)..'> '..full -- great for debugging
-
-				if obj.class_type then
-					return '<instance> ' .. full
-				elseif obj.instance_type then
-					return '<class> ' .. full
-				else
-					return full
-				end
-			end
+			return ret
 
 		elseif typ.tag == 'list' then
 			return '[' .. output(typ.type, next_indent) .. ']'
@@ -975,6 +892,90 @@ function T.format_type(root: T.Type, verbose: bool?)
 		end
 	end
 
+
+	output_obj = function(obj: T.Object, indent: string) -> string
+		local next_indent = indent .. INDENTATION
+
+		if not obj.namespace
+		   and not obj.metatable
+		   and U.table_empty(obj.members)
+		then
+			return '{ }'
+			--return '['..tostring(obj)..'] { }' -- great for debugging
+		else
+			local str = ''
+			if obj.namespace then
+				str = str .. next_indent .. '-- Types:\n'
+
+				var<T.Typelist> type_list = {}
+				for k,v in pairs(obj.namespace) do
+					table.insert(type_list, {name = k, type = v})
+				end
+				table.sort(type_list, function(a,b) return a.name < b.name end)
+				--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
+				for _,m in ipairs(type_list) do
+					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n"
+				end
+			end
+
+			if not U.table_empty(obj.members) then
+				if str ~= '' then
+					str = str .. '\n' .. next_indent .. '-- Members:\n'
+				end
+
+				var<[{name:string, type:T.Type}]> mem_list = {}
+				var widest_name = 0
+				for k,v in pairs(obj.members) do
+					table.insert(mem_list, {name = k, type = v})
+					widest_name = math.max(widest_name, #k)
+				end
+				table.sort(mem_list, function(a,b) return a.name < b.name end)
+				for _,m in ipairs(mem_list) do
+					str = str .. next_indent .. m.name .. ": "
+
+					-- Align:
+					for i = #m.name, widest_name - 1 do
+						str = str .. ' '
+					end
+
+					str = str .. output(m.type, next_indent) .. ";\n"
+				end
+			end
+
+			if obj.metatable then
+				if str ~= '' then
+					--str = str .. '\n' .. next_indent .. '-- metatable:\n'
+					str = str .. '\n'
+				end
+
+				str = str .. next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n'
+			end
+
+			if obj.class_type then
+				if str ~= '' then str = str .. '\n' end
+				str = str .. next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n'
+			end
+
+			if obj.instance_type then
+				if str ~= '' then str = str .. '\n' end
+				str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n'
+			end
+
+			local full = '{\n' .. str .. indent ..'}'
+
+			full = '<'..tostring(obj)..'>'..full -- great for debugging
+
+			if obj.class_type then
+				return '<instance>' .. full
+			elseif obj.instance_type then
+				return '<class>' .. full
+			else
+				return full
+			end
+		end
+	end
+
+
 	output_types = function(typelist: [T.Type], indent: string)
 		if #typelist == 0 then
 			return "void [EMPTY TYPE-LIST]"
@@ -992,9 +993,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 		end
 	end
 
-	rope[#rope + 1] = output(root, "")
-
-	return table.concat(rope)
+	return output(root, "")
 end
 
 
@@ -1533,5 +1532,8 @@ function T.is_class(typ: T.Object) -> bool
 	return typ.instance_type ~= nil
 end
 
+function T.should_extend_in_situ(typ: T.Type) -> bool
+	return T.is_instance(typ)
+end
 
 return T

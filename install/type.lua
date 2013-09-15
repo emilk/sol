@@ -785,22 +785,12 @@ end
 function T.format_type(root, verbose)
 	if verbose == nil then verbose = false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-	local rope = {} --[[SOL OUTPUT--]] 
-	local named = {} --[[SOL OUTPUT--]] 
 	local written_objs = {} --[[SOL OUTPUT--]] 
-
-	local function table_name(t)
-		return tostring(t):gsub("%W", "_") --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-	local output_types --[[SOL OUTPUT--]] 
+	local INDENTATION = '   ' --[[SOL OUTPUT--]] 
+	local output_types, output_obj --[[SOL OUTPUT--]] 
 
 	local function output(typ, indent)
-		if named[typ] then
-			return named[typ] --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
-		local next_indent = indent .. '   ' --[[SOL OUTPUT--]] 
+		local next_indent = indent .. INDENTATION --[[SOL OUTPUT--]] 
 
 		if typ.tag == 'any' then
 			return 'any' --[[SOL OUTPUT--]] 
@@ -837,85 +827,12 @@ function T.format_type(root, verbose)
 			if written_objs[obj] then
 				return '<!RECURSION!>' --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
+
 			written_objs[obj] = true --[[SOL OUTPUT--]] 
+			local ret = output_obj(obj, indent) --[[SOL OUTPUT--]] 
+			written_objs[obj] = nil --[[SOL OUTPUT--]] 
 
-			if not obj.namespace
-			   and not obj.metatable
-			   and U.table_empty(obj.members)
-			then
-				return '{ }' --[[SOL OUTPUT--]] 
-				--return '['..tostring(obj)..'] { }' -- great for debugging
-			else
-				local str = '' --[[SOL OUTPUT--]] 
-				if obj.namespace then
-					str = str .. next_indent .. '-- Types:\n' --[[SOL OUTPUT--]] 
-
-					local type_list = {} --[[SOL OUTPUT--]] 
-					for k,v in pairs(obj.namespace) do
-						table.insert(type_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-					table.sort(type_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
-					--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
-					for _,m in ipairs(type_list) do
-						str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n" --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				if not U.table_empty(obj.members) then
-					if str ~= '' then
-						str = str .. '\n' .. next_indent .. '-- Members:\n' --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-
-					local mem_list = {} --[[SOL OUTPUT--]] 
-					local widest_name = 0 --[[SOL OUTPUT--]] 
-					for k,v in pairs(obj.members) do
-						table.insert(mem_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
-						widest_name = math.max(widest_name, #k) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-					table.sort(mem_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
-					for _,m in ipairs(mem_list) do
-						str = str .. next_indent .. m.name .. ": " --[[SOL OUTPUT--]] 
-
-						-- Align:
-						for i = #m.name, widest_name - 1 do
-							str = str .. ' ' --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
-
-						str = str .. output(m.type, next_indent) .. ";\n" --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				if obj.metatable then
-					if str ~= '' then
-						--str = str .. '\n' .. next_indent .. '-- metatable:\n'
-						str = str .. '\n' --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-
-					str = str .. next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n' --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				if obj.class_type then
-					if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-					str = str .. next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n' --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				if obj.instance_type then
-					if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-					str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n' --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				local full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
-
-				full = '<'..tostring(obj)..'> '..full --[[SOL OUTPUT--]]  -- great for debugging
-
-				if obj.class_type then
-					return '<instance> ' .. full --[[SOL OUTPUT--]] 
-				elseif obj.instance_type then
-					return '<class> ' .. full --[[SOL OUTPUT--]] 
-				else
-					return full --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+			return ret --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'list' then
 			return '[' .. output(typ.type, next_indent) .. ']' --[[SOL OUTPUT--]] 
@@ -975,6 +892,90 @@ function T.format_type(root, verbose)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
+
+	output_obj = function(obj, indent)
+		local next_indent = indent .. INDENTATION --[[SOL OUTPUT--]] 
+
+		if not obj.namespace
+		   and not obj.metatable
+		   and U.table_empty(obj.members)
+		then
+			return '{ }' --[[SOL OUTPUT--]] 
+			--return '['..tostring(obj)..'] { }' -- great for debugging
+		else
+			local str = '' --[[SOL OUTPUT--]] 
+			if obj.namespace then
+				str = str .. next_indent .. '-- Types:\n' --[[SOL OUTPUT--]] 
+
+				local type_list = {} --[[SOL OUTPUT--]] 
+				for k,v in pairs(obj.namespace) do
+					table.insert(type_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+				table.sort(type_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
+				--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
+				for _,m in ipairs(type_list) do
+					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n" --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			if not U.table_empty(obj.members) then
+				if str ~= '' then
+					str = str .. '\n' .. next_indent .. '-- Members:\n' --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+				local mem_list = {} --[[SOL OUTPUT--]] 
+				local widest_name = 0 --[[SOL OUTPUT--]] 
+				for k,v in pairs(obj.members) do
+					table.insert(mem_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
+					widest_name = math.max(widest_name, #k) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+				table.sort(mem_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
+				for _,m in ipairs(mem_list) do
+					str = str .. next_indent .. m.name .. ": " --[[SOL OUTPUT--]] 
+
+					-- Align:
+					for i = #m.name, widest_name - 1 do
+						str = str .. ' ' --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
+					str = str .. output(m.type, next_indent) .. ";\n" --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			if obj.metatable then
+				if str ~= '' then
+					--str = str .. '\n' .. next_indent .. '-- metatable:\n'
+					str = str .. '\n' --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+				str = str .. next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n' --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			if obj.class_type then
+				if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+				str = str .. next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n' --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			if obj.instance_type then
+				if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+				str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n' --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			local full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
+
+			full = '<'..tostring(obj)..'>'..full --[[SOL OUTPUT--]]  -- great for debugging
+
+			if obj.class_type then
+				return '<instance>' .. full --[[SOL OUTPUT--]] 
+			elseif obj.instance_type then
+				return '<class>' .. full --[[SOL OUTPUT--]] 
+			else
+				return full --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+
 	output_types = function(typelist, indent)
 		if #typelist == 0 then
 			return "void [EMPTY TYPE-LIST]" --[[SOL OUTPUT--]] 
@@ -992,9 +993,7 @@ function T.format_type(root, verbose)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	rope[#rope + 1] = output(root, "") --[[SOL OUTPUT--]] 
-
-	return table.concat(rope) --[[SOL OUTPUT--]] 
+	return output(root, "") --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -1533,6 +1532,9 @@ function T.is_class(typ)
 	return typ.instance_type ~= nil --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
+function T.should_extend_in_situ(typ)
+	return T.is_instance(typ) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 return T --[[SOL OUTPUT--]] 
  --[[SOL OUTPUT--]] 

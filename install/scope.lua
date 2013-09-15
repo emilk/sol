@@ -250,7 +250,7 @@ function Scope:add_global(v)
 end --[[SOL OUTPUT--]] 
 
 
-function Scope:create_global(name, where, type)
+function Scope:create_global(name, where, typ)
 	assert(not self.fixed) --[[SOL OUTPUT--]] 
 
 	local v = {
@@ -259,7 +259,7 @@ function Scope:create_global(name, where, type)
 		is_global  = true,
 		references = 1,
 		where      = where,
-		type       = type,
+		type       = typ,
 	} --[[SOL OUTPUT--]] 
 
 	self:add_global(v) --[[SOL OUTPUT--]] 

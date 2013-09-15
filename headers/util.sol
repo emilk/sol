@@ -1,6 +1,6 @@
--- Compiled from sol/util.sol at 2013 Sep 15  20:03:28
+-- Compiled from sol/util.sol at 2013 Sep 15  22:21:02
 
-return <table: 0x003d7808> {
+return <table: 0x005f2380>{
    const:             function(table: table) -> object;
    ellipsis:          function(msg: string, max_len: int?) -> string;
    file_exists:       function(path: string) -> bool;
