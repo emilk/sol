@@ -703,6 +703,10 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 						return T.Any --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
+					if obj.members[id] then
+						report_error("Object member '%s' declared twice", id) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
 					obj.members[id] = type --[[SOL OUTPUT--]] 
 
 					if not tok:consume_symbol(',') and not tok:consume_symbol(';') then

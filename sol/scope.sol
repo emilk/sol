@@ -258,7 +258,6 @@ function Scope:create_global(name: string, where: string, type: T.Type?) -> Vari
 		name       = name,
 		is_global  = true,
 		references = 1,
-		type       = nil,
 		where      = where,
 		type       = type,
 	}

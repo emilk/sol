@@ -1328,8 +1328,9 @@ local function analyze(ast, filename, on_require, settings)
 				report_spam(expr, "Explicit type missing - is this an empty table, list, map, object - what?") --[[SOL OUTPUT--]] 
 				return T.create_empty_table() --[[SOL OUTPUT--]] 
 			else
-				local   key_type    = T.make_variant() --[[SOL OUTPUT--]]  -- in maps
-				local   value_type  = T.make_variant() --[[SOL OUTPUT--]] 
+				local map_keys    = {} --[[SOL OUTPUT--]] 
+				local key_type    = T.make_variant() --[[SOL OUTPUT--]]  -- in maps
+				local value_type  = T.make_variant() --[[SOL OUTPUT--]] 
 				local obj_members = {} --[[SOL OUTPUT--]] 
 
 				local count = { ['key'] = 0, ['ident_key'] = 0, ['value'] = 0 } --[[SOL OUTPUT--]] 
@@ -1344,15 +1345,24 @@ local function analyze(ast, filename, on_require, settings)
 					value_type = T.extend_variant( value_type, this_val_type ) --[[SOL OUTPUT--]] 
 
 					if e.type == 'key' then
-						assert(e.key) --[[SOL OUTPUT--]] 
-						if not e.key.ast_type then
-							report_error(expr, "Bad map key: %s", expr2str(e.key)) --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
 						local this_key_type = analyze_expr_single(e.key, scope) --[[SOL OUTPUT--]] 
 						key_type = T.extend_variant( key_type, this_key_type ) --[[SOL OUTPUT--]] 
+
+						if type(this_key_type) == 'string' or
+						   type(this_key_type) == 'number' or
+						   type(this_key_type) == 'bool'
+						then
+							if map_keys[ this_key_type] then
+								report_error(e.value, "Map key '%s' declared twice", this_key_type) --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
+							map_keys[ this_key_type ] = true --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
 					if e.type == 'ident_key' then
+						if obj_members[ e.key ] then
+							report_error(e.value, "Object member '%s' declared twice", e.key) --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 						obj_members[ e.key ] = this_val_type --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 

@@ -258,7 +258,6 @@ function Scope:create_global(name, where, type)
 		name       = name,
 		is_global  = true,
 		references = 1,
-		type       = nil,
 		where      = where,
 		type       = type,
 	} --[[SOL OUTPUT--]] 

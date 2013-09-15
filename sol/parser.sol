@@ -703,6 +703,10 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 						return T.Any
 					end
 
+					if obj.members[id] then
+						report_error("Object member '%s' declared twice", id)
+					end
+
 					obj.members[id] = type
 
 					if not tok:consume_symbol(',') and not tok:consume_symbol(';') then

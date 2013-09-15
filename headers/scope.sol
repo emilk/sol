@@ -1,6 +1,6 @@
--- Compiled from sol/scope.sol at 2013 Sep 15  19:45:19
+-- Compiled from sol/scope.sol at 2013 Sep 15  20:03:28
 
-global typedef Variable = <table: 0x013232c8> {
+global typedef Variable = <table: 0x01315600> {
    is_global:  bool;
    name:       string;
    namespace:  {string => Type}?;
@@ -10,13 +10,13 @@ global typedef Variable = <table: 0x013232c8> {
    where:      string;
 }
 
-global typedef Scope = <instance> <table: 0x0184f520> {
+global typedef Scope = <instance> <table: 0x01837868> {
    fixed: true?;
 
    !! class_type:    { }
 }
 
-global Scope : <table: 0x018aaca0> {
+global Scope : <table: 0x0188fab0> {
    add_global:          function(self, v) -> void [EMPTY TYPE-LIST];
    add_global_type:     function(self, name: string, typ: Type) -> void [EMPTY TYPE-LIST];
    create_global:       function(self, name: string, where: string, type: Type?) -> Variable;
@@ -38,7 +38,7 @@ global Scope : <table: 0x018aaca0> {
    get_type:            function(self, name: string) -> Type?;
    get_var:             function(self, name: string) -> Variable?;
    get_var_args:        function(self) -> Type?;
-   global_scope:        <instance> <table: 0x0184f520> {
+   global_scope:        <instance> <table: 0x01837868> {
       fixed: true?;
 
       !! class_type:    { }

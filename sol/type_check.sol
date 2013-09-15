@@ -1328,9 +1328,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_spam(expr, "Explicit type missing - is this an empty table, list, map, object - what?")
 				return T.create_empty_table()
 			else
-				var<T.Type>   key_type    = T.make_variant() -- in maps
-				var<T.Type>   value_type  = T.make_variant()
-				var<[T.Type]> obj_members = {}
+				var map_keys    = {} : {string or number or bool}
+				var key_type    = T.make_variant() -- in maps
+				var value_type  = T.make_variant()
+				var obj_members = {} : {string => T.Type}
 
 				local count = { ['key'] = 0, ['ident_key'] = 0, ['value'] = 0 }
 				for _,e in pairs(expr.entry_list) do
@@ -1344,15 +1345,24 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					value_type = T.extend_variant( value_type, this_val_type )
 
 					if e.type == 'key' then
-						assert(e.key)
-						if not e.key.ast_type then
-							report_error(expr, "Bad map key: %s", expr2str(e.key))
-						end
 						local this_key_type = analyze_expr_single(e.key, scope)
 						key_type = T.extend_variant( key_type, this_key_type )
+
+						if type(this_key_type) == 'string' or
+						   type(this_key_type) == 'number' or
+						   type(this_key_type) == 'bool'
+						then
+							if map_keys[ this_key_type] then
+								report_error(e.value, "Map key '%s' declared twice", this_key_type)
+							end
+							map_keys[ this_key_type ] = true
+						end
 					end
 
 					if e.type == 'ident_key' then
+						if obj_members[ e.key ] then
+							report_error(e.value, "Object member '%s' declared twice", e.key)
+						end
 						obj_members[ e.key ] = this_val_type
 					end
 				end

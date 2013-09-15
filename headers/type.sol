@@ -1,17 +1,17 @@
--- Compiled from sol/type.sol at 2013 Sep 15  19:45:19
+-- Compiled from sol/type.sol at 2013 Sep 15  20:03:28
 
-return <table: 0x0184d920> {
+return <table: 0x01834ec0> {
    -- Types:
-   typedef Any = <table: 0x0151e118> {
+   typedef Any = <table: 0x0150f618> {
       pre_analyzed: bool?;
       tag:          "any";
    };
-   typedef False = <table: 0x01520500> {
+   typedef False = <table: 0x01511a00> {
       pre_analyzed: bool?;
       tag:          "false";
    };
-   typedef Function = <table: 0x01524708> {
-      args:           [<table: 0x015247f0> {
+   typedef Function = <table: 0x01515b20> {
+      args:           [<table: 0x01515c08> {
             name: string?;
             type: Type?;
          }];
@@ -22,7 +22,7 @@ return <table: 0x0184d920> {
       tag:            "function";
       vararg:         VarArgs?;
    };
-   typedef Identifier = <table: 0x01525e40> {
+   typedef Identifier = <table: 0x01517258> {
       first_usage:  string?;
       name:         string;
       pre_analyzed: bool?;
@@ -32,40 +32,40 @@ return <table: 0x0184d920> {
       var_:         Variable?;
       where:        string;
    };
-   typedef Int = <table: 0x01520ab0> {
+   typedef Int = <table: 0x01511fb0> {
       pre_analyzed: bool?;
       tag:          "int";
    };
-   typedef IntLiteral = <table: 0x0151e6c8> {
+   typedef IntLiteral = <table: 0x0150fbc8> {
       pre_analyzed: bool?;
       tag:          "int_literal";
       value:        int;
    };
-   typedef List = <table: 0x01522170> {
+   typedef List = <table: 0x01513670> {
       pre_analyzed: bool?;
       tag:          "list";
       type:         Type;
    };
-   typedef Map = <table: 0x01522818> {
+   typedef Map = <table: 0x01513d18> {
       key_type:     Type;
       pre_analyzed: bool?;
       tag:          "map";
       value_type:   Type;
    };
-   typedef Nil = <table: 0x0151f928> {
+   typedef Nil = <table: 0x01510e28> {
       pre_analyzed: bool?;
       tag:          "nil";
    };
-   typedef Num = <table: 0x01521060> {
+   typedef Num = <table: 0x01512560> {
       pre_analyzed: bool?;
       tag:          "num";
    };
-   typedef NumLiteral = <table: 0x0151ece8> {
+   typedef NumLiteral = <table: 0x015101e8> {
       pre_analyzed: bool?;
       tag:          "num_literal";
       value:        number;
    };
-   typedef Object = <table: 0x01523120> {
+   typedef Object = <table: 0x01514538> {
       derived:      [Identifier]?;
       members:      {string => Type};
       metatable:    Object?;
@@ -73,42 +73,42 @@ return <table: 0x0184d920> {
       pre_analyzed: bool?;
       tag:          "object";
    };
-   typedef String = <table: 0x01521610> {
+   typedef String = <table: 0x01512b10> {
       pre_analyzed: bool?;
       tag:          "string";
    };
-   typedef StringLiteral = <table: 0x0151f308> {
+   typedef StringLiteral = <table: 0x01510808> {
       pre_analyzed: bool?;
       tag:          "string_literal";
       value:        string;
    };
-   typedef Table = <table: 0x01521bc0> {
+   typedef Table = <table: 0x015130c0> {
       pre_analyzed: bool?;
       tag:          "table";
    };
-   typedef True = <table: 0x0151fed8> {
+   typedef True = <table: 0x015113d8> {
       pre_analyzed: bool?;
       tag:          "true";
    };
-   typedef Type = <table: 0x0151d648> {
+   typedef Type = <table: 0x0150eb48> {
       pre_analyzed: bool?;
       tag:          TypeID;
    };
    typedef TypeID = "any" or "int_literal" or "num_literal" or "string_literal" or "nil" or "true" or "false" or "int" or "num" or "string" or "table" or "list" or "map" or "object" or "function" or "variant" or "identifier" or "varargs";
    typedef Typelist = [Type];
-   typedef VarArgs = <table: 0x01524060> {
+   typedef VarArgs = <table: 0x01515478> {
       pre_analyzed: bool?;
       tag:          "varargs";
       type:         Type;
    };
-   typedef Variant = <table: 0x01525738> {
+   typedef Variant = <table: 0x01516b50> {
       pre_analyzed: bool?;
       tag:          "variant";
       variants:     [Type];
    };
 
    -- Members:
-   Any:                 <table: 0x0170d7e0> {
+   Any:                 <table: 0x016fe2d8> {
       tag: "any";
    };
    AnyTypeList:         table;
