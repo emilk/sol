@@ -1,8 +1,10 @@
--- Compiled from sol/util.sol
-{
+-- Compiled from sol/util.sol at 2013 Sep 15  17:05:59
+
+return {
    const:             function(table: table) -> object;
    ellipsis:          function(msg: string, max_len: int?) -> string;
    file_exists:       function(path: string) -> bool;
+   indent:            function(str: string) -> string;
    is_array:          function(val) -> bool;
    list_concat:       function(a: [any], b: [any]) -> [any];
    list_join:         function(out: [any], in_table: [any]) -> void [EMPTY TYPE-LIST];

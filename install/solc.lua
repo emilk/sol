@@ -62,9 +62,10 @@ local printf_err = U.printf_err --[[SOL OUTPUT--]]
 
 ------------------------------------------------
 
-_G.g_local_parse = false --[[SOL OUTPUT--]]  -- If true, ignore 'require'
-_G.g_spam = false --[[SOL OUTPUT--]] 
-_G.g_ignore_errors = false --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+_G.g_local_parse    = false --[[SOL OUTPUT--]]  -- If true, ignore 'require'
+_G.g_spam           = false --[[SOL OUTPUT--]] 
+_G.g_ignore_errors  = false --[[SOL OUTPUT--]] 
+_G.g_break_on_error = true --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 
@@ -285,9 +286,19 @@ local function output_module(info, path_in, path_out, header_path_out)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
+
 	if info.type and header_path_out then
-		local type_name = T.name(info.type) --[[SOL OUTPUT--]] 
-		local out_text = '-- Compiled from ' .. path_in .. '\n' .. type_name --[[SOL OUTPUT--]] 
+		local out_text = "-- Compiled from "..path_in.." at "..os.date("%Y %b %d  %X")..'\n\n' --[[SOL OUTPUT--]] 
+
+		for name,type in pairs(info.global_typedefs) do
+			out_text = out_text .. "global typedef "..name.." = "..T.name(type).."\n\n" --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		for _,v in ipairs(info.global_vars) do
+			out_text = out_text .. "global "..v.name.." : "..T.name(v.type).."\n\n" --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		out_text = out_text .. "return " .. T.name(info.type) --[[SOL OUTPUT--]] 
 		U.write_file(header_path_out, out_text) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 

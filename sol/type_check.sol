@@ -93,9 +93,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		for i = 1, select( '#', ... ) do
 			local a = select( i, ... )
 			if type(a) == 'table' and a.ast_type then
-				a = format_expr(a)
+				a = '\n'..U.indent( format_expr(a) )..'\n'
 			elseif T.is_type(a) or T.is_type_list(a) then
-				a = T.name(a)
+				a = '\n'..U.indent( T.name(a) )..'\n'
 			elseif type( a ) ~= 'string' and type( a ) ~= 'number' then
 				-- bool/table
 				a = tostring( a )
@@ -175,7 +175,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 
-	local function declare_local(node: P.Node, scope: Scope, name: string) -> Variable
+	local function declare_local(node: P.Node, scope: Scope, name: string, typ: T.Type?) -> Variable
 		D.assert(node and scope and name)
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
@@ -197,10 +197,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return old
 		end
 
-		return scope:create_local(name, where_is(node))
+		local v = scope:create_local(name, where_is(node))
+		v.type = typ
+		return v
 	end
 
-	local function declare_global(node, scope, name: string) -> Variable
+	local function declare_global(node, scope: Scope, name: string, typ: T.Type?) -> Variable
 		D.assert(node and scope and scope.parent)
 		D.assert(type(name) == 'string')
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
@@ -227,14 +229,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return old
 		end
 
-		return scope:create_global(name, where_is(node))
+		return scope:create_global(name, where_is(node), typ)
 	end
 
-	local function declare_var(node: P.Node, scope: Scope, name: string, is_local: bool) -> Variable
+	local function declare_var(node: P.Node, scope: Scope, name: string, is_local: bool, typ: T.Type?) -> Variable
 		if is_local then
-			return declare_local(node, scope, name)
+			return declare_local(node, scope, name, typ)
 		else
-			return declare_global(node, scope, name)
+			return declare_global(node, scope, name, typ)
 		end
 	end
 
@@ -333,7 +335,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		assert(node.return_types == nil or T.is_type_list(node.return_types))
 
 		var<T.Function> fun_t = {
-			tag = "function",
+			tag = 'function',
 			args = {},
 			rets = node.return_types  -- If any
 		}
@@ -412,7 +414,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function do_indexing(node: P.Node, type: T.Type, name: string) -> T.Type?
+	local function do_member_lookup(node: P.Node, type: T.Type, name: string) -> T.Type?
 		--report_spam(node, "Looking for member %q in %s", name, type)
 
 		type = T.follow_identifiers(type)
@@ -421,7 +423,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local indexed_type = nil
 
 			for _,v in ipairs(type.variants) do
-				indexed_type = T.variant(indexed_type, do_indexing(node, v, name))
+				indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name))
 			end
 
 			return indexed_type
@@ -443,16 +445,20 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						end
 					else
 						report_spam(node, "Looking up member %q in metatbale __index", name)
-						return do_indexing(node, indexer, name)
+						return do_member_lookup(node, indexer, name)
 					end
 				end
+			end
+
+			if not indexed_type and obj.class_type then
+				return do_member_lookup(node, obj.class_type, name)
 			end
 
 			indexed_type = T.broaden( indexed_type ) -- Previous value may have been 'false' - we should allow 'true' now:
 
 			if obj.derived then
 				for _,v in ipairs(obj.derived) do
-					indexed_type = T.variant(indexed_type, do_indexing(node, v, name))
+					indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name))
 				end
 			end
 
@@ -483,9 +489,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					elseif typ.tag == 'object' then
 						return { T.String, T.Any }
 					elseif typ.tag == 'map' then
-						assert( typ.key_type )
-						assert( typ.value_type )
-						return { typ.key_type, typ.value_type }
+						if typ.value_type == T.True then
+							-- A set!
+							return { typ.key_type }
+						else
+							return { typ.key_type, typ.value_type }
+						end
 					elseif typ.tag == 'list' then
 						--report_warning(expr, "Calling 'pairs' on a list - did you mean to use 'ipairs'?")
 						report_error(expr, "Calling 'pairs' on a list - did you mean to use 'ipairs'?")
@@ -688,7 +697,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return
 		end
 
-		target_type = U.shallow_clone(target_type)
+		if not T.is_instance(target_type) then
+			target_type = U.shallow_clone(target_type)
+		end
 		target_type.metatable = arg_ts[2]
 
 		report_spam(expr, "Setting metatable")
@@ -733,6 +744,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		var<T.Function> fun_t = typ
+		D.assert(fun_t.name)
 
 		--------------------------------------------------------
 		-- Check special functions:
@@ -754,16 +766,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			-- generators returns function that returns 'it_types':
 			local it_types = generator_types(expr, fun_t, arg_ts)
 
-			if it_types ~= T.AnyTypeList then
-				--report_info(expr, "Generator recognized: %s", it_types)
-			end
-
-			--var<T.Function> ret = {  -- FIXME
-			local ret = {
+			var<T.Function> ret = {
 				tag    = 'function',
 				args   = {},
-				vararg = T.Any,
+				vararg = { tag='varargs', type=T.Any },
 				rets   = it_types,
+				name   = '[pairs/ipairs iterator]',
 			}
 			return { ret }
 		end
@@ -793,6 +801,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	-- Returns a list of types
 	local function call_function(expr: P.Node, scope: Scope) -> T.Typelist
+		if expr.where:match("type_check.sol:184") then
+			D.break_()
+		end
+
 		--------------------------------------------------------
 		-- Pick out function type:
 		report_spam(expr, "Analyzing function base...")
@@ -817,7 +829,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			assert(arg_ts[i], "missing type")
 		end
 
-
 		--------------------------------------------------------
 		-- Do we know the function type?
 
@@ -825,6 +836,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			typ = T.follow_identifiers(typ)
 
 			if T.is_any(typ) then
+				-- TODO: Upgrade to a warning!
 				report_spam(expr, "Function call cannot be deduced - calling something of unknown type: '%s'", fun_type)
 				return T.AnyTypeList
 
@@ -928,9 +940,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	analyze_expr_unchecked = function(expr: P.Node, scope: Scope) -> T.Typelist or T.Type, Variable?
 		assert(expr)
 		assert(type(expr) == 'table')
-		if not expr.ast_type then
-			error("Not an expression: " .. expr2str(expr))
-		end
 		assert(expr.ast_type)
 
 		report_spam(expr, "Analyzing %s...", expr.ast_type)
@@ -1253,6 +1262,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif expr.ast_type == 'MemberExpr' then
+			if expr.where:match("type_check.sol:182") then
+				D.break_()
+			end
+
 			-- .  or  :
 			local base_t = analyze_expr_single(expr.base, scope)
 			local name = expr.ident.data
@@ -1260,7 +1273,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if T.is_any(base_t) then
 				return T.Any
 			else
-				local t = do_indexing(expr, base_t, name)
+				local t = do_member_lookup(expr, base_t, name)
 				if t then
 					return t
 				else
@@ -1274,6 +1287,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			-- Lambda function
 			local is_pre_analyze = false
 			local fun_t = analyze_function_head( expr, scope, is_pre_analyze )
+			fun_t.name = '[lambda]'
 			analyze_function_body( expr, fun_t )
 			return fun_t
 
@@ -1422,7 +1436,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 	local function assign_to_obj_member(stat: P.Node, scope: Scope,
-		                                 is_pre_analyze: bool, is_declare: bool, extend_class: bool,
+		                                 is_pre_analyze: bool, is_declare: bool, extend_existing_type: bool,
 		                                 obj_t: T.Object, name: string, right_type: T.Type) -> T.Type
 	 											--> T.Type -- TODO: have this here
 
@@ -1433,7 +1447,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		if left_type and left_type.pre_analyzed then
 			if right_type.pre_analyzed and is_pre_analyze then
-				report_error(stat, "Name clash?")
+				report_error(stat, "Name clash: %q", name)
 			else
 				D.assert(not right_type.pre_analyzed)
 			end
@@ -1480,7 +1494,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 			--]]
 
-			if extend_class then
+			if extend_existing_type then
 				report_spam(stat, "Extending class with %q", name)
 				obj_t.members[name] = right_type
 			else
@@ -1514,13 +1528,13 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if base_var then
 				-- self.foo = 32 will actually add the member 'foo' to the class definition!
 				-- think ctors and the like
-				var extend_class = (base_var.name == 'self')
+				var extend_existing_type = (base_var.name == 'self')
 
 
 				if not base_var.type or T.is_empty_table(base_var.type) then
 					report_spam(stat, "New object")
 					base_var.type = { tag = 'object', members = {} }
-					extend_class = false -- bad idea
+					extend_existing_type = false -- bad idea
 				end
 
 				report_spam(stat, "Assigning to %s.%s", base_var.name, name)
@@ -1528,7 +1542,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				local var_t = T.follow_identifiers(base_var.type)
 
 				if var_t.tag == 'variant' then
-					extend_class = false
+					--var extend_variant_member = extend_existing_type
+					var extend_variant_member = false
 
 					var variant = T.clone_variant(var_t)
 
@@ -1536,13 +1551,16 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					for i,v in ipairs(variant.variants) do
 						if v.tag == 'object' then
 							variant.variants[i] = assign_to_obj_member(stat, scope,
-								                                        is_pre_analyze, is_declare, extend_class,
+								                                        is_pre_analyze, is_declare, extend_variant_member,
 								                                        v, name, right_type)	
 						end
 					end
 				elseif var_t.tag == 'object' then
+					--var extend_object = extend_existing_type or T.is_class(var_t) or T.is_instance(var_t)
+					var extend_object = extend_existing_type -- TODO: the above
+
 					base_var.type = assign_to_obj_member(stat, scope,
-						                                 is_pre_analyze, is_declare, extend_class,
+						                                 is_pre_analyze, is_declare, extend_object,
 						                                 var_t, name, right_type)	
 					return
 				elseif T.is_any(var_t) then
@@ -1761,8 +1779,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		-------------------------------------------------
 		-- Now for the variable:
 
-		local v = declare_var(stat, scope, name, is_local)
-		v.type = class_type  -- The variable represents the class - not an instance of it!
+		-- The variable represents the class - not an instance of it!
+		local v = declare_var(stat, scope, name, is_local, class_type)
 	end
 
 
@@ -2001,8 +2019,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				--]]
 				report_spam(stat, "free function, name: %q", fun_t.name)
 
-				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local)
-				v.type = fun_t
+				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t)
 			end
 
 			-- Now analyze body:
@@ -2154,6 +2171,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze )
 						fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
+						fun_t.name = var_name
 
 						v.type = fun_t
 
@@ -2191,9 +2209,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				]]
 				--[[
 				report_spam(stat, "Pre-declaring function %q", fun_t.name)
-				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local)
+				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t)
 				v.forward_declared = true
-				v.type = fun_t
 				--]]
 			end
 		end
@@ -2232,7 +2249,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	local top_scope = ast.scope  -- HACK
 	local module_function = {
-		tag = "function",
+		tag = 'function',
 		args = {}
 		-- name = ???
 		-- rets = ???

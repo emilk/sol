@@ -62,9 +62,10 @@ local printf_err = U.printf_err
 
 ------------------------------------------------
 
-_G.g_local_parse = false -- If true, ignore 'require'
-_G.g_spam = false
-_G.g_ignore_errors = false
+_G.g_local_parse    = false -- If true, ignore 'require'
+_G.g_spam           = false
+_G.g_ignore_errors  = false
+_G.g_break_on_error = true
 
 
 typedef parse_info = {
@@ -285,9 +286,19 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 		end
 	end
 
+
 	if info.type and header_path_out then
-		local type_name = T.name(info.type)
-		var out_text = '-- Compiled from ' .. path_in .. '\n' .. type_name
+		var out_text = "-- Compiled from "..path_in.." at "..os.date("%Y %b %d  %X")..'\n\n'
+
+		for name,type in pairs(info.global_typedefs) do
+			out_text = out_text .. "global typedef "..name.." = "..T.name(type).."\n\n"
+		end
+
+		for _,v in ipairs(info.global_vars) do
+			out_text = out_text .. "global "..v.name.." : "..T.name(v.type).."\n\n"
+		end
+
+		out_text = out_text .. "return " .. T.name(info.type)
 		U.write_file(header_path_out, out_text)
 	end
 end

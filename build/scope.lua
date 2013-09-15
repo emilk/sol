@@ -12,8 +12,9 @@ When parsign a module, there is a 'module_scope' whose parent is the 'global_sco
 User declared globals goes into the 'module_scope' and are marked as 'global'.
 --]]
 
-  Scope = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
-
+  Scope = {
+	-- TODO: static members here, i.e. global_scope
+} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 
@@ -27,7 +28,7 @@ User declared globals goes into the 'module_scope' and are marked as 'global'.
 
 
 function Scope.new(parent)
-	local s = {} --[[SOL OUTPUT--]] 	
+	local s = {} --[[SOL OUTPUT--]] 
 	setmetatable(s, { __index = Scope }) --[[SOL OUTPUT--]] 
 	s:init(parent) --[[SOL OUTPUT--]] 
 	return s --[[SOL OUTPUT--]] 
@@ -95,7 +96,7 @@ function Scope.create_global_scope()
 
 	for _,name in ipairs(functions) do
 		local fun_t = {
-			tag            = "function",
+			tag            = 'function',
 			args           = { },
 			vararg         = { tag = 'varargs', type = T.Any },
 			rets           = T.AnyTypeList,
@@ -112,7 +113,7 @@ function Scope.create_global_scope()
 	-- Ensure 'require' is recognized by TypeCheck.sol
 	local require = s:create_global( 'require', where ) --[[SOL OUTPUT--]] 
 	require.type = {
-		tag            = "function",
+		tag            = 'function',
 		args           = { { type = T.String } },
 		rets           = T.AnyTypeList,
 		name           = "require",
@@ -122,7 +123,7 @@ function Scope.create_global_scope()
 	-- Ensure 'pairs' and 'ipairs' are recognized by TypeCheck.sol
 	local pairs = s:create_global( 'pairs', where ) --[[SOL OUTPUT--]] 
 	pairs.type = {
-		tag            = "function",
+		tag            = 'function',
 		args           = { { type = T.Any } },
 		rets           = T.AnyTypeList,
 		intrinsic_name = "pairs",
@@ -131,7 +132,7 @@ function Scope.create_global_scope()
 
 	local ipairs_ = s:create_global( 'ipairs', where ) --[[SOL OUTPUT--]] 
 	ipairs_.type = {
-		tag            = "function",
+		tag            = 'function',
 		args           = { { type = T.List } },
 		rets           = T.AnyTypeList,
 		intrinsic_name = "ipairs",
@@ -140,7 +141,7 @@ function Scope.create_global_scope()
 
 	local setmetatable = s:create_global( 'setmetatable', where ) --[[SOL OUTPUT--]] 
 	setmetatable.type = {
-		tag            = "function",
+		tag            = 'function',
 		args           = { {  type = T.Table }, { type = T.Table } },
 		rets           = { T.Table },
 		intrinsic_name = "setmetatable",
@@ -149,7 +150,7 @@ function Scope.create_global_scope()
 
 	local type = s:create_global( 'type', where ) --[[SOL OUTPUT--]] 
 	type.type = {
-		tag            = "function",
+		tag            = 'function',
 		args           = { {        type = T.Any } },
 		rets           = { T.String },
 		intrinsic_name = "type",
@@ -233,7 +234,6 @@ function Scope:create_local(name, where)
 		name       = name,
 		is_global  = false,
 		references = 1,
-		type       = nil,
 		where      = where,
 	} --[[SOL OUTPUT--]] 
 

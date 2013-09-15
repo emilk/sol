@@ -1,5 +1,6 @@
--- Compiled from sol/type.sol
-{
+-- Compiled from sol/type.sol at 2013 Sep 15  17:05:59
+
+return {
    -- Types:
    typedef Any = {
       pre_analyzed: bool?;
@@ -15,7 +16,7 @@
             type: Type?;
          }];
       intrinsic_name: string?;
-      name:           string?;
+      name:           string;
       pre_analyzed:   bool?;
       rets:           [Type]?;
       tag:            "function";
@@ -118,9 +119,7 @@
    List:                object;
    Map:                 object;
    Nil:                 object;
-   Nilable:             {
-      tag: "any";
-   };
+   Nilable:             [!RECURSION!];
    Num:                 object;
    Object:              object;
    String:              object;
@@ -128,14 +127,8 @@
    True:                object;
    Uint:                object;
    Void:                table;
-   _empty_table:        {
-      tag: "table";
-   };
    all_variants:        function(typ: Type) -> function() -> Type?;
-   as_type_list:        function(t: Type or [Type]) -> Type or [Type] or [{
-                  pre_analyzed: bool?;
-                  tag:          TypeID;
-               } or [Type]];
+   as_type_list:        function(t: Type or [Type]) -> Type or [Type] or [[!RECURSION!] or [Type]];
    broaden:             function(t: Type?) -> Type?;
    clone_variant:       function(v) -> Variant;
    combine:             function(a: Type, b: Type) -> { };
@@ -147,18 +140,19 @@
    create_empty_table:  function() -> Type;
    extend_variant:      function(v, ... : varargs) -> any;
    extend_variant_one:  function(v: Variant, e: Type) -> Variant;
-   find:                function(t: Type, target: Type) -> {
-            pre_analyzed: bool?;
-            tag:          TypeID;
-         }?;
+   find:                function(t: Type, target: Type) -> [!RECURSION!]?;
    follow_identifiers:  function(t: Type, forgiving: bool?) -> Type;
+   format_type:         function(root: Type, verbose: bool?) -> void [EMPTY TYPE-LIST];
    from_num_literal:    function(str: string) -> IntLiteral or NumLiteral?;
    from_string_literal: function(str: string) -> StringLiteral;
    is_any:              function(a: Type) -> any;
+   is_atomic:           function(t: Type) -> bool;
    is_bool:             function(a: Type) -> any;
+   is_class:            function(typ: Object) -> bool;
    is_empty_table:      function(t: Type) -> bool;
+   is_instance:         function(typ: Object) -> bool;
    is_integral:         function(str: string) -> bool;
-   is_nilable:          function(a: Type) -> ...;
+   is_nilable:          function(a: Type) -> void [EMPTY TYPE-LIST];
    is_obj_obj:          function(d: Object, b: Object, problem_rope: [string]?) -> bool;
    is_type:             function(x) -> bool;
    is_type_list:        function(list) -> false or true;
@@ -168,13 +162,12 @@
    isa_raw:             function(d: Type, b: Type, problem_rope: [string]?) -> bool;
    isa_typelists:       function(d: [Type]?, b: [Type]?, problem_rope: [string]?) -> bool;
    make_variant:        function(... : varargs) -> Variant;
-   name:                function(typ: Type or [Type]?, indent: string?, verbose: bool?) -> ...;
-   name_verbose:        function(typ: Type or [Type]?) -> ...;
+   name:                function(typ: Type or [Type]?, verbose: bool?) -> string;
+   name_old:            function(typ: Type or [Type]?, indent: string?, verbose: bool?) -> string;
+   name_verbose:        function(typ: Type or [Type]?) -> string;
+   names:               function(typ: [Type], verbose: bool?) -> string;
    on_error:            function(fmt, ... : varargs) -> void [EMPTY TYPE-LIST];
    simplify:            function(t: Type) -> Type;
    variant:             function(a: Type?, b: Type?) -> Type?;
-   variant_remove:      function(t: Type, remove_this_type: Type) -> {
-         pre_analyzed: bool?;
-         tag:          TypeID;
-      };
+   variant_remove:      function(t: Type, remove_this_type: Type) -> [!RECURSION!];
 }

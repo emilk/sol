@@ -93,9 +93,9 @@ local function analyze(ast, filename, on_require, settings)
 		for i = 1, select( '#', ... ) do
 			local a = select( i, ... ) --[[SOL OUTPUT--]] 
 			if type(a) == 'table' and a.ast_type then
-				a = format_expr(a) --[[SOL OUTPUT--]] 
+				a = '\n'..U.indent( format_expr(a) )..'\n' --[[SOL OUTPUT--]] 
 			elseif T.is_type(a) or T.is_type_list(a) then
-				a = T.name(a) --[[SOL OUTPUT--]] 
+				a = '\n'..U.indent( T.name(a) )..'\n' --[[SOL OUTPUT--]] 
 			elseif type( a ) ~= 'string' and type( a ) ~= 'number' then
 				-- bool/table
 				a = tostring( a ) --[[SOL OUTPUT--]] 
@@ -175,7 +175,7 @@ local function analyze(ast, filename, on_require, settings)
 
 
 
-	local function declare_local(node, scope, name)
+	local function declare_local(node, scope, name, typ)
 		D.assert(node and scope and name) --[[SOL OUTPUT--]] 
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
@@ -197,10 +197,12 @@ local function analyze(ast, filename, on_require, settings)
 			return old --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		return scope:create_local(name, where_is(node)) --[[SOL OUTPUT--]] 
+		local v = scope:create_local(name, where_is(node)) --[[SOL OUTPUT--]] 
+		v.type = typ --[[SOL OUTPUT--]] 
+		return v --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local function declare_global(node, scope, name)
+	local function declare_global(node, scope, name, typ)
 		D.assert(node and scope and scope.parent) --[[SOL OUTPUT--]] 
 		D.assert(type(name) == 'string') --[[SOL OUTPUT--]] 
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
@@ -227,14 +229,14 @@ local function analyze(ast, filename, on_require, settings)
 			return old --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		return scope:create_global(name, where_is(node)) --[[SOL OUTPUT--]] 
+		return scope:create_global(name, where_is(node), typ) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local function declare_var(node, scope, name, is_local)
+	local function declare_var(node, scope, name, is_local, typ)
 		if is_local then
-			return declare_local(node, scope, name) --[[SOL OUTPUT--]] 
+			return declare_local(node, scope, name, typ) --[[SOL OUTPUT--]] 
 		else
-			return declare_global(node, scope, name) --[[SOL OUTPUT--]] 
+			return declare_global(node, scope, name, typ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -333,7 +335,7 @@ local function analyze(ast, filename, on_require, settings)
 		assert(node.return_types == nil or T.is_type_list(node.return_types)) --[[SOL OUTPUT--]] 
 
 		local fun_t = {
-			tag = "function",
+			tag = 'function',
 			args = {},
 			rets = node.return_types  -- If any
 		} --[[SOL OUTPUT--]] 
@@ -412,7 +414,7 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
-	local function do_indexing(node, type, name)
+	local function do_member_lookup(node, type, name)
 		--report_spam(node, "Looking for member %q in %s", name, type)
 
 		type = T.follow_identifiers(type) --[[SOL OUTPUT--]] 
@@ -421,7 +423,7 @@ local function analyze(ast, filename, on_require, settings)
 			local indexed_type = nil --[[SOL OUTPUT--]] 
 
 			for _,v in ipairs(type.variants) do
-				indexed_type = T.variant(indexed_type, do_indexing(node, v, name)) --[[SOL OUTPUT--]] 
+				indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name)) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			return indexed_type --[[SOL OUTPUT--]] 
@@ -443,16 +445,20 @@ local function analyze(ast, filename, on_require, settings)
 						end --[[SOL OUTPUT--]] 
 					else
 						report_spam(node, "Looking up member %q in metatbale __index", name) --[[SOL OUTPUT--]] 
-						return do_indexing(node, indexer, name) --[[SOL OUTPUT--]] 
+						return do_member_lookup(node, indexer, name) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			if not indexed_type and obj.class_type then
+				return do_member_lookup(node, obj.class_type, name) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			indexed_type = T.broaden( indexed_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
 
 			if obj.derived then
 				for _,v in ipairs(obj.derived) do
-					indexed_type = T.variant(indexed_type, do_indexing(node, v, name)) --[[SOL OUTPUT--]] 
+					indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name)) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -483,9 +489,12 @@ local function analyze(ast, filename, on_require, settings)
 					elseif typ.tag == 'object' then
 						return { T.String, T.Any } --[[SOL OUTPUT--]] 
 					elseif typ.tag == 'map' then
-						assert( typ.key_type ) --[[SOL OUTPUT--]] 
-						assert( typ.value_type ) --[[SOL OUTPUT--]] 
-						return { typ.key_type, typ.value_type } --[[SOL OUTPUT--]] 
+						if typ.value_type == T.True then
+							-- A set!
+							return { typ.key_type } --[[SOL OUTPUT--]] 
+						else
+							return { typ.key_type, typ.value_type } --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 					elseif typ.tag == 'list' then
 						--report_warning(expr, "Calling 'pairs' on a list - did you mean to use 'ipairs'?")
 						report_error(expr, "Calling 'pairs' on a list - did you mean to use 'ipairs'?") --[[SOL OUTPUT--]] 
@@ -688,7 +697,9 @@ local function analyze(ast, filename, on_require, settings)
 			return --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		target_type = U.shallow_clone(target_type) --[[SOL OUTPUT--]] 
+		if not T.is_instance(target_type) then
+			target_type = U.shallow_clone(target_type) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 		target_type.metatable = arg_ts[2] --[[SOL OUTPUT--]] 
 
 		report_spam(expr, "Setting metatable") --[[SOL OUTPUT--]] 
@@ -733,6 +744,7 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 
 		local fun_t = typ --[[SOL OUTPUT--]] 
+		D.assert(fun_t.name) --[[SOL OUTPUT--]] 
 
 		--------------------------------------------------------
 		-- Check special functions:
@@ -754,16 +766,12 @@ local function analyze(ast, filename, on_require, settings)
 			-- generators returns function that returns 'it_types':
 			local it_types = generator_types(expr, fun_t, arg_ts) --[[SOL OUTPUT--]] 
 
-			if it_types ~= T.AnyTypeList then
-				--report_info(expr, "Generator recognized: %s", it_types)
-			end --[[SOL OUTPUT--]] 
-
-			--var<T.Function> ret = {  -- FIXME
 			local ret = {
 				tag    = 'function',
 				args   = {},
-				vararg = T.Any,
+				vararg = { tag='varargs', type=T.Any },
 				rets   = it_types,
+				name   = '[pairs/ipairs iterator]',
 			} --[[SOL OUTPUT--]] 
 			return { ret } --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -793,6 +801,10 @@ local function analyze(ast, filename, on_require, settings)
 
 	-- Returns a list of types
 	local function call_function(expr, scope)
+		if expr.where:match("type_check.sol:184") then
+			D.break_() --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
 		--------------------------------------------------------
 		-- Pick out function type:
 		report_spam(expr, "Analyzing function base...") --[[SOL OUTPUT--]] 
@@ -817,7 +829,6 @@ local function analyze(ast, filename, on_require, settings)
 			assert(arg_ts[i], "missing type") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-
 		--------------------------------------------------------
 		-- Do we know the function type?
 
@@ -825,6 +836,7 @@ local function analyze(ast, filename, on_require, settings)
 			typ = T.follow_identifiers(typ) --[[SOL OUTPUT--]] 
 
 			if T.is_any(typ) then
+				-- TODO: Upgrade to a warning!
 				report_spam(expr, "Function call cannot be deduced - calling something of unknown type: '%s'", fun_type) --[[SOL OUTPUT--]] 
 				return T.AnyTypeList --[[SOL OUTPUT--]] 
 
@@ -928,9 +940,6 @@ local function analyze(ast, filename, on_require, settings)
 	analyze_expr_unchecked = function(expr, scope)
 		assert(expr) --[[SOL OUTPUT--]] 
 		assert(type(expr) == 'table') --[[SOL OUTPUT--]] 
-		if not expr.ast_type then
-			error("Not an expression: " .. expr2str(expr)) --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
 		assert(expr.ast_type) --[[SOL OUTPUT--]] 
 
 		report_spam(expr, "Analyzing %s...", expr.ast_type) --[[SOL OUTPUT--]] 
@@ -1253,6 +1262,10 @@ local function analyze(ast, filename, on_require, settings)
 
 
 		elseif expr.ast_type == 'MemberExpr' then
+			if expr.where:match("type_check.sol:182") then
+				D.break_() --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
 			-- .  or  :
 			local base_t = analyze_expr_single(expr.base, scope) --[[SOL OUTPUT--]] 
 			local name = expr.ident.data --[[SOL OUTPUT--]] 
@@ -1260,7 +1273,7 @@ local function analyze(ast, filename, on_require, settings)
 			if T.is_any(base_t) then
 				return T.Any --[[SOL OUTPUT--]] 
 			else
-				local t = do_indexing(expr, base_t, name) --[[SOL OUTPUT--]] 
+				local t = do_member_lookup(expr, base_t, name) --[[SOL OUTPUT--]] 
 				if t then
 					return t --[[SOL OUTPUT--]] 
 				else
@@ -1274,6 +1287,7 @@ local function analyze(ast, filename, on_require, settings)
 			-- Lambda function
 			local is_pre_analyze = false --[[SOL OUTPUT--]] 
 			local fun_t = analyze_function_head( expr, scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
+			fun_t.name = '[lambda]' --[[SOL OUTPUT--]] 
 			analyze_function_body( expr, fun_t ) --[[SOL OUTPUT--]] 
 			return fun_t --[[SOL OUTPUT--]] 
 
@@ -1422,7 +1436,7 @@ local function analyze(ast, filename, on_require, settings)
 
 
 	local function assign_to_obj_member(stat, scope,
-		                                 is_pre_analyze, is_declare, extend_class,
+		                                 is_pre_analyze, is_declare, extend_existing_type,
 		                                 obj_t, name, right_type)
 	 											--> T.Type -- TODO: have this here
 
@@ -1433,7 +1447,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		if left_type and left_type.pre_analyzed then
 			if right_type.pre_analyzed and is_pre_analyze then
-				report_error(stat, "Name clash?") --[[SOL OUTPUT--]] 
+				report_error(stat, "Name clash: %q", name) --[[SOL OUTPUT--]] 
 			else
 				D.assert(not right_type.pre_analyzed) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1480,7 +1494,7 @@ local function analyze(ast, filename, on_require, settings)
 			end
 			--]]
 
-			if extend_class then
+			if extend_existing_type then
 				report_spam(stat, "Extending class with %q", name) --[[SOL OUTPUT--]] 
 				obj_t.members[name] = right_type --[[SOL OUTPUT--]] 
 			else
@@ -1514,13 +1528,13 @@ local function analyze(ast, filename, on_require, settings)
 			if base_var then
 				-- self.foo = 32 will actually add the member 'foo' to the class definition!
 				-- think ctors and the like
-				local extend_class = (base_var.name == 'self') --[[SOL OUTPUT--]] 
+				local extend_existing_type = (base_var.name == 'self') --[[SOL OUTPUT--]] 
 
 
 				if not base_var.type or T.is_empty_table(base_var.type) then
 					report_spam(stat, "New object") --[[SOL OUTPUT--]] 
 					base_var.type = { tag = 'object', members = {} } --[[SOL OUTPUT--]] 
-					extend_class = false --[[SOL OUTPUT--]]  -- bad idea
+					extend_existing_type = false --[[SOL OUTPUT--]]  -- bad idea
 				end --[[SOL OUTPUT--]] 
 
 				report_spam(stat, "Assigning to %s.%s", base_var.name, name) --[[SOL OUTPUT--]] 
@@ -1528,7 +1542,8 @@ local function analyze(ast, filename, on_require, settings)
 				local var_t = T.follow_identifiers(base_var.type) --[[SOL OUTPUT--]] 
 
 				if var_t.tag == 'variant' then
-					extend_class = false --[[SOL OUTPUT--]] 
+					--var extend_variant_member = extend_existing_type
+					local extend_variant_member = false --[[SOL OUTPUT--]] 
 
 					local variant = T.clone_variant(var_t) --[[SOL OUTPUT--]] 
 
@@ -1536,13 +1551,16 @@ local function analyze(ast, filename, on_require, settings)
 					for i,v in ipairs(variant.variants) do
 						if v.tag == 'object' then
 							variant.variants[i] = assign_to_obj_member(stat, scope,
-								                                        is_pre_analyze, is_declare, extend_class,
+								                                        is_pre_analyze, is_declare, extend_variant_member,
 								                                        v, name, right_type) --[[SOL OUTPUT--]] 	
 						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				elseif var_t.tag == 'object' then
+					--var extend_object = extend_existing_type or T.is_class(var_t) or T.is_instance(var_t)
+					local extend_object = extend_existing_type --[[SOL OUTPUT--]]  -- TODO: the above
+
 					base_var.type = assign_to_obj_member(stat, scope,
-						                                 is_pre_analyze, is_declare, extend_class,
+						                                 is_pre_analyze, is_declare, extend_object,
 						                                 var_t, name, right_type) --[[SOL OUTPUT--]] 	
 					return --[[SOL OUTPUT--]] 
 				elseif T.is_any(var_t) then
@@ -1761,8 +1779,8 @@ local function analyze(ast, filename, on_require, settings)
 		-------------------------------------------------
 		-- Now for the variable:
 
-		local v = declare_var(stat, scope, name, is_local) --[[SOL OUTPUT--]] 
-		v.type = class_type --[[SOL OUTPUT--]]   -- The variable represents the class - not an instance of it!
+		-- The variable represents the class - not an instance of it!
+		local v = declare_var(stat, scope, name, is_local, class_type) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -2001,8 +2019,7 @@ local function analyze(ast, filename, on_require, settings)
 				--]]
 				report_spam(stat, "free function, name: %q", fun_t.name) --[[SOL OUTPUT--]] 
 
-				local v = declare_var(stat, scope, stat.name_expr.name, stat.is_local) --[[SOL OUTPUT--]] 
-				v.type = fun_t --[[SOL OUTPUT--]] 
+				local v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			-- Now analyze body:
@@ -2154,6 +2171,7 @@ local function analyze(ast, filename, on_require, settings)
 
 						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
 						fun_t.pre_analyzed = true --[[SOL OUTPUT--]]  -- Rmember that this is a temporary 'guess'
+						fun_t.name = var_name --[[SOL OUTPUT--]] 
 
 						v.type = fun_t --[[SOL OUTPUT--]] 
 
@@ -2191,9 +2209,8 @@ local function analyze(ast, filename, on_require, settings)
 				]]
 				--[[
 				report_spam(stat, "Pre-declaring function %q", fun_t.name)
-				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local)
+				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t)
 				v.forward_declared = true
-				v.type = fun_t
 				--]]
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -2232,7 +2249,7 @@ local function analyze(ast, filename, on_require, settings)
 
 	local top_scope = ast.scope --[[SOL OUTPUT--]]   -- HACK
 	local module_function = {
-		tag = "function",
+		tag = 'function',
 		args = {}
 		-- name = ???
 		-- rets = ???

@@ -45,7 +45,13 @@ local function is_keyword(key)
 	or     key == "then"
 	or     key == "true"
 	or     key == "until"
-	or     key == "while" --[[SOL OUTPUT--]] 
+	or     key == "while"
+
+	-- Sol:
+	or     key == "class"
+	or     key == "global"
+	or     key == "typedef"
+	or     key == "var" --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -131,7 +137,12 @@ end --[[SOL OUTPUT--]]
 ------------------------------------------------------
 
 function U.trim(str)
-	return str:gsub("^%s*(.-)%s*$", "%1") --[[SOL OUTPUT--]] 	
+	return str:gsub("^%s*(.-)%s*$", "%1") --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+function U.indent(str)
+	local indentation = "   " --[[SOL OUTPUT--]] 
+	return indentation..str:gsub("\n", "\n"..indentation) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -155,13 +166,13 @@ end --[[SOL OUTPUT--]]
 function U.printf_err(fmt, ...)
 	local msg = string.format(fmt, ...) --[[SOL OUTPUT--]] 
 
-	msg = U.ellipsis(msg) --[[SOL OUTPUT--]] 
+	--msg = U.ellipsis(msg)
 
 	io.stderr:write( msg .. '\n' ) --[[SOL OUTPUT--]] 
 	D.break_() --[[SOL OUTPUT--]] 
 
-	if _G.g_spam then
-		os.exit(1) --[[SOL OUTPUT--]] 	
+	if _G.g_break_on_error then
+		os.exit(1) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 

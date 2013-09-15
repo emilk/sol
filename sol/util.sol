@@ -46,6 +46,12 @@ local function is_keyword(key: string) -> bool
 	or     key == "true"
 	or     key == "until"
 	or     key == "while"
+
+	-- Sol:
+	or     key == "class"
+	or     key == "global"
+	or     key == "typedef"
+	or     key == "var"
 end
 
 
@@ -131,7 +137,12 @@ end
 ------------------------------------------------------
 
 function U.trim(str: string) -> string
-	return str:gsub("^%s*(.-)%s*$", "%1")	
+	return str:gsub("^%s*(.-)%s*$", "%1")
+end
+
+function U.indent(str: string) -> string
+	local indentation = "   "
+	return indentation..str:gsub("\n", "\n"..indentation)
 end
 
 
@@ -155,13 +166,13 @@ end
 function U.printf_err(fmt: string, ...)
 	local msg = string.format(fmt, ...)
 
-	msg = U.ellipsis(msg)
+	--msg = U.ellipsis(msg)
 
 	io.stderr:write( msg .. '\n' )
 	D.break_()
 
-	if _G.g_spam then
-		os.exit(1)	
+	if _G.g_break_on_error then
+		os.exit(1)
 	end
 end
 

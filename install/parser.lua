@@ -763,7 +763,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				args   = {},
 				vararg = nil,
 				rets   = nil,
-				name   = nil,
+				name   = '[lambda]',
 			} --[[SOL OUTPUT--]] 
 
 			if not tok:consume_symbol(')') then
@@ -983,19 +983,12 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			end --[[SOL OUTPUT--]] 
 
 			local base_name = type_name --[[SOL OUTPUT--]] 
-			--[[
-			local var_ = scope:get_var(base_name)
-			if not var_ then
-				return false, report_error("namespaced typedef: %s is not a previously defined variable", base_name)
-			end
-			--]]
 
 			type_name = tok:get_ident() --[[SOL OUTPUT--]] 
 			if not type_name then
 				return false, report_error("Identifier expected") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			--nod([^S].)variable  = var_
 			node.namespace_name = base_name --[[SOL OUTPUT--]] 
 			node.type_name      = type_name --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

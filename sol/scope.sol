@@ -12,11 +12,12 @@ When parsign a module, there is a 'module_scope' whose parent is the 'global_sco
 User declared globals goes into the 'module_scope' and are marked as 'global'.
 --]]
 
-global class Scope = {}
+global class Scope = {
+	-- TODO: static members here, i.e. global_scope
+}
 
 global typedef Variable = {
 	scope      : Scope,
-	scope      : any,
 	name       : string,
 	type       : T.Type?,
 	is_global  : bool,
@@ -27,7 +28,8 @@ global typedef Variable = {
 
 
 function Scope.new(parent: Scope?) -> Scope
-	local s = {}	
+	--var s = {} : Scope
+	local s = {}
 	setmetatable(s, { __index = Scope })
 	s:init(parent)
 	return s
@@ -95,7 +97,7 @@ function Scope.create_global_scope() -> Scope
 
 	for _,name in ipairs(functions) do
 		var<T.Function> fun_t = {
-			tag            = "function",
+			tag            = 'function',
 			args           = { },
 			vararg         = { tag = 'varargs', type = T.Any },
 			rets           = T.AnyTypeList,
@@ -112,7 +114,7 @@ function Scope.create_global_scope() -> Scope
 	-- Ensure 'require' is recognized by TypeCheck.sol
 	local require = s:create_global( 'require', where )
 	require.type = {
-		tag            = "function",
+		tag            = 'function',
 		args           = { { type = T.String } },
 		rets           = T.AnyTypeList,
 		name           = "require",
@@ -122,7 +124,7 @@ function Scope.create_global_scope() -> Scope
 	-- Ensure 'pairs' and 'ipairs' are recognized by TypeCheck.sol
 	local pairs = s:create_global( 'pairs', where )
 	pairs.type = {
-		tag            = "function",
+		tag            = 'function',
 		args           = { { type = T.Any } },
 		rets           = T.AnyTypeList,
 		intrinsic_name = "pairs",
@@ -131,7 +133,7 @@ function Scope.create_global_scope() -> Scope
 
 	local ipairs_ = s:create_global( 'ipairs', where )
 	ipairs_.type = {
-		tag            = "function",
+		tag            = 'function',
 		args           = { { type = T.List } },
 		rets           = T.AnyTypeList,
 		intrinsic_name = "ipairs",
@@ -140,7 +142,7 @@ function Scope.create_global_scope() -> Scope
 
 	local setmetatable = s:create_global( 'setmetatable', where )
 	setmetatable.type = {
-		tag            = "function",
+		tag            = 'function',
 		args           = { {  type = T.Table }, { type = T.Table } },
 		rets           = { T.Table },
 		intrinsic_name = "setmetatable",
@@ -149,7 +151,7 @@ function Scope.create_global_scope() -> Scope
 
 	local type = s:create_global( 'type', where )
 	type.type = {
-		tag            = "function",
+		tag            = 'function',
 		args           = { {        type = T.Any } },
 		rets           = { T.String },
 		intrinsic_name = "type",
@@ -233,7 +235,6 @@ function Scope:create_local(name: string, where: string) -> Variable
 		name       = name,
 		is_global  = false,
 		references = 1,
-		type       = nil,
 		where      = where,
 	}
 
@@ -249,7 +250,7 @@ function Scope:add_global(v)
 end
 
 
-function Scope:create_global(name: string, where: string, type: T.Type) -> Variable
+function Scope:create_global(name: string, where: string, type: T.Type?) -> Variable
 	assert(not self.fixed)
 
 	local v = {
