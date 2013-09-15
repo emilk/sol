@@ -337,28 +337,39 @@ T.isa(T.False, T.Bool)
 --]]
 
 -- Memoization:
-var<{T.Type => {T.Type => true or string}}> isa_memo = {}
+-- true   -> yes, it is
+-- false  -> no, and no error string generated yet
+-- string -> no, and here's the error string
+var<{T.Type => {T.Type => true or false or string}}> isa_memo = {}
 
 function T.isa(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	local res = isa_memo[d] and isa_memo[d][b]
-	if res==nil then
-		local rope = {}
-		res = T.isa_raw(d, b, rope)
-		if not res then
-			res = table.concat(rope, '\n')
-		end
-		isa_memo[d] = isa_memo[d] or {}
-		isa_memo[d][b] = res
-	end
 	if res == true then
 		return true
-	else
-		assert(type(res) == 'string')
-		if problem_rope then
-			problem_rope[#problem_rope +1 ] = res
+	end
+
+	if problem_rope then
+		if res == false or res == nil then
+			-- We need to generate a problem description:
+			local isa_rope = {}
+			T.isa_raw(d, b, isa_rope)
+			res = table.concat(isa_rope, '\n')
+			isa_memo[d] = isa_memo[d] or {}
+			isa_memo[d][b] = res
 		end
+		assert(type(res) == 'string')
+		problem_rope[#problem_rope + 1] = res
 		return false
-	end	
+	else
+		-- No problem description needed
+		if res==nil then
+			res = T.isa_raw(d, b)
+			isa_memo[d] = isa_memo[d] or {}
+			isa_memo[d][b] = res
+		end
+
+		return res
+	end
 end
 
 
@@ -539,7 +550,12 @@ function T.isa_typelists(d: [T.Type]?, b: [T.Type]?, problem_rope: [string]?) ->
 end
 
 
-function T.is_nilable(a: T.Type)
+function T.make_nilable(a: T.Type) -> T.Type
+	return T.make_variant(a, T.Nil)
+end
+
+
+function T.is_nilable(a: T.Type) -> bool
 	a = T.follow_identifiers(a)
 	if a == T.Any then return true end
 	if a == T.Nil then return false end
@@ -609,6 +625,11 @@ end
 -- T.could_be(int or bool, string or bool)  == true
 -- T.could_be(int or nil, string or nil)  == false
 function T.could_be(a: T.Type, b: T.Type, problem_rope: [string]?)
+	if a==b then
+		-- Early out:
+		return true
+	end
+
 	D.assert( T.is_type(a) )
 	D.assert( T.is_type(b) )
 
@@ -764,26 +785,6 @@ end
 function T.format_type(root: T.Type, verbose: bool?)
 	if verbose == nil then verbose = false end
 
-	-- Count the occurence of a type:
-	var occurences = {} : {table => 'single' or 'multiple'}
-
-	local function count_occurences(t: table)
-		if occurences[t] then
-			occurences[t] = 'multiple'
-			-- No need to recurse again
-		else
-			occurences[t] = 'single'
-
-			for _,v in pairs(t) do
-				if type(v) == 'table' then
-					count_occurences(v)
-				end
-			end
-		end
-	end
-
-	count_occurences(root)
-
 	var rope = {} : [string]
 	var named = {} : {table => string}
 	var written_objs = {} : {T.Object}
@@ -834,7 +835,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 			var<T.Object> obj = typ
 
 			if written_objs[obj] then
-				return '[!RECURSION!]'
+				return '<!RECURSION!>'
 			end
 			written_objs[obj] = true
 
@@ -843,6 +844,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 			   and U.table_empty(obj.members)
 			then
 				return '{ }'
+				--return '['..tostring(obj)..'] { }' -- great for debugging
 			else
 				local str = ''
 				if obj.namespace then
@@ -904,10 +906,12 @@ function T.format_type(root: T.Type, verbose: bool?)
 
 				local full = '{\n' .. str .. indent ..'}'
 
+				full = '<'..tostring(obj)..'> '..full -- great for debugging
+
 				if obj.class_type then
-					return '[instance] ' .. full
+					return '<instance> ' .. full
 				elseif obj.instance_type then
-					return '[class] ' .. full
+					return '<class> ' .. full
 				else
 					return full
 				end
@@ -959,7 +963,8 @@ function T.format_type(root: T.Type, verbose: bool?)
 			return string.format('%q', typ.value)
 
 		elseif typ.tag == 'identifier' then
-			if verbose and typ.type then
+			if (verbose or _G.g_spam) and typ.type then
+			--if typ.type then
 				return string.format('%s (%s)', typ.name, output(typ.type, next_indent))
 			else
 				return string.format('%s', typ.name)
@@ -986,17 +991,6 @@ function T.format_type(root: T.Type, verbose: bool?)
 			return str
 		end
 	end
-
-	-- Everything that has been alluded to multiple times must be named and printed out:
-	--[[
-	for t,occurence in pairs(occurences) do
-		if occurence == 'multiple' and T.is_type(t) and not T.is_simple(t) then
-			local name = table_name(t)  -- TODO: var
-			rope[#rope + 1] = name.." = "..output(t,"").."\n\n"
-			named[t] = name
-		end
-	end
-	--]]
 
 	rope[#rope + 1] = output(root, "")
 
@@ -1175,9 +1169,9 @@ function T.name_old(typ: T.Type or [T.Type] or nil, indent: string?, verbose: bo
 			local full = '{\n' .. str .. indent ..'}'
 
 			if obj.class_type then
-				return '[instance] ' .. full
+				return '<instance> ' .. full
 			elseif obj.instance_type then
-				return '[class] ' .. full
+				return '<class> ' .. full
 			else
 				return full
 			end
@@ -1464,6 +1458,13 @@ function T.broaden(t: T.Type?) -> T.Type?
 			key_type   = T.broaden(t.key_type),
 			value_type = T.broaden(t.value_type),
 		}
+	elseif t.tag == 'variant' then
+		-- false?   ->  bool?
+		var<T.Variant> ret = { tag='variant', variants={} }
+		for ix,v in ipairs(t.variants) do
+			ret.variants[ix] = T.broaden(v)
+		end
+		return ret
 	else
 		return t
 	end

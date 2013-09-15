@@ -763,7 +763,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				args   = {},
 				vararg = nil,
 				rets   = nil,
-				name   = '[lambda]',
+				name   = '<lambda>',
 			} --[[SOL OUTPUT--]] 
 
 			if not tok:consume_symbol(')') then

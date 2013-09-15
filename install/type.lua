@@ -337,28 +337,39 @@ T.isa(T.False, T.Bool)
 --]]
 
 -- Memoization:
+-- true   -> yes, it is
+-- false  -> no, and no error string generated yet
+-- string -> no, and here's the error string
 local isa_memo = {} --[[SOL OUTPUT--]] 
 
 function T.isa(d, b, problem_rope)
 	local res = isa_memo[d] and isa_memo[d][b] --[[SOL OUTPUT--]] 
-	if res==nil then
-		local rope = {} --[[SOL OUTPUT--]] 
-		res = T.isa_raw(d, b, rope) --[[SOL OUTPUT--]] 
-		if not res then
-			res = table.concat(rope, '\n') --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-		isa_memo[d] = isa_memo[d] or {} --[[SOL OUTPUT--]] 
-		isa_memo[d][b] = res --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
 	if res == true then
 		return true --[[SOL OUTPUT--]] 
-	else
-		assert(type(res) == 'string') --[[SOL OUTPUT--]] 
-		if problem_rope then
-			problem_rope[#problem_rope +1 ] = res --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	if problem_rope then
+		if res == false or res == nil then
+			-- We need to generate a problem description:
+			local isa_rope = {} --[[SOL OUTPUT--]] 
+			T.isa_raw(d, b, isa_rope) --[[SOL OUTPUT--]] 
+			res = table.concat(isa_rope, '\n') --[[SOL OUTPUT--]] 
+			isa_memo[d] = isa_memo[d] or {} --[[SOL OUTPUT--]] 
+			isa_memo[d][b] = res --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
+		assert(type(res) == 'string') --[[SOL OUTPUT--]] 
+		problem_rope[#problem_rope + 1] = res --[[SOL OUTPUT--]] 
 		return false --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 	
+	else
+		-- No problem description needed
+		if res==nil then
+			res = T.isa_raw(d, b) --[[SOL OUTPUT--]] 
+			isa_memo[d] = isa_memo[d] or {} --[[SOL OUTPUT--]] 
+			isa_memo[d][b] = res --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		return res --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -539,6 +550,11 @@ function T.isa_typelists(d, b, problem_rope)
 end --[[SOL OUTPUT--]] 
 
 
+function T.make_nilable(a)
+	return T.make_variant(a, T.Nil) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
 function T.is_nilable(a)
 	a = T.follow_identifiers(a) --[[SOL OUTPUT--]] 
 	if a == T.Any then return true --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
@@ -609,6 +625,11 @@ end --[[SOL OUTPUT--]]
 -- T.could_be(int or bool, string or bool)  == true
 -- T.could_be(int or nil, string or nil)  == false
 function T.could_be(a, b, problem_rope)
+	if a==b then
+		-- Early out:
+		return true --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
 	D.assert( T.is_type(a) ) --[[SOL OUTPUT--]] 
 	D.assert( T.is_type(b) ) --[[SOL OUTPUT--]] 
 
@@ -764,26 +785,6 @@ end
 function T.format_type(root, verbose)
 	if verbose == nil then verbose = false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-	-- Count the occurence of a type:
-	local occurences = {} --[[SOL OUTPUT--]] 
-
-	local function count_occurences(t)
-		if occurences[t] then
-			occurences[t] = 'multiple' --[[SOL OUTPUT--]] 
-			-- No need to recurse again
-		else
-			occurences[t] = 'single' --[[SOL OUTPUT--]] 
-
-			for _,v in pairs(t) do
-				if type(v) == 'table' then
-					count_occurences(v) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-	count_occurences(root) --[[SOL OUTPUT--]] 
-
 	local rope = {} --[[SOL OUTPUT--]] 
 	local named = {} --[[SOL OUTPUT--]] 
 	local written_objs = {} --[[SOL OUTPUT--]] 
@@ -834,7 +835,7 @@ function T.format_type(root, verbose)
 			local obj = typ --[[SOL OUTPUT--]] 
 
 			if written_objs[obj] then
-				return '[!RECURSION!]' --[[SOL OUTPUT--]] 
+				return '<!RECURSION!>' --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			written_objs[obj] = true --[[SOL OUTPUT--]] 
 
@@ -843,6 +844,7 @@ function T.format_type(root, verbose)
 			   and U.table_empty(obj.members)
 			then
 				return '{ }' --[[SOL OUTPUT--]] 
+				--return '['..tostring(obj)..'] { }' -- great for debugging
 			else
 				local str = '' --[[SOL OUTPUT--]] 
 				if obj.namespace then
@@ -904,10 +906,12 @@ function T.format_type(root, verbose)
 
 				local full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
 
+				full = '<'..tostring(obj)..'> '..full --[[SOL OUTPUT--]]  -- great for debugging
+
 				if obj.class_type then
-					return '[instance] ' .. full --[[SOL OUTPUT--]] 
+					return '<instance> ' .. full --[[SOL OUTPUT--]] 
 				elseif obj.instance_type then
-					return '[class] ' .. full --[[SOL OUTPUT--]] 
+					return '<class> ' .. full --[[SOL OUTPUT--]] 
 				else
 					return full --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -959,7 +963,8 @@ function T.format_type(root, verbose)
 			return string.format('%q', typ.value) --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'identifier' then
-			if verbose and typ.type then
+			if (verbose or _G.g_spam) and typ.type then
+			--if typ.type then
 				return string.format('%s (%s)', typ.name, output(typ.type, next_indent)) --[[SOL OUTPUT--]] 
 			else
 				return string.format('%s', typ.name) --[[SOL OUTPUT--]] 
@@ -986,17 +991,6 @@ function T.format_type(root, verbose)
 			return str --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
-
-	-- Everything that has been alluded to multiple times must be named and printed out:
-	--[[
-	for t,occurence in pairs(occurences) do
-		if occurence == 'multiple' and T.is_type(t) and not T.is_simple(t) then
-			local name = table_name(t)  -- TODO: var
-			rope[#rope + 1] = name.." = "..output(t,"").."\n\n"
-			named[t] = name
-		end
-	end
-	--]]
 
 	rope[#rope + 1] = output(root, "") --[[SOL OUTPUT--]] 
 
@@ -1175,9 +1169,9 @@ function T.name_old(typ, indent, verbose)
 			local full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
 
 			if obj.class_type then
-				return '[instance] ' .. full --[[SOL OUTPUT--]] 
+				return '<instance> ' .. full --[[SOL OUTPUT--]] 
 			elseif obj.instance_type then
-				return '[class] ' .. full --[[SOL OUTPUT--]] 
+				return '<class> ' .. full --[[SOL OUTPUT--]] 
 			else
 				return full --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1464,6 +1458,13 @@ function T.broaden(t)
 			key_type   = T.broaden(t.key_type),
 			value_type = T.broaden(t.value_type),
 		} --[[SOL OUTPUT--]] 
+	elseif t.tag == 'variant' then
+		-- false?   ->  bool?
+		local ret = { tag='variant', variants={} } --[[SOL OUTPUT--]] 
+		for ix,v in ipairs(t.variants) do
+			ret.variants[ix] = T.broaden(v) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+		return ret --[[SOL OUTPUT--]] 
 	else
 		return t --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

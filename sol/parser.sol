@@ -763,7 +763,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				args   = {},
 				vararg = nil,
 				rets   = nil,
-				name   = '[lambda]',
+				name   = '<lambda>',
 			}
 
 			if not tok:consume_symbol(')') then

@@ -491,7 +491,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if #arg_ts ~= 1 then
 				report_error(expr, "Too many arguments to 'pairs'")
 			else
-				local function pairs_type(typ, error_rope: [string]) -> T.Typelist?
+				local function pairs_type(typ, error_rope: [string]?) -> T.Typelist?
 					typ = T.follow_identifiers(typ)
 
 					if typ == T.Any or typ.tag == 'table' then
@@ -520,17 +520,20 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						assert(types == nil  or  #types == 2)
 						return types
 					else
-						table.insert(error_rope, string.format("Incompatible type: '%s'", T.name(typ)))
+						if error_rope then
+							table.insert(error_rope, string.format("Incompatible type: '%s'", T.name(typ)))
+						end
 						return nil
 					end
 				end
 
-				var<[string]> error_rope = {}
-				local types = pairs_type( arg_ts[1], error_rope )
+				local types = pairs_type( arg_ts[1] )
 				if types then
 					assert(#types == 2)
 					return types
 				else
+					var<[string]> error_rope = {}
+					pairs_type( arg_ts[1], error_rope )
 					report_error(expr, "'pairs' called on incompatible type: " .. rope_to_msg(error_rope))
 					return { T.Any, T.Any }
 				end
@@ -781,7 +784,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				args   = {},
 				vararg = { tag='varargs', type=T.Any },
 				rets   = it_types,
-				name   = '[pairs/ipairs iterator]',
+				name   = '<pairs/ipairs iterator>',
 			}
 			return { ret }
 		end
@@ -811,8 +814,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	-- Returns a list of types
 	local function call_function(expr: P.Node, scope: Scope) -> T.Typelist
-		if expr.where:match("type_check.sol:184") then
-			D.break_()
+		if expr.where:match("type_check.sol:192") then
+			--D.break_() -- TODO
 		end
 
 		--------------------------------------------------------
@@ -1272,8 +1275,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif expr.ast_type == 'MemberExpr' then
-			if expr.where:match("type_check.sol:182") then
-				D.break_()
+			if expr.where:match("type_check.sol:192") then
+				--D.break_()  -- TODO
 			end
 
 			-- .  or  :
@@ -1297,7 +1300,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			-- Lambda function
 			local is_pre_analyze = false
 			local fun_t = analyze_function_head( expr, scope, is_pre_analyze )
-			fun_t.name = '[lambda]'
+			fun_t.name = '<lambda>'
 			analyze_function_body( expr, fun_t )
 			return fun_t
 
@@ -1504,8 +1507,21 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 			--]]
 
+			--extend_existing_type = true -- HACK FIXME TODO osv
+
 			if extend_existing_type then
 				report_spam(stat, "Extending class with %q", name)
+
+				--[[
+				var foo = Foo:new()
+				if ... then
+					foo.name = "hello"   
+					-- Don't change 'Foo' to *require* a  name: string
+					-- Just add an optional               name: string?
+				end
+				--]]
+				right_type = T.make_nilable(right_type)
+
 				obj_t.members[name] = right_type
 			else
 				obj_t = U.shallow_clone( obj_t )
@@ -1566,9 +1582,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						end
 					end
 				elseif var_t.tag == 'object' then
-					--var extend_object = extend_existing_type or T.is_class(var_t) or T.is_instance(var_t)
-					--var extend_object = extend_existing_type or T.is_instance(var_t)
-					var extend_object = extend_existing_type -- TODO: the above
+					var extend_object = extend_existing_type or T.is_class(var_t) or T.is_instance(var_t)
 
 					base_var.type = assign_to_obj_member(stat, scope,
 						                                 is_pre_analyze, is_declare, extend_object,
