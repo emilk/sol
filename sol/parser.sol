@@ -88,13 +88,230 @@ typedef P.Statlist : P.Node = {
 	ast_type: 'Statlist',
 }
 
+---------------------------------------------
+
 typedef P.ExprNode : P.Node = {
 	ast_type: P.ExprType
 }
 
+typedef P.IdExpr : P.ExprNode = {
+	ast_type: 'IdExpr';
+	name:     string;
+}
+
+typedef P.NumberExpr : P.ExprNode = {
+	ast_type: 'NumberExpr';
+	value:    string;
+}
+
+typedef P.StringExpr : P.ExprNode = {
+	ast_type: 'StringExpr';
+	value:    string;
+}
+
+typedef P.BooleanExpr : P.ExprNode = {
+	ast_type: 'BooleanExpr';
+	value:    bool;
+}
+
+typedef P.NilExpr : P.ExprNode = {
+	ast_type: 'NilExpr';
+}
+
+typedef P.BinopExpr : P.ExprNode = {
+	ast_type: 'BinopExpr';
+	lhs:      P.ExprNode;
+	op:       string;
+	rhs:      P.ExprNode;
+}
+
+typedef P.UnopExpr : P.ExprNode = {
+	ast_type: 'UnopExpr';
+	op:       string;
+	rhs:      P.ExprNode;
+}
+
+typedef P.DotsExpr : P.ExprNode = {
+	ast_type: 'DotsExpr';
+}
+
+typedef P.CallExpr : P.ExprNode = {
+	ast_type:  'CallExpr';
+	base:      P.ExprNode;
+	arguments: [P.ExprNode];
+}
+
+typedef P.TableCallExpr : P.ExprNode = {
+	ast_type:  'TableCallExpr';
+	base:      P.ExprNode;
+	arguments: [P.ConstructorExpr];
+}
+
+typedef P.StringCallExpr : P.ExprNode = {
+	ast_type:  'StringCallExpr';
+	base:      P.ExprNode;
+	arguments: [P.StringExpr];
+}
+
+typedef P.IndexExpr : P.ExprNode = {
+	ast_type:  'IndexExpr';
+	base:      P.ExprNode;
+	index:     P.ExprNode;
+}
+
+typedef P.MemberExpr : P.ExprNode = {
+	ast_type:  'MemberExpr';
+	base:      P.ExprNode;
+	--indexer:   string;
+	ident:     string;
+}
+
+typedef P.LambdaFunctionExpr : P.ExprNode = {
+	ast_type:  'LambdaFunctionExpr';
+	-- TODO
+}
+
+typedef ConstructorExprEntry = {
+	type:  'key'      or 'ident_key' or 'value';
+	key:   P.ExprNode or string      or nil;
+	value: P.ExprNode;
+}
+
+typedef P.ConstructorExpr : P.ExprNode = {
+	ast_type:   'ConstructorExpr';
+	entry_list: [ ConstructorExprEntry ];
+}
+
+typedef P.ParenthesesExpr : P.ExprNode = {
+	ast_type: 'ParenthesesExpr';
+	inner:    P.ExprNode;
+}
+
+typedef P.CastExpr : P.ExprNode = {
+	ast_type: 'CastExpr';
+	expr:     P.ExprNode;
+}
+
+---------------------------------------------
+
 typedef P.StatNode : P.Node = {
 	ast_type: P.StatType
 }
+
+typedef P.AssignmentStatement : P.StatNode = {
+	ast_type: 'AssignmentStatement';
+	lhs:      [P.ExprNode];
+	rhs:      [P.ExprNode];
+}
+
+typedef P.CallStatement : P.StatNode = {
+	ast_type:   'CallStatement';
+	expression: P.ExprNode;
+}
+
+typedef P.VarDeclareStatement : P.StatNode = {
+	ast_type:  'VarDeclareStatement';
+	name_list: [string];
+	init_list: P.ExprNode;
+}
+
+typedef P.ClassDeclStatement : P.StatNode = {
+	ast_type:  'ClassDeclStatement';
+	name:      string;
+	rhs:       P.ExprNode;
+}
+
+typedef IfStatementClause = {
+	condition: P.ExprNode?;
+	body:      P.Statlist;
+}
+
+typedef P.IfStatement : P.StatNode = {
+	ast_type:  'IfStatement';
+	clauses:   [IfStatementClause];
+}
+
+typedef P.WhileStatement : P.StatNode = {
+	ast_type:  'WhileStatement';
+	condition: P.ExprNode;
+	body:      P.Statlist;
+}
+
+typedef P.DoStatement : P.StatNode = {
+	ast_type:  'DoStatement';
+	body:      P.Statlist;
+}
+
+typedef P.GenericForStatement : P.StatNode = {
+	ast_type:   'GenericForStatement';
+	-- for
+	var_names:  [string];
+	-- in
+	generators: [P.ExprNode];
+	-- do
+	body:       P.Statlist;
+	-- end
+}
+
+typedef P.NumericForStatement : P.StatNode = {
+	ast_type: 'NumericForStatement';
+	-- for
+	var_name: string;
+	-- =
+	start:    P.ExprNode;
+	-- ,
+	end_:     P.ExprNode;
+	-- ,
+	step:     P.ExprNode?;
+	-- do
+	body:     P.Statlist;
+	-- end
+}
+
+typedef P.RepeatStatement : P.StatNode = {
+	ast_type:  'RepeatStatement';
+	body:      P.Statlist;
+	condition: P.ExprNode;
+}
+
+typedef P.LabelStatement : P.StatNode = {
+	ast_type: 'LabelStatement';
+	label:    string;
+}
+
+typedef P.GotoStatement : P.StatNode = {
+	ast_type: 'GotoStatement';
+	label:    string;
+}
+
+typedef P.ReturnStatement : P.StatNode = {
+	ast_type:  'ReturnStatement';
+	arguments: [P.ExprNode];
+}
+
+typedef P.BreakStatement : P.StatNode = {
+	ast_type:  'BreakStatement';
+}
+
+typedef P.FunctionDeclStatement : P.StatNode = {
+	ast_type:     'FunctionDeclStatement';
+	scoping:      'local' or 'global' or '';
+	is_aggregate: bool;   -- true: function foo.bar(...)
+	name_expr:    P.ExprNode;
+	arguments:    [ { name: string } ];
+	vararg:       T.VarArgs?;
+	body:         P.Statlist;
+}
+
+typedef P.Eof : P.StatNode = {
+	ast_type:     'Eof';
+}
+
+typedef P.Typedef : P.StatNode = {
+	ast_type:     'Typedef';
+}
+
+---------------------------------------------
 
 typedef ExprNode_or_error = P.ExprNode or string or nil
 typedef StatNode_or_error = P.StatNode or string or nil

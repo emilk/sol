@@ -375,50 +375,6 @@ local function output(ast, filename: string, insert_new_lines : bool?) -> string
 			format_statlist(stat.body)
 			t:append_next_token( "end" )
 
-		elseif stat.ast_type == 'ReturnStatement' then
-			t:append_next_token( "return" )
-			for i = 1, #stat.arguments do
-				format_expr(stat.arguments[i])
-				t:append_comma( i ~= #stat.arguments )
-			end
-
-		elseif stat.ast_type == 'BreakStatement' then
-			t:append_next_token( "break" )
-
-		elseif stat.ast_type == 'RepeatStatement' then
-			t:append_next_token( "repeat" )
-			format_statlist(stat.body)
-			t:append_next_token( "until" )
-			format_expr(stat.condition)
-
-		elseif stat.ast_type == 'FunctionDeclStatement' then
-			if stat.scoping == 'local' then
-				t:append_next_token( "local" )
-			elseif stat.scoping == 'global' then
-				t:skip_next_token()
-			elseif not stat.is_aggregate then
-				t:inject_str(' local ') -- turn global function into local
-			end
-			t:append_next_token( "function" )
-			format_expr( stat.name_expr )
-
-			t:append_next_token( "(" )
-			if #stat.arguments > 0 then
-				for i = 1, #stat.arguments do
-					t:append_str( stat.arguments[i].name )
-					t:append_comma( i ~= #stat.arguments or stat.vararg )
-					if i == #stat.arguments and stat.vararg then
-						t:append_next_token( "..." )
-					end
-				end
-			elseif stat.vararg then
-				t:append_next_token( "..." )
-			end
-			t:append_next_token( ")" )
-
-			format_statlist(stat.body)
-			t:append_next_token( "end" )
-
 		elseif stat.ast_type == 'GenericForStatement' then
 			t:append_next_token( "for" )
 			for i,name in ipairs(stat.var_names) do
@@ -449,6 +405,12 @@ local function output(ast, filename: string, insert_new_lines : bool?) -> string
 			format_statlist(stat.body)
 			t:append_next_token( "end" )
 
+		elseif stat.ast_type == 'RepeatStatement' then
+			t:append_next_token( "repeat" )
+			format_statlist(stat.body)
+			t:append_next_token( "until" )
+			format_expr(stat.condition)
+
 		elseif stat.ast_type == 'LabelStatement' then
 			t:append_next_token( "::" )
 			t:append_str( stat.label )
@@ -457,6 +419,44 @@ local function output(ast, filename: string, insert_new_lines : bool?) -> string
 		elseif stat.ast_type == 'GotoStatement' then
 			t:append_next_token( "goto" )
 			t:append_str( stat.label )
+
+		elseif stat.ast_type == 'ReturnStatement' then
+			t:append_next_token( "return" )
+			for i = 1, #stat.arguments do
+				format_expr(stat.arguments[i])
+				t:append_comma( i ~= #stat.arguments )
+			end
+
+		elseif stat.ast_type == 'BreakStatement' then
+			t:append_next_token( "break" )
+
+		elseif stat.ast_type == 'FunctionDeclStatement' then
+			if stat.scoping == 'local' then
+				t:append_next_token( "local" )
+			elseif stat.scoping == 'global' then
+				t:skip_next_token()
+			elseif not stat.is_aggregate then
+				t:inject_str(' local ') -- turn global function into local
+			end
+			t:append_next_token( "function" )
+			format_expr( stat.name_expr )
+
+			t:append_next_token( "(" )
+			if #stat.arguments > 0 then
+				for i = 1, #stat.arguments do
+					t:append_str( stat.arguments[i].name )
+					t:append_comma( i ~= #stat.arguments or stat.vararg )
+					if i == #stat.arguments and stat.vararg then
+						t:append_next_token( "..." )
+					end
+				end
+			elseif stat.vararg then
+				t:append_next_token( "..." )
+			end
+			t:append_next_token( ")" )
+
+			format_statlist(stat.body)
+			t:append_next_token( "end" )
 
 		elseif stat.ast_type == 'Eof' then
 			t:append_white()

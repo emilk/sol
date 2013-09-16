@@ -375,50 +375,6 @@ local function output(ast, filename, insert_new_lines)
 			format_statlist(stat.body) --[[SOL OUTPUT--]] 
 			t:append_next_token( "end" ) --[[SOL OUTPUT--]] 
 
-		elseif stat.ast_type == 'ReturnStatement' then
-			t:append_next_token( "return" ) --[[SOL OUTPUT--]] 
-			for i = 1, #stat.arguments do
-				format_expr(stat.arguments[i]) --[[SOL OUTPUT--]] 
-				t:append_comma( i ~= #stat.arguments ) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-		elseif stat.ast_type == 'BreakStatement' then
-			t:append_next_token( "break" ) --[[SOL OUTPUT--]] 
-
-		elseif stat.ast_type == 'RepeatStatement' then
-			t:append_next_token( "repeat" ) --[[SOL OUTPUT--]] 
-			format_statlist(stat.body) --[[SOL OUTPUT--]] 
-			t:append_next_token( "until" ) --[[SOL OUTPUT--]] 
-			format_expr(stat.condition) --[[SOL OUTPUT--]] 
-
-		elseif stat.ast_type == 'FunctionDeclStatement' then
-			if stat.scoping == 'local' then
-				t:append_next_token( "local" ) --[[SOL OUTPUT--]] 
-			elseif stat.scoping == 'global' then
-				t:skip_next_token() --[[SOL OUTPUT--]] 
-			elseif not stat.is_aggregate then
-				t:inject_str(' local ') --[[SOL OUTPUT--]]  -- turn global function into local
-			end --[[SOL OUTPUT--]] 
-			t:append_next_token( "function" ) --[[SOL OUTPUT--]] 
-			format_expr( stat.name_expr ) --[[SOL OUTPUT--]] 
-
-			t:append_next_token( "(" ) --[[SOL OUTPUT--]] 
-			if #stat.arguments > 0 then
-				for i = 1, #stat.arguments do
-					t:append_str( stat.arguments[i].name ) --[[SOL OUTPUT--]] 
-					t:append_comma( i ~= #stat.arguments or stat.vararg ) --[[SOL OUTPUT--]] 
-					if i == #stat.arguments and stat.vararg then
-						t:append_next_token( "..." ) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			elseif stat.vararg then
-				t:append_next_token( "..." ) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-			t:append_next_token( ")" ) --[[SOL OUTPUT--]] 
-
-			format_statlist(stat.body) --[[SOL OUTPUT--]] 
-			t:append_next_token( "end" ) --[[SOL OUTPUT--]] 
-
 		elseif stat.ast_type == 'GenericForStatement' then
 			t:append_next_token( "for" ) --[[SOL OUTPUT--]] 
 			for i,name in ipairs(stat.var_names) do
@@ -449,6 +405,12 @@ local function output(ast, filename, insert_new_lines)
 			format_statlist(stat.body) --[[SOL OUTPUT--]] 
 			t:append_next_token( "end" ) --[[SOL OUTPUT--]] 
 
+		elseif stat.ast_type == 'RepeatStatement' then
+			t:append_next_token( "repeat" ) --[[SOL OUTPUT--]] 
+			format_statlist(stat.body) --[[SOL OUTPUT--]] 
+			t:append_next_token( "until" ) --[[SOL OUTPUT--]] 
+			format_expr(stat.condition) --[[SOL OUTPUT--]] 
+
 		elseif stat.ast_type == 'LabelStatement' then
 			t:append_next_token( "::" ) --[[SOL OUTPUT--]] 
 			t:append_str( stat.label ) --[[SOL OUTPUT--]] 
@@ -457,6 +419,44 @@ local function output(ast, filename, insert_new_lines)
 		elseif stat.ast_type == 'GotoStatement' then
 			t:append_next_token( "goto" ) --[[SOL OUTPUT--]] 
 			t:append_str( stat.label ) --[[SOL OUTPUT--]] 
+
+		elseif stat.ast_type == 'ReturnStatement' then
+			t:append_next_token( "return" ) --[[SOL OUTPUT--]] 
+			for i = 1, #stat.arguments do
+				format_expr(stat.arguments[i]) --[[SOL OUTPUT--]] 
+				t:append_comma( i ~= #stat.arguments ) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+		elseif stat.ast_type == 'BreakStatement' then
+			t:append_next_token( "break" ) --[[SOL OUTPUT--]] 
+
+		elseif stat.ast_type == 'FunctionDeclStatement' then
+			if stat.scoping == 'local' then
+				t:append_next_token( "local" ) --[[SOL OUTPUT--]] 
+			elseif stat.scoping == 'global' then
+				t:skip_next_token() --[[SOL OUTPUT--]] 
+			elseif not stat.is_aggregate then
+				t:inject_str(' local ') --[[SOL OUTPUT--]]  -- turn global function into local
+			end --[[SOL OUTPUT--]] 
+			t:append_next_token( "function" ) --[[SOL OUTPUT--]] 
+			format_expr( stat.name_expr ) --[[SOL OUTPUT--]] 
+
+			t:append_next_token( "(" ) --[[SOL OUTPUT--]] 
+			if #stat.arguments > 0 then
+				for i = 1, #stat.arguments do
+					t:append_str( stat.arguments[i].name ) --[[SOL OUTPUT--]] 
+					t:append_comma( i ~= #stat.arguments or stat.vararg ) --[[SOL OUTPUT--]] 
+					if i == #stat.arguments and stat.vararg then
+						t:append_next_token( "..." ) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			elseif stat.vararg then
+				t:append_next_token( "..." ) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			t:append_next_token( ")" ) --[[SOL OUTPUT--]] 
+
+			format_statlist(stat.body) --[[SOL OUTPUT--]] 
+			t:append_next_token( "end" ) --[[SOL OUTPUT--]] 
 
 		elseif stat.ast_type == 'Eof' then
 			t:append_white() --[[SOL OUTPUT--]] 

@@ -2155,7 +2155,7 @@ local function analyze(ast, filename, on_require, settings)
 			-- HACK for forward-declaring namespaces:
 			if true then
 				for _,name in ipairs(stat.name_list) do
-					local is_local = (stat.type ~= 'global') --[[SOL OUTPUT--]] 
+					local is_local = (stat.scoping ~= 'global') --[[SOL OUTPUT--]] 
 					local v = declare_var(stat, scope, name, is_local) --[[SOL OUTPUT--]] 
 					v.forward_declared = true --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -2165,7 +2165,7 @@ local function analyze(ast, filename, on_require, settings)
 					if init.ast_type == 'ConstructorExpr' then
 						if #init.entry_list == 0 then
 							-- {}
-							local is_local = (stat.type ~= 'global') --[[SOL OUTPUT--]] 
+							local is_local = (stat.scoping ~= 'global') --[[SOL OUTPUT--]] 
 							local v = declare_var(stat, scope, stat.name_list[1], is_local) --[[SOL OUTPUT--]] 
 							v.forward_declared = true --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
