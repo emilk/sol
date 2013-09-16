@@ -1032,7 +1032,6 @@ local function analyze(ast, filename, on_require, settings)
 	-- Return type
 	analyze_simple_expr_unchecked = function(expr, scope)
 		if expr.ast_type == 'NumberExpr' then
-			-- TODO: 0xff, 42 is int,  42.0 is num
 			local str = expr.value.data --[[SOL OUTPUT--]] 
 			local t = T.from_num_literal( str ) --[[SOL OUTPUT--]] 
 			if t then
@@ -1333,7 +1332,7 @@ local function analyze(ast, filename, on_require, settings)
 				local obj_members = {} --[[SOL OUTPUT--]] 
 
 				local count = { ['key'] = 0, ['ident_key'] = 0, ['value'] = 0 } --[[SOL OUTPUT--]] 
-				for _,e in pairs(expr.entry_list) do
+				for _,e in ipairs(expr.entry_list) do
 					count[e.type] = count[e.type] + 1 --[[SOL OUTPUT--]] 
 
 					local this_val_type = analyze_expr_single(e.value, scope) --[[SOL OUTPUT--]] 
@@ -1487,7 +1486,7 @@ local function analyze(ast, filename, on_require, settings)
 			left_type = T.broaden( left_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
 
 			if not T.could_be(right_type, left_type) then
-				report_error(stat, "[B] type clash: cannot assign to '%s' (type '%s') with '%s'", name, left_type, right_type) --[[SOL OUTPUT--]] 
+				report_error(stat, "[B] type clash: cannot assign to %q (of type %s) with %s", name, left_type, right_type) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			return obj_t --[[SOL OUTPUT--]] 
@@ -1638,7 +1637,7 @@ local function analyze(ast, filename, on_require, settings)
 						left_type = T.broaden( left_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
 
 						if not T.could_be(right_type, left_type) then
-							report_error(stat, "[A] type clash: cannot assign to '%s' (type '%s') with '%s'", name, left_type, right_type) --[[SOL OUTPUT--]] 
+							report_error(stat, "[A] type clash: cannot assign to %q (of type %s) with %s", name, left_type, right_type) --[[SOL OUTPUT--]] 
 							return false --[[SOL OUTPUT--]] 
 						else
 							return true --[[SOL OUTPUT--]] 
@@ -1699,7 +1698,7 @@ local function analyze(ast, filename, on_require, settings)
 			local problem_rope = {} --[[SOL OUTPUT--]] 
 			T.could_be(right_type, left_type, problem_rope) --[[SOL OUTPUT--]] 
 			local problem_str = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
-			report_error(stat, "[C] type clash: cannot assign to type '%s' with '%s': %s", left_type, right_type, problem_str) --[[SOL OUTPUT--]] 
+			report_error(stat, "[C] type clash: cannot assign to type %s with %s: %s", left_type, right_type, problem_str) --[[SOL OUTPUT--]] 
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return true --[[SOL OUTPUT--]] 
@@ -1901,7 +1900,7 @@ local function analyze(ast, filename, on_require, settings)
 				if #explicit_types == 1 and #explicit_types ~= #vars then
 					-- One type to be applied to all - just duplicate: 
 
-					explicit_types = { explicit_types[1] } --[[SOL OUTPUT--]] 
+					explicit_types = U.shallow_clone( explicit_types ) --[[SOL OUTPUT--]] 
 
 					while #explicit_types < #vars do
 						table.insert(explicit_types, explicit_types[1]) --[[SOL OUTPUT--]] 

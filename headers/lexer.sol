@@ -1,6 +1,6 @@
--- Compiled from sol/lexer.sol at 2013 Sep 16  22:07:42
+-- Compiled from sol/lexer.sol at 2013 Sep 16  22:23:02
 
-return <0x005b49e8>{
+return <0x005fbee0>{
 	-- Types:
 	typedef Token = Token;
 	typedef TokenList = [Token];

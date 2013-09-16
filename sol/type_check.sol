@@ -1030,9 +1030,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	-- Return type
-	analyze_simple_expr_unchecked = function(expr, scope: Scope) -> T.Typelist or T.Type
+	analyze_simple_expr_unchecked = function(expr: P.ExprNode, scope: Scope) -> T.Typelist or T.Type
 		if expr.ast_type == 'NumberExpr' then
-			-- TODO: 0xff, 42 is int,  42.0 is num
 			local str = expr.value.data
 			local t = T.from_num_literal( str )
 			if t then
@@ -1333,7 +1332,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				var obj_members = {} : {string => T.Type}
 
 				local count = { ['key'] = 0, ['ident_key'] = 0, ['value'] = 0 }
-				for _,e in pairs(expr.entry_list) do
+				for _,e in ipairs(expr.entry_list) do
 					count[e.type] = count[e.type] + 1
 
 					local this_val_type = analyze_expr_single(e.value, scope)
@@ -1487,7 +1486,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			left_type = T.broaden( left_type ) -- Previous value may have been 'false' - we should allow 'true' now:
 
 			if not T.could_be(right_type, left_type) then
-				report_error(stat, "[B] type clash: cannot assign to '%s' (type '%s') with '%s'", name, left_type, right_type)
+				report_error(stat, "[B] type clash: cannot assign to %q (of type %s) with %s", name, left_type, right_type)
 			end
 
 			return obj_t
@@ -1638,7 +1637,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						left_type = T.broaden( left_type ) -- Previous value may have been 'false' - we should allow 'true' now:
 
 						if not T.could_be(right_type, left_type) then
-							report_error(stat, "[A] type clash: cannot assign to '%s' (type '%s') with '%s'", name, left_type, right_type)
+							report_error(stat, "[A] type clash: cannot assign to %q (of type %s) with %s", name, left_type, right_type)
 							return false
 						else
 							return true
@@ -1699,7 +1698,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local problem_rope = {}
 			T.could_be(right_type, left_type, problem_rope)
 			local problem_str = rope_to_msg(problem_rope)
-			report_error(stat, "[C] type clash: cannot assign to type '%s' with '%s': %s", left_type, right_type, problem_str)
+			report_error(stat, "[C] type clash: cannot assign to type %s with %s: %s", left_type, right_type, problem_str)
 			return false
 		end
 		return true
@@ -1826,7 +1825,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	-- Iff it is a return statement, will returns a list of types
 	-- Else nil
 	-- 'scope_fun' contains info about the enclosing function
-	local analyze_statement = function(stat, scope: Scope, scope_fun: T.Function)
+	local analyze_statement = function(stat: P.StatNode, scope: Scope, scope_fun: T.Function)
 		assert(scope)
 		var is_pre_analyze = false
 
@@ -1881,7 +1880,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 			end
 
-			local explicit_types = stat.type_list
+			var explicit_types = stat.type_list
 
 			-- Declare variables:
 			var is_local = (stat.scoping ~= 'global')
@@ -1901,7 +1900,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				if #explicit_types == 1 and #explicit_types ~= #vars then
 					-- One type to be applied to all - just duplicate: 
 
-					explicit_types = { explicit_types[1] }
+					explicit_types = U.shallow_clone( explicit_types )
 
 					while #explicit_types < #vars do
 						table.insert(explicit_types, explicit_types[1])
@@ -1910,7 +1909,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 				local N = #vars
 				for i = 1,N do
-					local v = vars[i]
+					var v = vars[i]
 					v.type = explicit_types[i]
 				end
 			end

@@ -211,8 +211,12 @@ typedef P.CallStatement : P.StatNode = {
 
 typedef P.VarDeclareStatement : P.StatNode = {
 	ast_type:  'VarDeclareStatement';
+	scoping:   'local' or 'global' or 'var';
+	is_local:  bool;
+	type_list: [T.Type]?;
+	--type_list: T.Typelist?;  -- FIXME: doesn't work, but the equivalent above does
 	name_list: [string];
-	init_list: P.ExprNode;
+	init_list: [P.ExprNode];
 }
 
 typedef P.ClassDeclStatement : P.StatNode = {
@@ -1314,7 +1318,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		var angle_bracket = (tok:peek().data == '<')
 
 		var where = where_am_i()
-		local types = nil
+		var types = nil : T.Typelist?
 
 		if scoping == 'var' then
 			types = parse_type_args(scope)
@@ -1349,12 +1353,12 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		local node_local = {
 			ast_type  = 'VarDeclareStatement';
+			scoping   = scoping; -- 'local' or 'global' or 'var'
 			type_list = types;
 			name_list = name_list;
 			init_list = init_list;
 			tokens    = token_list;
 			is_local  = is_local;
-			scoping   = scoping; -- 'local' or 'global' or 'var'
 			where     = where;
 		}
 		--
