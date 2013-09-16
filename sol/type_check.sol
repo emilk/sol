@@ -1,5 +1,3 @@
---[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
---[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
 local U   = require 'util'
 local set = U.set
 local T   = require 'type'
@@ -27,7 +25,7 @@ local function rope_to_msg(rope: [string]) -> string
 end
 
 
-local function loose_lookup(table, id: string) -> string?
+local function loose_lookup(table: table, id: string) -> string?
 	D.assert(type(id) == 'string')
 
 	if table[id] then
@@ -426,7 +424,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function do_member_lookup(node: P.Node, type: T.Type, name: string) -> T.Type?
+	local function do_member_lookup(node: P.Node, type: T.Type, name: string, suggestions: [string]) -> T.Type?
 		--report_spam(node, "Looking for member %q in %s", name, type)
 
 		type = T.follow_identifiers(type)
@@ -435,7 +433,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local indexed_type = nil
 
 			for _,v in ipairs(type.variants) do
-				indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name))
+				indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name, suggestions))
 			end
 
 			return indexed_type
@@ -457,20 +455,28 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						end
 					else
 						report_spam(node, "Looking up member %q in metatbale __index", name)
-						return do_member_lookup(node, indexer, name)
+						return do_member_lookup(node, indexer, name, suggestions)
 					end
 				end
 			end
 
 			if not indexed_type and obj.class_type then
-				return do_member_lookup(node, obj.class_type, name)
+				indexed_type = do_member_lookup(node, obj.class_type, name, suggestions)
 			end
 
 			indexed_type = T.broaden( indexed_type ) -- Previous value may have been 'false' - we should allow 'true' now:
 
 			if obj.derived then
 				for _,v in ipairs(obj.derived) do
-					indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name))
+					indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name, suggestions))
+				end
+			end
+
+			if not indexed_type then
+				local close_name = loose_lookup(obj.members, name)
+
+				if close_name then
+					suggestions[#suggestions + 1] = close_name
 				end
 			end
 
@@ -1284,11 +1290,16 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if T.is_any(base_t) then
 				return T.Any
 			else
-				local t = do_member_lookup(expr, base_t, name)
+				var suggestions = {} : [string]
+				local t = do_member_lookup(expr, base_t, name, suggestions)
 				if t then
 					return t
 				else
-					--report_warning(expr, "Failed to find member '%s'", name) -- TODO
+					if #suggestions > 0 then
+						report_warning(expr, "Failed to find member '%s' - did you mean %s?", name, table.concat(suggestions, " or "))
+					else
+						report_spam(expr, "Failed to find member '%s'", name) -- TODO: warn
+					end
 					return T.Any
 				end
 			end

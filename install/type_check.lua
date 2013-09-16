@@ -1,6 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol --]] --[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
---[[ DO NOT MODIFY - COMPILED FROM ../sol/TypeCheck.sol --]] 
-local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local L   = require 'lexer' --[[SOL OUTPUT--]] 
@@ -426,7 +424,7 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
-	local function do_member_lookup(node, type, name)
+	local function do_member_lookup(node, type, name, suggestions)
 		--report_spam(node, "Looking for member %q in %s", name, type)
 
 		type = T.follow_identifiers(type) --[[SOL OUTPUT--]] 
@@ -435,7 +433,7 @@ local function analyze(ast, filename, on_require, settings)
 			local indexed_type = nil --[[SOL OUTPUT--]] 
 
 			for _,v in ipairs(type.variants) do
-				indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name)) --[[SOL OUTPUT--]] 
+				indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name, suggestions)) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			return indexed_type --[[SOL OUTPUT--]] 
@@ -457,20 +455,28 @@ local function analyze(ast, filename, on_require, settings)
 						end --[[SOL OUTPUT--]] 
 					else
 						report_spam(node, "Looking up member %q in metatbale __index", name) --[[SOL OUTPUT--]] 
-						return do_member_lookup(node, indexer, name) --[[SOL OUTPUT--]] 
+						return do_member_lookup(node, indexer, name, suggestions) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			if not indexed_type and obj.class_type then
-				return do_member_lookup(node, obj.class_type, name) --[[SOL OUTPUT--]] 
+				indexed_type = do_member_lookup(node, obj.class_type, name, suggestions) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			indexed_type = T.broaden( indexed_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
 
 			if obj.derived then
 				for _,v in ipairs(obj.derived) do
-					indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name)) --[[SOL OUTPUT--]] 
+					indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name, suggestions)) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			if not indexed_type then
+				local close_name = loose_lookup(obj.members, name) --[[SOL OUTPUT--]] 
+
+				if close_name then
+					suggestions[#suggestions + 1] = close_name --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -1284,11 +1290,16 @@ local function analyze(ast, filename, on_require, settings)
 			if T.is_any(base_t) then
 				return T.Any --[[SOL OUTPUT--]] 
 			else
-				local t = do_member_lookup(expr, base_t, name) --[[SOL OUTPUT--]] 
+				local suggestions = {} --[[SOL OUTPUT--]] 
+				local t = do_member_lookup(expr, base_t, name, suggestions) --[[SOL OUTPUT--]] 
 				if t then
 					return t --[[SOL OUTPUT--]] 
 				else
-					--report_warning(expr, "Failed to find member '%s'", name) -- TODO
+					if #suggestions > 0 then
+						report_warning(expr, "Failed to find member '%s' - did you mean %s?", name, table.concat(suggestions, " or ")) --[[SOL OUTPUT--]] 
+					else
+						report_spam(expr, "Failed to find member '%s'", name) --[[SOL OUTPUT--]]  -- TODO: warn
+					end --[[SOL OUTPUT--]] 
 					return T.Any --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 

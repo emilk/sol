@@ -79,13 +79,14 @@ typedef P.NodeType = P.ExprType or P.StatType or 'Statlist'
 
 -- General AstNode:
 typedef P.Node = {
-	ast_type: P.NodeType,
-	tokens:   [L.Token],
-	where:    string
+	ast_type: P.NodeType;
+	tokens:   [L.Token];
+	where:    string;
 }
 
 typedef P.Statlist : P.Node = {
-	ast_type: 'Statlist',
+	ast_type: 'Statlist';
+	body:     [P.StatNode];
 }
 
 ---------------------------------------------
@@ -162,13 +163,17 @@ typedef P.IndexExpr : P.ExprNode = {
 typedef P.MemberExpr : P.ExprNode = {
 	ast_type:  'MemberExpr';
 	base:      P.ExprNode;
-	--indexer:   string;
+	indexer:   string;
 	ident:     string;
 }
 
 typedef P.LambdaFunctionExpr : P.ExprNode = {
-	ast_type:  'LambdaFunctionExpr';
-	-- TODO
+	ast_type:     'LambdaFunctionExpr';
+	is_mem_fun:   bool;
+	arguments:    [ {  name:    string } ];
+	vararg:       T.VarArgs?;
+	return_types: [T.Type]?;
+	body:         P.Statlist;
 }
 
 typedef ConstructorExprEntry = {
@@ -221,6 +226,7 @@ typedef P.VarDeclareStatement : P.StatNode = {
 
 typedef P.ClassDeclStatement : P.StatNode = {
 	ast_type:  'ClassDeclStatement';
+	is_local:  bool;
 	name:      string;
 	rhs:       P.ExprNode;
 }
@@ -300,6 +306,7 @@ typedef P.BreakStatement : P.StatNode = {
 typedef P.FunctionDeclStatement : P.StatNode = {
 	ast_type:     'FunctionDeclStatement';
 	scoping:      'local' or 'global' or '';
+	is_mem_fun:   bool;
 	is_aggregate: bool;   -- true: function foo.bar(...)
 	name_expr:    P.ExprNode;
 	arguments:    [ { name: string } ];
@@ -1354,11 +1361,11 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		local node_local = {
 			ast_type  = 'VarDeclareStatement';
 			scoping   = scoping; -- 'local' or 'global' or 'var'
+			is_local  = is_local;
 			type_list = types;
 			name_list = name_list;
 			init_list = init_list;
 			tokens    = token_list;
-			is_local  = is_local;
 			where     = where;
 		}
 		--
@@ -1449,7 +1456,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				if not st then return false, node_body end
 				clauses[#clauses+1] = {
 					condition = node_cond;
-					body = node_body;
+					body      = node_body;
 				}
 			until not tok:consume_keyword('elseif', token_list)
 

@@ -325,6 +325,13 @@ local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'} --[[SOL O
 
 
 
+
+
+
+
+
+
+
 function P.parse_sol(src, tok, filename, settings, module_scope)
 	filename = filename or '' --[[SOL OUTPUT--]] 
 	settings = settings or P.SOL_SETTINGS --[[SOL OUTPUT--]] 
@@ -1354,11 +1361,11 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		local node_local = {
 			ast_type  = 'VarDeclareStatement';
 			scoping   = scoping; -- 'local' or 'global' or 'var'
+			is_local  = is_local;
 			type_list = types;
 			name_list = name_list;
 			init_list = init_list;
 			tokens    = token_list;
-			is_local  = is_local;
 			where     = where;
 		} --[[SOL OUTPUT--]] 
 		--
@@ -1449,7 +1456,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				if not st then return false, node_body --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				clauses[#clauses+1] = {
 					condition = node_cond;
-					body = node_body;
+					body      = node_body;
 				} --[[SOL OUTPUT--]] 
 			until not tok:consume_keyword('elseif', token_list) --[[SOL OUTPUT--]] 
 
