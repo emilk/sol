@@ -68,8 +68,8 @@ end --[[SOL OUTPUT--]]
 
 local function format_expr(e)
 	local output = require 'output' --[[SOL OUTPUT--]] 
-	local insert_new_lines = false --[[SOL OUTPUT--]] 
-	local str = output(e, '', insert_new_lines) --[[SOL OUTPUT--]] 
+	local strip_white_space = true --[[SOL OUTPUT--]] 
+	local str = output(e, '', strip_white_space) --[[SOL OUTPUT--]] 
 	str = U.trim(str) --[[SOL OUTPUT--]] 
 	return str --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
@@ -1308,7 +1308,7 @@ local function analyze(ast, filename, on_require, settings)
 					if #suggestions > 0 then
 						report_warning(expr, "Failed to find member '%s' (%s) - did you mean %s?", name, expr, table.concat(suggestions, " or ")) --[[SOL OUTPUT--]] 
 					else
-						report_spam(expr, "Failed to find member '%s' (%s)", name, expr) --[[SOL OUTPUT--]]  -- TODO: warn
+						report_warning(expr, "Failed to find member '%s' (%s)", name, expr) --[[SOL OUTPUT--]]  -- TODO: warn
 					end --[[SOL OUTPUT--]] 
 					return T.Any --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 

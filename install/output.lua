@@ -39,9 +39,9 @@ assert(count_line_breaks("hello\n") == 1) --[[SOL OUTPUT--]]
 assert(count_line_breaks("hello\nyou\ntoo") == 2) --[[SOL OUTPUT--]] 
 
 
-local function output(ast, filename, insert_new_lines)
-	if insert_new_lines == nil then
-		insert_new_lines = true --[[SOL OUTPUT--]] 
+local function output(ast, filename, strip_white_space)
+	if strip_white_space == nil then
+		strip_white_space = false --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local out = {
@@ -59,7 +59,7 @@ local function output(ast, filename, insert_new_lines)
 
 			local str  = token.data --[[SOL OUTPUT--]] 
 
-			if insert_new_lines then
+			if not strip_white_space then
 				local nl = count_line_breaks(str) --[[SOL OUTPUT--]] 
 
 				while self.line + nl < token.line do
@@ -80,7 +80,9 @@ local function output(ast, filename, insert_new_lines)
 
 		append_white = function(self, token)
 			if token.all_leading_white then
-				self:append_str( token.all_leading_white ) --[[SOL OUTPUT--]] 
+				if not strip_white_space or #self.rope>0 then
+					self:append_str( token.all_leading_white ) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end
 	} --[[SOL OUTPUT--]] 

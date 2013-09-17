@@ -68,8 +68,8 @@ end
 
 local function format_expr(e: P.ExprNode)
 	local output = require 'output'
-	local insert_new_lines = false
-	local str = output(e, '', insert_new_lines)
+	local strip_white_space = true
+	local str = output(e, '', strip_white_space)
 	str = U.trim(str)
 	return str
 end
@@ -1308,7 +1308,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					if #suggestions > 0 then
 						report_warning(expr, "Failed to find member '%s' (%s) - did you mean %s?", name, expr, table.concat(suggestions, " or "))
 					else
-						report_spam(expr, "Failed to find member '%s' (%s)", name, expr) -- TODO: warn
+						report_warning(expr, "Failed to find member '%s' (%s)", name, expr) -- TODO: warn
 					end
 					return T.Any
 				end
