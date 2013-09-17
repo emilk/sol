@@ -58,6 +58,7 @@ local S          = require 'scope' --[[SOL OUTPUT--]]
 local T          = require 'type' --[[SOL OUTPUT--]] 
 local TypeCheck  = require 'type_check' --[[SOL OUTPUT--]] 
 local U          = require 'util' --[[SOL OUTPUT--]] 
+local intrinsics = require 'lua_intrinsics' --[[SOL OUTPUT--]] 
 local printf_err = U.printf_err --[[SOL OUTPUT--]] 
 
 ------------------------------------------------
@@ -379,6 +380,8 @@ else
 	local g_header_out_dir = nil --[[SOL OUTPUT--]] 
 	local ix             = 1 --[[SOL OUTPUT--]] 
 	local num_files      = 0 --[[SOL OUTPUT--]] 
+
+	intrinsics.add_intrinsics_to_global_scope() --[[SOL OUTPUT--]] 
 
 	while ix <= #arg do
 		local a = arg[ix] --[[SOL OUTPUT--]] 

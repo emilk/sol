@@ -45,7 +45,7 @@ P.SOL_SETTINGS = {
 		'return', 'then',  'true', 'until',    'while',
 
 		-- Sol specific:
-		'typedef', 'global', 'var', 'class',
+		'typedef', 'global', 'var', 'class', 'extern',
 	};
 
 
@@ -55,10 +55,20 @@ P.SOL_SETTINGS = {
 } --[[SOL OUTPUT--]] 
 
 
-local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 --------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -414,7 +424,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 	end --[[SOL OUTPUT--]] 
 
 
-	local parse_expr --[[SOL OUTPUT--]] 
+	local parse_expr --[[SOL OUTPUT--]]  
 	local parse_statement_list --[[SOL OUTPUT--]] 
 	local parse_simple_expr, 
 	      parse_sub_expr,
@@ -498,13 +508,19 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			return_types = parse_type_list(func_scope) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		--body
-		local st, body = parse_statement_list(func_scope) --[[SOL OUTPUT--]] 
-		if not st then return false, body --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+		local st,body --[[SOL OUTPUT--]] 
 
-		--end
-		if not tok:consume_keyword('end', token_list) then
-			return false, report_error("`end` expected after function body at %s", where) --[[SOL OUTPUT--]] 
+		if tok:consume_symbol('=') and tok:consume_keyword('extern') then
+			-- extern - used by lua_intrinsics.sol
+		else
+			--body
+			st, body = parse_statement_list(func_scope) --[[SOL OUTPUT--]] 
+			if not st then return false, body --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+
+			--end
+			if not tok:consume_keyword('end', token_list) then
+				return false, report_error("`end` expected after function body at %s", where) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		local node_func = {
@@ -692,6 +708,12 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				tokens   = token_list;
 			} --[[SOL OUTPUT--]] 
 
+		elseif tok:consume_keyword('extern', token_list) then
+			node = {
+				ast_type = 'ExternExpr';
+				tokens   = token_list;
+			} --[[SOL OUTPUT--]] 
+
 		elseif tok:is_keyword('false') or tok:is_keyword('true') then
 			node = {
 				ast_type = 'BooleanExpr';
@@ -786,7 +808,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				elseif tok:consume_symbol('}', token_list) then
 					break --[[SOL OUTPUT--]] 
 				else
-					return false, report_error("`}` or table entry Expected") --[[SOL OUTPUT--]] 
+					return false, report_error("`}` or table entry expected") --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			node.tokens = token_list --[[SOL OUTPUT--]] 
@@ -1138,6 +1160,23 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 		local list = nil --[[SOL OUTPUT--]] 
 		while true do
+			if tok:consume_symbol('...') then
+				if false then
+					local var_arg_t = T.Any --[[SOL OUTPUT--]] 
+
+					if tok:consume_symbol(':') then
+						var_arg_t = parse_type(scope) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
+					local type = { tag = 'varargs', type = var_arg_t } --[[SOL OUTPUT--]] 
+					list = list or {} --[[SOL OUTPUT--]] 
+					table.insert(list, type) --[[SOL OUTPUT--]] 
+					return list --[[SOL OUTPUT--]]   -- var-args must be last
+				else
+					return T.AnyTypeList --[[SOL OUTPUT--]]  -- FIXME HACK
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
 			local type = parse_type(scope) --[[SOL OUTPUT--]] 
 			if not type then
 				return list --[[SOL OUTPUT--]] 
@@ -1260,11 +1299,13 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				return type --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			node.base_types = parse_bases() --[[SOL OUTPUT--]] 
-			if not node.base_types then return false, report_error("base type(s) expected") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			local base_types = parse_bases() --[[SOL OUTPUT--]] 
+			if not base_types then return false, report_error("base type(s) expected") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			node.base_types = base_types --[[SOL OUTPUT--]] 
 
-			node.type = parse_type_assignment() --[[SOL OUTPUT--]] 
-			if not node.type then return false, report_error("type assignment expected") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			local type = parse_type_assignment() --[[SOL OUTPUT--]] 
+			if not type then return false, report_error("type assignment expected") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			node.type = type --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		return true, node --[[SOL OUTPUT--]] 

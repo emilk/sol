@@ -1,4 +1,4 @@
--- Compiled from sol/type_check.sol at 2013 Sep 17  22:01:26
+-- Compiled from sol/lua_intrinsics.sol at 2013 Sep 17  22:01:26
 
 global typedef Variable = <0x012620e8>{
 	is_global:  bool;
@@ -92,4 +92,6 @@ global Scope : <class><0x017b5590>{
 	}
 }
 
-return function(ast, filename: string, on_require: OnRequireT?, settings) -> true or false, any
+return <0x021f9e18>{
+	add_intrinsics_to_global_scope: function() -> void;
+}

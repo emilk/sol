@@ -58,6 +58,7 @@ local S          = require 'scope'
 local T          = require 'type'
 local TypeCheck  = require 'type_check'
 local U          = require 'util'
+local intrinsics = require 'lua_intrinsics'
 local printf_err = U.printf_err
 
 ------------------------------------------------
@@ -379,6 +380,8 @@ else
 	var g_header_out_dir = nil : string?
 	var ix             = 1
 	var num_files      = 0
+
+	intrinsics.add_intrinsics_to_global_scope()
 
 	while ix <= #arg do
 		local a = arg[ix]

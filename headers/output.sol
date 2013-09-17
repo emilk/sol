@@ -1,6 +1,6 @@
--- Compiled from sol/output.sol at 2013 Sep 16  22:48:12
+-- Compiled from sol/output.sol at 2013 Sep 17  22:01:26
 
-global typedef Variable = <0x0068a830>{
+global typedef Variable = <0x012620e8>{
 	is_global:  bool;
 	name:       string;
 	namespace:  {string => Type}?;
@@ -10,7 +10,7 @@ global typedef Variable = <0x0068a830>{
 	where:      string;
 }
 
-global typedef Scope = <instance><0x005b2ff8>{
+global typedef Scope = <instance><0x017b5618>{
 	children:        [Scope]?;
 	fixed:           true?;
 	global_typedefs: {string => Type}?;
@@ -20,7 +20,7 @@ global typedef Scope = <instance><0x005b2ff8>{
 	typedefs:        {string => Type}?;
 	vararg:          Variable?;
 
-	!! class_type:    <class><0x00581258>{
+	!! class_type:    <class><0x017b5590>{
 		add_global:          (function(self, v) -> void) or nil;
 		add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 		create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -31,7 +31,7 @@ global typedef Scope = <instance><0x005b2ff8>{
 		get_global:          (function(self, name: string) -> Variable?) or nil;
 		get_global_scope:    (function() -> Scope) or nil;
 		get_global_type:     (function(self, name: string) -> Type?) or nil;
-		get_global_typedefs: (function(self, list: [Variable]?) -> [Variable]) or nil;
+		get_global_typedefs: (function(self) -> {string => Type}) or nil;
 		get_global_vars:     (function(self, list: [Variable]?) -> [Variable]) or nil;
 		get_local:           (function(self, name: string) -> Variable?) or nil;
 		get_local_type:      (function(self, name: string) -> Type?) or nil;
@@ -47,11 +47,11 @@ global typedef Scope = <instance><0x005b2ff8>{
 		is_module_level:     (function(self) -> bool) or nil;
 		new:                 (function(parent: Scope?) -> Scope) or nil;
 
-		!! instance_type: <RECURSION 0x005b2ff8>
+		!! instance_type: <RECURSION 0x017b5618>
 	}
 }
 
-global Scope : <class><0x00581258>{
+global Scope : <class><0x017b5590>{
 	add_global:          (function(self, v) -> void) or nil;
 	add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 	create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -62,7 +62,7 @@ global Scope : <class><0x00581258>{
 	get_global:          (function(self, name: string) -> Variable?) or nil;
 	get_global_scope:    (function() -> Scope) or nil;
 	get_global_type:     (function(self, name: string) -> Type?) or nil;
-	get_global_typedefs: (function(self, list: [Variable]?) -> [Variable]) or nil;
+	get_global_typedefs: (function(self) -> {string => Type}) or nil;
 	get_global_vars:     (function(self, list: [Variable]?) -> [Variable]) or nil;
 	get_local:           (function(self, name: string) -> Variable?) or nil;
 	get_local_type:      (function(self, name: string) -> Type?) or nil;
@@ -78,7 +78,7 @@ global Scope : <class><0x00581258>{
 	is_module_level:     (function(self) -> bool) or nil;
 	new:                 (function(parent: Scope?) -> Scope) or nil;
 
-	!! instance_type: <instance><0x005b2ff8>{
+	!! instance_type: <instance><0x017b5618>{
 		children:        [Scope]?;
 		fixed:           true?;
 		global_typedefs: {string => Type}?;
@@ -88,7 +88,7 @@ global Scope : <class><0x00581258>{
 		typedefs:        {string => Type}?;
 		vararg:          Variable?;
 
-		!! class_type:    <RECURSION 0x00581258>
+		!! class_type:    <RECURSION 0x017b5590>
 	}
 }
 

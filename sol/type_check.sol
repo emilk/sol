@@ -382,6 +382,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	     If fun_t.rets is nil (no type deduced) then this function will fill it in via deduction.
 	--]]
 	local function analyze_function_body(node: P.Node, fun_t: T.Function)
+		if not node.body then
+			-- body-less function - used by lua_intrinsics.sol
+			return
+		end
+
 		local func_scope = node.scope
 
 		-- Declare arguments as variables:
@@ -1065,6 +1070,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return T.Nil
 
 
+		elseif expr.ast_type == 'ExternExpr' then
+			-- Definitions is in C - could be anything
+			return T.Any
+
+
 		elseif expr.ast_type == 'BinopExpr' then
 			local op = expr.op
 			local lt = analyze_expr_single( expr.lhs, scope )
@@ -1296,9 +1306,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					return t
 				else
 					if #suggestions > 0 then
-						report_warning(expr, "Failed to find member '%s' - did you mean %s?", name, table.concat(suggestions, " or "))
+						report_warning(expr, "Failed to find member '%s' (%s) - did you mean %s?", name, expr, table.concat(suggestions, " or "))
 					else
-						report_spam(expr, "Failed to find member '%s'", name) -- TODO: warn
+						report_spam(expr, "Failed to find member '%s' (%s)", name, expr) -- TODO: warn
 					end
 					return T.Any
 				end
@@ -1767,7 +1777,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					local base_type = T.follow_identifiers(base)
 					if base_type.tag ~= 'object' then
 						--report_error(stat, "'%s' cannot inherit non-object '%s'", name, base_type)
-						report_error(stat, "'%s' cannot inherit non-object '%s'", name, expr2str(base))
+						report_error(stat, "'%s' cannot inherit non-object '%s'", name, base)
 						break
 					end
 

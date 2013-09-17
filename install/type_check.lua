@@ -382,6 +382,11 @@ local function analyze(ast, filename, on_require, settings)
 	     If fun_t.rets is nil (no type deduced) then this function will fill it in via deduction.
 	--]]
 	local function analyze_function_body(node, fun_t)
+		if not node.body then
+			-- body-less function - used by lua_intrinsics.sol
+			return --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
 		local func_scope = node.scope --[[SOL OUTPUT--]] 
 
 		-- Declare arguments as variables:
@@ -1065,6 +1070,11 @@ local function analyze(ast, filename, on_require, settings)
 			return T.Nil --[[SOL OUTPUT--]] 
 
 
+		elseif expr.ast_type == 'ExternExpr' then
+			-- Definitions is in C - could be anything
+			return T.Any --[[SOL OUTPUT--]] 
+
+
 		elseif expr.ast_type == 'BinopExpr' then
 			local op = expr.op --[[SOL OUTPUT--]] 
 			local lt = analyze_expr_single( expr.lhs, scope ) --[[SOL OUTPUT--]] 
@@ -1296,9 +1306,9 @@ local function analyze(ast, filename, on_require, settings)
 					return t --[[SOL OUTPUT--]] 
 				else
 					if #suggestions > 0 then
-						report_warning(expr, "Failed to find member '%s' - did you mean %s?", name, table.concat(suggestions, " or ")) --[[SOL OUTPUT--]] 
+						report_warning(expr, "Failed to find member '%s' (%s) - did you mean %s?", name, expr, table.concat(suggestions, " or ")) --[[SOL OUTPUT--]] 
 					else
-						report_spam(expr, "Failed to find member '%s'", name) --[[SOL OUTPUT--]]  -- TODO: warn
+						report_spam(expr, "Failed to find member '%s' (%s)", name, expr) --[[SOL OUTPUT--]]  -- TODO: warn
 					end --[[SOL OUTPUT--]] 
 					return T.Any --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -1767,7 +1777,7 @@ local function analyze(ast, filename, on_require, settings)
 					local base_type = T.follow_identifiers(base) --[[SOL OUTPUT--]] 
 					if base_type.tag ~= 'object' then
 						--report_error(stat, "'%s' cannot inherit non-object '%s'", name, base_type)
-						report_error(stat, "'%s' cannot inherit non-object '%s'", name, expr2str(base)) --[[SOL OUTPUT--]] 
+						report_error(stat, "'%s' cannot inherit non-object '%s'", name, base) --[[SOL OUTPUT--]] 
 						break --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 

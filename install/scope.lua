@@ -70,9 +70,11 @@ function Scope.create_global_scope()
 	for k,v in pairs(_G)  do print(k, "\t=\t", v)  end
 	--]]
 
+	-- Ommisions explicitly added in lua_intrinsics.sol
+
 	local tables = {
 		'_G',
-		'coroutine', 'debug', 'io', 'math', 'os', 'package', 'string', 'table',
+		'coroutine', 'package',
 		'jit'  -- luaJIT
 	} --[[SOL OUTPUT--]] 
 
@@ -372,7 +374,7 @@ function Scope:get_global_vars(list)
 end --[[SOL OUTPUT--]] 
 
 
-function Scope:get_global_typedefs(list)
+function Scope:get_global_typedefs()
 	return U.shallow_clone( self.global_typedefs ) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 

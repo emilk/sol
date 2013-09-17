@@ -45,7 +45,7 @@ P.SOL_SETTINGS = {
 		'return', 'then',  'true', 'until',    'while',
 
 		-- Sol specific:
-		'typedef', 'global', 'var', 'class',
+		'typedef', 'global', 'var', 'class', 'extern',
 	};
 
 
@@ -60,7 +60,7 @@ local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'}
 
 --------------------------------------------------------
 
-typedef P.ExprType = 'IdExpr' or 'NumberExpr' or 'StringExpr' or 'BooleanExpr' or 'NilExpr'
+typedef P.ExprType = 'IdExpr' or 'NumberExpr' or 'StringExpr' or 'BooleanExpr' or 'NilExpr' or 'ExternExpr'
                   or 'BinopExpr' or 'UnopExpr' or 'DotsExpr'
                   or 'CallExpr' or 'TableCallExpr' or 'StringCallExpr'
                   or 'IndexExpr' or 'MemberExpr' or 'LambdaFunctionExpr'
@@ -119,6 +119,10 @@ typedef P.NilExpr : P.ExprNode = {
 	ast_type: 'NilExpr';
 }
 
+typedef P.ExternExpr : P.ExprNode = {
+	ast_type: 'ExternExpr';
+}
+
 typedef P.BinopExpr : P.ExprNode = {
 	ast_type: 'BinopExpr';
 	lhs:      P.ExprNode;
@@ -173,7 +177,7 @@ typedef P.LambdaFunctionExpr : P.ExprNode = {
 	arguments:    [ {  name:    string } ];
 	vararg:       T.VarArgs?;
 	return_types: [T.Type]?;
-	body:         P.Statlist;
+	body:         P.Statlist?;  -- nil means header only, used by lua_intrinsics.sol
 }
 
 typedef ConstructorExprEntry = {
@@ -200,7 +204,8 @@ typedef P.CastExpr : P.ExprNode = {
 ---------------------------------------------
 
 typedef P.StatNode : P.Node = {
-	ast_type: P.StatType
+	ast_type: P.StatType;
+	scope:    Scope?;  -- TODO: REMOVE!
 }
 
 typedef P.AssignmentStatement : P.StatNode = {
@@ -319,7 +324,12 @@ typedef P.Eof : P.StatNode = {
 }
 
 typedef P.Typedef : P.StatNode = {
-	ast_type:     'Typedef';
+	ast_type:       'Typedef';
+	namespace_name: string?;
+	type_name:      string;
+	is_local:       bool;
+	base_types:     [T.Type];  -- Inherits
+	type:           T.Type?;  -- nil == forward declare (TODO)
 }
 
 ---------------------------------------------
@@ -414,7 +424,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
-	local parse_expr
+	local parse_expr 
 	local parse_statement_list
 	local parse_simple_expr, 
 	      parse_sub_expr,
@@ -498,13 +508,19 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			return_types = parse_type_list(func_scope)
 		end
 
-		--body
-		local st, body = parse_statement_list(func_scope)
-		if not st then return false, body end
+		local st,body
 
-		--end
-		if not tok:consume_keyword('end', token_list) then
-			return false, report_error("`end` expected after function body at %s", where)
+		if tok:consume_symbol('=') and tok:consume_keyword('extern') then
+			-- extern - used by lua_intrinsics.sol
+		else
+			--body
+			st, body = parse_statement_list(func_scope)
+			if not st then return false, body end
+
+			--end
+			if not tok:consume_keyword('end', token_list) then
+				return false, report_error("`end` expected after function body at %s", where)
+			end
 		end
 
 		local node_func = {
@@ -692,6 +708,12 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				tokens   = token_list;
 			}
 
+		elseif tok:consume_keyword('extern', token_list) then
+			node = {
+				ast_type = 'ExternExpr';
+				tokens   = token_list;
+			}
+
 		elseif tok:is_keyword('false') or tok:is_keyword('true') then
 			node = {
 				ast_type = 'BooleanExpr';
@@ -786,7 +808,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				elseif tok:consume_symbol('}', token_list) then
 					break
 				else
-					return false, report_error("`}` or table entry Expected")
+					return false, report_error("`}` or table entry expected")
 				end
 			end
 			node.tokens = token_list
@@ -1138,6 +1160,23 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		local list = nil
 		while true do
+			if tok:consume_symbol('...') then
+				if false then
+					var<T.Type> var_arg_t = T.Any
+
+					if tok:consume_symbol(':') then
+						var_arg_t = parse_type(scope)
+					end
+
+					local type = { tag = 'varargs', type = var_arg_t }
+					list = list or {}
+					table.insert(list, type)
+					return list  -- var-args must be last
+				else
+					return T.AnyTypeList -- FIXME HACK
+				end
+			end
+
 			local type = parse_type(scope)
 			if not type then
 				return list
@@ -1260,11 +1299,13 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				return type
 			end
 
-			node.base_types = parse_bases()
-			if not node.base_types then return false, report_error("base type(s) expected") end
+			var base_types = parse_bases()
+			if not base_types then return false, report_error("base type(s) expected") end
+			node.base_types = base_types
 
-			node.type = parse_type_assignment()
-			if not node.type then return false, report_error("type assignment expected") end
+			var type = parse_type_assignment()
+			if not type then return false, report_error("type assignment expected") end
+			node.type = type
 		end
 
 		return true, node
