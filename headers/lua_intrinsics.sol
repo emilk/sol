@@ -1,16 +1,17 @@
--- Compiled from sol/lua_intrinsics.sol at 2013 Sep 17  22:01:26
+-- Compiled from sol/lua_intrinsics.sol at 2013 Sep 17  22:13:12
 
-global typedef Variable = <0x012620e8>{
-	is_global:  bool;
-	name:       string;
-	namespace:  {string => Type}?;
-	references: int;
-	scope:      Scope;
-	type:       Type?;
-	where:      string;
+global typedef Variable = <0x0074a780>{
+	forward_declared: bool?;
+	is_global:        bool;
+	name:             string;
+	namespace:        {string => Type}?;
+	references:       int;
+	scope:            Scope;
+	type:             Type?;
+	where:            string;
 }
 
-global typedef Scope = <instance><0x017b5618>{
+global typedef Scope = <instance><0x01823f58>{
 	children:        [Scope]?;
 	fixed:           true?;
 	global_typedefs: {string => Type}?;
@@ -20,7 +21,7 @@ global typedef Scope = <instance><0x017b5618>{
 	typedefs:        {string => Type}?;
 	vararg:          Variable?;
 
-	!! class_type:    <class><0x017b5590>{
+	!! class_type:    <class><0x01823ed0>{
 		add_global:          (function(self, v) -> void) or nil;
 		add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 		create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -47,11 +48,11 @@ global typedef Scope = <instance><0x017b5618>{
 		is_module_level:     (function(self) -> bool) or nil;
 		new:                 (function(parent: Scope?) -> Scope) or nil;
 
-		!! instance_type: <RECURSION 0x017b5618>
+		!! instance_type: <RECURSION 0x01823f58>
 	}
 }
 
-global Scope : <class><0x017b5590>{
+global Scope : <class><0x01823ed0>{
 	add_global:          (function(self, v) -> void) or nil;
 	add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 	create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -78,7 +79,7 @@ global Scope : <class><0x017b5590>{
 	is_module_level:     (function(self) -> bool) or nil;
 	new:                 (function(parent: Scope?) -> Scope) or nil;
 
-	!! instance_type: <instance><0x017b5618>{
+	!! instance_type: <instance><0x01823f58>{
 		children:        [Scope]?;
 		fixed:           true?;
 		global_typedefs: {string => Type}?;
@@ -88,10 +89,10 @@ global Scope : <class><0x017b5590>{
 		typedefs:        {string => Type}?;
 		vararg:          Variable?;
 
-		!! class_type:    <RECURSION 0x017b5590>
+		!! class_type:    <RECURSION 0x01823ed0>
 	}
 }
 
-return <0x021f9e18>{
+return <0x023c4018>{
 	add_intrinsics_to_global_scope: function() -> void;
 }

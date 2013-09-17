@@ -1,14 +1,19 @@
 --[[ DO NOT MODIFY - COMPILED FROM sol/lua_intrinsics.sol --]] local INTRINSICS = [[
+	global coroutine = {
+		yield = extern : function(...) -> ...;
+		wrap  = extern : function(...) -> ...;
+	}
+
 	global debug = {
-		getinfo = extern : function(...: number) -> ...;
+		getinfo = extern : function(...) -> ...;
 	}
 
 	global math = {
 		min   = extern : function(...: number) -> number;
 		max   = extern : function(...: number) -> number;
-		abs   = extern : function(...: number) -> number;
-		ceil  = extern : function(...: number) -> number;
-		floor = extern : function(...: number) -> number;
+		abs   = extern : function(number) -> number;
+		ceil  = extern : function(number) -> number;
+		floor = extern : function(number) -> number;
 		huge  = extern : number;
 	}
 

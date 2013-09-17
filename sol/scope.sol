@@ -17,13 +17,14 @@ global class Scope = {
 }
 
 global typedef Variable = {
-	scope      : Scope,
-	name       : string,
-	type       : T.Type?,
-	is_global  : bool,
-	references : int,
-	namespace  : { string => T.Type } ?,
-	where      : string,
+	scope            : Scope,
+	name             : string,
+	type             : T.Type?,
+	is_global        : bool,
+	references       : int,
+	namespace        : { string => T.Type } ?,
+	where            : string,
+	forward_declared : bool?,
 }
 
 
@@ -74,7 +75,7 @@ function Scope.create_global_scope() -> Scope
 
 	var tables = {
 		'_G',
-		'coroutine', 'package',
+		'package',
 		'jit'  -- luaJIT
 	}
 

@@ -70,9 +70,11 @@ _G.g_break_on_error = false
 
 
 typedef parse_info = {
-	name : string,
-	ast  : any,  -- For output
-	type : any,  -- What the module returns
+	name:            string;
+	ast:             any; -- For output
+	type:            any; -- What the module returns
+	global_vars:     [Variable];
+	global_typedefs: { string => T.Type };
 }
 
 typedef CURRENTLY_PARSING = false

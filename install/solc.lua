@@ -76,6 +76,8 @@ _G.g_break_on_error = false --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTP
 
 
 
+
+
 local CURRENTLY_PARSING = false --[[SOL OUTPUT--]] 
 
 -- type is CURRENTLY_PARSING during parsing.

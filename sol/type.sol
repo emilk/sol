@@ -82,11 +82,13 @@ typedef T.Map : T.Type = {
 	value_type : T.Type,
 }
 typedef T.Object : T.Type = {
-	tag       : 'object',
-	members   : { string => T.Type },
-	namespace : { string => T.Identifier } ?,
-	derived   : [ T.Identifier ] or nil,  -- Things that inherit us
-	metatable : T.Object?
+	tag           : 'object',
+	members       : { string => T.Type       },
+	namespace     : { string => T.Identifier } ?,
+	derived       : [ T.Identifier ]  or nil, -- Things that inherit us
+	metatable     : T.Object?,
+	class_type    : T.Object?,  -- If I am a class, this is my instance
+	instance_type : T.Object?,  -- If I am an instance, this is my class
 }
 
 -- Very special: represents an unknown number of values, each of the encapsuled type
@@ -113,7 +115,8 @@ typedef T.Variant : T.Type = {
 typedef T.Identifier : T.Type = {
 	tag         : 'identifier',
 	scope       : Scope,
-	var_        : Variable?, -- If namespaced typedef, i.e.   typedef var_.type  =  ...
+	var_name    : string?, -- If namespaced typedef, i.e.   typedef var_.type  =  ...
+	--var_        : Variable?, -- If namespaced typedef, i.e.   typedef var_.type  =  ...
 	name        : string,    -- The name of the type
 	where       : string,    -- Point of declaration (file:line)
 	first_usage : string?,   -- Point of first use
