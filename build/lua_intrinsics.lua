@@ -31,8 +31,9 @@
 	}
 
 	global string = {
+		byte   = extern : function(string, int, int?, int?) -> ...;
+		char   = extern : function(string, ... : int) -> string;
 		format = extern : function(...) -> ...;
-		byte   = extern : function(...) -> ...;
 		rep    = extern : function(...) -> ...;
 		sub    = extern : function(...) -> ...;
 	}

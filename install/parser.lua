@@ -342,6 +342,13 @@ local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'} --[[SOL O
 
 
 
+
+
+
+
+
+
+
 function P.parse_sol(src, tok, filename, settings, module_scope)
 	filename = filename or '' --[[SOL OUTPUT--]] 
 	settings = settings or P.SOL_SETTINGS --[[SOL OUTPUT--]] 
@@ -728,10 +735,8 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			} --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_symbol('{', token_list) then
-			node = {
-				ast_type = 'ConstructorExpr';
-				entry_list = {};
-			} --[[SOL OUTPUT--]] 
+			--var entry_list = {} : [ConstructorExprEntry] -- TODO
+			local entry_list = {} --[[SOL OUTPUT--]] 
 			--
 			while true do
 				if tok:is_symbol('[', token_list) then
@@ -751,7 +756,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 					if not st then
 						return false, report_error("value expression Expected") --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
-					node.entry_list[#node.entry_list+1] = {
+					entry_list[#entry_list+1] = {
 						type  = 'key';
 						key   = key;
 						value = value;
@@ -770,7 +775,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 						if not st then
 							return false, report_error("value expression Expected") --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
-						node.entry_list[#node.entry_list+1] = {
+						entry_list[#entry_list+1] = {
 							type  = 'ident_key';
 							key   = key.data;
 							value = value;
@@ -782,7 +787,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 						if not st then
 							return false, report_error("value Exected") --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
-						node.entry_list[#node.entry_list+1] = {
+						entry_list[#entry_list+1] = {
 							type = 'value';
 							value = value;
 						} --[[SOL OUTPUT--]] 
@@ -794,7 +799,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				else
 					--value
 					local st, value = parse_expr(scope) --[[SOL OUTPUT--]] 
-					node.entry_list[#node.entry_list+1] = {
+					entry_list[#entry_list+1] = {
 						type = 'value';
 						value = value;
 					} --[[SOL OUTPUT--]] 
@@ -811,7 +816,12 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 					return false, report_error("`}` or table entry expected") --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			node.tokens = token_list --[[SOL OUTPUT--]] 
+
+			node = {
+				ast_type   = 'ConstructorExpr';
+				entry_list = entry_list;
+				tokens     = token_list;
+			} --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_keyword('function', token_list) then
 			-- Parse lambda

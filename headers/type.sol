@@ -1,17 +1,17 @@
--- Compiled from sol/type.sol at 2013 Sep 17  22:13:13
+-- Compiled from sol/type.sol at 2013 Sep 17  22:58:25
 
-return <0x01821ae0>{
+return <0x017db580>{
 	-- Types:
-	typedef Any = <0x0147ef80>{
+	typedef Any = <0x013d0238>{
 		pre_analyzed: bool?;
 		tag:          "any";
 	};
-	typedef False = <0x014814e8>{
+	typedef False = <0x0133c850>{
 		pre_analyzed: bool?;
 		tag:          "false";
 	};
-	typedef Function = <0x01485c68>{
-		args:           [<0x01485d50>{
+	typedef Function = <0x007b3b58>{
+		args:           [<0x013608c0>{
 		                		name: string?;
 		                		type: Type?;
 		                	}];
@@ -22,7 +22,7 @@ return <0x01821ae0>{
 		tag:            "function";
 		vararg:         VarArgs?;
 	};
-	typedef Identifier = <0x01487448>{
+	typedef Identifier = <0x01420e38>{
 		first_usage:  string?;
 		name:         string;
 		pre_analyzed: bool?;
@@ -32,40 +32,40 @@ return <0x01821ae0>{
 		var_name:     string?;
 		where:        string;
 	};
-	typedef Int = <0x01481b70>{
+	typedef Int = <0x01326480>{
 		pre_analyzed: bool?;
 		tag:          "int";
 	};
-	typedef IntLiteral = <0x0147f570>{
+	typedef IntLiteral = <0x0107af50>{
 		pre_analyzed: bool?;
 		tag:          "int_literal";
 		value:        int;
 	};
-	typedef List = <0x01483330>{
+	typedef List = <0x01248cf0>{
 		pre_analyzed: bool?;
 		tag:          "list";
 		type:         Type;
 	};
-	typedef Map = <0x01483a40>{
+	typedef Map = <0x007f9158>{
 		key_type:     Type;
 		pre_analyzed: bool?;
 		tag:          "map";
 		value_type:   Type;
 	};
-	typedef Nil = <0x01480908>{
+	typedef Nil = <0x007c9568>{
 		pre_analyzed: bool?;
 		tag:          "nil";
 	};
-	typedef Num = <0x01482160>{
+	typedef Num = <0x0124a618>{
 		pre_analyzed: bool?;
 		tag:          "num";
 	};
-	typedef NumLiteral = <0x0147fbf8>{
+	typedef NumLiteral = <0x010ae410>{
 		pre_analyzed: bool?;
 		tag:          "num_literal";
 		value:        number;
 	};
-	typedef Object = <0x01484280>{
+	typedef Object = <0x010b2638>{
 		class_type:    Object?;
 		derived:       [Identifier]?;
 		instance_type: Object?;
@@ -75,108 +75,108 @@ return <0x01821ae0>{
 		pre_analyzed:  bool?;
 		tag:           "object";
 	};
-	typedef String = <0x01482750>{
+	typedef String = <0x010156a8>{
 		pre_analyzed: bool?;
 		tag:          "string";
 	};
-	typedef StringLiteral = <0x01480280>{
+	typedef StringLiteral = <0x01465970>{
 		pre_analyzed: bool?;
 		tag:          "string_literal";
 		value:        string;
 	};
-	typedef Table = <0x01482d40>{
+	typedef Table = <0x006e3870>{
 		pre_analyzed: bool?;
 		tag:          "table";
 	};
-	typedef True = <0x01480ef8>{
+	typedef True = <0x004d3cc8>{
 		pre_analyzed: bool?;
 		tag:          "true";
 	};
-	typedef Type = <0x0147e3f8>{
+	typedef Type = <0x01408e98>{
 		pre_analyzed: bool?;
 		tag:          TypeID;
 	};
 	typedef TypeID = "any" or "int_literal" or "num_literal" or "string_literal" or "nil" or "true" or "false" or "int" or "num" or "string" or "table" or "list" or "map" or "object" or "function" or "variant" or "identifier" or "varargs";
 	typedef Typelist = [Type];
-	typedef VarArgs = <0x01485558>{
+	typedef VarArgs = <0x013ad670>{
 		pre_analyzed: bool?;
 		tag:          "varargs";
 		type:         Type;
 	};
-	typedef Variant = <0x01486cd8>{
+	typedef Variant = <0x01249670>{
 		pre_analyzed: bool?;
 		tag:          "variant";
 		variants:     [Type];
 	};
 
 	-- Members:
-	Any:                   <0x0162f428>{
+	Any:                   <0x015e4a08>{
 	                       	tag: "any";
 	                       };
 	AnyTypeList:           table;
-	Bool:                  <0x01647c18>{
+	Bool:                  <0x015fc920>{
 	                       	tag:      "variant";
-	                       	variants: [<0x01639030>{
+	                       	variants: [<0x015edcf8>{
 	                       	          			tag: "false";
-	                       	          		} or <0x016376f8>{
+	                       	          		} or <0x015ec240>{
 	                       	          			tag: "true";
 	                       	          		}];
 	                       };
-	False:                 <0x01639030>{
+	False:                 <0x015edcf8>{
 	                       	tag: "false";
 	                       };
-	Int:                   <0x0163ed10>{
+	Int:                   <0x015f3d68>{
 	                       	tag: "int";
 	                       };
-	List:                  <0x0148f010>{
+	List:                  <0x006cad48>{
 	                       	tag:  "list";
-	                       	type: <0x0162f428>{
+	                       	type: <0x015e4a08>{
 	                       	      	tag: "any";
 	                       	      };
 	                       };
-	Map:                   <0x01652e30>{
-	                       	key_type:   <0x0162f428>{
+	Map:                   <0x01607920>{
+	                       	key_type:   <0x015e4a08>{
 	                       	            	tag: "any";
 	                       	            };
 	                       	tag:        "map";
-	                       	value_type: <0x0162f428>{
+	                       	value_type: <0x015e4a08>{
 	                       	            	tag: "any";
 	                       	            };
 	                       };
-	Nil:                   <0x016357c0>{
+	Nil:                   <0x015ea470>{
 	                       	tag: "nil";
 	                       };
-	Nilable:               <0x0162f428>{
+	Nilable:               <0x015e4a08>{
 	                       	tag: "any";
 	                       };
-	Num:                   <0x0163d338>{
+	Num:                   <0x015f23e0>{
 	                       	tag: "num";
 	                       };
-	Object:                <0x0164cf88>{
+	Object:                <0x01601ce0>{
 	                       	members: table;
 	                       	tag:     "object";
 	                       };
-	String:                <0x0163a9b8>{
+	String:                <0x015efa60>{
 	                       	tag: "string";
 	                       };
-	Table:                 <0x0164a2e0>{
+	Table:                 <0x015fefe8>{
 	                       	tag: "table";
 	                       };
-	True:                  <0x016376f8>{
+	True:                  <0x015ec240>{
 	                       	tag: "true";
 	                       };
-	Uint:                  <0x0163ed10>{
+	Uint:                  <0x015f3d68>{
 	                       	tag: "int";
 	                       };
 	Void:                  table;
 	all_variants:          function(typ: Type) -> function() -> Type?;
-	as_type_list:          function(t: Type or [Type]) -> Type or [Type] or [<0x0147e3f8>{
+	as_type_list:          function(t: Type or [Type]) -> Type or [Type] or [<0x01408e98>{
 	                       					pre_analyzed: bool?;
 	                       					tag:          TypeID;
 	                       				} or [Type]];
 	broaden:               function(t: Type?) -> Type?;
 	clone_variant:         function(v) -> Variant;
-	combine:               function(a: Type, b: Type) -> <0x0147e3f8>{
+	combine:               function(a: Type, b: Type) -> <0x01408e98>{
 	                       		pre_analyzed: bool?;
 	                       		tag:          TypeID;
 	                       	};
@@ -188,7 +188,7 @@ return <0x01821ae0>{
 	create_empty_table:    function() -> Type;
 	extend_variant:        function(v, ... : varargs) -> any;
 	extend_variant_one:    function(v: Variant, e: Type) -> Variant;
-	find:                  function(t: Type, target: Type) -> <0x0147e3f8>{
+	find:                  function(t: Type, target: Type) -> <0x01408e98>{
 	                       			pre_analyzed: bool?;
 	                       			tag:          TypeID;
 	                       		}?;
@@ -222,7 +222,7 @@ return <0x01821ae0>{
 	simplify:              function(t: Type) -> Type;
 	table_id:              function(t: table) -> string;
 	variant:               function(a: Type?, b: Type?) -> Type?;
-	variant_remove:        function(t: Type, remove_this_type: Type) -> <0x0147e3f8>{
+	variant_remove:        function(t: Type, remove_this_type: Type) -> <0x01408e98>{
 	                       		pre_analyzed: bool?;
 	                       		tag:          TypeID;
 	                       	};

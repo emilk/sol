@@ -150,6 +150,9 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
+	--local member_missing_reporter = report_warning -- TODO
+	local member_missing_reporter = report_spam --[[SOL OUTPUT--]] 
+
 	--[[
 	-- Will lookup typedefs in scope variables
 	local function reduce_type(node, scope, t)
@@ -451,7 +454,7 @@ local function analyze(ast, filename, on_require, settings)
 				if indexer then
 					if indexer.tag == 'function' then
 						report_spam(node, "metatable has __index function") --[[SOL OUTPUT--]] 
-						if indexer.rets and #indexer.rets>0 then
+						if indexer.rets and #indexer.rets > 0 then
 							return indexer.rets[1] --[[SOL OUTPUT--]] 
 						else
 							-- TODO: warnings should be written on __index set
@@ -1308,7 +1311,7 @@ local function analyze(ast, filename, on_require, settings)
 					if #suggestions > 0 then
 						report_warning(expr, "Failed to find member '%s' (%s) - did you mean %s?", name, expr, table.concat(suggestions, " or ")) --[[SOL OUTPUT--]] 
 					else
-						report_warning(expr, "Failed to find member '%s' (%s)", name, expr) --[[SOL OUTPUT--]]  -- TODO: warn
+						member_missing_reporter(expr, "Failed to find member '%s' (%s)", name, expr) --[[SOL OUTPUT--]]  -- TODO: warn
 					end --[[SOL OUTPUT--]] 
 					return T.Any --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 

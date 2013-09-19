@@ -131,6 +131,7 @@ typedef T.Identifier : T.Type = {
 -- Used for interaction with Lua code.
 T.Any  = { tag = 'any'  }  -- Single unknown value
 T.AnyTypeList = {}   -- Unkown number of unknown values
+--T.AnyTypeList = { { tag = 'varargs', type = T.Any } }  -- TODO
 
 T.Nil      = { tag = 'nil'    }
 T.True     = { tag = 'true'   }

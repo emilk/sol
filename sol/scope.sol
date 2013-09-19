@@ -46,157 +46,16 @@ end
 --]]
 
 --------------------------------------------------
--- Static members:
-
--- Created the global top-level scope
-function Scope.get_global_scope() -> Scope
-	Scope.global_scope = Scope.global_scope or Scope.create_global_scope()
-	return Scope.global_scope
-end
-
-
-function Scope.create_module_scope() -> Scope
-	local top_scope = Scope.get_global_scope()
-	return Scope.new( top_scope )
-end
-
-
-function Scope.create_global_scope() -> Scope
-	local s = Scope.new()
-	local where = "[intrinsic]"  -- var.where
-
-
-	--[[
-	-- Print out all globals
-	for k,v in pairs(_G)  do print(k, "\t=\t", v)  end
-	--]]
-
-	-- Ommisions explicitly added in lua_intrinsics.sol
-
-	var tables = {
-		'_G',
-		'package',
-		'jit'  -- luaJIT
-	}
-
-	var functions = {
-		'assert',
-		'collectgarbage',
-		'dofile',
-		'error',
-		'gcinfo', 'getfenv', 'getmetatable',
-		'load', 'loadfile', 'loadstring',
-		'module',
-		'newproxy', 'next',
-		'pcall', 'print',
-		'rawequal', 'rawget', 'rawset',
-		'select', 'setfenv',
-		'tonumber', 'tostring', 'unpack', 'xpcall',
-	}
-
-	for _,name in ipairs(tables) do
-		s:create_global( name, where, T.Object )
-	end
-
-	for _,name in ipairs(functions) do
-		var<T.Function> fun_t = {
-			tag            = 'function',
-			args           = { },
-			vararg         = { tag = 'varargs', type = T.Any },
-			rets           = T.AnyTypeList,
-			name           = name,
-			intrinsic_name = name,
-		}
-		s:create_global( name, where, fun_t)
-	end
-
-	s:create_global( '_VERSION', where, T.String )
-	s:create_global( 'arg', where, { tag = 'list', type = T.String} )
-
-
-	-- Ensure 'require' is recognized by TypeCheck.sol
-	local require = s:create_global( 'require', where )
-	require.type = {
-		tag            = 'function',
-		args           = { { type = T.String } },
-		rets           = T.AnyTypeList,
-		name           = "require",
-		intrinsic_name = "require",
-	}
-
-	-- Ensure 'pairs' and 'ipairs' are recognized by TypeCheck.sol
-	local pairs = s:create_global( 'pairs', where )
-	pairs.type = {
-		tag            = 'function',
-		args           = { { type = T.Any } },
-		rets           = T.AnyTypeList,
-		intrinsic_name = "pairs",
-		name           = "pairs",
-	}
-
-	local ipairs_ = s:create_global( 'ipairs', where )
-	ipairs_.type = {
-		tag            = 'function',
-		args           = { { type = T.List } },
-		rets           = T.AnyTypeList,
-		intrinsic_name = "ipairs",
-		name           = "ipairs",
-	}
-
-	local setmetatable = s:create_global( 'setmetatable', where )
-	setmetatable.type = {
-		tag            = 'function',
-		args           = { {  type = T.Table }, { type = T.Table } },
-		rets           = { T.Table },
-		intrinsic_name = "setmetatable",
-		name           = "setmetatable",
-	}
-
-	local type = s:create_global( 'type', where )
-	type.type = {
-		tag            = 'function',
-		args           = { {        type = T.Any } },
-		rets           = { T.String },
-		intrinsic_name = "type",
-		name           = "type",
-	}
-
-
-	var is_local = true
-	--s:declare_type( 'void',    T.Void ) -- Not a valid type, only allowed as a typelist
-	s:declare_type( 'bool',   T.Bool,   where, is_local )
-	s:declare_type( 'int',    T.Int,    where, is_local )
-	s:declare_type( 'uint',   T.Uint,   where, is_local )
-	s:declare_type( 'number', T.Num,    where, is_local )
-	s:declare_type( 'string', T.String, where, is_local )
-	s:declare_type( 'any',    T.Any,    where, is_local )
-	s:declare_type( 'table',  T.Table,  where, is_local )
-	--s:declare_type( 'list',   T.List,   where, is_local ) -- use: [any]
-	--s:declare_type( 'map',    T.Map,    where, is_local ) -- use: {any => any}
-	s:declare_type( 'object', T.Object, where, is_local )
-
-	-- keywords are handles explicitly during parsing
-	--s:declare_type( 'nil',     T.Nil)    -- for e.g.:   foo or bar or nil
-	--s:declare_type( 'true',    T.True)
-	--s:declare_type( 'false',   T.False)
-
-	-- No more changes - user globals should be declared in module scope (a direct child)
-	s.fixed = true
-
-	return s
-end
-
---------------------------------------------------
 
 -- Constructor
 function Scope:init(parent: Scope?)
 	self.parent          = parent 
-	self.children        = {}     : [Scope]
-	self.locals          = {}     : [Variable]
-	self.globals         = {}     : [Variable]
-	self.typedefs        = {}     : { string => T.Type }
-	self.global_typedefs = {}     : { string => T.Type }
-	self.vararg          = nil    : Variable?
+	self.children        = {}  : [Scope]
+	self.locals          = {}  : [Variable]
+	self.globals         = {}  : [Variable]
+	self.typedefs        = {}  : { string => T.Type }
+	self.global_typedefs = {}  : { string => T.Type }
+	self.vararg          = nil : Variable?
 	self.fixed           = false  
 	
 	if parent then
@@ -379,5 +238,148 @@ function Scope:get_global_typedefs() -> { string => T.Type }
 	return U.shallow_clone( self.global_typedefs )
 end
 
+
+--------------------------------------------------
+-- Static members:
+
+-- Created the global top-level scope
+function Scope.get_global_scope() -> Scope
+	Scope.global_scope = Scope.global_scope or Scope.create_global_scope()
+	return Scope.global_scope
+end
+
+
+function Scope.create_module_scope() -> Scope
+	local top_scope = Scope.get_global_scope()
+	return Scope.new( top_scope )
+end
+
+
+function Scope.create_global_scope() -> Scope
+	var s = Scope.new()
+	var where = "[intrinsic]"  -- var.where
+
+
+	--[[
+	-- Print out all globals
+	for k,v in pairs(_G)  do print(k, "\t=\t", v)  end
+	--]]
+
+	-- Ommisions explicitly added in lua_intrinsics.sol
+
+	var tables = {
+		'_G',
+		'package',
+		'jit'  -- luaJIT
+	}
+
+	var functions = {
+		'assert',
+		'collectgarbage',
+		'dofile',
+		'error',
+		'gcinfo', 'getfenv', 'getmetatable',
+		'load', 'loadfile', 'loadstring',
+		'module',
+		'newproxy', 'next',
+		'pcall', 'print',
+		'rawequal', 'rawget', 'rawset',
+		'select', 'setfenv',
+		'tonumber', 'tostring', 'unpack', 'xpcall',
+	}
+
+	for _,name in ipairs(tables) do
+		s:create_global( name, where, T.Object )
+	end
+
+	for _,name in ipairs(functions) do
+		var<T.Function> fun_t = {
+			tag            = 'function',
+			args           = { },
+			vararg         = { tag = 'varargs', type = T.Any },
+			rets           = T.AnyTypeList,
+			name           = name,
+			intrinsic_name = name,
+		}
+		s:create_global( name, where, fun_t)
+	end
+
+	s:create_global( '_VERSION', where, T.String )
+	s:create_global( 'arg', where, { tag = 'list', type = T.String} )
+
+
+	-- Ensure 'require' is recognized by TypeCheck.sol
+	local require = s:create_global( 'require', where )
+	require.type = {
+		tag            = 'function',
+		args           = { { type = T.String } },
+		rets           = T.AnyTypeList,
+		name           = "require",
+		intrinsic_name = "require",
+	}
+
+	-- Ensure 'pairs' and 'ipairs' are recognized by TypeCheck.sol
+	local pairs = s:create_global( 'pairs', where )
+	pairs.type = {
+		tag            = 'function',
+		args           = { { type = T.Any } },
+		rets           = T.AnyTypeList,
+		intrinsic_name = "pairs",
+		name           = "pairs",
+	}
+
+	local ipairs_ = s:create_global( 'ipairs', where )
+	ipairs_.type = {
+		tag            = 'function',
+		args           = { { type = T.List } },
+		rets           = T.AnyTypeList,
+		intrinsic_name = "ipairs",
+		name           = "ipairs",
+	}
+
+	local setmetatable = s:create_global( 'setmetatable', where )
+	setmetatable.type = {
+		tag            = 'function',
+		args           = { {  type = T.Table }, { type = T.Table } },
+		rets           = { T.Table },
+		intrinsic_name = "setmetatable",
+		name           = "setmetatable",
+	}
+
+	local type = s:create_global( 'type', where )
+	type.type = {
+		tag            = 'function',
+		args           = { {        type = T.Any } },
+		rets           = { T.String },
+		intrinsic_name = "type",
+		name           = "type",
+	}
+
+
+	var is_local = true
+	--s:declare_type( 'void',    T.Void ) -- Not a valid type, only allowed as a typelist
+	s:declare_type( 'bool',   T.Bool,   where, is_local )
+	s:declare_type( 'int',    T.Int,    where, is_local )
+	s:declare_type( 'uint',   T.Uint,   where, is_local )
+	s:declare_type( 'number', T.Num,    where, is_local )
+	s:declare_type( 'string', T.String, where, is_local )
+	s:declare_type( 'any',    T.Any,    where, is_local )
+	s:declare_type( 'table',  T.Table,  where, is_local )
+	--s:declare_type( 'list',   T.List,   where, is_local ) -- use: [any]
+	--s:declare_type( 'map',    T.Map,    where, is_local ) -- use: {any => any}
+	s:declare_type( 'object', T.Object, where, is_local )
+
+	-- keywords are handles explicitly during parsing
+	--s:declare_type( 'nil',     T.Nil)    -- for e.g.:   foo or bar or nil
+	--s:declare_type( 'true',    T.True)
+	--s:declare_type( 'false',   T.False)
+
+	-- No more changes - user globals should be declared in module scope (a direct child)
+	s.fixed = true
+
+	return s
+end
+
+----------------------------------------
 
 return {}

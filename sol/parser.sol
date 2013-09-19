@@ -98,6 +98,7 @@ typedef P.ExprNode : P.Node = {
 typedef P.IdExpr : P.ExprNode = {
 	ast_type: 'IdExpr';
 	name:     string;
+	variable: Variable;  -- Set by type_check
 }
 
 typedef P.NumberExpr : P.ExprNode = {
@@ -174,7 +175,10 @@ typedef P.MemberExpr : P.ExprNode = {
 typedef P.LambdaFunctionExpr : P.ExprNode = {
 	ast_type:     'LambdaFunctionExpr';
 	is_mem_fun:   bool;
-	arguments:    [ {  name:    string } ];
+	arguments:    [ {
+	              	name: string;
+	              	type: T.Type?;
+	              } ];
 	vararg:       T.VarArgs?;
 	return_types: [T.Type]?;
 	body:         P.Statlist?;  -- nil means header only, used by lua_intrinsics.sol
@@ -314,7 +318,10 @@ typedef P.FunctionDeclStatement : P.StatNode = {
 	is_mem_fun:   bool;
 	is_aggregate: bool;   -- true: function foo.bar(...)
 	name_expr:    P.ExprNode;
-	arguments:    [ { name: string } ];
+	arguments:    [ {
+	              	name: string;
+	              	type: T.Type?;
+	              } ];
 	vararg:       T.VarArgs?;
 	body:         P.Statlist;
 }
@@ -728,10 +735,8 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			}
 
 		elseif tok:consume_symbol('{', token_list) then
-			node = {
-				ast_type = 'ConstructorExpr';
-				entry_list = {};
-			}
+			--var entry_list = {} : [ConstructorExprEntry] -- TODO
+			var entry_list = {} : [any]
 			--
 			while true do
 				if tok:is_symbol('[', token_list) then
@@ -751,7 +756,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					if not st then
 						return false, report_error("value expression Expected")
 					end
-					node.entry_list[#node.entry_list+1] = {
+					entry_list[#entry_list+1] = {
 						type  = 'key';
 						key   = key;
 						value = value;
@@ -770,7 +775,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 						if not st then
 							return false, report_error("value expression Expected")
 						end
-						node.entry_list[#node.entry_list+1] = {
+						entry_list[#entry_list+1] = {
 							type  = 'ident_key';
 							key   = key.data;
 							value = value;
@@ -782,7 +787,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 						if not st then
 							return false, report_error("value Exected")
 						end
-						node.entry_list[#node.entry_list+1] = {
+						entry_list[#entry_list+1] = {
 							type = 'value';
 							value = value;
 						}
@@ -794,7 +799,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				else
 					--value
 					local st, value = parse_expr(scope)
-					node.entry_list[#node.entry_list+1] = {
+					entry_list[#entry_list+1] = {
 						type = 'value';
 						value = value;
 					}
@@ -811,7 +816,12 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					return false, report_error("`}` or table entry expected")
 				end
 			end
-			node.tokens = token_list
+
+			node = {
+				ast_type   = 'ConstructorExpr';
+				entry_list = entry_list;
+				tokens     = token_list;
+			}
 
 		elseif tok:consume_keyword('function', token_list) then
 			-- Parse lambda
