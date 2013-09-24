@@ -682,6 +682,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					end
 				else
 					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args)
+					D.break_()
 				end
 			else
 				break

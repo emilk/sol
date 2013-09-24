@@ -356,7 +356,8 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 
 	--
 	local function where_am_i(offset)
-		return filename .. ":" .. tok:peek(offset).line --[[SOL OUTPUT--]] 
+		local token = tok:peek(offset) --[[SOL OUTPUT--]] 
+		return filename .. ":" .. token.line --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local function generate_msg(msg_fmt, ...)
@@ -645,7 +646,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				local node_call = {} --[[SOL OUTPUT--]] 
-				node_call.ast_type   = 'CallExpr' --[[SOL OUTPUT--]] 
+				node_call.ast_type  = 'CallExpr' --[[SOL OUTPUT--]] 
 				node_call.base      = prim --[[SOL OUTPUT--]] 
 				node_call.arguments = args --[[SOL OUTPUT--]] 
 				node_call.tokens    = token_list --[[SOL OUTPUT--]] 
@@ -658,12 +659,12 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				local st, ex = parse_simple_expr(scope) --[[SOL OUTPUT--]] 
 				if not st then return false, ex --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				local node_call = {} --[[SOL OUTPUT--]] 
-				node_call.ast_type    = 'StringCallExpr' --[[SOL OUTPUT--]] 
-				node_call.base       = prim --[[SOL OUTPUT--]] 
+				node_call.ast_type  = 'StringCallExpr' --[[SOL OUTPUT--]] 
+				node_call.base      = prim --[[SOL OUTPUT--]] 
 				--node_call.arguments  = { tok:get(token_list) }
-				node_call.arguments  = { ex } --[[SOL OUTPUT--]] 
-				node_call.tokens     = token_list --[[SOL OUTPUT--]] 
-				node_call.where      = where --[[SOL OUTPUT--]] 
+				node_call.arguments = { ex } --[[SOL OUTPUT--]] 
+				node_call.tokens    = token_list --[[SOL OUTPUT--]] 
+				node_call.where     = where --[[SOL OUTPUT--]] 
 				--
 				prim = node_call --[[SOL OUTPUT--]] 
 
@@ -674,7 +675,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				-- We just want the table
 				if not st then return false, ex --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				local node_call = {} --[[SOL OUTPUT--]] 
-				node_call.ast_type   = 'TableCallExpr' --[[SOL OUTPUT--]] 
+				node_call.ast_type  = 'TableCallExpr' --[[SOL OUTPUT--]] 
 				node_call.base      = prim --[[SOL OUTPUT--]] 
 				node_call.arguments = { ex } --[[SOL OUTPUT--]] 
 				node_call.tokens    = token_list --[[SOL OUTPUT--]] 
@@ -862,8 +863,9 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 	} --[[SOL OUTPUT--]] 
 
 	parse_sub_expr = function(scope, prio_level)
-		local    st  = false --[[SOL OUTPUT--]] 
-		local exp = nil --[[SOL OUTPUT--]] 
+		local    st    = false --[[SOL OUTPUT--]] 
+		local exp   = nil --[[SOL OUTPUT--]] 
+		local          where = where_am_i() --[[SOL OUTPUT--]] 
 
 		--base item, possibly with unop prefix
 		if unops[tok:peek().data] then
@@ -905,7 +907,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		exp.where = where_am_i() --[[SOL OUTPUT--]] 
+		exp.where = exp.where or where --[[SOL OUTPUT--]] 
 
 		return true, exp --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

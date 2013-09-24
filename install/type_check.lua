@@ -682,6 +682,7 @@ local function analyze(ast, filename, on_require, settings)
 					end --[[SOL OUTPUT--]] 
 				else
 					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args) --[[SOL OUTPUT--]] 
+					D.break_() --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else
 				break --[[SOL OUTPUT--]] 

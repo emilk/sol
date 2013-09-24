@@ -356,7 +356,8 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 	--
 	local function where_am_i(offset: int?) -> string
-		return filename .. ":" .. tok:peek(offset).line
+		local token = tok:peek(offset)
+		return filename .. ":" .. token.line
 	end
 
 	local function generate_msg(msg_fmt, ...) -> string
@@ -645,7 +646,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					end
 				end
 				local node_call = {}
-				node_call.ast_type   = 'CallExpr'
+				node_call.ast_type  = 'CallExpr'
 				node_call.base      = prim
 				node_call.arguments = args
 				node_call.tokens    = token_list
@@ -658,12 +659,12 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				local st, ex = parse_simple_expr(scope)
 				if not st then return false, ex end
 				local node_call = {}
-				node_call.ast_type    = 'StringCallExpr'
-				node_call.base       = prim
+				node_call.ast_type  = 'StringCallExpr'
+				node_call.base      = prim
 				--node_call.arguments  = { tok:get(token_list) }
-				node_call.arguments  = { ex }
-				node_call.tokens     = token_list
-				node_call.where      = where
+				node_call.arguments = { ex }
+				node_call.tokens    = token_list
+				node_call.where     = where
 				--
 				prim = node_call
 
@@ -674,7 +675,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				-- We just want the table
 				if not st then return false, ex end
 				local node_call = {}
-				node_call.ast_type   = 'TableCallExpr'
+				node_call.ast_type  = 'TableCallExpr'
 				node_call.base      = prim
 				node_call.arguments = { ex }
 				node_call.tokens    = token_list
@@ -862,8 +863,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	}
 
 	parse_sub_expr = function(scope: Scope, prio_level: int) -> bool, ExprNode_or_error
-		var<bool>    st  = false
-		var<object?> exp = nil
+		var<bool>    st    = false
+		var<object?> exp   = nil
+		var          where = where_am_i()
 
 		--base item, possibly with unop prefix
 		if unops[tok:peek().data] then
@@ -905,7 +907,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			end
 		end
 
-		exp.where = where_am_i()
+		exp.where = exp.where or where
 
 		return true, exp
 	end
