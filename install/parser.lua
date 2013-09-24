@@ -527,7 +527,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 			--end
 			if not tok:consume_keyword('end', token_list) then
-				return false, report_error("`end` expected after function body at %s", where) --[[SOL OUTPUT--]] 
+				return false, report_error("`end` expected after function body in %s", where) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 

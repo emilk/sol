@@ -159,8 +159,8 @@ local function require_module(path_in: string, mod_name: string, module_scope: S
 		--D.break_();
 		local existing = module_scope:get_global( v.name )
 		if existing and existing ~= v then
-			printf_err("Global clash when including module '%s' at %s:"
-				     .. "Global variable '%s' re-declared at %s, previously declared in %s",
+			printf_err("Global clash when including module '%s' in %s:"
+				     .. "Global variable '%s' re-declared in %s, previously declared in %s",
 				mod_name, req_where, v.name, v.where, existing.where)
 		end
 
@@ -176,8 +176,8 @@ local function require_module(path_in: string, mod_name: string, module_scope: S
 		--D.break_();
 		local existing = module_scope:get_global_type( name )
 		if existing and existing ~= type then
-			printf_err("Global clash when including module '%s' at %s:"
-				     .. "Global type '%s' re-declared at %s, previously declared in %s",
+			printf_err("Global clash when including module '%s' in %s:"
+				     .. "Global type '%s' re-declared in %s, previously declared in %s",
 				mod_name, req_where, name, type.where, existing.where)
 		end
 
@@ -226,7 +226,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	for _,v in ipairs(g_globals.global_vars) do
 		local existing = module_scope:get_global( v.name )
 		if existing and existing ~= v then
-			printf_err("Global variable '%s' re-declared at %s, previously declared in %s",
+			printf_err("Global variable '%s' re-declared in %s, previously declared in %s",
 				v.name, v.where, existing.where)
 		end
 
@@ -238,7 +238,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	for name,type in pairs(g_globals.global_typedefs) do
 		local existing = module_scope:get_global_type( name )
 		if existing and existing ~= type then
-			printf_err("Global type '%s' re-declared at %s, previously declared in %s",
+			printf_err("Global type '%s' re-declared in %s, previously declared in %s",
 				name, type.where, existing.where)
 		end
 

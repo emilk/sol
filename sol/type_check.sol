@@ -210,12 +210,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		if old then
 			if name ~= "st" and name ~= "_" then  -- HACK
-				report_error(node, "'%s' already declared in this scope, at %s", name, old.where)
+				report_error(node, "%q already declared in this scope, in %s", name, old.where)
 			end
 			return old
 		end
 
-		report_spam(node, "Declaring local '%s'", name)
+		report_spam(node, "Declaring local %q", name)
 		local v = scope:create_local(name, where_is(node))
 		v.type = typ
 		return v
@@ -245,11 +245,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		if old then
-			report_error(node, "global '%s' already declared at %s", name, old.where)
+			report_error(node, "global %q already declared in %s", name, old.where)
 			return old
 		end
 
-		report_spam(node, "Declaring global '%s'", name)
+		report_spam(node, "Declaring global %q", name)
 		return scope:create_global(name, where_is(node), typ)
 	end
 
@@ -306,7 +306,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			elseif #t == 1 then
 				return t[1], v
 			else
-				report_error(expr, "Expected single type, got: '%s' when analyzing '%s' expression", t, expr.ast_type)
+				report_error(expr, "When analyzing '%s' expression: Expected single type, got: %s", expr.ast_type, t)
 				return T.Any, v
 			end
 		else
@@ -338,7 +338,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				if base_var then
 					return base_var.type or T.Any, base_var
 				else
-					report_error(expr, "Pre-analyzer: Unknown identifier '%s'", expr.name)
+					report_error(expr, "Pre-analyzer: Unknown identifier %q", expr.name)
 					return T.Any, nil
 				end
 
@@ -660,9 +660,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					if i == 1 and fun_t.args[i].name == 'self' then
 						report_error(expr, "Missing object argument ('self'). Did you forget to call with : ?")
 					elseif not T.is_nilable(expected) then
-						report_error(expr, "Missing non-nilable argument %i: expected '%s'", i, expected)
+						report_error(expr, "Missing non-nilable argument %i: expected %s", i, expected)
 					elseif _G.g_spam then
-						report_spam(expr, "Ignoring missing argument %i: it's nilable: '%s'", i, expected)
+						report_spam(expr, "Ignoring missing argument %i: it's nilable: %s", i, expected)
 					end
 				end
 			elseif i <= #arg_ts then
@@ -676,7 +676,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					assert(T.is_type(given))
 					assert(T.is_type(expected))
 
-					report_spam(expr, "Check varargs. Given: '%s', expected '%s'", given, expected)
+					report_spam(expr, "Check varargs. Given: %s, expected %s", given, expected)
 
 					if given.tag == 'varargs' then
 						given = given.type
@@ -747,8 +747,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 	local function analyze_fun_call(expr: P.Node, typ: T.Type, args: [P.Node], arg_ts: [T.Type], report_errors: bool) -> T.Typelist?
-		report_spam(expr, "analyze_fun_call, typ: '%s'", typ)
-		report_spam(expr, "analyze_fun_call, arg_ts: '%s'", arg_ts)
+		report_spam(expr, "analyze_fun_call, typ: %s", typ)
+		report_spam(expr, "analyze_fun_call, arg_ts: %s", arg_ts)
 
 		typ = T.follow_identifiers(typ)
 
@@ -776,7 +776,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		if typ.tag ~= 'function' then
 			if report_errors then
-				report_error(expr, "Not a function: '%s'", typ)
+				report_error(expr, "Not a function: %s", typ)
 			end
 			return nil
 		end
@@ -871,7 +871,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if T.is_any(typ) then
 				-- TODO: Upgrade to a warning!
-				report_spam(expr, "Function call cannot be deduced - calling something of unknown type: '%s'", fun_type)
+				report_spam(expr, "Function call cannot be deduced - calling something of unknown type: %s", fun_type)
 				return T.AnyTypeList
 
 			elseif typ.tag == 'function' then
@@ -913,7 +913,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				return rets
 
 			elseif report_errors then
-				report_error(expr, "Cannot call '%s'", typ)
+				report_error(expr, "Cannot call %s", typ)
 				return nil
 			else
 				return nil
@@ -923,12 +923,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		local rets = try_call(fun_type, false)
 
 		if rets then
-			report_spam(expr, "Function deduced to returning: '%s'", rets)
+			report_spam(expr, "Function deduced to returning: %s", rets)
 			D.assert( T.is_type_list(rets) )
 			return rets
 		else
 			-- Show errors:
-			report_error(expr, "Cannot call '%s'", fun_type)
+			report_error(expr, "Cannot call %s", fun_type)
 			try_call(fun_type, true)
 			return T.AnyTypeList
 		end
@@ -954,7 +954,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		D.assert(gen_t)
 
-		report_spam(expr, "extract_iterator_type, gen_t: '%s'", gen_t)
+		report_spam(expr, "extract_iterator_type, gen_t: %s", gen_t)
 
 		gen_t = T.follow_identifiers(gen_t)
 		if gen_t == T.Any then
@@ -967,7 +967,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				suggestion = 'ipairs'
 			end
 
-			report_error(expr, "Generator function expected, got '%s' - did you forget to use '%s'?", gen_t, suggestion)
+			report_error(expr, "Generator function expected, got %s - did you forget to use '%s'?", gen_t, suggestion)
 
 			return T.AnyTypeList
 		end
@@ -1001,11 +1001,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_error(expr, "You may not read from discard variable '_'")
 			end
 
-			var<Variable?> var_ = scope:get_var( expr.name )
+			var<Variable?> var_ = scope:get_var( expr.name, 'ignore_fwd_decl' )
 
 			if var_ then
 				if var_.forward_declared then
-					report_error(expr, "Use of forward-declared variable '%s', forward-declared at %s",
+					report_error(expr, "Use of forward-declared variable %q, forward-declared in %s",
 						expr.name, var_.where)
 				end
 
@@ -1044,7 +1044,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						end
 					end
 				else
-					report_error(expr, "Variable '%s' used as namespace but is not an object (it's '%s')", var_.name, type)
+					report_error(expr, "Variable %q used as namespace but is not an object - it's %s", var_.name, type)
 					var_.namespace = nil -- Only warn once
 				end
 			end
@@ -1155,7 +1155,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				-- Make sure we aren't comparing string to int:s:
 				if (not T.could_be(lt, rt)) and (not T.could_be(rt, lt)) then
 					-- Apples and oranges
-					report_error(expr, "Comparing incompatible types: '%s' and '%s'", lt, rt)
+					report_error(expr, "Comparing incompatible types: %s and %s", lt, rt)
 				end
 				return T.Bool
 
@@ -1170,9 +1170,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--]]
 			elseif op == 'and' then
 				if not T.is_useful_boolean(lt) then
-					report_warning(expr,
-						--"Operator 'and' expected boolean expression to the left, got %s from expression %s", T.name(lt), expr2str(expr.lhs))
-						"Operator 'and' expected boolean expression to the left, got '%s'", T.name(lt))
+					report_warning(expr, "Operator 'and' expected boolean expression to the left, got %s", lt)
 				end
 
 				-- Iff left is false, then left, else right
@@ -1192,9 +1190,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			elseif op == 'or' then
 				if not T.is_useful_boolean(lt) then
-					report_warning(expr,
-						--"Operator 'or' expected boolean expression to the left, got %s from expression %s", T.name(lt), expr2str(expr.lhs))
-						"Operator 'or' expected boolean expression to the left, got '%s'", T.name(lt))
+					report_warning(expr, "Operator 'or' expected boolean expression to the left, got %s", lt)
 				end
 
 				-- If first argument is true, then the left is returned, else the right
@@ -1335,9 +1331,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					return t
 				else
 					if #suggestions > 0 then
-						report_warning(expr, "Failed to find member '%s' (%s) - did you mean %s?", name, expr, table.concat(suggestions, " or "))
+						report_warning(expr, "Failed to find member %q (%s) - did you mean %s?", name, expr, table.concat(suggestions, " or "))
 					else
-						member_missing_reporter(expr, "Failed to find member '%s' (%s)", name, expr) -- TODO: warn
+						member_missing_reporter(expr, "Failed to find member %q (%s)", name, expr) -- TODO: warn
 					end
 					return T.Any
 				end
@@ -1401,7 +1397,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						   type(this_key_type) == 'bool'
 						then
 							if map_keys[ this_key_type] then
-								report_error(e.value, "Map key '%s' declared twice", this_key_type)
+								report_error(e.value, "Map key %q declared twice", this_key_type)
 							end
 							map_keys[ this_key_type ] = true
 						end
@@ -1409,7 +1405,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 					if e.type == 'ident_key' then
 						if obj_members[ e.key ] then
-							report_error(e.value, "Object member '%s' declared twice", e.key)
+							report_error(e.value, "Object member %q declared twice", e.key)
 						end
 						obj_members[ e.key ] = this_val_type
 					end
@@ -1481,7 +1477,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		else
 			local t = analyze_expr_single(expr, scope)
 			if not T.is_useful_boolean(t) then
-				report_error(expr, "Not a useful boolean expression in %q, type is '%s'", name, t)
+				report_error(expr, "Not a useful boolean expression in %q, type is %s", name, t)
 			end
 		end
 	end
@@ -1518,7 +1514,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		if left_type and left_type.pre_analyzed then
 			if right_type.pre_analyzed and is_pre_analyze then
-				report_error(stat, "Name clash: %q, previously decalred at %s", name, right_type.where)
+				report_error(stat, "Name clash: %q, previously declared in %s", name, left_type.where)
 			else
 				D.assert(not right_type.pre_analyzed)
 			end
@@ -1528,7 +1524,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--obj_t.members[name] = nil  -- TODO: makes compilation hang!
 			left_type = nil
 
-			report_spam(stat, "Replacing pre-analyzed type with refined type: '%s'", right_type)
+			report_spam(stat, "Replacing pre-analyzed type with refined type: %s", right_type)
 		end
 
 		if left_type then
@@ -1546,7 +1542,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					local close_name = loose_lookup(obj_t.members, name)
 
 					if close_name then
-						report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name)
+						report_warning(stat, "Could not find %q - Did you mean %q?", name, close_name)
 					end
 				end
 
@@ -1653,11 +1649,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					sol_warning(stat, "[B] Trying to index type 'any' with '%s'", name)
+					sol_warning(stat, "[B] Trying to index type 'any' with %q", name)
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Trying to index non-object of type %s with '%s'", var_t, name)
+					report_warning(stat, "[B] Trying to index non-object of type %s with %q", var_t, name)
 					--D.break_()
 				end
 
@@ -1679,7 +1675,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						--var_t.members[name] = nil  -- TODO: makes compilation hang!
 						left_type = nil
 
-						report_spam(stat, "Replacing pre-analyzed type with refined type: '%s'", right_type)
+						report_spam(stat, "Replacing pre-analyzed type with refined type: %s", right_type)
 					end
 
 					if left_type then
@@ -1697,7 +1693,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							local close_name = loose_lookup(base_t.members, name)
 
 							if close_name then
-								report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name)
+								report_warning(stat, "Could not find %q - Did you mean %q?", name, close_name)
 							end
 						end
 
@@ -1721,9 +1717,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				elseif T.is_any(base_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					sol_warning(stat, "[A] Trying to index type 'any' with '%s'", name)
+					sol_warning(stat, "[A] Trying to index type 'any' with %q", name)
 				else
-					report_warning(stat, "[A] Trying to index non-object of type '%s' with '%s'", base_t, name)
+					report_warning(stat, "[A] Trying to index non-object of type %s with %q", base_t, name)
 				end
 			end
 		end
@@ -1769,11 +1765,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			v.namespace = v.namespace or {}
 			local ns = v.namespace
 			if ns[name] then
-				report_error(stat, "type %s.%s already declared as '%s'", v.name, name, ns[name])
+				report_error(stat, "type %s.%s already declared as %s", v.name, name, ns[name])
 			end
 
 			if stat.type then
-				report_spam(stat, "Declaring type %s.%s as '%s'", v.name, name, stat.type)
+				report_spam(stat, "Declaring type %s.%s as %s", v.name, name, stat.type)
 			else
 				report_spam(stat, "Forward-declaring type %s.%s", v.name, name)
 			end
@@ -1782,7 +1778,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		else
 			local old = scope:get_scoped_type(name)
 			if old then
-				report_error(stat, "type %q already declared as '%s'", name, old)
+				report_error(stat, "type %q already declared as %s", name, old)
 			end
 			scope:declare_type(name, stat.type, where_is(stat), stat.is_local)
 		end
@@ -1793,7 +1789,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local child_type = T.follow_identifiers(stat.type)
 
 			if child_type.tag ~= 'object' then
-				report_error(stat, "Only objects can have base-types (child: '%s')", child_type)
+				report_error(stat, "Only objects can have base-types - child: %s", child_type)
 			else
 				for _,base in ipairs(stat.base_types) do
 					report_spam(stat, "%s inheriting %s", name, base.name)
@@ -1805,15 +1801,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 					local base_type = T.follow_identifiers(base)
 					if base_type.tag ~= 'object' then
-						--report_error(stat, "'%s' cannot inherit non-object '%s'", name, base_type)
-						report_error(stat, "'%s' cannot inherit non-object '%s'", name, base)
+						report_error(stat, "%q cannot inherit non-object %s", name, base)
 						break
 					end
 
 					for id,id_type in pairs(base_type.members) do
 						if child_type.members[id] then
 							if not T.isa(child_type.members[id], id_type) then
-								report_error(stat, "Child type '%s' overrides '%s' with differing type.", name, id)
+								report_error(stat, "Child type %s overrides %q with differing type.", name, id)
 							end
 						else
 							-- Inherit:
@@ -1840,7 +1835,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		local old = scope:get_scoped_type(name)
 		if old then
-			report_error(stat, "class type %q already declared as '%s'", name, old)
+			report_error(stat, "class type %q already declared as %q", name, old)
 		end
 		var class_type = {
 			tag     = 'object',
@@ -1971,8 +1966,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				elseif explicit_types then
 					for _,v in ipairs(vars) do
 						if not T.is_nilable(v.type) then
-							report_error(stat, "Variable '%s' of non-nilable type '%s' missing its definition",
-								v.name, T.name(v.type))
+							report_error(stat, "Variable %q of non-nilable type %s missing its definition", v.name, v.type)
 						end
 					end
 				else
@@ -2234,7 +2228,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						-- Assigning to something declared in an outer scope
 					else
 						-- Leave error reporting out of pre-analyzer
-						report_error(stat, "Pre-analyze: Declaring implicit global '%s'", var_name)
+						report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name)
 						v = scope:create_global( var_name, where_is(stat) )
 					end
 
@@ -2242,7 +2236,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						--do_assignment(stat, scope, stat.lhs[1], fun_t)
 					
 						if v.type then
-							report_error(stat, "Cannot forward declare '%s': it already has type '%s'", v.name, v.type)
+							report_error(stat, "Cannot forward declare %q: it already has type %s", v.name, v.type)
 						end
 
 						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze )
@@ -2252,7 +2246,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 						v.type = fun_t
 
-						report_spam(stat, "Forward-declared '%s' as '%s'", v.name, fun_t)
+						report_spam(stat, "Forward-declared %q as %s", v.name, fun_t)
 					end
 				end
 			end
@@ -2271,7 +2265,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if stat.is_aggregate then
 				-- function foo.bar(arg)  -- namespaced - OK
 				-- function foo:bar(arg)  -- member - OK
-				report_spam(stat, "Pre-analyzed function head for %q as '%s'", fun_t.name, fun_t)
+				report_spam(stat, "Pre-analyzed function head for %q as %s", fun_t.name, fun_t)
 				do_assignment(stat, scope, stat.name_expr, fun_t, is_pre_analyze)
 				report_spam(stat, "Assigned.")
 			else

@@ -14,7 +14,10 @@ User declared globals goes into the 'module_scope' and are marked as 'global'.
 
   Scope = {
 	-- TODO: static members here, i.e. global_scope
-} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+
+
+
 
 
 
@@ -159,9 +162,13 @@ end --[[SOL OUTPUT--]]
 
 
 -- Will only check local scope
-function Scope:get_scoped(name)
+function Scope:get_scoped(name, options)
 	for _,v in ipairs(self.locals) do
-		if v.name == name then return v --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+		if v.name == name then
+			if not v.forward_declared or options ~= 'ignore_fwd_decl' then
+				return v --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	return nil --[[SOL OUTPUT--]] 
@@ -169,43 +176,47 @@ end --[[SOL OUTPUT--]]
 
 
 -- Will check locals and parents
-function Scope:get_local(name)
-	local v = self:get_scoped(name) --[[SOL OUTPUT--]] 
+function Scope:get_local(name, options)
+	local v = self:get_scoped(name, options) --[[SOL OUTPUT--]] 
 	if v then return v --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	
 	if self.parent then
-		return self.parent:get_local(name) --[[SOL OUTPUT--]] 
+		return self.parent:get_local(name, options) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
 -- Global declared in this scope
-function Scope:get_scoped_global(name)
+function Scope:get_scoped_global(name, options)
 	for k, v in ipairs(self.globals) do
-		if v.name == name then return v --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+		if v.name == name then
+			if not v.forward_declared or options ~= 'ignore_fwd_decl' then
+				return v --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
-function Scope:get_global(name)
-	local v = self:get_scoped_global(name) --[[SOL OUTPUT--]] 
+function Scope:get_global(name, options)
+	local v = self:get_scoped_global(name, options) --[[SOL OUTPUT--]] 
 	if v then return v --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	
 	if self.parent then
-		return self.parent:get_global(name) --[[SOL OUTPUT--]] 
+		return self.parent:get_global(name, options) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
 
 -- Var declared in this scope
-function Scope:get_scoped_var(name)
-	return self:get_scoped(name) or self:get_scoped_global(name) --[[SOL OUTPUT--]] 
+function Scope:get_scoped_var(name, options)
+	return self:get_scoped(name, options) or self:get_scoped_global(name, options) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
-function Scope:get_var(name)
-	return self:get_local(name) or self:get_global(name) --[[SOL OUTPUT--]] 
+function Scope:get_var(name, options)
+	return self:get_local(name, options) or self:get_global(name, options) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 

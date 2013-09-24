@@ -210,12 +210,12 @@ local function analyze(ast, filename, on_require, settings)
 
 		if old then
 			if name ~= "st" and name ~= "_" then  -- HACK
-				report_error(node, "'%s' already declared in this scope, at %s", name, old.where) --[[SOL OUTPUT--]] 
+				report_error(node, "%q already declared in this scope, in %s", name, old.where) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			return old --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		report_spam(node, "Declaring local '%s'", name) --[[SOL OUTPUT--]] 
+		report_spam(node, "Declaring local %q", name) --[[SOL OUTPUT--]] 
 		local v = scope:create_local(name, where_is(node)) --[[SOL OUTPUT--]] 
 		v.type = typ --[[SOL OUTPUT--]] 
 		return v --[[SOL OUTPUT--]] 
@@ -245,11 +245,11 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 
 		if old then
-			report_error(node, "global '%s' already declared at %s", name, old.where) --[[SOL OUTPUT--]] 
+			report_error(node, "global %q already declared in %s", name, old.where) --[[SOL OUTPUT--]] 
 			return old --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		report_spam(node, "Declaring global '%s'", name) --[[SOL OUTPUT--]] 
+		report_spam(node, "Declaring global %q", name) --[[SOL OUTPUT--]] 
 		return scope:create_global(name, where_is(node), typ) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -306,7 +306,8 @@ local function analyze(ast, filename, on_require, settings)
 			elseif #t == 1 then
 				return t[1], v --[[SOL OUTPUT--]] 
 			else
-				report_error(expr, "Expected single type, got: '%s' when analyzing '%s' expression", t, expr.ast_type) --[[SOL OUTPUT--]] 
+				report_error(expr, "When analyzing '%s' expression: Expected single type, got: %s", expr.ast_type, t) --[[SOL OUTPUT--]] 
+				D.break_() --[[SOL OUTPUT--]] 
 				return T.Any, v --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		else
@@ -338,7 +339,7 @@ local function analyze(ast, filename, on_require, settings)
 				if base_var then
 					return base_var.type or T.Any, base_var --[[SOL OUTPUT--]] 
 				else
-					report_error(expr, "Pre-analyzer: Unknown identifier '%s'", expr.name) --[[SOL OUTPUT--]] 
+					report_error(expr, "Pre-analyzer: Unknown identifier %q", expr.name) --[[SOL OUTPUT--]] 
 					return T.Any, nil --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
@@ -660,9 +661,9 @@ local function analyze(ast, filename, on_require, settings)
 					if i == 1 and fun_t.args[i].name == 'self' then
 						report_error(expr, "Missing object argument ('self'). Did you forget to call with : ?") --[[SOL OUTPUT--]] 
 					elseif not T.is_nilable(expected) then
-						report_error(expr, "Missing non-nilable argument %i: expected '%s'", i, expected) --[[SOL OUTPUT--]] 
+						report_error(expr, "Missing non-nilable argument %i: expected %s", i, expected) --[[SOL OUTPUT--]] 
 					elseif _G.g_spam then
-						report_spam(expr, "Ignoring missing argument %i: it's nilable: '%s'", i, expected) --[[SOL OUTPUT--]] 
+						report_spam(expr, "Ignoring missing argument %i: it's nilable: %s", i, expected) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			elseif i <= #arg_ts then
@@ -676,7 +677,7 @@ local function analyze(ast, filename, on_require, settings)
 					assert(T.is_type(given)) --[[SOL OUTPUT--]] 
 					assert(T.is_type(expected)) --[[SOL OUTPUT--]] 
 
-					report_spam(expr, "Check varargs. Given: '%s', expected '%s'", given, expected) --[[SOL OUTPUT--]] 
+					report_spam(expr, "Check varargs. Given: %s, expected %s", given, expected) --[[SOL OUTPUT--]] 
 
 					if given.tag == 'varargs' then
 						given = given.type --[[SOL OUTPUT--]] 
@@ -747,8 +748,8 @@ local function analyze(ast, filename, on_require, settings)
 
 
 	local function analyze_fun_call(expr, typ, args, arg_ts, report_errors)
-		report_spam(expr, "analyze_fun_call, typ: '%s'", typ) --[[SOL OUTPUT--]] 
-		report_spam(expr, "analyze_fun_call, arg_ts: '%s'", arg_ts) --[[SOL OUTPUT--]] 
+		report_spam(expr, "analyze_fun_call, typ: %s", typ) --[[SOL OUTPUT--]] 
+		report_spam(expr, "analyze_fun_call, arg_ts: %s", arg_ts) --[[SOL OUTPUT--]] 
 
 		typ = T.follow_identifiers(typ) --[[SOL OUTPUT--]] 
 
@@ -776,7 +777,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		if typ.tag ~= 'function' then
 			if report_errors then
-				report_error(expr, "Not a function: '%s'", typ) --[[SOL OUTPUT--]] 
+				report_error(expr, "Not a function: %s", typ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			return nil --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -871,7 +872,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			if T.is_any(typ) then
 				-- TODO: Upgrade to a warning!
-				report_spam(expr, "Function call cannot be deduced - calling something of unknown type: '%s'", fun_type) --[[SOL OUTPUT--]] 
+				report_spam(expr, "Function call cannot be deduced - calling something of unknown type: %s", fun_type) --[[SOL OUTPUT--]] 
 				return T.AnyTypeList --[[SOL OUTPUT--]] 
 
 			elseif typ.tag == 'function' then
@@ -913,7 +914,7 @@ local function analyze(ast, filename, on_require, settings)
 				return rets --[[SOL OUTPUT--]] 
 
 			elseif report_errors then
-				report_error(expr, "Cannot call '%s'", typ) --[[SOL OUTPUT--]] 
+				report_error(expr, "Cannot call %s", typ) --[[SOL OUTPUT--]] 
 				return nil --[[SOL OUTPUT--]] 
 			else
 				return nil --[[SOL OUTPUT--]] 
@@ -923,12 +924,12 @@ local function analyze(ast, filename, on_require, settings)
 		local rets = try_call(fun_type, false) --[[SOL OUTPUT--]] 
 
 		if rets then
-			report_spam(expr, "Function deduced to returning: '%s'", rets) --[[SOL OUTPUT--]] 
+			report_spam(expr, "Function deduced to returning: %s", rets) --[[SOL OUTPUT--]] 
 			D.assert( T.is_type_list(rets) ) --[[SOL OUTPUT--]] 
 			return rets --[[SOL OUTPUT--]] 
 		else
 			-- Show errors:
-			report_error(expr, "Cannot call '%s'", fun_type) --[[SOL OUTPUT--]] 
+			report_error(expr, "Cannot call %s", fun_type) --[[SOL OUTPUT--]] 
 			try_call(fun_type, true) --[[SOL OUTPUT--]] 
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -954,7 +955,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		D.assert(gen_t) --[[SOL OUTPUT--]] 
 
-		report_spam(expr, "extract_iterator_type, gen_t: '%s'", gen_t) --[[SOL OUTPUT--]] 
+		report_spam(expr, "extract_iterator_type, gen_t: %s", gen_t) --[[SOL OUTPUT--]] 
 
 		gen_t = T.follow_identifiers(gen_t) --[[SOL OUTPUT--]] 
 		if gen_t == T.Any then
@@ -967,7 +968,7 @@ local function analyze(ast, filename, on_require, settings)
 				suggestion = 'ipairs' --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			report_error(expr, "Generator function expected, got '%s' - did you forget to use '%s'?", gen_t, suggestion) --[[SOL OUTPUT--]] 
+			report_error(expr, "Generator function expected, got %s - did you forget to use '%s'?", gen_t, suggestion) --[[SOL OUTPUT--]] 
 
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1001,11 +1002,11 @@ local function analyze(ast, filename, on_require, settings)
 				report_error(expr, "You may not read from discard variable '_'") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			local var_ = scope:get_var( expr.name ) --[[SOL OUTPUT--]] 
+			local var_ = scope:get_var( expr.name, 'ignore_fwd_decl' ) --[[SOL OUTPUT--]] 
 
 			if var_ then
 				if var_.forward_declared then
-					report_error(expr, "Use of forward-declared variable '%s', forward-declared at %s",
+					report_error(expr, "Use of forward-declared variable %q, forward-declared in %s",
 						expr.name, var_.where) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
@@ -1044,7 +1045,7 @@ local function analyze(ast, filename, on_require, settings)
 						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
-					report_error(expr, "Variable '%s' used as namespace but is not an object (it's '%s')", var_.name, type) --[[SOL OUTPUT--]] 
+					report_error(expr, "Variable %q used as namespace but is not an object - it's %s", var_.name, type) --[[SOL OUTPUT--]] 
 					var_.namespace = nil --[[SOL OUTPUT--]]  -- Only warn once
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1155,7 +1156,7 @@ local function analyze(ast, filename, on_require, settings)
 				-- Make sure we aren't comparing string to int:s:
 				if (not T.could_be(lt, rt)) and (not T.could_be(rt, lt)) then
 					-- Apples and oranges
-					report_error(expr, "Comparing incompatible types: '%s' and '%s'", lt, rt) --[[SOL OUTPUT--]] 
+					report_error(expr, "Comparing incompatible types: %s and %s", lt, rt) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				return T.Bool --[[SOL OUTPUT--]] 
 
@@ -1170,9 +1171,7 @@ local function analyze(ast, filename, on_require, settings)
 			--]]
 			elseif op == 'and' then
 				if not T.is_useful_boolean(lt) then
-					report_warning(expr,
-						--"Operator 'and' expected boolean expression to the left, got %s from expression %s", T.name(lt), expr2str(expr.lhs))
-						"Operator 'and' expected boolean expression to the left, got '%s'", T.name(lt)) --[[SOL OUTPUT--]] 
+					report_warning(expr, "Operator 'and' expected boolean expression to the left, got %s", lt) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
 				-- Iff left is false, then left, else right
@@ -1192,9 +1191,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			elseif op == 'or' then
 				if not T.is_useful_boolean(lt) then
-					report_warning(expr,
-						--"Operator 'or' expected boolean expression to the left, got %s from expression %s", T.name(lt), expr2str(expr.lhs))
-						"Operator 'or' expected boolean expression to the left, got '%s'", T.name(lt)) --[[SOL OUTPUT--]] 
+					report_warning(expr, "Operator 'or' expected boolean expression to the left, got %s", lt) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
 				-- If first argument is true, then the left is returned, else the right
@@ -1335,9 +1332,9 @@ local function analyze(ast, filename, on_require, settings)
 					return t --[[SOL OUTPUT--]] 
 				else
 					if #suggestions > 0 then
-						report_warning(expr, "Failed to find member '%s' (%s) - did you mean %s?", name, expr, table.concat(suggestions, " or ")) --[[SOL OUTPUT--]] 
+						report_warning(expr, "Failed to find member %q (%s) - did you mean %s?", name, expr, table.concat(suggestions, " or ")) --[[SOL OUTPUT--]] 
 					else
-						member_missing_reporter(expr, "Failed to find member '%s' (%s)", name, expr) --[[SOL OUTPUT--]]  -- TODO: warn
+						member_missing_reporter(expr, "Failed to find member %q (%s)", name, expr) --[[SOL OUTPUT--]]  -- TODO: warn
 					end --[[SOL OUTPUT--]] 
 					return T.Any --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -1401,7 +1398,7 @@ local function analyze(ast, filename, on_require, settings)
 						   type(this_key_type) == 'bool'
 						then
 							if map_keys[ this_key_type] then
-								report_error(e.value, "Map key '%s' declared twice", this_key_type) --[[SOL OUTPUT--]] 
+								report_error(e.value, "Map key %q declared twice", this_key_type) --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
 							map_keys[ this_key_type ] = true --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
@@ -1409,7 +1406,7 @@ local function analyze(ast, filename, on_require, settings)
 
 					if e.type == 'ident_key' then
 						if obj_members[ e.key ] then
-							report_error(e.value, "Object member '%s' declared twice", e.key) --[[SOL OUTPUT--]] 
+							report_error(e.value, "Object member %q declared twice", e.key) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 						obj_members[ e.key ] = this_val_type --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
@@ -1481,7 +1478,7 @@ local function analyze(ast, filename, on_require, settings)
 		else
 			local t = analyze_expr_single(expr, scope) --[[SOL OUTPUT--]] 
 			if not T.is_useful_boolean(t) then
-				report_error(expr, "Not a useful boolean expression in %q, type is '%s'", name, t) --[[SOL OUTPUT--]] 
+				report_error(expr, "Not a useful boolean expression in %q, type is %s", name, t) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -1518,7 +1515,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		if left_type and left_type.pre_analyzed then
 			if right_type.pre_analyzed and is_pre_analyze then
-				report_error(stat, "Name clash: %q, previously decalred at %s", name, right_type.where) --[[SOL OUTPUT--]] 
+				report_error(stat, "Name clash: %q, previously declared in %s", name, left_type.where) --[[SOL OUTPUT--]] 
 			else
 				D.assert(not right_type.pre_analyzed) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1528,7 +1525,7 @@ local function analyze(ast, filename, on_require, settings)
 			--obj_t.members[name] = nil  -- TODO: makes compilation hang!
 			left_type = nil --[[SOL OUTPUT--]] 
 
-			report_spam(stat, "Replacing pre-analyzed type with refined type: '%s'", right_type) --[[SOL OUTPUT--]] 
+			report_spam(stat, "Replacing pre-analyzed type with refined type: %s", right_type) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if left_type then
@@ -1546,7 +1543,7 @@ local function analyze(ast, filename, on_require, settings)
 					local close_name = loose_lookup(obj_t.members, name) --[[SOL OUTPUT--]] 
 
 					if close_name then
-						report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name) --[[SOL OUTPUT--]] 
+						report_warning(stat, "Could not find %q - Did you mean %q?", name, close_name) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
@@ -1653,11 +1650,11 @@ local function analyze(ast, filename, on_require, settings)
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					sol_warning(stat, "[B] Trying to index type 'any' with '%s'", name) --[[SOL OUTPUT--]] 
+					sol_warning(stat, "[B] Trying to index type 'any' with %q", name) --[[SOL OUTPUT--]] 
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Trying to index non-object of type %s with '%s'", var_t, name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[B] Trying to index non-object of type %s with %q", var_t, name) --[[SOL OUTPUT--]] 
 					--D.break_()
 				end --[[SOL OUTPUT--]] 
 
@@ -1679,7 +1676,7 @@ local function analyze(ast, filename, on_require, settings)
 						--var_t.members[name] = nil  -- TODO: makes compilation hang!
 						left_type = nil --[[SOL OUTPUT--]] 
 
-						report_spam(stat, "Replacing pre-analyzed type with refined type: '%s'", right_type) --[[SOL OUTPUT--]] 
+						report_spam(stat, "Replacing pre-analyzed type with refined type: %s", right_type) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
 					if left_type then
@@ -1697,7 +1694,7 @@ local function analyze(ast, filename, on_require, settings)
 							local close_name = loose_lookup(base_t.members, name) --[[SOL OUTPUT--]] 
 
 							if close_name then
-								report_warning(stat, "Could not find '%s' - Did you mean '%s'?", name, close_name) --[[SOL OUTPUT--]] 
+								report_warning(stat, "Could not find %q - Did you mean %q?", name, close_name) --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 
@@ -1721,9 +1718,9 @@ local function analyze(ast, filename, on_require, settings)
 				elseif T.is_any(base_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					sol_warning(stat, "[A] Trying to index type 'any' with '%s'", name) --[[SOL OUTPUT--]] 
+					sol_warning(stat, "[A] Trying to index type 'any' with %q", name) --[[SOL OUTPUT--]] 
 				else
-					report_warning(stat, "[A] Trying to index non-object of type '%s' with '%s'", base_t, name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[A] Trying to index non-object of type %s with %q", base_t, name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1769,11 +1766,11 @@ local function analyze(ast, filename, on_require, settings)
 			v.namespace = v.namespace or {} --[[SOL OUTPUT--]] 
 			local ns = v.namespace --[[SOL OUTPUT--]] 
 			if ns[name] then
-				report_error(stat, "type %s.%s already declared as '%s'", v.name, name, ns[name]) --[[SOL OUTPUT--]] 
+				report_error(stat, "type %s.%s already declared as %s", v.name, name, ns[name]) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			if stat.type then
-				report_spam(stat, "Declaring type %s.%s as '%s'", v.name, name, stat.type) --[[SOL OUTPUT--]] 
+				report_spam(stat, "Declaring type %s.%s as %s", v.name, name, stat.type) --[[SOL OUTPUT--]] 
 			else
 				report_spam(stat, "Forward-declaring type %s.%s", v.name, name) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1782,7 +1779,7 @@ local function analyze(ast, filename, on_require, settings)
 		else
 			local old = scope:get_scoped_type(name) --[[SOL OUTPUT--]] 
 			if old then
-				report_error(stat, "type %q already declared as '%s'", name, old) --[[SOL OUTPUT--]] 
+				report_error(stat, "type %q already declared as %s", name, old) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			scope:declare_type(name, stat.type, where_is(stat), stat.is_local) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1793,7 +1790,7 @@ local function analyze(ast, filename, on_require, settings)
 			local child_type = T.follow_identifiers(stat.type) --[[SOL OUTPUT--]] 
 
 			if child_type.tag ~= 'object' then
-				report_error(stat, "Only objects can have base-types (child: '%s')", child_type) --[[SOL OUTPUT--]] 
+				report_error(stat, "Only objects can have base-types - child: %s", child_type) --[[SOL OUTPUT--]] 
 			else
 				for _,base in ipairs(stat.base_types) do
 					report_spam(stat, "%s inheriting %s", name, base.name) --[[SOL OUTPUT--]] 
@@ -1805,15 +1802,14 @@ local function analyze(ast, filename, on_require, settings)
 
 					local base_type = T.follow_identifiers(base) --[[SOL OUTPUT--]] 
 					if base_type.tag ~= 'object' then
-						--report_error(stat, "'%s' cannot inherit non-object '%s'", name, base_type)
-						report_error(stat, "'%s' cannot inherit non-object '%s'", name, base) --[[SOL OUTPUT--]] 
+						report_error(stat, "%q cannot inherit non-object %s", name, base) --[[SOL OUTPUT--]] 
 						break --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
 					for id,id_type in pairs(base_type.members) do
 						if child_type.members[id] then
 							if not T.isa(child_type.members[id], id_type) then
-								report_error(stat, "Child type '%s' overrides '%s' with differing type.", name, id) --[[SOL OUTPUT--]] 
+								report_error(stat, "Child type %s overrides %q with differing type.", name, id) --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
 						else
 							-- Inherit:
@@ -1840,7 +1836,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		local old = scope:get_scoped_type(name) --[[SOL OUTPUT--]] 
 		if old then
-			report_error(stat, "class type %q already declared as '%s'", name, old) --[[SOL OUTPUT--]] 
+			report_error(stat, "class type %q already declared as %q", name, old) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		local class_type = {
 			tag     = 'object',
@@ -1971,8 +1967,7 @@ local function analyze(ast, filename, on_require, settings)
 				elseif explicit_types then
 					for _,v in ipairs(vars) do
 						if not T.is_nilable(v.type) then
-							report_error(stat, "Variable '%s' of non-nilable type '%s' missing its definition",
-								v.name, T.name(v.type)) --[[SOL OUTPUT--]] 
+							report_error(stat, "Variable %q of non-nilable type %s missing its definition", v.name, v.type) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
@@ -2234,7 +2229,7 @@ local function analyze(ast, filename, on_require, settings)
 						-- Assigning to something declared in an outer scope
 					else
 						-- Leave error reporting out of pre-analyzer
-						report_error(stat, "Pre-analyze: Declaring implicit global '%s'", var_name) --[[SOL OUTPUT--]] 
+						report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name) --[[SOL OUTPUT--]] 
 						v = scope:create_global( var_name, where_is(stat) ) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
@@ -2242,7 +2237,7 @@ local function analyze(ast, filename, on_require, settings)
 						--do_assignment(stat, scope, stat.lhs[1], fun_t)
 					
 						if v.type then
-							report_error(stat, "Cannot forward declare '%s': it already has type '%s'", v.name, v.type) --[[SOL OUTPUT--]] 
+							report_error(stat, "Cannot forward declare %q: it already has type %s", v.name, v.type) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 
 						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
@@ -2252,7 +2247,7 @@ local function analyze(ast, filename, on_require, settings)
 
 						v.type = fun_t --[[SOL OUTPUT--]] 
 
-						report_spam(stat, "Forward-declared '%s' as '%s'", v.name, fun_t) --[[SOL OUTPUT--]] 
+						report_spam(stat, "Forward-declared %q as %s", v.name, fun_t) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -2271,7 +2266,7 @@ local function analyze(ast, filename, on_require, settings)
 			if stat.is_aggregate then
 				-- function foo.bar(arg)  -- namespaced - OK
 				-- function foo:bar(arg)  -- member - OK
-				report_spam(stat, "Pre-analyzed function head for %q as '%s'", fun_t.name, fun_t) --[[SOL OUTPUT--]] 
+				report_spam(stat, "Pre-analyzed function head for %q as %s", fun_t.name, fun_t) --[[SOL OUTPUT--]] 
 				do_assignment(stat, scope, stat.name_expr, fun_t, is_pre_analyze) --[[SOL OUTPUT--]] 
 				report_spam(stat, "Assigned.") --[[SOL OUTPUT--]] 
 			else

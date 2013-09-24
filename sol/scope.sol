@@ -28,6 +28,9 @@ global typedef Variable = {
 }
 
 
+typedef VarOptions = 'ignore_fwd_decl' or nil
+
+
 function Scope.new(parent: Scope?) -> Scope
 	--var s = {} : Scope
 	local s = {}
@@ -159,9 +162,13 @@ end
 
 
 -- Will only check local scope
-function Scope:get_scoped(name: string) -> Variable?
+function Scope:get_scoped(name: string, options: VarOptions) -> Variable?
 	for _,v in ipairs(self.locals) do
-		if v.name == name then return v end
+		if v.name == name then
+			if not v.forward_declared or options ~= 'ignore_fwd_decl' then
+				return v
+			end
+		end
 	end
 
 	return nil
@@ -169,43 +176,47 @@ end
 
 
 -- Will check locals and parents
-function Scope:get_local(name: string) -> Variable?
-	local v = self:get_scoped(name)
+function Scope:get_local(name: string, options: VarOptions) -> Variable?
+	local v = self:get_scoped(name, options)
 	if v then return v end
 	
 	if self.parent then
-		return self.parent:get_local(name)
+		return self.parent:get_local(name, options)
 	end
 end
 
 
 -- Global declared in this scope
-function Scope:get_scoped_global(name: string) -> Variable ?
+function Scope:get_scoped_global(name: string, options: VarOptions) -> Variable ?
 	for k, v in ipairs(self.globals) do
-		if v.name == name then return v end
+		if v.name == name then
+			if not v.forward_declared or options ~= 'ignore_fwd_decl' then
+				return v
+			end
+		end
 	end
 end
 
 
-function Scope:get_global(name: string) -> Variable ?
-	local v = self:get_scoped_global(name)
+function Scope:get_global(name: string, options: VarOptions) -> Variable ?
+	local v = self:get_scoped_global(name, options)
 	if v then return v end
 	
 	if self.parent then
-		return self.parent:get_global(name)
+		return self.parent:get_global(name, options)
 	end
 end
 
 
 
 -- Var declared in this scope
-function Scope:get_scoped_var(name: string) -> Variable ?
-	return self:get_scoped(name) or self:get_scoped_global(name)
+function Scope:get_scoped_var(name: string, options: VarOptions) -> Variable ?
+	return self:get_scoped(name, options) or self:get_scoped_global(name, options)
 end
 
 
-function Scope:get_var(name: string) -> Variable ?
-	return self:get_local(name) or self:get_global(name)
+function Scope:get_var(name: string, options: VarOptions) -> Variable ?
+	return self:get_local(name, options) or self:get_global(name, options)
 end
 
 

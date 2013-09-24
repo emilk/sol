@@ -527,7 +527,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 			--end
 			if not tok:consume_keyword('end', token_list) then
-				return false, report_error("`end` expected after function body at %s", where)
+				return false, report_error("`end` expected after function body in %s", where)
 			end
 		end
 
