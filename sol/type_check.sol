@@ -1522,6 +1522,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local function decl_var_type(stat, var_, deduced_type: T.Type)
 		D.assert( T.is_type(deduced_type) )
 
+		if deduced_type.tag == 'function' and deduced_type.name == '<lambda>' then
+			-- Give the lmabda-function a more helpful name:
+			deduced_type.name = var_.name
+		end
+
 		if var_.type then
 			-- .type must have been deduced by pre-parsing
 			check_type_is_a("Variable declaration", stat, deduced_type, var_.type, 'error')
@@ -1630,6 +1635,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	local function do_assignment(stat: P.Node, scope: Scope, left_expr: P.Node, right_type: T.Type, is_pre_analyze: bool)
 		assert(not T.is_type_list(right_type))
+
+		if right_type.tag == 'function' and right_type.name == '<lambda>' then
+			-- Give the lmabda-function a more helpful name:
+			right_type.name = format_expr(left_expr)
+		end
 
 		var is_declare = (stat.ast_type == 'FunctionDeclStatement')
 

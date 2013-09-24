@@ -2,13 +2,18 @@
 ----------------------------------------------------------------------------------
 -- Namespaces: 
 
+global Actor       = { }
 global Application = { }
-global Script      = { }
+global Camera      = { }
+global Gui         = { }
+global Light       = { }
 global Material    = { }
 global Math        = { }
 global Mesh        = { }
-global Unit        = { }
 global Profiler    = { }
+global Script      = { }
+global Unit        = { }
+global World       = { }
 
 
 ----------------------------------------------------------------------------------
@@ -27,8 +32,13 @@ Vector3.dot            = extern : function(Vector3,Vector3)->number
 
 setmetatable(Vector3, {
 	__call  = extern : function(Vector3, x: number, y: number, z: number) -> Vector3;
-	__index = extern : function(Vector3, 'x' or 'y' or 'z') -> number;
+	--__index = extern : function(Vector3, 'x' or 'y' or 'z') -> number;
+	__index = extern : { x: number, y: number, z: number }
 })
+
+-----------------------------------------
+
+global Vector2 = extern : function(number, number) -> Vector3
 
 -----------------------------------------
 
@@ -41,7 +51,8 @@ Quaternion.axis_angle    = extern : function(Vector3,number)->Quaternion
 
 setmetatable(Quaternion, {
 	__call  = extern : function(Quaternion, ...) -> Quaternion;
-	__index = extern : function(Quaternion, 'x' or 'y' or 'z' or 'w') -> number;
+	--__index = extern : function(Quaternion, 'x' or 'y' or 'z' or 'w') -> number;
+	__index = extern : { x: number, y: number, z: number, w: number }
 })
 
 global typedef Color = Quaternion
