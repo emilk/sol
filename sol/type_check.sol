@@ -32,9 +32,15 @@ local function loose_lookup(table: table, id: string) -> string?
 		return id
 	end
 
+	var MAX_DIST = 2
+
+	if #id < MAX_DIST then
+		-- Don't suggest 'x' over 'y'
+		return nil
+	end
+
 	var edit_distance = require 'edit_distance'
 
-	var MAX_DIST = 2
 	var<number>  closest_dist = math.huge
 	var<string?> closest_key  = nil
 
@@ -429,6 +435,99 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
+	local function check_arguments(expr, fun_t: T.Function, arg_ts: [T.Type]) -> bool
+		assert(fun_t.args)
+		var fun_name = fun_t.name or "lambda"
+		D.assert(type(fun_name) == 'string', "fun_name: %s", fun_name)
+		local all_passed = false
+
+		-- check arguments:
+		local i = 1
+		while true do
+			--report_spam(expr, "Checking argument %i", i)
+
+			if i <= #fun_t.args then
+				if fun_t.args[i].name == 'self' and i ~= 1 then
+					report_error(expr, "'self' must be the first arguemnt")
+					all_passed = false
+				end
+
+				local expected = fun_t.args[i].type
+
+				if i <= #arg_ts then
+					local given = arg_ts[i]
+
+					if given.tag == 'varargs' then
+						-- When calling with ..., if ... is empty we get nil:s
+						given = T.variant(given.type, T.Nil)
+					end
+
+					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
+
+
+					if T.is_variant(given) then
+						-- ensure  string?  ->  int?   does NOT pass
+						given = T.variant_remove(given, T.Nil)
+					end
+
+					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), expected)
+					
+					if not T.could_be(given, expected) then
+						local problem_rope = {}
+						T.could_be(given, expected, problem_rope)
+						local err_msg = rope_to_msg(problem_rope)
+						report_error(expr, "%s argument %i: could not convert from %s to %s: %s",
+						                    fun_name, i, given, expected, err_msg)
+						all_passed = false
+					end
+				else
+					if i == 1 and fun_t.args[i].name == 'self' then
+						report_error(expr, "Missing object argument ('self'). Did you forget to call with : ?")
+						all_passed = false
+					elseif not T.is_nilable(expected) then
+						report_error(expr, "Missing non-nilable argument %i: expected %s", i, expected)
+						all_passed = false
+					elseif _G.g_spam then
+						report_spam(expr, "Ignoring missing argument %i: it's nilable: %s", i, expected)
+					end
+				end
+			elseif i <= #arg_ts then
+				if fun_t.vararg then
+					local given    = arg_ts[i]
+					local expected = fun_t.vararg
+
+					assert(expected.tag == 'varargs')
+					expected = expected.type
+
+					assert(T.is_type(given))
+					assert(T.is_type(expected))
+
+					report_spam(expr, "Check varargs. Given: %s, expected %s", given, expected)
+
+					if given.tag == 'varargs' then
+						given = given.type
+					end
+
+					if not T.could_be(given, expected) then
+						report_error(expr, "%s argument %i: could not convert from %s to varargs %s",
+							                 fun_name, i, given, expected)
+						all_passed = false
+					end
+				else
+					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args)
+					all_passed = false
+				end
+			else
+				break
+			end
+
+			i = i + 1
+		end
+
+		return all_passed
+	end
+
+
 	local function do_member_lookup(node: P.Node, type: T.Type, name: string, suggestions: [string]) -> T.Type?
 		--report_spam(node, "Looking for member %q in %s", name, type)
 
@@ -451,12 +550,33 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				if indexer then
 					if indexer.tag == 'function' then
 						report_spam(node, "metatable has __index function")
-						if indexer.rets and #indexer.rets > 0 then
-							return indexer.rets[1]
+						-- First member is the 'self'
+
+						local ignore_indexer = false
+						var given_t = {tag='string_literal', value=name}
+
+						var<T.Function> indexer_fun = indexer
+						if #indexer_fun.args == 2 then
+							var expected_t = indexer_fun.args[2].type
+							if not T.isa(given_t, expected_t) then
+								-- e.g. indexer only accepts "x" or "y" or "z"
+								-- Ignoring mis-matches gives much better error messages
+								ignore_indexer = true
+							end
 						else
-							-- TODO: warnings should be written on __index set
-							report_error(node, "Unexpected __index function - no returns values")
-							return T.Any
+							if not check_arguments(node, indexer_fun, { T.Any, given_t }) then
+								ignore_indexer = true
+							end
+						end
+
+						if not ignore_indexer then
+							if indexer_fun.rets and #indexer_fun.rets > 0 then
+								return indexer_fun.rets[1]
+							else
+								-- TODO: warnings should be written on __index set
+								report_error(node, "Unexpected __index function - no returns values")
+								return T.Any
+							end
 						end
 					else
 						report_spam(node, "Looking up member %q in metatbale __index", name)
@@ -600,90 +720,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		--------------------------------------------------------
 
 		return T.AnyTypeList
-	end
-
-
-	local function check_arguments(expr, fun_t: T.Function, arg_ts: [T.Type])
-		assert(fun_t.args)
-		var fun_name = fun_t.name or "lambda"
-		D.assert(type(fun_name) == 'string', "fun_name: %s", fun_name)
-
-		-- check arguments:
-		local i = 1
-		while true do
-			--report_spam(expr, "Checking argument %i", i)
-
-			if i <= #fun_t.args then
-				if fun_t.args[i].name == 'self' and i ~= 1 then
-					report_error(expr, "'self' must be the first arguemnt")
-				end
-
-				local expected = fun_t.args[i].type
-
-				if i <= #arg_ts then
-					local given = arg_ts[i]
-
-					if given.tag == 'varargs' then
-						-- When calling with ..., if ... is empty we get nil:s
-						given = T.variant(given.type, T.Nil)
-					end
-
-					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
-
-
-					if T.is_variant(given) then
-						-- ensure  string?  ->  int?   does NOT pass
-						given = T.variant_remove(given, T.Nil)
-					end
-
-					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), expected)
-					
-					if not T.could_be(given, expected) then
-						local problem_rope = {}
-						T.could_be(given, expected, problem_rope)
-						local err_msg = rope_to_msg(problem_rope)
-						report_error(expr, "%s argument %i: could not convert from %s to %s: %s",
-						                    fun_name, i, given, expected, err_msg)
-					end
-				else
-					if i == 1 and fun_t.args[i].name == 'self' then
-						report_error(expr, "Missing object argument ('self'). Did you forget to call with : ?")
-					elseif not T.is_nilable(expected) then
-						report_error(expr, "Missing non-nilable argument %i: expected %s", i, expected)
-					elseif _G.g_spam then
-						report_spam(expr, "Ignoring missing argument %i: it's nilable: %s", i, expected)
-					end
-				end
-			elseif i <= #arg_ts then
-				if fun_t.vararg then
-					local given    = arg_ts[i]
-					local expected = fun_t.vararg
-
-					assert(expected.tag == 'varargs')
-					expected = expected.type
-
-					assert(T.is_type(given))
-					assert(T.is_type(expected))
-
-					report_spam(expr, "Check varargs. Given: %s, expected %s", given, expected)
-
-					if given.tag == 'varargs' then
-						given = given.type
-					end
-
-					if not T.could_be(given, expected) then
-						report_error(expr, "%s argument %i: could not convert from %s to varargs %s",
-							                 fun_name, i, given, expected)
-					end
-				else
-					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args)
-				end
-			else
-				break
-			end
-
-			i = i + 1
-		end
 	end
 
 

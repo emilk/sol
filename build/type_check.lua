@@ -32,9 +32,15 @@ local function loose_lookup(table, id)
 		return id --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
+	local MAX_DIST = 2 --[[SOL OUTPUT--]] 
+
+	if #id < MAX_DIST then
+		-- Don't suggest 'x' over 'y'
+		return nil --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
 	local edit_distance = require 'edit_distance' --[[SOL OUTPUT--]] 
 
-	local MAX_DIST = 2 --[[SOL OUTPUT--]] 
 	local  closest_dist = math.huge --[[SOL OUTPUT--]] 
 	local closest_key  = nil --[[SOL OUTPUT--]] 
 
@@ -429,6 +435,99 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
+	local function check_arguments(expr, fun_t, arg_ts)
+		assert(fun_t.args) --[[SOL OUTPUT--]] 
+		local fun_name = fun_t.name or "lambda" --[[SOL OUTPUT--]] 
+		D.assert(type(fun_name) == 'string', "fun_name: %s", fun_name) --[[SOL OUTPUT--]] 
+		local all_passed = false --[[SOL OUTPUT--]] 
+
+		-- check arguments:
+		local i = 1 --[[SOL OUTPUT--]] 
+		while true do
+			--report_spam(expr, "Checking argument %i", i)
+
+			if i <= #fun_t.args then
+				if fun_t.args[i].name == 'self' and i ~= 1 then
+					report_error(expr, "'self' must be the first arguemnt") --[[SOL OUTPUT--]] 
+					all_passed = false --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+				local expected = fun_t.args[i].type --[[SOL OUTPUT--]] 
+
+				if i <= #arg_ts then
+					local given = arg_ts[i] --[[SOL OUTPUT--]] 
+
+					if given.tag == 'varargs' then
+						-- When calling with ..., if ... is empty we get nil:s
+						given = T.variant(given.type, T.Nil) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
+					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
+
+
+					if T.is_variant(given) then
+						-- ensure  string?  ->  int?   does NOT pass
+						given = T.variant_remove(given, T.Nil) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
+					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), expected)
+					
+					if not T.could_be(given, expected) then
+						local problem_rope = {} --[[SOL OUTPUT--]] 
+						T.could_be(given, expected, problem_rope) --[[SOL OUTPUT--]] 
+						local err_msg = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
+						report_error(expr, "%s argument %i: could not convert from %s to %s: %s",
+						                    fun_name, i, given, expected, err_msg) --[[SOL OUTPUT--]] 
+						all_passed = false --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				else
+					if i == 1 and fun_t.args[i].name == 'self' then
+						report_error(expr, "Missing object argument ('self'). Did you forget to call with : ?") --[[SOL OUTPUT--]] 
+						all_passed = false --[[SOL OUTPUT--]] 
+					elseif not T.is_nilable(expected) then
+						report_error(expr, "Missing non-nilable argument %i: expected %s", i, expected) --[[SOL OUTPUT--]] 
+						all_passed = false --[[SOL OUTPUT--]] 
+					elseif _G.g_spam then
+						report_spam(expr, "Ignoring missing argument %i: it's nilable: %s", i, expected) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			elseif i <= #arg_ts then
+				if fun_t.vararg then
+					local given    = arg_ts[i] --[[SOL OUTPUT--]] 
+					local expected = fun_t.vararg --[[SOL OUTPUT--]] 
+
+					assert(expected.tag == 'varargs') --[[SOL OUTPUT--]] 
+					expected = expected.type --[[SOL OUTPUT--]] 
+
+					assert(T.is_type(given)) --[[SOL OUTPUT--]] 
+					assert(T.is_type(expected)) --[[SOL OUTPUT--]] 
+
+					report_spam(expr, "Check varargs. Given: %s, expected %s", given, expected) --[[SOL OUTPUT--]] 
+
+					if given.tag == 'varargs' then
+						given = given.type --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
+					if not T.could_be(given, expected) then
+						report_error(expr, "%s argument %i: could not convert from %s to varargs %s",
+							                 fun_name, i, given, expected) --[[SOL OUTPUT--]] 
+						all_passed = false --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				else
+					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args) --[[SOL OUTPUT--]] 
+					all_passed = false --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			else
+				break --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			i = i + 1 --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		return all_passed --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+
 	local function do_member_lookup(node, type, name, suggestions)
 		--report_spam(node, "Looking for member %q in %s", name, type)
 
@@ -451,12 +550,33 @@ local function analyze(ast, filename, on_require, settings)
 				if indexer then
 					if indexer.tag == 'function' then
 						report_spam(node, "metatable has __index function") --[[SOL OUTPUT--]] 
-						if indexer.rets and #indexer.rets > 0 then
-							return indexer.rets[1] --[[SOL OUTPUT--]] 
+						-- First member is the 'self'
+
+						local ignore_indexer = false --[[SOL OUTPUT--]] 
+						local given_t = {tag='string_literal', value=name} --[[SOL OUTPUT--]] 
+
+						local indexer_fun = indexer --[[SOL OUTPUT--]] 
+						if #indexer_fun.args == 2 then
+							local expected_t = indexer_fun.args[2].type --[[SOL OUTPUT--]] 
+							if not T.isa(given_t, expected_t) then
+								-- e.g. indexer only accepts "x" or "y" or "z"
+								-- Ignoring mis-matches gives much better error messages
+								ignore_indexer = true --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
 						else
-							-- TODO: warnings should be written on __index set
-							report_error(node, "Unexpected __index function - no returns values") --[[SOL OUTPUT--]] 
-							return T.Any --[[SOL OUTPUT--]] 
+							if not check_arguments(node, indexer_fun, { T.Any, given_t }) then
+								ignore_indexer = true --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+
+						if not ignore_indexer then
+							if indexer_fun.rets and #indexer_fun.rets > 0 then
+								return indexer_fun.rets[1] --[[SOL OUTPUT--]] 
+							else
+								-- TODO: warnings should be written on __index set
+								report_error(node, "Unexpected __index function - no returns values") --[[SOL OUTPUT--]] 
+								return T.Any --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 					else
 						report_spam(node, "Looking up member %q in metatbale __index", name) --[[SOL OUTPUT--]] 
@@ -600,90 +720,6 @@ local function analyze(ast, filename, on_require, settings)
 		--------------------------------------------------------
 
 		return T.AnyTypeList --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-
-	local function check_arguments(expr, fun_t, arg_ts)
-		assert(fun_t.args) --[[SOL OUTPUT--]] 
-		local fun_name = fun_t.name or "lambda" --[[SOL OUTPUT--]] 
-		D.assert(type(fun_name) == 'string', "fun_name: %s", fun_name) --[[SOL OUTPUT--]] 
-
-		-- check arguments:
-		local i = 1 --[[SOL OUTPUT--]] 
-		while true do
-			--report_spam(expr, "Checking argument %i", i)
-
-			if i <= #fun_t.args then
-				if fun_t.args[i].name == 'self' and i ~= 1 then
-					report_error(expr, "'self' must be the first arguemnt") --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				local expected = fun_t.args[i].type --[[SOL OUTPUT--]] 
-
-				if i <= #arg_ts then
-					local given = arg_ts[i] --[[SOL OUTPUT--]] 
-
-					if given.tag == 'varargs' then
-						-- When calling with ..., if ... is empty we get nil:s
-						given = T.variant(given.type, T.Nil) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-
-					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
-
-
-					if T.is_variant(given) then
-						-- ensure  string?  ->  int?   does NOT pass
-						given = T.variant_remove(given, T.Nil) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-
-					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), expected)
-					
-					if not T.could_be(given, expected) then
-						local problem_rope = {} --[[SOL OUTPUT--]] 
-						T.could_be(given, expected, problem_rope) --[[SOL OUTPUT--]] 
-						local err_msg = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
-						report_error(expr, "%s argument %i: could not convert from %s to %s: %s",
-						                    fun_name, i, given, expected, err_msg) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-				else
-					if i == 1 and fun_t.args[i].name == 'self' then
-						report_error(expr, "Missing object argument ('self'). Did you forget to call with : ?") --[[SOL OUTPUT--]] 
-					elseif not T.is_nilable(expected) then
-						report_error(expr, "Missing non-nilable argument %i: expected %s", i, expected) --[[SOL OUTPUT--]] 
-					elseif _G.g_spam then
-						report_spam(expr, "Ignoring missing argument %i: it's nilable: %s", i, expected) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			elseif i <= #arg_ts then
-				if fun_t.vararg then
-					local given    = arg_ts[i] --[[SOL OUTPUT--]] 
-					local expected = fun_t.vararg --[[SOL OUTPUT--]] 
-
-					assert(expected.tag == 'varargs') --[[SOL OUTPUT--]] 
-					expected = expected.type --[[SOL OUTPUT--]] 
-
-					assert(T.is_type(given)) --[[SOL OUTPUT--]] 
-					assert(T.is_type(expected)) --[[SOL OUTPUT--]] 
-
-					report_spam(expr, "Check varargs. Given: %s, expected %s", given, expected) --[[SOL OUTPUT--]] 
-
-					if given.tag == 'varargs' then
-						given = given.type --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-
-					if not T.could_be(given, expected) then
-						report_error(expr, "%s argument %i: could not convert from %s to varargs %s",
-							                 fun_name, i, given, expected) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-				else
-					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			else
-				break --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			i = i + 1 --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
