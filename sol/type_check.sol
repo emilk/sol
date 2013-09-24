@@ -209,6 +209,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return old
 		end
 
+		report_spam(node, "Declaring local '%s'", name)
 		local v = scope:create_local(name, where_is(node))
 		v.type = typ
 		return v
@@ -242,6 +243,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return old
 		end
 
+		report_spam(node, "Declaring global '%s'", name)
 		return scope:create_global(name, where_is(node), typ)
 	end
 
@@ -323,22 +325,22 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 	local function analyze_expr_single_custom(expr, scope: Scope, is_pre_analyze: bool) -> T.Type, Variable?
-		if not is_pre_analyze then
-			return analyze_expr_single(expr, scope)
-		end
+		if is_pre_analyze then
+			if expr.ast_type == 'IdExpr' then
+				local base_var = scope:get_var( expr.name )
 
-		if expr.ast_type == 'IdExpr' then
-			local base_var = scope:get_var( expr.name )
+				if base_var then
+					return base_var.type or T.Any, base_var
+				else
+					report_error(expr, "Pre-analyzer: Unknown identifier '%s'", expr.name)
+					return T.Any, nil
+				end
 
-			if base_var then
-				return base_var.type or T.Any, base_var
 			else
-				report_error(expr, "Unknown identifier '%s'", expr.name)
 				return T.Any, nil
 			end
-
 		else
-			return T.Any, nil
+			return analyze_expr_single(expr, scope)
 		end
 	end
 
@@ -376,7 +378,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			fun_t.vararg = node.vararg
 		end
 
-		report_spam(node, "analyze_function_head: '%s'", fun_t)
+		report_spam(node, "analyze_function_head: %s", fun_t)
 
 		return fun_t
 	end
@@ -980,14 +982,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if var_ then
 				if var_.forward_declared then
-					report_error(expr, "Use of forward-declared variable '%s', forward-declared here: %s",
+					report_error(expr, "Use of forward-declared variable '%s', forward-declared at %s",
 						expr.name, var_.where)
 				end
 
 				var_.references = var_.references + 1
 			else
 				if expr.name ~= '_' then  -- Implicit '_' var is OK
-					report_error(expr, "Implicit global %q", expr.name)
+					report_error(expr, "Declaring implicit global %q", expr.name)
 				end
 				var_ = scope:create_global( expr.name, where_is(expr) )
 			end
@@ -1026,7 +1028,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			
 			--report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, type)
 
-			D.assert(T.is_type(type)  or  T.is_type_list(type))
+			--D.assert(T.is_type(type)  or  T.is_type_list(type))
+			D.assert( T.is_type(type) )
 
 			-- Store for quick access later on:
 			expr.variable = var_
@@ -1631,13 +1634,13 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Trying to index non-object of type '%s' with '%s'", var_t, name)
+					report_warning(stat, "[B] Trying to index non-object of type %s with '%s'", var_t, name)
 					--D.break_()
 				end
 
 			else -- no variable we can update the type of
 				-- e.g.:   foo.bar.baz
-				report_warning(stat, "do_assignment: tried to index non-variable: %s", left_expr.base)
+				report_warning(stat, "Left hand side of assignment: tried to index non-variable: %s", left_expr.base)
 				assert(base_t)
 				base_t = T.follow_identifiers(base_t)
 				--assert(base_t ~= T.EmptyTable)
@@ -2164,7 +2167,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function pre_analyze_statement(stat, scope)
+	local function pre_analyze_statement(stat: P.StatNode, scope: Scope)
 		var is_pre_analyze = true
 
 		if stat.ast_type == 'Typedef' then
@@ -2201,31 +2204,19 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if #stat.lhs == 1 and #stat.rhs == 1 then
 				if stat.lhs[1].ast_type == 'IdExpr' then
+					var var_name = stat.lhs[1].name
+					var v = scope:get_var( var_name )
+
+					if v then
+						-- Assigning to something declared in an outer scope
+					else
+						-- Leave error reporting out of pre-analyzer
+						report_error(stat, "Pre-analyze: Implicit global '%s'", var_name)
+						v = scope:create_global( var_name, where_is(stat) )
+					end
+
 					if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
 						--do_assignment(stat, scope, stat.lhs[1], fun_t)
-
-						local var_name = stat.lhs[1].name
-
-						var<Variable?> v = nil
-
-						if true then
-							v = scope:get_var( var_name )
-
-							if v then
-								-- Assigning to something declared in an outer scope
-							else
-								-- Leave error reporting out of pre-analyzer
-								--v = scope:create_local( var_name, where_is(stat) )
-								--v.forward_declared = true
-								return
-							end
-						else
-							v = scope:get_var( var_name )
-							if not v then
-								report_error(stat, "Implicit global '%s'", var_name)
-								v = scope:create_global( var_name, where_is(stat) )
-							end
-						end
 					
 						if v.type then
 							report_error(stat, "Cannot forward declare '%s': it already has type '%s'", v.name, v.type)
@@ -2246,11 +2237,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		elseif stat.ast_type == 'FunctionDeclStatement' then
 			assert(stat.scope.parent == scope)
 
-			if stat.name_expr then
-				report_spam(stat, "Pre-analyzing function %q...", stat.name_expr)
-			else
-				report_spam(stat, "Pre-analyzing function %q...", stat.var_name)
-			end
+			assert(stat.name_expr)
+			report_spam(stat, "Pre-analyzing function %s...", stat.name_expr)
 
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze )
 			fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'

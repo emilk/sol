@@ -43,13 +43,13 @@ end
 -- Types:
 typedef T.TypeID = 'any'
                  or 'int_literal' or 'num_literal' or 'string_literal'
-                 or 'nil' or 'true' or 'false' or 'int' or 'num' or 'string'
+                 or 'nil' or 'true' or 'false' or 'int' or 'number' or 'string'
                  or 'table' or 'list' or 'map' or 'object' or 'function'
                  or 'variant' or 'identifier'
                  or 'varargs'
 
 var ATOMIC_TAGS = U.set{'any', 'int_literal', 'num_literal', 'string_literal',
-                        'nil', 'true', 'false', 'int', 'num', 'string'}
+                        'nil', 'true', 'false', 'int', 'number', 'string'}
 
 typedef T.Type = {
 	tag          : T.TypeID,
@@ -67,7 +67,7 @@ typedef T.Nil           : T.Type = { tag : 'nil'     }
 typedef T.True          : T.Type = { tag : 'true'    }
 typedef T.False         : T.Type = { tag : 'false'   }
 typedef T.Int           : T.Type = { tag : 'int'     }
-typedef T.Num           : T.Type = { tag : 'num'     }
+typedef T.Num           : T.Type = { tag : 'number'     }
 typedef T.String        : T.Type = { tag : 'string'  }
 
 typedef T.Table : T.Type = {
@@ -138,7 +138,7 @@ T.Nil      = { tag = 'nil'    }
 T.True     = { tag = 'true'   }
 T.False    = { tag = 'false'  }
 T.String   = { tag = 'string' }
-T.Num      = { tag = 'num'    }
+T.Num      = { tag = 'number'    }
 T.Int      = { tag = 'int'    }
 --T.Empty    = { tag = 'variant', variants = {} }
 
@@ -425,7 +425,7 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 			return true
 		end
 
-		return b.tag == 'num' or b.tag == 'int'
+		return b.tag == 'number' or b.tag == 'int'
 	end
 
 	if d.tag == 'num_literal' then
@@ -434,7 +434,7 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 			return true
 		end
 
-		return b.tag == 'num'
+		return b.tag == 'number'
 	end
 
 	if d.tag == 'string_literal' then
@@ -468,10 +468,10 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 		return b.tag == 'nil'
 	elseif d.tag == 'string' then
 		return b.tag == 'string'
-	elseif d.tag == 'num' then
-		return b.tag == 'num'
+	elseif d.tag == 'number' then
+		return b.tag == 'number'
 	elseif d.tag == 'int' then
-		return b.tag == 'num'
+		return b.tag == 'number'
 		    or b.tag == 'int'
 	elseif d.tag == 'table' then
 		return false -- Already covered

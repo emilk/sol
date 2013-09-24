@@ -49,7 +49,7 @@ local ATOMIC_TAGS
 
 
 = U.set{'any', 'int_literal', 'num_literal', 'string_literal',
-                        'nil', 'true', 'false', 'int', 'num', 'string'} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+                        'nil', 'true', 'false', 'int', 'number', 'string'} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 ------------------------------------------------------------------
 -- Prototypes for common stuff:
@@ -138,7 +138,7 @@ T.Nil      = { tag = 'nil'    } --[[SOL OUTPUT--]]
 T.True     = { tag = 'true'   } --[[SOL OUTPUT--]] 
 T.False    = { tag = 'false'  } --[[SOL OUTPUT--]] 
 T.String   = { tag = 'string' } --[[SOL OUTPUT--]] 
-T.Num      = { tag = 'num'    } --[[SOL OUTPUT--]] 
+T.Num      = { tag = 'number'    } --[[SOL OUTPUT--]] 
 T.Int      = { tag = 'int'    } --[[SOL OUTPUT--]] 
 --T.Empty    = { tag = 'variant', variants = {} }
 
@@ -425,7 +425,7 @@ function T.isa_raw(d, b, problem_rope)
 			return true --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		return b.tag == 'num' or b.tag == 'int' --[[SOL OUTPUT--]] 
+		return b.tag == 'number' or b.tag == 'int' --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	if d.tag == 'num_literal' then
@@ -434,7 +434,7 @@ function T.isa_raw(d, b, problem_rope)
 			return true --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		return b.tag == 'num' --[[SOL OUTPUT--]] 
+		return b.tag == 'number' --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	if d.tag == 'string_literal' then
@@ -468,10 +468,10 @@ function T.isa_raw(d, b, problem_rope)
 		return b.tag == 'nil' --[[SOL OUTPUT--]] 
 	elseif d.tag == 'string' then
 		return b.tag == 'string' --[[SOL OUTPUT--]] 
-	elseif d.tag == 'num' then
-		return b.tag == 'num' --[[SOL OUTPUT--]] 
+	elseif d.tag == 'number' then
+		return b.tag == 'number' --[[SOL OUTPUT--]] 
 	elseif d.tag == 'int' then
-		return b.tag == 'num'
+		return b.tag == 'number'
 		    or b.tag == 'int' --[[SOL OUTPUT--]] 
 	elseif d.tag == 'table' then
 		return false --[[SOL OUTPUT--]]  -- Already covered

@@ -16,6 +16,9 @@ var INTRINSICS = [[
 		floor = extern : function(number) -> number;
 		huge  = extern : number;
 
+		sqrt  = extern : function(number) -> number;
+		pow   = extern : function(number, number) -> number;
+
 		sin   = extern : function(number) -> number;
 		asin  = extern : function(number) -> number;
 		cos   = extern : function(number) -> number;
@@ -43,7 +46,11 @@ var INTRINSICS = [[
 		char   = extern : function(string, ... : int) -> string;
 		format = extern : function(...) -> ...;
 		rep    = extern : function(...) -> ...;
+
+		-- Patterns:
+		sub    = extern : function(...) -> ...;
 		gsub   = extern : function(...) -> ...;
+		find   = extern : function(...) -> ...;
 	}
 
 	global table = {
