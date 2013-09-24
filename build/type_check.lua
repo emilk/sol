@@ -935,7 +935,18 @@ local function analyze(ast, filename, on_require, settings)
 	local function extract_iterator_type(expr, scope)
 		report_spam(expr, "extract_iterator_type...") --[[SOL OUTPUT--]] 
 
-		local gen_t = analyze_expr_single(expr, scope) --[[SOL OUTPUT--]] 
+		--[-[
+		local types = analyze_expr(expr, scope) --[[SOL OUTPUT--]] 
+		types = T.as_type_list(types) --[[SOL OUTPUT--]] 
+		if types == T.AnyTypeList then
+			-- e.g.   for line in src:gmatch("[^\n]*\n?") do
+			return T.AnyTypeList --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+		local gen_t = types[1] --[[SOL OUTPUT--]] 
+		--]]	
+		--local gen_t = analyze_expr_single(expr, scope) -- TODO: var
+
+		D.assert(gen_t) --[[SOL OUTPUT--]] 
 
 		report_spam(expr, "extract_iterator_type, gen_t: '%s'", gen_t) --[[SOL OUTPUT--]] 
 
@@ -955,9 +966,15 @@ local function analyze(ast, filename, on_require, settings)
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		local fun = gen_t --[[SOL OUTPUT--]] 
-		--report_info(expr, "Generator deducted to %s", fun.rets)
-		return fun.rets --[[SOL OUTPUT--]] 
+		local fun_t = gen_t --[[SOL OUTPUT--]] 
+
+		local arg_ts = {} --[[SOL OUTPUT--]] 
+		for i = 2,#types do
+			arg_ts[i-1] = types[i] --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+		check_arguments(expr, fun_t, arg_ts) --[[SOL OUTPUT--]] 
+
+		return fun_t.rets or T.AnyTypeList --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 

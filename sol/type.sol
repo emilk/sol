@@ -963,10 +963,6 @@ function T.format_type(root: T.Type, verbose: bool?)
 				end
 
 				for _,m in ipairs(mem_list) do
-					if m.name == 'Bool' then
-						D.break_()
-					end
-
 					str = str .. next_indent .. m.name .. ": "
 
 					-- Align:

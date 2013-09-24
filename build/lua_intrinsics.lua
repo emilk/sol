@@ -51,6 +51,7 @@
 		sub    = extern : function(...) -> ...;
 		gsub   = extern : function(...) -> ...;
 		find   = extern : function(...) -> ...;
+		gmatch = extern : function(...) -> ...;   -- a generator
 	}
 
 	global table = {

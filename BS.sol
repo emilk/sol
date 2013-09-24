@@ -1,9 +1,18 @@
 
-global Math = {
-	
-}
+----------------------------------------------------------------------------------
+-- Namespaces: 
 
------------------------------------------
+global Application = { }
+global Script      = { }
+global Material    = { }
+global Math	        = { }
+global Mesh        = { }
+global Unit        = { }
+global Profiler    = { }
+
+
+----------------------------------------------------------------------------------
+-- Types:
 
 global class Vector3 = extern
 
@@ -33,10 +42,3 @@ global class Matrix4x4 = extern
 setmetatable(Matrix4x4, {
 	__call = extern : function(...) -> Matrix4x4;
 })
-
------------------------------------------
-
-global Script   = { }
-global Material = { }
-global Unit     = { }
-global Profiler = { }

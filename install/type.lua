@@ -963,10 +963,6 @@ function T.format_type(root, verbose)
 				end --[[SOL OUTPUT--]] 
 
 				for _,m in ipairs(mem_list) do
-					if m.name == 'Bool' then
-						D.break_() --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-
 					str = str .. next_indent .. m.name .. ": " --[[SOL OUTPUT--]] 
 
 					-- Align:

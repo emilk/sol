@@ -932,10 +932,21 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	-- for k,v in some_expr
 	-- this functions returns a list of types for k,v in the example above
-	local function extract_iterator_type(expr, scope: Scope) -> [T.Type]
+	local function extract_iterator_type(expr: P.Node, scope: Scope) -> [T.Type]
 		report_spam(expr, "extract_iterator_type...")
 
-		local gen_t = analyze_expr_single(expr, scope)
+		--[-[
+		var<T.Typelist> types = analyze_expr(expr, scope)
+		types = T.as_type_list(types)
+		if types == T.AnyTypeList then
+			-- e.g.   for line in src:gmatch("[^\n]*\n?") do
+			return T.AnyTypeList
+		end
+		local gen_t = types[1]
+		--]]	
+		--local gen_t = analyze_expr_single(expr, scope) -- TODO: var
+
+		D.assert(gen_t)
 
 		report_spam(expr, "extract_iterator_type, gen_t: '%s'", gen_t)
 
@@ -955,9 +966,15 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return T.AnyTypeList
 		end
 
-		var<T.Function> fun = gen_t
-		--report_info(expr, "Generator deducted to %s", fun.rets)
-		return fun.rets
+		var<T.Function> fun_t = gen_t
+
+		var arg_ts = {} : [T.Type]
+		for i = 2,#types do
+			arg_ts[i-1] = types[i]
+		end
+		check_arguments(expr, fun_t, arg_ts)
+
+		return fun_t.rets or T.AnyTypeList
 	end
 
 
