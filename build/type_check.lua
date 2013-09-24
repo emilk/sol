@@ -150,6 +150,12 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
+	local function sol_error(node, fmt, ...)
+		if settings.is_sol then
+			report_error(node, fmt, ...) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
 	--local member_missing_reporter = report_warning -- TODO
 	local member_missing_reporter = report_spam --[[SOL OUTPUT--]] 
 
@@ -222,7 +228,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		if name ~= '_' then
 			if not scope:is_module_level() then
-				report_error(node, "Global variables should be declared in the top scope") --[[SOL OUTPUT--]] 
+				sol_error(node, "Global variables should be declared in the top scope") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -571,7 +577,7 @@ local function analyze(ast, filename, on_require, settings)
 					if typ == T.Any then
 						return {T.Uint, T.Any} --[[SOL OUTPUT--]] 
 					elseif typ.tag == 'table' or T.is_empty_table(typ) then
-						report_warning(expr, "Calling 'ipairs' on unknown table") --[[SOL OUTPUT--]] 
+						sol_warning(expr, "Calling 'ipairs' on unknown table") --[[SOL OUTPUT--]] 
 						return {T.Uint, T.Any} --[[SOL OUTPUT--]]  -- Presumably a list?
 					elseif typ.tag == 'list' then
 						return {T.Uint, typ.type} --[[SOL OUTPUT--]] 
@@ -682,7 +688,6 @@ local function analyze(ast, filename, on_require, settings)
 					end --[[SOL OUTPUT--]] 
 				else
 					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args) --[[SOL OUTPUT--]] 
-					D.break_() --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else
 				break --[[SOL OUTPUT--]] 
@@ -1283,7 +1288,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			if T.is_empty_table(base_t) then
 				-- Indexing what? We don't know
-				report_warning(expr, 'Indexing unkown table') --[[SOL OUTPUT--]] 
+				sol_warning(expr, 'Indexing unkown table') --[[SOL OUTPUT--]] 
 				return T.Any --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -1648,7 +1653,7 @@ local function analyze(ast, filename, on_require, settings)
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Trying to index type 'any' with '%s'", name) --[[SOL OUTPUT--]] 
+					sol_warning(stat, "[B] Trying to index type 'any' with '%s'", name) --[[SOL OUTPUT--]] 
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
@@ -1716,7 +1721,7 @@ local function analyze(ast, filename, on_require, settings)
 				elseif T.is_any(base_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[A] Trying to index type 'any' with '%s'", name) --[[SOL OUTPUT--]] 
+					sol_warning(stat, "[A] Trying to index type 'any' with '%s'", name) --[[SOL OUTPUT--]] 
 				else
 					report_warning(stat, "[A] Trying to index non-object of type '%s' with '%s'", base_t, name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -2229,7 +2234,7 @@ local function analyze(ast, filename, on_require, settings)
 						-- Assigning to something declared in an outer scope
 					else
 						-- Leave error reporting out of pre-analyzer
-						report_error(stat, "Pre-analyze: Implicit global '%s'", var_name) --[[SOL OUTPUT--]] 
+						report_error(stat, "Pre-analyze: Declaring implicit global '%s'", var_name) --[[SOL OUTPUT--]] 
 						v = scope:create_global( var_name, where_is(stat) ) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 

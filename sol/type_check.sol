@@ -150,6 +150,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 	end
 
+	local function sol_error(node: P.Node?, fmt: string, ...)
+		if settings.is_sol then
+			report_error(node, fmt, ...)
+		end
+	end
+
 	--local member_missing_reporter = report_warning -- TODO
 	local member_missing_reporter = report_spam
 
@@ -222,7 +228,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		if name ~= '_' then
 			if not scope:is_module_level() then
-				report_error(node, "Global variables should be declared in the top scope")
+				sol_error(node, "Global variables should be declared in the top scope")
 			end
 		end
 
@@ -571,7 +577,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					if typ == T.Any then
 						return {T.Uint, T.Any}
 					elseif typ.tag == 'table' or T.is_empty_table(typ) then
-						report_warning(expr, "Calling 'ipairs' on unknown table")
+						sol_warning(expr, "Calling 'ipairs' on unknown table")
 						return {T.Uint, T.Any} -- Presumably a list?
 					elseif typ.tag == 'list' then
 						return {T.Uint, typ.type}
@@ -682,7 +688,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					end
 				else
 					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args)
-					D.break_()
 				end
 			else
 				break
@@ -1283,7 +1288,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if T.is_empty_table(base_t) then
 				-- Indexing what? We don't know
-				report_warning(expr, 'Indexing unkown table')
+				sol_warning(expr, 'Indexing unkown table')
 				return T.Any
 			end
 
@@ -1648,7 +1653,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Trying to index type 'any' with '%s'", name)
+					sol_warning(stat, "[B] Trying to index type 'any' with '%s'", name)
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
@@ -1716,7 +1721,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				elseif T.is_any(base_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[A] Trying to index type 'any' with '%s'", name)
+					sol_warning(stat, "[A] Trying to index type 'any' with '%s'", name)
 				else
 					report_warning(stat, "[A] Trying to index non-object of type '%s' with '%s'", base_t, name)
 				end
@@ -2229,7 +2234,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						-- Assigning to something declared in an outer scope
 					else
 						-- Leave error reporting out of pre-analyzer
-						report_error(stat, "Pre-analyze: Implicit global '%s'", var_name)
+						report_error(stat, "Pre-analyze: Declaring implicit global '%s'", var_name)
 						v = scope:create_global( var_name, where_is(stat) )
 					end
 
