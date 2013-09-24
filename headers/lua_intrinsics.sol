@@ -1,6 +1,6 @@
--- Compiled from sol/lua_intrinsics.sol at 2013 Sep 24  20:45:23
+-- Compiled from sol/lua_intrinsics.sol at 2013 Sep 24  20:54:57
 
-global typedef Variable = <0x01239330>{
+global typedef Variable = <0x0064ddd8>{
 	forward_declared: bool?;
 	is_global:        bool;
 	name:             string;
@@ -11,7 +11,7 @@ global typedef Variable = <0x01239330>{
 	where:            string;
 }
 
-global typedef Scope = <instance><0x0155b5f0>{
+global typedef Scope = <instance><0x011c76e0>{
 	children:        [Scope]?;
 	fixed:           false?;
 	global_typedefs: {string => Type}?;
@@ -21,7 +21,7 @@ global typedef Scope = <instance><0x0155b5f0>{
 	typedefs:        {string => Type}?;
 	vararg:          Variable?;
 
-	!! class_type:    <class><0x0155b1e8>{
+	!! class_type:    <class><0x0060c350>{
 		add_global:          (function(self, v) -> void) or nil;
 		add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 		create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -48,11 +48,11 @@ global typedef Scope = <instance><0x0155b5f0>{
 		is_module_level:     (function(self) -> bool) or nil;
 		new:                 (function(parent: Scope?) -> Scope) or nil;
 
-		!! instance_type: <RECURSION 0x0155b5f0>
+		!! instance_type: <RECURSION 0x011c76e0>
 	}
 }
 
-global Scope : <class><0x0155b1e8>{
+global Scope : <class><0x0060c350>{
 	add_global:          (function(self, v) -> void) or nil;
 	add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 	create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -79,7 +79,7 @@ global Scope : <class><0x0155b1e8>{
 	is_module_level:     (function(self) -> bool) or nil;
 	new:                 (function(parent: Scope?) -> Scope) or nil;
 
-	!! instance_type: <instance><0x0155b5f0>{
+	!! instance_type: <instance><0x011c76e0>{
 		children:        [Scope]?;
 		fixed:           false?;
 		global_typedefs: {string => Type}?;
@@ -89,10 +89,10 @@ global Scope : <class><0x0155b1e8>{
 		typedefs:        {string => Type}?;
 		vararg:          Variable?;
 
-		!! class_type:    <RECURSION 0x0155b1e8>
+		!! class_type:    <RECURSION 0x0060c350>
 	}
 }
 
-return <0x025c78e0>{
+return <0x01baec58>{
 	add_intrinsics_to_global_scope: function() -> void;
 }

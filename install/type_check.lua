@@ -307,7 +307,6 @@ local function analyze(ast, filename, on_require, settings)
 				return t[1], v --[[SOL OUTPUT--]] 
 			else
 				report_error(expr, "When analyzing '%s' expression: Expected single type, got: %s", expr.ast_type, t) --[[SOL OUTPUT--]] 
-				D.break_() --[[SOL OUTPUT--]] 
 				return T.Any, v --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		else
@@ -859,9 +858,24 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 
 		local arg_ts = {} --[[SOL OUTPUT--]] 
-		for i,v in ipairs(args) do
-			arg_ts[i], _ = analyze_expr_single(v, scope) --[[SOL OUTPUT--]] 
-			assert(arg_ts[i], "missing type") --[[SOL OUTPUT--]] 
+		for ix,v in ipairs(args) do
+			if ix < #args then
+				arg_ts[ix], _ = analyze_expr_single(v, scope) --[[SOL OUTPUT--]] 
+			else
+				-- Last argument may evaluate to several values
+				local types = analyze_expr(v, scope) --[[SOL OUTPUT--]] 
+				types = T.as_type_list(types) --[[SOL OUTPUT--]]  -- FIXME: analyze_expr should to this for us >:(
+				if types == T.AnyTypeList then
+					arg_ts[ix] = { tag = 'varargs', type = T.Any } --[[SOL OUTPUT--]] 
+				elseif #types == 0 then
+					report_error(expr, "Last argument evaluates to no values") --[[SOL OUTPUT--]] 
+					D.break_() --[[SOL OUTPUT--]] 
+				else
+					for _,t in ipairs(types) do
+						table.insert(arg_ts, t) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		--------------------------------------------------------

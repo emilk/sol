@@ -858,9 +858,23 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		var<[T.Type]> arg_ts = {}
-		for i,v in ipairs(args) do
-			arg_ts[i], _ = analyze_expr_single(v, scope)
-			assert(arg_ts[i], "missing type")
+		for ix,v in ipairs(args) do
+			if ix < #args then
+				arg_ts[ix], _ = analyze_expr_single(v, scope)
+			else
+				-- Last argument may evaluate to several values
+				local types = analyze_expr(v, scope)
+				types = T.as_type_list(types) -- FIXME: analyze_expr should to this for us >:(
+				if types == T.AnyTypeList then
+					arg_ts[ix] = { tag = 'varargs', type = T.Any }
+				elseif #types == 0 then
+					report_error(expr, "Last argument evaluates to no values")
+				else
+					for _,t in ipairs(types) do
+						table.insert(arg_ts, t)
+					end
+				end
+			end
 		end
 
 		--------------------------------------------------------
