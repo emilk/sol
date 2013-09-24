@@ -75,7 +75,7 @@ local function format_expr(e: P.ExprNode)
 end
 
 
-typedef OnRequireT = function(string, string) -> T.Type
+typedef OnRequireT = function(string, string) -> T.Type or T.Typelist
 
 
 local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
@@ -276,19 +276,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	analyze_expr = function(expr: P.Node, scope: Scope) --> T.Type or T.Typelist, Variable?  -- TODO
-		local type, var_ = analyze_expr_unchecked(expr, scope)
+	analyze_expr = function(expr: P.Node, scope: Scope) --> T.Typelist, Variable?  -- TODO
+		local types, var_ = analyze_expr_unchecked(expr, scope)
 
-		D.assert(T.is_type(type)  or  T.is_type_list(type))
+		D.assert(T.is_type_list(types))
 
-		if not T.is_type(type) and not T.is_type_list(type) then
-			report_error(expr, "expression of type %s: evaluated to non-type: '%s'", expr.ast_type, U.pretty(type))
-			type = T.AnyTypeList -- Could be any number of unknown values
-		end
-
-		--report_spam(expr, 'expression of type %s evaluated to %s', expr.ast_type, type)
-
-		return type, var_
+		return types, var_
 	end
 
 
@@ -299,18 +292,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return T.Any, v
 		end
 
-		if T.is_type_list(t) then
-			if #t == 0 then
-				report_error(expr, "Analyzing '%s' expression: Expected type, got void", expr.ast_type)
-				return T.Any, v
-			elseif #t == 1 then
-				return t[1], v
-			else
-				report_error(expr, "When analyzing '%s' expression: Expected single type, got: %s", expr.ast_type, t)
-				return T.Any, v
-			end
+		if #t == 0 then
+			report_error(expr, "Analyzing '%s' expression: Expected type, got void", expr.ast_type)
+			return T.Any, v
+		elseif #t == 1 then
+			return t[1], v
 		else
-			return t, v
+			report_error(expr, "When analyzing '%s' expression: Expected single type, got: %s", expr.ast_type, t)
+			return T.Any, v
 		end
 	end
 
@@ -421,7 +410,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		---
 
 		local ret_t = analyze_statlist(node.body, func_scope, fun_t)
-		ret_t = ret_t and T.as_type_list(ret_t) or T.Void
+		ret_t = ret_t or T.Void
 
 		if fun_t.rets then
 			if not T.could_be_tl(ret_t, fun_t.rets) then
@@ -699,7 +688,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 	local function analyze_require( module_name: string, req_where: string )
-		return T.as_type_list( on_require( module_name, req_where ) )
+		return T.as_type_list( on_require( module_name, req_where ) )  -- TODO: remove as_type_list
 	end
 
 
@@ -864,7 +853,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			else
 				-- Last argument may evaluate to several values
 				local types = analyze_expr(v, scope)
-				types = T.as_type_list(types) -- FIXME: analyze_expr should to this for us >:(
 				if types == T.AnyTypeList then
 					arg_ts[ix] = { tag = 'varargs', type = T.Any }
 				elseif #types == 0 then
@@ -957,7 +945,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		--[-[
 		var<T.Typelist> types = analyze_expr(expr, scope)
-		types = T.as_type_list(types)
 		if types == T.AnyTypeList then
 			-- e.g.   for line in src:gmatch("[^\n]*\n?") do
 			return T.AnyTypeList
@@ -1002,7 +989,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local analyze_simple_expr_unchecked
 
 
-	analyze_expr_unchecked = function(expr: P.Node, scope: Scope) -> T.Typelist or T.Type, Variable?
+	analyze_expr_unchecked = function(expr: P.Node, scope: Scope) -> T.Typelist, Variable?
 		assert(expr)
 		assert(type(expr) == 'table')
 		assert(expr.ast_type)
@@ -1071,20 +1058,34 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			-- Store for quick access later on:
 			expr.variable = var_
 
-			return type, var_
+			return { type }, var_
+
+		-- Anything that can return multiple values:
+		elseif expr.ast_type == 'CallExpr' then        -- foo(arg, ...)
+			--U.printf('CallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
+			return call_function(expr, scope), nil
+
+		elseif expr.ast_type == 'TableCallExpr' then   -- foo{arg}
+			--U.printf('TableCallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
+			return call_function(expr, scope), nil
+
+
+		elseif expr.ast_type == 'StringCallExpr' then  -- foo'arg'
+			--U.printf('StringCallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
+			return call_function(expr, scope), nil
 
 		else
 			local type = analyze_simple_expr_unchecked(expr, scope)
 
 			report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, type)
-			D.assert(T.is_type(type)  or  T.is_type_list(type))
+			D.assert(T.is_type(type))
 
-			return type, nil
+			return { type }, nil
 		end
 	end
 
 	-- Return type
-	analyze_simple_expr_unchecked = function(expr: P.ExprNode, scope: Scope) -> T.Typelist or T.Type
+	analyze_simple_expr_unchecked = function(expr: P.ExprNode, scope: Scope) -> T.Type
 		if expr.ast_type == 'NumberExpr' then
 			local str = expr.value.data
 			local t = T.from_num_literal( str )
@@ -1269,21 +1270,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					type = T.Any 
 				}
 			end
-
-
-		elseif expr.ast_type == 'CallExpr' then        -- foo(arg, ...)
-			--U.printf('CallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
-			return call_function(expr, scope)
-
-
-		elseif expr.ast_type == 'TableCallExpr' then   -- foo{arg}
-			--U.printf('TableCallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
-			return call_function(expr, scope)
-
-
-		elseif expr.ast_type == 'StringCallExpr' then  -- foo'arg'
-			--U.printf('StringCallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
-			return call_function(expr, scope)
 
 
 		elseif expr.ast_type == 'IndexExpr' then
@@ -1884,7 +1870,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	-- Iff it is a return statement, will returns a list of types
 	-- Else nil
 	-- 'scope_fun' contains info about the enclosing function
-	local analyze_statement = function(stat: P.StatNode, scope: Scope, scope_fun: T.Function)
+	local analyze_statement = function(stat: P.StatNode, scope: Scope, scope_fun: T.Function) -> T.Typelist?
 		assert(scope)
 		var is_pre_analyze = false
 
@@ -1896,7 +1882,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			assert(nrhs > 0)
 			if nrhs == 1 then
 				local rt = analyze_expr(stat.rhs[1], scope)
-				rt = T.as_type_list(rt)
 				if rt == T.AnyTypeList then
 					-- Nothing to do
 				elseif nlhs > #rt then
@@ -1929,7 +1914,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			-- Analyze init_list before declaring variables to prevent
 			-- local x = x
 
-			var<T.Typelist or [T.Type]> init_types = {}
+			var<[T.Type]> init_types = {}
 
 			if #stat.init_list == 1 then
 				init_types = analyze_expr( stat.init_list[1], scope )
@@ -1998,7 +1983,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				if t == T.AnyTypeList then
 					-- Nothing to do
 				else
-					local deduced_types = T.as_type_list( t )
+					local deduced_types = t
 					local nt = #deduced_types
 					
 					if #vars < nt then
@@ -2070,7 +2055,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if #stat.arguments == 0 then
 				what_to_return = T.Void
 			elseif #stat.arguments == 1 then
-				what_to_return = T.as_type_list( analyze_expr( stat.arguments[1], scope ) )
+				what_to_return = analyze_expr( stat.arguments[1], scope )
 			else
 				var<[T.Type]> type_list = {}
 				for i = 1, #stat.arguments do
@@ -2302,7 +2287,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	-- Returns the list of types returned in these statements
 	-- or nil if no returns statements where found
-	analyze_statlist = function(stat_list, scope, scope_fun: T.Function)
+	analyze_statlist = function(stat_list, scope, scope_fun: T.Function) -> T.Typelist?
 		assert(stat_list)
 		assert(scope)
 		local return_types = nil

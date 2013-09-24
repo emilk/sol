@@ -674,19 +674,13 @@ function T.could_be(a, b, problem_rope)
 end --[[SOL OUTPUT--]] 
 
 function T.could_be_tl(al, bl, problem_rope)
-	assert(al and bl) --[[SOL OUTPUT--]] 
-
 	if al == T.AnyTypeList or bl == T.AnyTypeList then
 		return true --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	if not T.is_type_list(al) and not T.is_type_list(bl) then
-		return T.could_be(al, bl, problem_rope) --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
 	assert(al and bl) --[[SOL OUTPUT--]] 
-	al = T.as_type_list(al) --[[SOL OUTPUT--]] 
-	bl = T.as_type_list(bl) --[[SOL OUTPUT--]] 
+	assert(T.is_type_list(al)) --[[SOL OUTPUT--]] 
+	assert(T.is_type_list(bl)) --[[SOL OUTPUT--]] 
 
 	if #al ~= #bl then
 		if problem_rope then

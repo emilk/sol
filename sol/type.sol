@@ -673,20 +673,14 @@ function T.could_be(a: T.Type, b: T.Type, problem_rope: [string]?)
 	end
 end
 
-function T.could_be_tl(al, bl, problem_rope: [string]?) -> bool
-	assert(al and bl)
-
+function T.could_be_tl(al: T.Typelist, bl: T.Typelist, problem_rope: [string]?) -> bool
 	if al == T.AnyTypeList or bl == T.AnyTypeList then
 		return true
 	end
 
-	if not T.is_type_list(al) and not T.is_type_list(bl) then
-		return T.could_be(al, bl, problem_rope)
-	end
-
 	assert(al and bl)
-	al = T.as_type_list(al)
-	bl = T.as_type_list(bl)
+	assert(T.is_type_list(al))
+	assert(T.is_type_list(bl))
 
 	if #al ~= #bl then
 		if problem_rope then

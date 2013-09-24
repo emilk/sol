@@ -276,19 +276,12 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
-	analyze_expr = function(expr, scope) --> T.Type or T.Typelist, Variable?  -- TODO
-		local type, var_ = analyze_expr_unchecked(expr, scope) --[[SOL OUTPUT--]] 
+	analyze_expr = function(expr, scope) --> T.Typelist, Variable?  -- TODO
+		local types, var_ = analyze_expr_unchecked(expr, scope) --[[SOL OUTPUT--]] 
 
-		D.assert(T.is_type(type)  or  T.is_type_list(type)) --[[SOL OUTPUT--]] 
+		D.assert(T.is_type_list(types)) --[[SOL OUTPUT--]] 
 
-		if not T.is_type(type) and not T.is_type_list(type) then
-			report_error(expr, "expression of type %s: evaluated to non-type: '%s'", expr.ast_type, U.pretty(type)) --[[SOL OUTPUT--]] 
-			type = T.AnyTypeList --[[SOL OUTPUT--]]  -- Could be any number of unknown values
-		end --[[SOL OUTPUT--]] 
-
-		--report_spam(expr, 'expression of type %s evaluated to %s', expr.ast_type, type)
-
-		return type, var_ --[[SOL OUTPUT--]] 
+		return types, var_ --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -299,18 +292,14 @@ local function analyze(ast, filename, on_require, settings)
 			return T.Any, v --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		if T.is_type_list(t) then
-			if #t == 0 then
-				report_error(expr, "Analyzing '%s' expression: Expected type, got void", expr.ast_type) --[[SOL OUTPUT--]] 
-				return T.Any, v --[[SOL OUTPUT--]] 
-			elseif #t == 1 then
-				return t[1], v --[[SOL OUTPUT--]] 
-			else
-				report_error(expr, "When analyzing '%s' expression: Expected single type, got: %s", expr.ast_type, t) --[[SOL OUTPUT--]] 
-				return T.Any, v --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+		if #t == 0 then
+			report_error(expr, "Analyzing '%s' expression: Expected type, got void", expr.ast_type) --[[SOL OUTPUT--]] 
+			return T.Any, v --[[SOL OUTPUT--]] 
+		elseif #t == 1 then
+			return t[1], v --[[SOL OUTPUT--]] 
 		else
-			return t, v --[[SOL OUTPUT--]] 
+			report_error(expr, "When analyzing '%s' expression: Expected single type, got: %s", expr.ast_type, t) --[[SOL OUTPUT--]] 
+			return T.Any, v --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -421,7 +410,7 @@ local function analyze(ast, filename, on_require, settings)
 		---
 
 		local ret_t = analyze_statlist(node.body, func_scope, fun_t) --[[SOL OUTPUT--]] 
-		ret_t = ret_t and T.as_type_list(ret_t) or T.Void --[[SOL OUTPUT--]] 
+		ret_t = ret_t or T.Void --[[SOL OUTPUT--]] 
 
 		if fun_t.rets then
 			if not T.could_be_tl(ret_t, fun_t.rets) then
@@ -699,7 +688,7 @@ local function analyze(ast, filename, on_require, settings)
 
 
 	local function analyze_require( module_name, req_where )
-		return T.as_type_list( on_require( module_name, req_where ) ) --[[SOL OUTPUT--]] 
+		return T.as_type_list( on_require( module_name, req_where ) ) --[[SOL OUTPUT--]]   -- TODO: remove as_type_list
 	end --[[SOL OUTPUT--]] 
 
 
@@ -864,12 +853,10 @@ local function analyze(ast, filename, on_require, settings)
 			else
 				-- Last argument may evaluate to several values
 				local types = analyze_expr(v, scope) --[[SOL OUTPUT--]] 
-				types = T.as_type_list(types) --[[SOL OUTPUT--]]  -- FIXME: analyze_expr should to this for us >:(
 				if types == T.AnyTypeList then
 					arg_ts[ix] = { tag = 'varargs', type = T.Any } --[[SOL OUTPUT--]] 
 				elseif #types == 0 then
 					report_error(expr, "Last argument evaluates to no values") --[[SOL OUTPUT--]] 
-					D.break_() --[[SOL OUTPUT--]] 
 				else
 					for _,t in ipairs(types) do
 						table.insert(arg_ts, t) --[[SOL OUTPUT--]] 
@@ -958,7 +945,6 @@ local function analyze(ast, filename, on_require, settings)
 
 		--[-[
 		local types = analyze_expr(expr, scope) --[[SOL OUTPUT--]] 
-		types = T.as_type_list(types) --[[SOL OUTPUT--]] 
 		if types == T.AnyTypeList then
 			-- e.g.   for line in src:gmatch("[^\n]*\n?") do
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
@@ -1072,15 +1058,29 @@ local function analyze(ast, filename, on_require, settings)
 			-- Store for quick access later on:
 			expr.variable = var_ --[[SOL OUTPUT--]] 
 
-			return type, var_ --[[SOL OUTPUT--]] 
+			return { type }, var_ --[[SOL OUTPUT--]] 
+
+		-- Anything that can return multiple values:
+		elseif expr.ast_type == 'CallExpr' then        -- foo(arg, ...)
+			--U.printf('CallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
+			return call_function(expr, scope), nil --[[SOL OUTPUT--]] 
+
+		elseif expr.ast_type == 'TableCallExpr' then   -- foo{arg}
+			--U.printf('TableCallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
+			return call_function(expr, scope), nil --[[SOL OUTPUT--]] 
+
+
+		elseif expr.ast_type == 'StringCallExpr' then  -- foo'arg'
+			--U.printf('StringCallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
+			return call_function(expr, scope), nil --[[SOL OUTPUT--]] 
 
 		else
 			local type = analyze_simple_expr_unchecked(expr, scope) --[[SOL OUTPUT--]] 
 
 			report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, type) --[[SOL OUTPUT--]] 
-			D.assert(T.is_type(type)  or  T.is_type_list(type)) --[[SOL OUTPUT--]] 
+			D.assert(T.is_type(type)) --[[SOL OUTPUT--]] 
 
-			return type, nil --[[SOL OUTPUT--]] 
+			return { type }, nil --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -1270,21 +1270,6 @@ local function analyze(ast, filename, on_require, settings)
 					type = T.Any 
 				} --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-
-
-		elseif expr.ast_type == 'CallExpr' then        -- foo(arg, ...)
-			--U.printf('CallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
-			return call_function(expr, scope) --[[SOL OUTPUT--]] 
-
-
-		elseif expr.ast_type == 'TableCallExpr' then   -- foo{arg}
-			--U.printf('TableCallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
-			return call_function(expr, scope) --[[SOL OUTPUT--]] 
-
-
-		elseif expr.ast_type == 'StringCallExpr' then  -- foo'arg'
-			--U.printf('StringCallExpr, base: %q, args: %q', expr2str(expr.base), expr2str(expr.arguments))
-			return call_function(expr, scope) --[[SOL OUTPUT--]] 
 
 
 		elseif expr.ast_type == 'IndexExpr' then
@@ -1897,7 +1882,6 @@ local function analyze(ast, filename, on_require, settings)
 			assert(nrhs > 0) --[[SOL OUTPUT--]] 
 			if nrhs == 1 then
 				local rt = analyze_expr(stat.rhs[1], scope) --[[SOL OUTPUT--]] 
-				rt = T.as_type_list(rt) --[[SOL OUTPUT--]] 
 				if rt == T.AnyTypeList then
 					-- Nothing to do
 				elseif nlhs > #rt then
@@ -1999,7 +1983,7 @@ local function analyze(ast, filename, on_require, settings)
 				if t == T.AnyTypeList then
 					-- Nothing to do
 				else
-					local deduced_types = T.as_type_list( t ) --[[SOL OUTPUT--]] 
+					local deduced_types = t --[[SOL OUTPUT--]] 
 					local nt = #deduced_types --[[SOL OUTPUT--]] 
 					
 					if #vars < nt then
@@ -2071,7 +2055,7 @@ local function analyze(ast, filename, on_require, settings)
 			if #stat.arguments == 0 then
 				what_to_return = T.Void --[[SOL OUTPUT--]] 
 			elseif #stat.arguments == 1 then
-				what_to_return = T.as_type_list( analyze_expr( stat.arguments[1], scope ) ) --[[SOL OUTPUT--]] 
+				what_to_return = analyze_expr( stat.arguments[1], scope ) --[[SOL OUTPUT--]] 
 			else
 				local type_list = {} --[[SOL OUTPUT--]] 
 				for i = 1, #stat.arguments do
