@@ -53,7 +53,8 @@ var ATOMIC_TAGS = U.set{'any', 'int_literal', 'num_literal', 'string_literal',
 
 typedef T.Type = {
 	tag          : T.TypeID,
-	pre_analyzed : bool?,   -- Temporary type reached by pre-analyze?
+	pre_analyzed : bool?,    -- Temporary type reached by pre-analyze?
+	where        : string?,  -- Where the type was declared (always set if pre_analyzed is true)
 }
 
 typedef T.Typelist = [T.Type]
@@ -115,8 +116,8 @@ typedef T.Variant : T.Type = {
 typedef T.Identifier : T.Type = {
 	tag         : 'identifier',
 	scope       : Scope,
-	var_name    : string?, -- If namespaced typedef, i.e.   typedef var_.type  =  ...
-	--var_        : Variable?, -- If namespaced typedef, i.e.   typedef var_.type  =  ...
+	var_name    : string?, -- If namespaced typedef, i.e.   typedef some_var.type  =  ...
+	--var_        : Variable?, -- If namespaced typedef, i.e.   typedef some_var.type  =  ...
 	name        : string,    -- The name of the type
 	where       : string,    -- Point of declaration (file:line)
 	first_usage : string?,   -- Point of first use

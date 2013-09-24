@@ -78,18 +78,30 @@ typedef parse_info = {
 }
 
 typedef CURRENTLY_PARSING = false
-local CURRENTLY_PARSING = false
+var     CURRENTLY_PARSING = false
+local   FAIL_INFO = { ast = nil, type = T.Any }
 
 -- type is CURRENTLY_PARSING during parsing.
-var<{string => parse_info or CURRENTLY_PARSING}> g_modules = {}
+var g_modules = {} : {string => parse_info or CURRENTLY_PARSING}
 
-local FAIL_INFO = { ast = nil, type = T.Any }
+-- Result of global includes:
+var g_globals = {
+	global_vars     = {} : [Variable];
+	global_typedefs = {} : { string => T.Type };
+}
 
-var<{string => bool}> g_did_warn_about = {}
+
+var g_did_warn_about  = {} : {string => bool}
 
 
 -- Find path to a module given it's name, and the path to the file doing the require:ing
 local function find_moudle(path_in: string, mod_name: string) -> string?
+	local sol_path_local = mod_name .. '.sol'
+	if U.file_exists(sol_path_local) then
+		--U.printf("Found moudle at %q", sol_path)
+		return sol_path_local
+	end
+
 	local dir      = path.splitpath(path_in) .. '/'
 
 	local sol_path = dir .. mod_name .. '.sol'
@@ -111,7 +123,82 @@ local function find_moudle(path_in: string, mod_name: string) -> string?
 end
 
 
+------------------------------------------------
+
+
 local parse_module
+
+
+------------------------------------------------
+
+
+-- Returns its type
+local function require_module(path_in: string, mod_name: string, module_scope: Scope, req_where: string, req_chain: [string])
+	--U.printf('require %q', v)
+	req_chain = { unpack(req_chain) }  -- clone
+	table.insert(req_chain, mod_name)
+
+	local mod_path = find_moudle(path_in, mod_name)
+	if not mod_path then
+		if not g_did_warn_about[mod_name:lower()] then
+			g_did_warn_about[mod_name:lower()] = true
+			U.printf('Failed to find module %q', mod_name)
+		end
+		return T.Any
+	end
+
+
+	local mod_info = parse_module(req_chain, mod_path)
+
+	if mod_info == FAIL_INFO then
+		-- Something went wrong - continue as if everything went right
+		return T.Any
+	end
+
+	for _,v in ipairs(mod_info.global_vars) do
+		--D.break_();
+		local existing = module_scope:get_global( v.name )
+		if existing and existing ~= v then
+			printf_err("Global clash when including module '%s' at %s:"
+				     .. "Global variable '%s' re-declared at %s, previously declared in %s",
+				mod_name, req_where, v.name, v.where, existing.where)
+		end
+
+		if not existing then
+			if _G.g_spam then
+				U.printf("Adding global '%s'", v.name)
+			end
+			module_scope:add_global(v)
+		end
+	end
+
+	for name,type in pairs(mod_info.global_typedefs) do
+		--D.break_();
+		local existing = module_scope:get_global_type( name )
+		if existing and existing ~= type then
+			printf_err("Global clash when including module '%s' at %s:"
+				     .. "Global type '%s' re-declared at %s, previously declared in %s",
+				mod_name, req_where, name, type.where, existing.where)
+		end
+
+		if not existing then
+			if _G.g_spam then
+				U.printf("Adding global '%s'", name)
+			end
+			module_scope:add_global_type( name, type )
+		end
+	end
+
+	if mod_info.type then
+		return mod_info.type
+	else
+		-- No return-type
+		return T.Void
+	end
+end
+
+
+------------------------------------------------
 
 
 local function parse_module_str(chain: [string], path_in: string, source_text: string) -> parse_info
@@ -133,6 +220,35 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 
 	var module_scope = Scope.create_module_scope()
 
+	--------------------------------------------------
+	-- Import from global requires:
+
+	for _,v in ipairs(g_globals.global_vars) do
+		local existing = module_scope:get_global( v.name )
+		if existing and existing ~= v then
+			printf_err("Global variable '%s' re-declared at %s, previously declared in %s",
+				v.name, v.where, existing.where)
+		end
+
+		if not existing then
+			module_scope:add_global(v)
+		end
+	end
+
+	for name,type in pairs(g_globals.global_typedefs) do
+		local existing = module_scope:get_global_type( name )
+		if existing and existing ~= type then
+			printf_err("Global type '%s' re-declared at %s, previously declared in %s",
+				name, type.where, existing.where)
+		end
+
+		if not existing then
+			module_scope:add_global_type( name, type )
+		end
+	end
+
+	--------------------------------------------------
+
 	local st, ast = Parser.parse_sol(source_text, tokens, filename, settings, module_scope)
 	if not st then
 		--we failed to parse the file, show why
@@ -147,68 +263,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 			return T.Any
 		end
 
-		--U.printf('require %q', v)
-		local longer_chain = { unpack(chain) }
-		table.insert(longer_chain, mod_name)
-		local mod_path = find_moudle(path_in, mod_name)
-		if mod_path then
-			local mod_info = parse_module(longer_chain, mod_path)
-
-			if mod_info == FAIL_INFO then
-				-- Something went wrong - continue as if everything went right
-				return T.Any
-			end
-
-			-- Bring in any globals:
-
-			for _,v in ipairs(mod_info.global_vars) do
-				--D.break_();
-				local existing = module_scope:get_global( v.name )
-				if existing and existing ~= v then
-					printf_err("Global clash when including module '%s' at %s:"
-						     .. "Global variable '%s' re-declared at %s, previously declared in %s",
-						mod_name, req_where, v.name, v.where, existing.where)
-				end
-
-				if not existing then
-					if _G.g_spam then
-						U.printf("Adding global '%s'", v.name)
-					end
-					module_scope:add_global(v)
-				end
-			end
-
-			for name,type in pairs(mod_info.global_typedefs) do
-				--D.break_();
-				local existing = module_scope:get_global_type( name )
-				if existing and existing ~= type then
-					printf_err("Global clash when including module '%s' at %s:"
-						     .. "Global type '%s' re-declared at %s, previously declared in %s",
-						mod_name, req_where, name, type.where, existing.where)
-				end
-
-				if not existing then
-					if _G.g_spam then
-						U.printf("Adding global '%s'", name)
-					end
-					module_scope:add_global_type( name, type )
-				end
-			end
-
-
-			if mod_info.type then
-				return mod_info.type
-			else
-				-- No return-type
-				return T.Void
-			end
-		else
-			if not g_did_warn_about[mod_name:lower()] then
-				g_did_warn_about[mod_name:lower()] = true
-				U.printf('Failed to find module %q', mod_name)
-			end
-			return T.Any
-		end
+		return require_module(path_in, mod_name, module_scope, req_where, chain)
 	end
 
 	local success, type = TypeCheck(ast, filename, on_require, settings)
@@ -321,6 +376,38 @@ local function compile_file(path_in: string, lua_path_out: string?, header_path_
 end
 
 
+local function parse_global_require(mod_name: string)
+	var mod_path = mod_name .. '.sol' -- FIXME
+	if not mod_path then
+		U.printf('Failed to find module %q', mod_name)
+		return false
+	end
+
+	var req_chain = { "[global require]" }
+	var mod_info = parse_module(req_chain, mod_path)
+
+	if mod_info == FAIL_INFO then
+		return false
+	end
+
+	for _,v in ipairs(mod_info.global_vars) do
+		if _G.g_spam then
+			U.printf("Adding global '%s'", v.name)
+		end
+		table.insert(g_globals.global_vars, v)
+	end
+
+	for name,type in pairs(mod_info.global_typedefs) do
+		if _G.g_spam then
+			U.printf("Adding global type '%s'", name)
+		end
+		g_globals.global_typedefs[name] = type
+	end
+
+	return true
+end
+
+
 local function print_help()
 	print([[
 		NAME:
@@ -367,6 +454,9 @@ local function print_help()
 
 			-d  or  --debug
 				For debugging solc compiler
+
+			-l name
+				Require library 'name' 
 		]])
 end
 
@@ -439,6 +529,14 @@ else
 
 			num_files = num_files + 1
 
+		elseif a == '-l' then
+			var mod_name = arg[ix]
+			ix = ix + 1
+			if not parse_global_require(mod_name) then
+				U.printf_err("Aborting")
+				os.exit(123)
+			end
+
 		elseif a:match('^-') then
 			U.printf_err("Unknown option: %q", a)
 			print_help()
@@ -446,10 +544,13 @@ else
 
 		else
 			local path_in = a
+
+			--[[
 			if path.extension(path_in) ~= '.sol' then
 				printf_err( "Input file must have .sol ending: %q", path_in)
 				os.exit(-2)
 			end
+			]]
 
 			if g_write_lua then
 				path.mkdir( g_out_dir ) -- Ensure we can write there

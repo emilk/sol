@@ -1205,7 +1205,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			elseif expr.op == 'not' then
 				if not T.is_useful_boolean(arg_t) then
-					report_warning(expr, "'not' operator expected boolean or nil:able, got '%s'", arg_t) --[[SOL OUTPUT--]] 
+					report_warning(expr, "'not' operator expected boolean or nil:able, got %s", arg_t) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				return T.Bool --[[SOL OUTPUT--]] 
 
@@ -1492,7 +1492,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		if left_type and left_type.pre_analyzed then
 			if right_type.pre_analyzed and is_pre_analyze then
-				report_error(stat, "Name clash: %q", name) --[[SOL OUTPUT--]] 
+				report_error(stat, "Name clash: %q, previously decalred at %s", name, right_type.where) --[[SOL OUTPUT--]] 
 			else
 				D.assert(not right_type.pre_analyzed) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1637,7 +1637,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			else -- no variable we can update the type of
 				-- e.g.:   foo.bar.baz
-				report_warning(stat, "do_assignment: tried to index non-variable") --[[SOL OUTPUT--]] 
+				report_warning(stat, "do_assignment: tried to index non-variable: %s", left_expr.base) --[[SOL OUTPUT--]] 
 				assert(base_t) --[[SOL OUTPUT--]] 
 				base_t = T.follow_identifiers(base_t) --[[SOL OUTPUT--]] 
 				--assert(base_t ~= T.EmptyTable)
@@ -2233,6 +2233,7 @@ local function analyze(ast, filename, on_require, settings)
 
 						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
 						fun_t.pre_analyzed = true --[[SOL OUTPUT--]]  -- Rmember that this is a temporary 'guess'
+						fun_t.where = where_is(stat) --[[SOL OUTPUT--]] 
 						fun_t.name = var_name --[[SOL OUTPUT--]] 
 
 						v.type = fun_t --[[SOL OUTPUT--]] 
@@ -2253,6 +2254,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
 			fun_t.pre_analyzed = true --[[SOL OUTPUT--]]  -- Rmember that this is a temporary 'guess'
+			fun_t.where = where_is(stat) --[[SOL OUTPUT--]] 
 			fun_t.name = format_expr(stat.name_expr) --[[SOL OUTPUT--]] 
 
 			if stat.is_aggregate then

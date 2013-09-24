@@ -15,6 +15,14 @@
 		ceil  = extern : function(number) -> number;
 		floor = extern : function(number) -> number;
 		huge  = extern : number;
+
+		sin   = extern : function(number) -> number;
+		asin  = extern : function(number) -> number;
+		cos   = extern : function(number) -> number;
+		acos  = extern : function(number) -> number;
+		tan   = extern : function(number) -> number;
+		atan  = extern : function(number) -> number;
+		atan2 = extern : function(number, number) -> number;
 	}
 
 	global io = {
@@ -35,7 +43,7 @@
 		char   = extern : function(string, ... : int) -> string;
 		format = extern : function(...) -> ...;
 		rep    = extern : function(...) -> ...;
-		sub    = extern : function(...) -> ...;
+		gsub   = extern : function(...) -> ...;
 	}
 
 	global table = {

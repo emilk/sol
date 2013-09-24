@@ -1205,7 +1205,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			elseif expr.op == 'not' then
 				if not T.is_useful_boolean(arg_t) then
-					report_warning(expr, "'not' operator expected boolean or nil:able, got '%s'", arg_t)
+					report_warning(expr, "'not' operator expected boolean or nil:able, got %s", arg_t)
 				end
 				return T.Bool
 
@@ -1492,7 +1492,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		if left_type and left_type.pre_analyzed then
 			if right_type.pre_analyzed and is_pre_analyze then
-				report_error(stat, "Name clash: %q", name)
+				report_error(stat, "Name clash: %q, previously decalred at %s", name, right_type.where)
 			else
 				D.assert(not right_type.pre_analyzed)
 			end
@@ -1637,7 +1637,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			else -- no variable we can update the type of
 				-- e.g.:   foo.bar.baz
-				report_warning(stat, "do_assignment: tried to index non-variable")
+				report_warning(stat, "do_assignment: tried to index non-variable: %s", left_expr.base)
 				assert(base_t)
 				base_t = T.follow_identifiers(base_t)
 				--assert(base_t ~= T.EmptyTable)
@@ -2233,6 +2233,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze )
 						fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
+						fun_t.where = where_is(stat)
 						fun_t.name = var_name
 
 						v.type = fun_t
@@ -2253,6 +2254,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			local fun_t = analyze_function_head( stat, scope, is_pre_analyze )
 			fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
+			fun_t.where = where_is(stat)
 			fun_t.name = format_expr(stat.name_expr)
 
 			if stat.is_aggregate then

@@ -1,6 +1,6 @@
--- Compiled from sol/scope.sol at 2013 Sep 17  22:58:25
+-- Compiled from sol/scope.sol at 2013 Sep 24  14:03:16
 
-global typedef Variable = <0x012912d8>{
+global typedef Variable = <0x0124c850>{
 	forward_declared: bool?;
 	is_global:        bool;
 	name:             string;
@@ -11,7 +11,7 @@ global typedef Variable = <0x012912d8>{
 	where:            string;
 }
 
-global typedef Scope = <instance><0x017dd8c0>{
+global typedef Scope = <instance><0x010c7570>{
 	children:        [Scope]?;
 	fixed:           false?;
 	global_typedefs: {string => Type}?;
@@ -21,7 +21,7 @@ global typedef Scope = <instance><0x017dd8c0>{
 	typedefs:        {string => Type}?;
 	vararg:          Variable?;
 
-	!! class_type:    <class><0x017dd838>{
+	!! class_type:    <class><0x014aebd0>{
 		add_global:          (function(self, v) -> void) or nil;
 		add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 		create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -48,11 +48,11 @@ global typedef Scope = <instance><0x017dd8c0>{
 		is_module_level:     (function(self) -> bool) or nil;
 		new:                 (function(parent: Scope?) -> Scope) or nil;
 
-		!! instance_type: <RECURSION 0x017dd8c0>
+		!! instance_type: <RECURSION 0x010c7570>
 	}
 }
 
-global Scope : <class><0x017dd838>{
+global Scope : <class><0x014aebd0>{
 	add_global:          (function(self, v) -> void) or nil;
 	add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 	create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -79,7 +79,7 @@ global Scope : <class><0x017dd838>{
 	is_module_level:     (function(self) -> bool) or nil;
 	new:                 (function(parent: Scope?) -> Scope) or nil;
 
-	!! instance_type: <instance><0x017dd8c0>{
+	!! instance_type: <instance><0x010c7570>{
 		children:        [Scope]?;
 		fixed:           false?;
 		global_typedefs: {string => Type}?;
@@ -89,7 +89,7 @@ global Scope : <class><0x017dd838>{
 		typedefs:        {string => Type}?;
 		vararg:          Variable?;
 
-		!! class_type:    <RECURSION 0x017dd838>
+		!! class_type:    <RECURSION 0x014aebd0>
 	}
 }
 

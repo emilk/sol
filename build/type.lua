@@ -129,6 +129,7 @@ T
 
 
 
+
 .Any  = { tag = 'any'  } --[[SOL OUTPUT--]]   -- Single unknown value
 T.AnyTypeList = {} --[[SOL OUTPUT--]]    -- Unkown number of unknown values
 --T.AnyTypeList = { { tag = 'varargs', type = T.Any } }  -- TODO
