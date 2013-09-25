@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol --]] local U = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Sep 25  22:14:52 --]] local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 

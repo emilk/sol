@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/util.sol --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/util.sol on 2013 Sep 25  22:20:08 --]] --[[
 Util.lua
 
 Provides some common utilities shared throughout the project.

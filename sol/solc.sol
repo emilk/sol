@@ -331,7 +331,7 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 	if info.ast and path_out then
 		U.write_unprotect(path_out) -- Ensure we can write over it
 
-		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] '
+		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. " on " .. os.date("%Y %b %d  %X") .. ' --]] '
 		out_text = out_text .. output(info.ast, path_in)
 		if not U.write_file(path_out, out_text) then
 			printf_err("Failed to open %q for writing", path_out)
@@ -346,7 +346,7 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 
 
 	if info.type and header_path_out then
-		var out_text = "-- Compiled from "..path_in.." at "..os.date("%Y %b %d  %X")..'\n\n'
+		var out_text = "-- Compiled from "..path_in.." on "..os.date("%Y %b %d  %X")..'\n\n'
 
 		for name,type in pairs(info.global_typedefs) do
 			out_text = out_text .. "global typedef "..name.." = "..T.name(type).."\n\n"
