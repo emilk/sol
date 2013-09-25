@@ -82,7 +82,7 @@ function M.add_intrinsics_to_global_scope()
 	local scope = module_scope --[[SOL OUTPUT--]] 
 
 	local filename = "INTRINSICS" --[[SOL OUTPUT--]] 
-	local settings = P.SOL_SETTINGS --[[SOL OUTPUT--]] 
+	local settings = P.SOL_SETTINGS --[[SOL OUTPUT--]]   -- TODO: var
 
 	local st, tokens = L.lex_sol(INTRINSICS, filename, settings) --[[SOL OUTPUT--]] 
 	assert(st) --[[SOL OUTPUT--]] 

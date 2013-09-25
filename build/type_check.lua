@@ -1977,14 +1977,20 @@ local function analyze(ast, filename, on_require, settings)
 			if nrhs == 1 then
 				local rt = analyze_expr(stat.rhs[1], scope) --[[SOL OUTPUT--]] 
 				if rt == T.AnyTypeList then
-					-- Nothing to do
-				elseif nlhs > #rt then
-					report_error(stat, "Unequal number of variables and values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt) --[[SOL OUTPUT--]] 
-				elseif nlhs < #rt then
-					report_warning(stat, "Assignment discards values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt) --[[SOL OUTPUT--]] 
+					local N = nlhs --[[SOL OUTPUT--]] 
+					for i=1,N do
+						do_assignment(stat, scope, stat.lhs[i], T.Any, is_pre_analyze) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 				else
-					for i,v in ipairs(rt) do
-						do_assignment(stat, scope, stat.lhs[i], v, is_pre_analyze) --[[SOL OUTPUT--]] 
+					if nlhs > #rt then
+						report_error(stat, "Unequal number of variables and values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt) --[[SOL OUTPUT--]] 
+					elseif nlhs < #rt then
+						report_warning(stat, "Assignment discards values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
+					local N = math.min(nlhs, #rt) --[[SOL OUTPUT--]] 
+					for i=1,N do
+						do_assignment(stat, scope, stat.lhs[i], T.Any, is_pre_analyze) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else

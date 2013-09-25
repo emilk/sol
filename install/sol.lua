@@ -52,11 +52,11 @@ local function compile_sol(source_text)
 		return nil --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local on_require = function(name, where)
+	local on_require = function(_,_)
 		return T.Any --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local st, type = TypeCheck(ast, filename, on_require, settings) --[[SOL OUTPUT--]] 
+	local st, _ = TypeCheck(ast, filename, on_require, settings) --[[SOL OUTPUT--]] 
 
 	if not st then
 		os.exit(3) --[[SOL OUTPUT--]] 

@@ -1977,14 +1977,20 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if nrhs == 1 then
 				local rt = analyze_expr(stat.rhs[1], scope)
 				if rt == T.AnyTypeList then
-					-- Nothing to do
-				elseif nlhs > #rt then
-					report_error(stat, "Unequal number of variables and values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt)
-				elseif nlhs < #rt then
-					report_warning(stat, "Assignment discards values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt)
+					var N = nlhs
+					for i=1,N do
+						do_assignment(stat, scope, stat.lhs[i], T.Any, is_pre_analyze)
+					end
 				else
-					for i,v in ipairs(rt) do
-						do_assignment(stat, scope, stat.lhs[i], v, is_pre_analyze)
+					if nlhs > #rt then
+						report_error(stat, "Unequal number of variables and values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt)
+					elseif nlhs < #rt then
+						report_warning(stat, "Assignment discards values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt)
+					end
+
+					var N = math.min(nlhs, #rt)
+					for i=1,N do
+						do_assignment(stat, scope, stat.lhs[i], T.Any, is_pre_analyze)
 					end
 				end
 			else
