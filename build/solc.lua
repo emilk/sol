@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 25  22:20:08 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 25  23:56:45 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -92,6 +92,7 @@ local g_globals = {
 
 
 local g_did_warn_about  = {} --[[SOL OUTPUT--]] 
+local g_lex_only = false --[[SOL OUTPUT--]] 
 
 
 -- Find path to a module given it's name, and the path to the file doing the require:ing
@@ -216,6 +217,10 @@ local function parse_module_str(chain, path_in, source_text)
 		g_modules[module_name] = FAIL_INFO --[[SOL OUTPUT--]] 
 		os.exit(1) --[[SOL OUTPUT--]] 
 		return FAIL_INFO --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	if g_lex_only then
+		return {} --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local module_scope = Scope.create_module_scope() --[[SOL OUTPUT--]] 
@@ -436,6 +441,9 @@ local function print_help()
 			-ho header_output_dir
 				Write header files here
 
+			-l name
+				Require library 'name' 
+
 			-p
 				Parse mode: Compile but do not write any Lua. This is useful for syntax checking.
 
@@ -455,8 +463,8 @@ local function print_help()
 			-d  or  --debug
 				For debugging solc compiler
 
-			-l name
-				Require library 'name' 
+			-L
+				Lex only: Useful for profiling 
 		]]) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -496,6 +504,11 @@ else
 		elseif a == '-p' or a == '--parse' then
 			-- e.g. for syntax checking
 			g_write_lua = false --[[SOL OUTPUT--]] 
+
+		elseif a == '-L' then
+			-- e.g. for syntax checking
+			print('Lex only') --[[SOL OUTPUT--]] 
+			g_lex_only = true --[[SOL OUTPUT--]] 
 
 		elseif a == '-s' or a == '--spam' then
 			_G.g_spam = true --[[SOL OUTPUT--]] 

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 25  22:20:08 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 25  23:56:45 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1085,7 +1085,7 @@ local function analyze(ast, filename, on_require, settings)
 				var_.num_reads = var_.num_reads + 1 --[[SOL OUTPUT--]] 
 			else
 				if expr.name ~= '_' then  -- Implicit '_' var is OK
-					report_error(expr, "Declaring implicit global %q", expr.name) --[[SOL OUTPUT--]] 
+					report_error(expr, "Implicit global %q", expr.name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				var_ = top_scope:create_global( expr.name, where_is(expr) ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 

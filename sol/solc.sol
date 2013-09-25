@@ -92,6 +92,7 @@ var g_globals = {
 
 
 var g_did_warn_about  = {} : {string => bool}
+var g_lex_only = false
 
 
 -- Find path to a module given it's name, and the path to the file doing the require:ing
@@ -216,6 +217,10 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 		g_modules[module_name] = FAIL_INFO
 		os.exit(1)
 		return FAIL_INFO
+	end
+
+	if g_lex_only then
+		return {}
 	end
 
 	var module_scope = Scope.create_module_scope()
@@ -436,6 +441,9 @@ local function print_help()
 			-ho header_output_dir
 				Write header files here
 
+			-l name
+				Require library 'name' 
+
 			-p
 				Parse mode: Compile but do not write any Lua. This is useful for syntax checking.
 
@@ -455,8 +463,8 @@ local function print_help()
 			-d  or  --debug
 				For debugging solc compiler
 
-			-l name
-				Require library 'name' 
+			-L
+				Lex only: Useful for profiling 
 		]])
 end
 
@@ -496,6 +504,11 @@ else
 		elseif a == '-p' or a == '--parse' then
 			-- e.g. for syntax checking
 			g_write_lua = false
+
+		elseif a == '-L' then
+			-- e.g. for syntax checking
+			print('Lex only')
+			g_lex_only = true
 
 		elseif a == '-s' or a == '--spam' then
 			_G.g_spam = true

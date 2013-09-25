@@ -29,9 +29,38 @@ typedef L.Token = Token
 typedef L.TokenList = [L.Token]
 
 
+local function extract_chars(str: string) -> [string]
+	var chars = {}
+	if true then
+		-- Fastest
+		for i = 1, #str do
+			chars[#chars + 1] = str:sub(i,i)
+		end
+	elseif true then
+		str:gsub(".", function(c)
+			chars[#chars + 1] = c
+		end)
+	else
+		for chr in str:gmatch(".") do
+			chars[#chars + 1] = chr
+		end
+	end
+	assert(#chars == #str)
+
+	-- Signal eof:
+	chars[#chars + 1] = ''
+	chars[#chars + 1] = ''
+	chars[#chars + 1] = ''
+
+	return chars
+end 
+
+
 -- The settings are found in Parser.sol
 function L.lex_sol(src: string, filename: string, settings) -> bool, any
 	assert(type(src) == 'string')
+
+	local chars = extract_chars(src)
 
 	local symbols  = settings.symbols
 	local keywords = settings.keywords
@@ -45,7 +74,8 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 
 		--get / peek functions
 		local function get() -> string
-			local c = src:sub(p,p)
+			--local c = src:sub(p,p)
+			local c = chars[p]
 			if c == '\n' then
 				char = 1
 				line = line + 1
@@ -56,15 +86,14 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			return c
 		end
 
-		local function peek(n: int?) -> string
-			n = n or 0
-			return src:sub(p+n,p+n)
+		local function peek(n: int) -> string
+			return chars[p+n]
 		end
 
-		local function consume(chars: string) -> string?
-			local c = peek()
-			for i = 1, #chars do
-				if c == chars:sub(i,i) then
+		local function consume(any_of_these: string) -> string?
+			local c = chars[p]
+			for i = 1, #any_of_these do
+				if c == any_of_these:sub(i,i) then
 					return get()
 				end
 			end
@@ -81,7 +110,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 		-- returns content, long
 		local function try_get_long_string() -> string?, string?
 			local start = p
-			if peek() == '[' then
+			if chars[p] == '[' then
 				local equals_count = 0
 				local depth = 1
 				while peek(equals_count+1) == '=' do
@@ -95,13 +124,13 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 					local content_start = p
 					while true do
 						--check for eof
-						if peek() == '' then
+						if chars[p] == '' then
 							return report_lexer_error("Expected `]"..string.rep('=', equals_count).."]` near <eof>.", 3)
 						end
 
 						--check for the end
 						local found_end = true
-						if peek() == ']' then
+						if chars[p] == ']' then
 							for i = 1, equals_count do
 								if peek(i) ~= '=' then found_end = false end
 							end
@@ -109,7 +138,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 								found_end = false
 							end
 						else
-							if peek() == '[' then
+							if chars[p] == '[' then
 								-- is there an embedded long string?
 								local embedded = true
 								for i = 1, equals_count do
@@ -167,7 +196,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			local start = p
 
 			while true do
-				local c = peek()
+				local c = chars[p]
 
 				if c == ' ' or c == '\t' or c == '\n' or c == '\r' then
 					get()
@@ -215,7 +244,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			local this_line = line
 			local this_char = char
 			local error_at = ":"..line..":"..char..":> "
-			local c = peek()
+			local c = chars[p]
 
 			--symbol to emit
 			var<Token?> to_emit = nil
@@ -230,7 +259,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 				local start = p
 				repeat
 					get()
-					c = peek()
+					c = chars[p]
 				until not (UpperChars[c] or LowerChars[c] or Digits[c] or c == '_')
 				local dat = src:sub(start, p-1)
 				if keywords[dat] then
@@ -239,25 +268,25 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 					to_emit = {type = 'ident', data = dat}
 				end
 
-			elseif Digits[c] or (peek() == '.' and Digits[peek(1)]) then
+			elseif Digits[c] or (chars[p] == '.' and Digits[peek(1)]) then
 				--number const
 				local start = p
 				if c == '0' and peek(1) == 'x' then
 					get()  -- 0
 					get()  -- x
-					while HexDigits[peek()] do get() end
+					while HexDigits[chars[p]] do get() end
 					if consume('Pp') then
 						consume('+-')
-						while Digits[peek()] do get() end
+						while Digits[chars[p]] do get() end
 					end
 				else
-					while Digits[peek()] do get() end
+					while Digits[chars[p]] do get() end
 					if consume('.') then
-						while Digits[peek()] do get() end
+						while Digits[chars[p]] do get() end
 					end
 					if consume('Ee') then
 						consume('+-')
-						while Digits[peek()] do get() end
+						while Digits[chars[p]] do get() end
 					end
 				end
 				to_emit = {type = 'Number', data = src:sub(start, p-1)}

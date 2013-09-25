@@ -1085,7 +1085,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				var_.num_reads = var_.num_reads + 1
 			else
 				if expr.name ~= '_' then  -- Implicit '_' var is OK
-					report_error(expr, "Declaring implicit global %q", expr.name)
+					report_error(expr, "Implicit global %q", expr.name)
 				end
 				var_ = top_scope:create_global( expr.name, where_is(expr) )
 			end

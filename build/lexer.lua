@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Sep 25  22:20:07 --]] local U = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Sep 25  23:56:44 --]] local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
@@ -17,21 +17,50 @@ local HexDigits    = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 local L = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+local function extract_chars(str)
+	local chars = {} --[[SOL OUTPUT--]] 
+	if true then
+		-- Fastest
+		for i = 1, #str do
+			chars[#chars + 1] = str:sub(i,i) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	elseif true then
+		str:gsub(".", function(c)
+			chars[#chars + 1] = c --[[SOL OUTPUT--]] 
+		end) --[[SOL OUTPUT--]] 
+	else
+		for chr in str:gmatch(".") do
+			chars[#chars + 1] = chr --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+	assert(#chars == #str) --[[SOL OUTPUT--]] 
+
+	-- Signal eof:
+	chars[#chars + 1] = '' --[[SOL OUTPUT--]] 
+	chars[#chars + 1] = '' --[[SOL OUTPUT--]] 
+	chars[#chars + 1] = '' --[[SOL OUTPUT--]] 
+
+	return chars --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]]  
+
+
 -- The settings are found in Parser.sol
-
-
-
-
-
-
-
-
-
-
-
-
 function L.lex_sol(src, filename, settings)
 	assert(type(src) == 'string') --[[SOL OUTPUT--]] 
+
+	local chars = extract_chars(src) --[[SOL OUTPUT--]] 
 
 	local symbols  = settings.symbols --[[SOL OUTPUT--]] 
 	local keywords = settings.keywords --[[SOL OUTPUT--]] 
@@ -45,7 +74,8 @@ function L.lex_sol(src, filename, settings)
 
 		--get / peek functions
 		local function get()
-			local c = src:sub(p,p) --[[SOL OUTPUT--]] 
+			--local c = src:sub(p,p)
+			local c = chars[p] --[[SOL OUTPUT--]] 
 			if c == '\n' then
 				char = 1 --[[SOL OUTPUT--]] 
 				line = line + 1 --[[SOL OUTPUT--]] 
@@ -57,14 +87,13 @@ function L.lex_sol(src, filename, settings)
 		end --[[SOL OUTPUT--]] 
 
 		local function peek(n)
-			n = n or 0 --[[SOL OUTPUT--]] 
-			return src:sub(p+n,p+n) --[[SOL OUTPUT--]] 
+			return chars[p+n] --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		local function consume(chars)
-			local c = peek() --[[SOL OUTPUT--]] 
-			for i = 1, #chars do
-				if c == chars:sub(i,i) then
+		local function consume(any_of_these)
+			local c = chars[p] --[[SOL OUTPUT--]] 
+			for i = 1, #any_of_these do
+				if c == any_of_these:sub(i,i) then
 					return get() --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -81,7 +110,7 @@ function L.lex_sol(src, filename, settings)
 		-- returns content, long
 		local function try_get_long_string()
 			local start = p --[[SOL OUTPUT--]] 
-			if peek() == '[' then
+			if chars[p] == '[' then
 				local equals_count = 0 --[[SOL OUTPUT--]] 
 				local depth = 1 --[[SOL OUTPUT--]] 
 				while peek(equals_count+1) == '=' do
@@ -95,13 +124,13 @@ function L.lex_sol(src, filename, settings)
 					local content_start = p --[[SOL OUTPUT--]] 
 					while true do
 						--check for eof
-						if peek() == '' then
+						if chars[p] == '' then
 							return report_lexer_error("Expected `]"..string.rep('=', equals_count).."]` near <eof>.", 3) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 
 						--check for the end
 						local found_end = true --[[SOL OUTPUT--]] 
-						if peek() == ']' then
+						if chars[p] == ']' then
 							for i = 1, equals_count do
 								if peek(i) ~= '=' then found_end = false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
@@ -109,7 +138,7 @@ function L.lex_sol(src, filename, settings)
 								found_end = false --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
 						else
-							if peek() == '[' then
+							if chars[p] == '[' then
 								-- is there an embedded long string?
 								local embedded = true --[[SOL OUTPUT--]] 
 								for i = 1, equals_count do
@@ -167,7 +196,7 @@ function L.lex_sol(src, filename, settings)
 			local start = p --[[SOL OUTPUT--]] 
 
 			while true do
-				local c = peek() --[[SOL OUTPUT--]] 
+				local c = chars[p] --[[SOL OUTPUT--]] 
 
 				if c == ' ' or c == '\t' or c == '\n' or c == '\r' then
 					get() --[[SOL OUTPUT--]] 
@@ -215,7 +244,7 @@ function L.lex_sol(src, filename, settings)
 			local this_line = line --[[SOL OUTPUT--]] 
 			local this_char = char --[[SOL OUTPUT--]] 
 			local error_at = ":"..line..":"..char..":> " --[[SOL OUTPUT--]] 
-			local c = peek() --[[SOL OUTPUT--]] 
+			local c = chars[p] --[[SOL OUTPUT--]] 
 
 			--symbol to emit
 			local to_emit = nil --[[SOL OUTPUT--]] 
@@ -230,7 +259,7 @@ function L.lex_sol(src, filename, settings)
 				local start = p --[[SOL OUTPUT--]] 
 				repeat
 					get() --[[SOL OUTPUT--]] 
-					c = peek() --[[SOL OUTPUT--]] 
+					c = chars[p] --[[SOL OUTPUT--]] 
 				until not (UpperChars[c] or LowerChars[c] or Digits[c] or c == '_') --[[SOL OUTPUT--]] 
 				local dat = src:sub(start, p-1) --[[SOL OUTPUT--]] 
 				if keywords[dat] then
@@ -239,25 +268,25 @@ function L.lex_sol(src, filename, settings)
 					to_emit = {type = 'ident', data = dat} --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-			elseif Digits[c] or (peek() == '.' and Digits[peek(1)]) then
+			elseif Digits[c] or (chars[p] == '.' and Digits[peek(1)]) then
 				--number const
 				local start = p --[[SOL OUTPUT--]] 
 				if c == '0' and peek(1) == 'x' then
 					get() --[[SOL OUTPUT--]]   -- 0
 					get() --[[SOL OUTPUT--]]   -- x
-					while HexDigits[peek()] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+					while HexDigits[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					if consume('Pp') then
 						consume('+-') --[[SOL OUTPUT--]] 
-						while Digits[peek()] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+						while Digits[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
-					while Digits[peek()] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+					while Digits[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					if consume('.') then
-						while Digits[peek()] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+						while Digits[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 					if consume('Ee') then
 						consume('+-') --[[SOL OUTPUT--]] 
-						while Digits[peek()] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+						while Digits[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				to_emit = {type = 'Number', data = src:sub(start, p-1)} --[[SOL OUTPUT--]] 
