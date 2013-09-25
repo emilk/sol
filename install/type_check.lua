@@ -202,15 +202,16 @@ local function analyze(ast, filename, on_require, settings)
 	local function discard_scope(scope)
 		for _,v in scope:locals_iterator() do
 			if v.name ~= '_' then
+				local var_type = v.var_type or 'Variable' --[[SOL OUTPUT--]] 
 				if v.num_reads == 0 then
 					if v.type and v.type.tag == 'function' then
 						print( report('WARNING', v.where, "Unused function %q", v.name) ) --[[SOL OUTPUT--]] 
 					else
-						print( report('WARNING', v.where, "Variable %q is never read (use _ to silence this warning)", v.name) ) --[[SOL OUTPUT--]] 
+						print( report('WARNING', v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name) ) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				if v.num_writes == 0 then
-					print( report('WARNING', v.where, "Variable %q is never written to (use _ to silence this warning)", v.name) ) --[[SOL OUTPUT--]] 
+					print( report('WARNING', v.where, "%s %q is never written to (use _ to silence this warning)", var_type, v.name) ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -427,18 +428,21 @@ local function analyze(ast, filename, on_require, settings)
 			v.type = node.self_var_type --[[SOL OUTPUT--]] 
 			v.num_writes = 1 --[[SOL OUTPUT--]] 
 			v.num_reads  = 1 --[[SOL OUTPUT--]]   -- It must have been for the function to be found (silences warnings)
+			v.var_type = 'Argument' --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		for _,arg in ipairs(node.arguments) do
 			local v = declare_local(node, func_scope, arg.name) --[[SOL OUTPUT--]] 
 			v.type = arg.type --[[SOL OUTPUT--]] 
 			v.num_writes = 1 --[[SOL OUTPUT--]] 
+			v.var_type = 'Argument' --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if node.vararg then
 			local v = declare_local(node, func_scope, '...') --[[SOL OUTPUT--]] 
 			v.type = node.vararg --[[SOL OUTPUT--]] 
 			v.num_writes = 1 --[[SOL OUTPUT--]] 
+			v.var_type = 'Argument' --[[SOL OUTPUT--]] 
 			assert(T.is_type(v.type)) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -2033,6 +2037,9 @@ local function analyze(ast, filename, on_require, settings)
 				report_spam(stat, "Declaration: %s %s", stat.type, name) --[[SOL OUTPUT--]] 
 				local v = declare_var(stat, scope, name, is_local) --[[SOL OUTPUT--]] 
 				--v.type = nil -- Ignore any forward-deduced type
+
+				v.var_type = (is_local and 'Local variable' or 'Global variable') --[[SOL OUTPUT--]] 
+
 				vars[#vars + 1] = v --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -2207,6 +2214,7 @@ local function analyze(ast, filename, on_require, settings)
 
 				local v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t) --[[SOL OUTPUT--]] 
 				v.num_writes = v.num_writes + 1 --[[SOL OUTPUT--]] 
+				v.var_type = 'Function' --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			-- Now analyze body:
@@ -2232,6 +2240,7 @@ local function analyze(ast, filename, on_require, settings)
 			for i = 1,#stat.var_names do
 				local v = declare_local(stat, loop_scope, stat.var_names[i]) --[[SOL OUTPUT--]] 
 				v.num_writes = v.num_writes + 1 --[[SOL OUTPUT--]] 
+				v.var_type = 'Loop variable' --[[SOL OUTPUT--]] 
 				if types ~= T.AnyTypeList then
 					v.type = types[i] --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -2270,6 +2279,7 @@ local function analyze(ast, filename, on_require, settings)
 			iter_var.type = iter_t --[[SOL OUTPUT--]] 
 			iter_var.num_writes = iter_var.num_writes + 1 --[[SOL OUTPUT--]] 
 			iter_var.num_reads  = iter_var.num_reads  + 1 --[[SOL OUTPUT--]]   -- Actual looping counts
+			iter_var.var_type = 'Loop variable' --[[SOL OUTPUT--]] 
 			
 			local ret = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
 			discard_scope(loop_scope) --[[SOL OUTPUT--]] 

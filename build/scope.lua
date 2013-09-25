@@ -34,6 +34,7 @@ User declared globals goes into the 'module_scope' and are marked as 'global'.
 
 
 
+
 function Scope.new(where, parent)
 	--var s = {} : Scope
 	local s = {} --[[SOL OUTPUT--]] 

@@ -1,6 +1,6 @@
--- Compiled from sol/parser.sol at 2013 Sep 25  21:46:56
+-- Compiled from sol/parser.sol at 2013 Sep 25  21:58:54
 
-global typedef Variable = <0x0128fbf0>{
+global typedef Variable = <0x01290f60>{
 	forward_declared: bool?;
 	is_global:        bool;
 	name:             string;
@@ -9,10 +9,11 @@ global typedef Variable = <0x0128fbf0>{
 	num_writes:       int;
 	scope:            Scope;
 	type:             Type?;
+	var_type:         "Function" or "Loop variable" or "Argument" or "Global variable" or "Local variable"?;
 	where:            string;
 }
 
-global typedef Scope = <instance><0x012e2ba8>{
+global typedef Scope = <instance><0x012e49d0>{
 	children:        any;
 	fixed:           any;
 	global_typedefs: any;
@@ -23,7 +24,7 @@ global typedef Scope = <instance><0x012e2ba8>{
 	vararg:          any;
 	where:           any;
 
-	!! class_type:    <class><0x012e2b20>{
+	!! class_type:    <class><0x012e4948>{
 		add_global:          (function(self, v) -> void) or nil;
 		add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 		create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -50,11 +51,11 @@ global typedef Scope = <instance><0x012e2ba8>{
 		locals_iterator:     (function(self) -> function(... : varargs) -> int, any) or nil;
 		new:                 (function(where: string, parent: Scope?) -> Scope) or nil;
 
-		!! instance_type: <RECURSION 0x012e2ba8>
+		!! instance_type: <RECURSION 0x012e49d0>
 	}
 }
 
-global Scope : <class><0x012e2b20>{
+global Scope : <class><0x012e4948>{
 	add_global:          (function(self, v) -> void) or nil;
 	add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 	create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -81,7 +82,7 @@ global Scope : <class><0x012e2b20>{
 	locals_iterator:     (function(self) -> function(... : varargs) -> int, any) or nil;
 	new:                 (function(where: string, parent: Scope?) -> Scope) or nil;
 
-	!! instance_type: <instance><0x012e2ba8>{
+	!! instance_type: <instance><0x012e49d0>{
 		children:        any;
 		fixed:           any;
 		global_typedefs: any;
@@ -92,7 +93,7 @@ global Scope : <class><0x012e2b20>{
 		vararg:          any;
 		where:           any;
 
-		!! class_type:    <RECURSION 0x012e2b20>
+		!! class_type:    <RECURSION 0x012e4948>
 	}
 }
 

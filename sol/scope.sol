@@ -28,6 +28,7 @@ global typedef Variable = {
 	-- Usage statistics:
 	num_reads        : int,
 	num_writes       : int,
+	var_type         : 'Function' or 'Loop variable' or 'Argument' or 'Global variable' or 'Local variable' or nil
 }
 
 

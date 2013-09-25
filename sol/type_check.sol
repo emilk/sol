@@ -202,15 +202,16 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local function discard_scope(scope: Scope)
 		for _,v in scope:locals_iterator() do
 			if v.name ~= '_' then
+				local var_type = v.var_type or 'Variable'
 				if v.num_reads == 0 then
 					if v.type and v.type.tag == 'function' then
 						print( report('WARNING', v.where, "Unused function %q", v.name) )
 					else
-						print( report('WARNING', v.where, "Variable %q is never read (use _ to silence this warning)", v.name) )
+						print( report('WARNING', v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name) )
 					end
 				end
 				if v.num_writes == 0 then
-					print( report('WARNING', v.where, "Variable %q is never written to (use _ to silence this warning)", v.name) )
+					print( report('WARNING', v.where, "%s %q is never written to (use _ to silence this warning)", var_type, v.name) )
 				end
 			end
 		end
@@ -427,18 +428,21 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			v.type = node.self_var_type
 			v.num_writes = 1
 			v.num_reads  = 1  -- It must have been for the function to be found (silences warnings)
+			v.var_type = 'Argument'
 		end
 
 		for _,arg in ipairs(node.arguments) do
 			var v = declare_local(node, func_scope, arg.name)
 			v.type = arg.type
 			v.num_writes = 1
+			v.var_type = 'Argument'
 		end
 
 		if node.vararg then
 			var v = declare_local(node, func_scope, '...')
 			v.type = node.vararg
 			v.num_writes = 1
+			v.var_type = 'Argument'
 			assert(T.is_type(v.type))
 		end
 
@@ -2033,6 +2037,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_spam(stat, "Declaration: %s %s", stat.type, name)
 				local v = declare_var(stat, scope, name, is_local)
 				--v.type = nil -- Ignore any forward-deduced type
+
+				v.var_type = (is_local and 'Local variable' or 'Global variable')
+
 				vars[#vars + 1] = v
 			end
 
@@ -2207,6 +2214,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t)
 				v.num_writes = v.num_writes + 1
+				v.var_type = 'Function'
 			end
 
 			-- Now analyze body:
@@ -2232,6 +2240,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			for i = 1,#stat.var_names do
 				local v = declare_local(stat, loop_scope, stat.var_names[i])
 				v.num_writes = v.num_writes + 1
+				v.var_type = 'Loop variable'
 				if types ~= T.AnyTypeList then
 					v.type = types[i]
 				end
@@ -2270,6 +2279,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			iter_var.type = iter_t
 			iter_var.num_writes = iter_var.num_writes + 1
 			iter_var.num_reads  = iter_var.num_reads  + 1  -- Actual looping counts
+			iter_var.var_type = 'Loop variable'
 			
 			local ret = analyze_statlist(stat.body, loop_scope, scope_fun)
 			discard_scope(loop_scope)
