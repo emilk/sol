@@ -88,7 +88,7 @@ function M.add_intrinsics_to_global_scope()
 	assert(st)
 	local st, ast = P.parse_sol(INTRINSICS, tokens, filename, settings, scope)
 	assert(st)
-	local st, type = TypeCheck(ast, filename, nil, settings)
+	local st, _ = TypeCheck(ast, filename, nil, settings)
 	assert(st)
 
 	global_scope.fixed = false

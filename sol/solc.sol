@@ -54,7 +54,7 @@ local D          = require 'sol_debug'
 local output     = require 'output'
 local Lexer      = require 'lexer'
 local Parser     = require 'parser'
-local S          = require 'scope'
+local _          = require 'scope'
 local T          = require 'type'
 local TypeCheck  = require 'type_check'
 local U          = require 'util'
@@ -554,9 +554,9 @@ else
 
 			if g_write_lua then
 				path.mkdir( g_out_dir ) -- Ensure we can write there
-				local dir, fn  = path.splitpath(path_in)
-				local lua_path_out = g_out_dir .. path.splitext(fn) .. '.lua'
-				local header_path_out = g_header_out_dir and (g_header_out_dir .. path.splitext(fn) .. '.sol')
+				local _, filename  = path.splitpath(path_in)
+				local lua_path_out = g_out_dir .. path.splitext(filename) .. '.lua'
+				local header_path_out = g_header_out_dir and (g_header_out_dir .. path.splitext(filename) .. '.sol')
 				compile_file(path_in, lua_path_out, header_path_out)
 			else
 				compile_file(path_in)

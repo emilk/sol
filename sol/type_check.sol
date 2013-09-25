@@ -1,7 +1,6 @@
 local U   = require 'util'
 local set = U.set
 local T   = require 'type'
-local L   = require 'lexer'
 local P   = require 'parser'
 local S   = require 'scope'
 local D   = require 'sol_debug'
@@ -25,7 +24,7 @@ local function rope_to_msg(rope: [string]) -> string
 end
 
 
-local function loose_lookup(table: table, id: string) -> string?
+local function loose_lookup(table: {string => any}, id: string) -> string?
 	D.assert(type(id) == 'string')
 
 	if table[id] then
@@ -44,7 +43,7 @@ local function loose_lookup(table: table, id: string) -> string?
 	var<number>  closest_dist = math.huge
 	var<string?> closest_key  = nil
 
-	for k,v in pairs(table) do
+	for k,_ in pairs(table) do
 		D.assert(type(k) == 'string')
 
 		var dist = edit_distance(k, id, MAX_DIST)
@@ -109,8 +108,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local a = select( i, ... )
 			if type(a) == 'table' and a.ast_type then
 				a = U.quote_or_indent( format_expr(a) )
-			elseif T.is_type(a) or T.is_type_list(a) then
-				a = U.quote_or_indent( T.name(a) )
+			elseif T.is_type(a) then
+ 				a = U.quote_or_indent( T.name(a) )
+			elseif T.is_type_list(a) then
+				a = U.quote_or_indent( T.names(a) )
 			elseif type( a ) ~= 'string' and type( a ) ~= 'number' then
 				-- bool/table
 				a = tostring( a )
@@ -121,39 +122,39 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function report(type: string, node: P.Node?, fmt: string, ...) -> string
+	local function report(type: string, where: string, fmt: string, ...) -> string
 		local inner_msg = fancy_format(fmt, ...)
-		local msg = string.format('%s: %s: %s', type, where_is(node), inner_msg)
+		local msg = string.format('%s: %s: %s', type, where, inner_msg)
 		return msg
 	end
 
-	local function report_spam(node: P.Node?, fmt: string, ...)
+	local function report_spam(node: P.Node, fmt: string, ...)
 		if _G.g_spam then
-			print( report('Spam', node, fmt, ...) )
+			print( report('Spam', where_is(node), fmt, ...) )
 		end
 	end
 
-	local function report_info(node: P.Node?, fmt: string, ...)
-		print( report('Info', node, fmt, ...) )
+	local function report_info(node: P.Node, fmt: string, ...)
+		print( report('Info', where_is(node), fmt, ...) )
 	end
 
-	local function report_warning(node: P.Node?, fmt: string, ...)
-		print( report('WARNING', node, fmt, ...) )
+	local function report_warning(node: P.Node, fmt: string, ...)
+		print( report('WARNING', where_is(node), fmt, ...) )
 	end
 
-	local function sol_warning(node: P.Node?, fmt: string, ...)
+	local function sol_warning(node: P.Node, fmt: string, ...)
 		if settings.is_sol then
 			report_warning(node, fmt, ...)
 		end
 	end
 
-	local function report_error(node: P.Node?, fmt, ...)
+	local function report_error(node: P.Node, fmt, ...)
 		if settings.is_sol then
-			U.printf_err( "%s", report('ERROR', node, fmt, ...) )
+			U.printf_err( "%s", report('ERROR', where_is(node), fmt, ...) )
 			error_count = error_count + 1
 		else
 			-- Forgive lua code
-			print( report('WARNING', node, fmt, ...) )
+			print( report('WARNING', where_is(node), fmt, ...) )
 		end
 	end
 
@@ -196,6 +197,29 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 	--]]
 
+
+
+	local function discard_scope(scope: Scope)
+		for _,v in scope:locals_iterator() do
+			if v.name ~= '_' then
+				if v.num_reads == 0 then
+					if v.type and v.type.tag == 'function' then
+						print( report('WARNING', v.where, "Unused function %q", v.name) )
+					else
+						print( report('WARNING', v.where, "Variable %q is never read (use _ to silence this warning)", v.name) )
+					end
+				end
+				if v.num_writes == 0 then
+					print( report('WARNING', v.where, "Variable %q is never written to (use _ to silence this warning)", v.name) )
+				end
+			end
+		end
+	end
+
+
+	local function analyze_closed_off_statlist(stat_list: P.Statlist, scope_fun: T.Function) -> T.Typelist?
+		return analyze_statlist(stat_list, stat_list.scope, scope_fun)
+	end
 
 
 
@@ -372,7 +396,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--report_spam(node, "self: '%s'", self_type)
 		end
 
-		for i,arg in ipairs(node.arguments) do
+		for _,arg in ipairs(node.arguments) do
 			table.insert(fun_t.args, {name = arg.name, type = arg.type or T.Any})
 		end
 
@@ -401,22 +425,28 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			assert(node.self_var_type) -- Set by analyze_function_head
 			var v = declare_local(node, func_scope, 'self')
 			v.type = node.self_var_type
+			v.num_writes = 1
+			v.num_reads  = 1  -- It must have been for the function to be found (silences warnings)
 		end
 
 		for _,arg in ipairs(node.arguments) do
 			var v = declare_local(node, func_scope, arg.name)
 			v.type = arg.type
+			v.num_writes = 1
 		end
 
 		if node.vararg then
 			var v = declare_local(node, func_scope, '...')
 			v.type = node.vararg
+			v.num_writes = 1
 			assert(T.is_type(v.type))
 		end
 
 		---
 
 		local ret_t = analyze_statlist(node.body, func_scope, fun_t)
+		discard_scope(func_scope)
+
 		ret_t = ret_t or T.Void
 
 		if fun_t.rets then
@@ -1048,7 +1078,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						expr.name, var_.where)
 				end
 
-				var_.references = var_.references + 1
+				var_.num_reads = var_.num_reads + 1
 			else
 				if expr.name ~= '_' then  -- Implicit '_' var is OK
 					report_error(expr, "Declaring implicit global %q", expr.name)
@@ -1297,10 +1327,20 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif expr.ast_type == 'DotsExpr' then
-			var t = scope:get_var_args()
-			if t then
-				assert(t.tag == 'varargs')
-				return t
+			var v = scope:get_local('...')
+			if v then
+				v.num_reads = v.num_reads + 1
+				var t = v.type
+				assert(t)
+				if t then
+					assert(t.tag == 'varargs')
+					return t
+				else
+					return {
+						tag  = 'varargs',
+						type = T.Any 
+					}
+				end
 			else
 				report_error(expr, "No ... in scope")
 				return {
@@ -1410,7 +1450,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_spam(expr, "Explicit type missing - is this an empty table, list, map, object - what?")
 				return T.create_empty_table()
 			else
-				var map_keys    = {} : {string or number or bool}
+				var map_keys    = {} : {string or number or int}
 				var key_type    = T.make_variant() -- in maps
 				var value_type  = T.make_variant()
 				var obj_members = {} : {string => T.Type}
@@ -1430,14 +1470,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						local this_key_type = analyze_expr_single(e.key, scope)
 						key_type = T.extend_variant( key_type, this_key_type )
 
-						if type(this_key_type) == 'string' or
-						   type(this_key_type) == 'number' or
-						   type(this_key_type) == 'bool'
+						if this_key_type.tag == 'int_literal' or
+						   this_key_type.tag == 'num_literal' or
+						   this_key_type.tag == 'string_literal'
 						then
-							if map_keys[ this_key_type] then
-								report_error(e.value, "Map key %q declared twice", this_key_type)
+							if map_keys[ this_key_type.value ] then
+								report_error(e.value, "Map key %q declared twice", this_key_type.value)
 							end
-							map_keys[ this_key_type ] = true
+							map_keys[ this_key_type.value ] = true
 						end
 					end
 
@@ -1505,15 +1545,16 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	-- eg:  check_condition(stat, 'while', some_expr, scope)
+	-- eg:  check_condition('while', some_expr, scope)
 	-- examples:   if some_expr then ...
 	-- examples:   while true then ...
-	local check_condition = function(stat, name, expr, scope: Scope)
+	local check_condition = function(name, expr, scope: Scope)
+		local t = analyze_expr_single(expr, scope)
+
 		if expr.ast_type == 'BooleanExpr' then
-			-- 'true' or 'false' as explici argument - that's OK
+			-- 'true' or 'false' as explicit argument - that's OK
 			-- e.g. for   while true do  ... break ... end
 		else
-			local t = analyze_expr_single(expr, scope)
 			if not T.is_useful_boolean(t) then
 				report_error(expr, "Not a useful boolean expression in %q, type is %s", name, t)
 			end
@@ -1542,10 +1583,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		var_.namespace = deduced_type.namespace  -- If any
+		var_.num_writes = var_.num_writes + 1
 	end
 
 
-	local function assign_to_obj_member(stat: P.Node, scope: Scope,
+	local function assign_to_obj_member(stat: P.Node, _: Scope,
 		                                 is_pre_analyze: bool, is_declare: bool, extend_existing_type: bool,
 		                                 obj_t: T.Object, name: string, right_type: T.Type) -> T.Type
 	 											--> T.Type -- TODO: have this here
@@ -1781,7 +1823,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return true
 		end
 
-		local left_type = analyze_expr_single( left_expr, scope )
+		local left_type, left_var = analyze_expr_single( left_expr, scope )
+
+		if left_var then
+			left_var.num_writes = left_var.num_writes + 1
+		end
 
 		if left_type.namespace then
 			report_error(stat, "Cannot assign to a namespace outside of declaration")
@@ -1938,7 +1984,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					report_warning(stat, "Assignment discards values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt)
 				else
 					for i,v in ipairs(rt) do
-						do_assignment(stat, scope, stat.lhs[i], rt[i], is_pre_analyze)
+						do_assignment(stat, scope, stat.lhs[i], v, is_pre_analyze)
 					end
 				end
 			else
@@ -2027,24 +2073,27 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			elseif #stat.init_list == 1 then
 				-- local a,b = foo()
-				local t = init_types
-				if t == T.AnyTypeList then
+				if init_types == T.AnyTypeList then
 					-- Nothing to do
+					for _,v in ipairs(vars) do
+						v.num_writes = v.num_writes + 1
+					end
 				else
-					local deduced_types = t
-					local nt = #deduced_types
+					local nt = #init_types
 					
 					if #vars < nt then
 						-- Ignoring a few return values is OK
+						--report_warning(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types)
+						report_spam(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types)
 					elseif #vars > nt then
 						report_error(stat, "Too many variables in 'local' declaration. Right hand side has type %s",
-							T.name(t))
-					else
-						local N = #vars
-						for i = 1,N do
-							local v = vars[i]
-							decl_var_type(stat, v, deduced_types[i])
-						end
+							T.name(init_types))
+					end
+
+					local N = math.min(nt, #vars)
+					for i = 1,N do
+						local v = vars[i]
+						decl_var_type(stat, v, init_types[i])
 					end
 				end
 			elseif #vars ~= #stat.init_list then
@@ -2072,29 +2121,29 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif stat.ast_type == 'IfStatement' then
-			check_condition( stat, 'if', stat.clauses[1].condition, scope )
+			check_condition( 'if', stat.clauses[1].condition, scope )
 
-			local ret = analyze_statlist( stat.clauses[1].body, scope, scope_fun )
+			local ret = analyze_closed_off_statlist( stat.clauses[1].body, scope_fun )
 
 			for i = 2, #stat.clauses do
 				local st = stat.clauses[i]
 				if st.condition then
-					check_condition( stat, 'elseif', st.condition, scope )
+					check_condition( 'elseif', st.condition, scope )
 				end
-				ret = T.combine_type_lists(ret, analyze_statlist( st.body, scope, scope_fun ))
+				ret = T.combine_type_lists(ret, analyze_closed_off_statlist( st.body, scope_fun ))
 			end
 
 			return ret
 
 
 		elseif stat.ast_type == 'WhileStatement' then
-			check_condition( stat, 'while', stat.condition, scope )
-			local ret = analyze_statlist(stat.body, scope, scope_fun)
+			check_condition( 'while', stat.condition, scope )
+			local ret = analyze_closed_off_statlist(stat.body, scope_fun)
 			return ret
 
 
 		elseif stat.ast_type == 'DoStatement' then
-			local ret = analyze_statlist(stat.body, scope, scope_fun)
+			local ret = analyze_closed_off_statlist(stat.body, scope_fun)
 			return ret
 
 
@@ -2121,8 +2170,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			-- TODO
 
 		elseif stat.ast_type == 'RepeatStatement' then
-			local ret = analyze_statlist(stat.body, stat.scope, scope_fun)
-			check_condition( stat, 'repeat', stat.condition, stat.scope )
+			local loop_scope = stat.scope
+			local ret = analyze_statlist(stat.body, loop_scope, scope_fun)
+			check_condition( 'repeat', stat.condition, loop_scope )
+			discard_scope(loop_scope)
 			return ret
 
 		elseif stat.ast_type == 'FunctionDeclStatement' then
@@ -2149,6 +2200,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_spam(stat, "free function, name: %q", fun_t.name)
 
 				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t)
+				v.num_writes = v.num_writes + 1
 			end
 
 			-- Now analyze body:
@@ -2156,7 +2208,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif stat.ast_type == 'GenericForStatement' then
-			assert(stat.scope.parent == scope)
+			var loop_scope = stat.scope
+			assert(loop_scope.parent == scope)
 
 			if #stat.generators > 1 then
 				report_warning(stat, "Sol currently only support one generator")
@@ -2171,18 +2224,21 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 
 			for i = 1,#stat.var_names do
-				local v = declare_local(stat, stat.scope, stat.var_names[i])
+				local v = declare_local(stat, loop_scope, stat.var_names[i])
+				v.num_writes = v.num_writes + 1
 				if types ~= T.AnyTypeList then
 					v.type = types[i]
 				end
 			end
 
-			local ret = analyze_statlist(stat.body, stat.scope, scope_fun)
+			local ret = analyze_statlist(stat.body, loop_scope, scope_fun)
+			discard_scope(loop_scope)
 			return ret
 
 
 		elseif stat.ast_type == 'NumericForStatement' then
-			assert(stat.scope.parent == scope)
+			var loop_scope = stat.scope
+			assert(loop_scope.parent == scope)
 
 			local function check_num_arg(what, t: T.Type)
 				if not T.isa(t, T.Num) then
@@ -2190,8 +2246,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 			end
 
-			local start_t = analyze_expr_single(stat.start, stat.scope)
-			local end_t   = analyze_expr_single(stat.end_, stat.scope)
+			local start_t = analyze_expr_single(stat.start, loop_scope)
+			local end_t   = analyze_expr_single(stat.end_, loop_scope)
 
 			check_num_arg('start', start_t)
 			check_num_arg('end',   end_t)
@@ -2199,15 +2255,18 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local iter_t = T.combine(start_t, end_t)
 
 			if stat.step then
-				local step_t   = analyze_expr_single(stat.step, stat.scope)
+				local step_t   = analyze_expr_single(stat.step, loop_scope)
 				check_num_arg('step', step_t)
 				iter_t = T.combine(iter_t, step_t)
 			end
 
-			local iter_var = declare_local(stat, stat.scope, stat.var_name)
+			local iter_var = declare_local(stat, loop_scope, stat.var_name)
 			iter_var.type = iter_t
+			iter_var.num_writes = iter_var.num_writes + 1
+			iter_var.num_reads  = iter_var.num_reads  + 1  -- Actual looping counts
 			
-			local ret = analyze_statlist(stat.body, stat.scope, scope_fun)
+			local ret = analyze_statlist(stat.body, loop_scope, scope_fun)
+			discard_scope(loop_scope)
 			return ret
 
 
@@ -2335,29 +2394,24 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	-- Returns the list of types returned in these statements
 	-- or nil if no returns statements where found
-	analyze_statlist = function(stat_list, scope, scope_fun: T.Function) -> T.Typelist?
-		assert(stat_list)
-		assert(scope)
+	analyze_statlist = function(stat_list: P.Statlist, scope: Scope, scope_fun: T.Function) -> T.Typelist?
+		assert(stat_list.scope == scope)
+
 		local return_types = nil
 
-		local list_scope = stat_list.scope
-		--assert(list_scope.parent == scope)
-		assert(list_scope)
-
 		-- Look for function declarations:
-		-- This is so that we don't need to forward-declare function
+		-- This is so that we don't need to forward-declare functions
 		-- like we have to in lesser languages.
 
 		for _, stat in ipairs(stat_list.body) do
-			pre_analyze_statement(stat, list_scope)
+			pre_analyze_statement(stat, scope)
 		end
 
-
-		-- end_
 		for _, stat in ipairs(stat_list.body) do
-			local stat_rets = analyze_statement(stat, list_scope, scope_fun)
+			local stat_rets = analyze_statement(stat, scope, scope_fun)
 			return_types = T.combine_type_lists(return_types, stat_rets)
 		end
+
 
 		return return_types
 	end

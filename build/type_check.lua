@@ -1,7 +1,6 @@
 --[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
-local L   = require 'lexer' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
 local S   = require 'scope' --[[SOL OUTPUT--]] 
 local D   = require 'sol_debug' --[[SOL OUTPUT--]] 
@@ -44,7 +43,7 @@ local function loose_lookup(table, id)
 	local  closest_dist = math.huge --[[SOL OUTPUT--]] 
 	local closest_key  = nil --[[SOL OUTPUT--]] 
 
-	for k,v in pairs(table) do
+	for k,_ in pairs(table) do
 		D.assert(type(k) == 'string') --[[SOL OUTPUT--]] 
 
 		local dist = edit_distance(k, id, MAX_DIST) --[[SOL OUTPUT--]] 
@@ -109,8 +108,10 @@ local function analyze(ast, filename, on_require, settings)
 			local a = select( i, ... ) --[[SOL OUTPUT--]] 
 			if type(a) == 'table' and a.ast_type then
 				a = U.quote_or_indent( format_expr(a) ) --[[SOL OUTPUT--]] 
-			elseif T.is_type(a) or T.is_type_list(a) then
-				a = U.quote_or_indent( T.name(a) ) --[[SOL OUTPUT--]] 
+			elseif T.is_type(a) then
+ 				a = U.quote_or_indent( T.name(a) ) --[[SOL OUTPUT--]] 
+			elseif T.is_type_list(a) then
+				a = U.quote_or_indent( T.names(a) ) --[[SOL OUTPUT--]] 
 			elseif type( a ) ~= 'string' and type( a ) ~= 'number' then
 				-- bool/table
 				a = tostring( a ) --[[SOL OUTPUT--]] 
@@ -121,24 +122,24 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
-	local function report(type, node, fmt, ...)
+	local function report(type, where, fmt, ...)
 		local inner_msg = fancy_format(fmt, ...) --[[SOL OUTPUT--]] 
-		local msg = string.format('%s: %s: %s', type, where_is(node), inner_msg) --[[SOL OUTPUT--]] 
+		local msg = string.format('%s: %s: %s', type, where, inner_msg) --[[SOL OUTPUT--]] 
 		return msg --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local function report_spam(node, fmt, ...)
 		if _G.g_spam then
-			print( report('Spam', node, fmt, ...) ) --[[SOL OUTPUT--]] 
+			print( report('Spam', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local function report_info(node, fmt, ...)
-		print( report('Info', node, fmt, ...) ) --[[SOL OUTPUT--]] 
+		print( report('Info', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local function report_warning(node, fmt, ...)
-		print( report('WARNING', node, fmt, ...) ) --[[SOL OUTPUT--]] 
+		print( report('WARNING', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local function sol_warning(node, fmt, ...)
@@ -149,11 +150,11 @@ local function analyze(ast, filename, on_require, settings)
 
 	local function report_error(node, fmt, ...)
 		if settings.is_sol then
-			U.printf_err( "%s", report('ERROR', node, fmt, ...) ) --[[SOL OUTPUT--]] 
+			U.printf_err( "%s", report('ERROR', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
 			error_count = error_count + 1 --[[SOL OUTPUT--]] 
 		else
 			-- Forgive lua code
-			print( report('WARNING', node, fmt, ...) ) --[[SOL OUTPUT--]] 
+			print( report('WARNING', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -196,6 +197,29 @@ local function analyze(ast, filename, on_require, settings)
 	end
 	--]]
 
+
+
+	local function discard_scope(scope)
+		for _,v in scope:locals_iterator() do
+			if v.name ~= '_' then
+				if v.num_reads == 0 then
+					if v.type and v.type.tag == 'function' then
+						print( report('WARNING', v.where, "Unused function %q", v.name) ) --[[SOL OUTPUT--]] 
+					else
+						print( report('WARNING', v.where, "Variable %q is never read (use _ to silence this warning)", v.name) ) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+				if v.num_writes == 0 then
+					print( report('WARNING', v.where, "Variable %q is never written to (use _ to silence this warning)", v.name) ) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+
+	local function analyze_closed_off_statlist(stat_list, scope_fun)
+		return analyze_statlist(stat_list, stat_list.scope, scope_fun) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 
 
@@ -372,7 +396,7 @@ local function analyze(ast, filename, on_require, settings)
 			--report_spam(node, "self: '%s'", self_type)
 		end --[[SOL OUTPUT--]] 
 
-		for i,arg in ipairs(node.arguments) do
+		for _,arg in ipairs(node.arguments) do
 			table.insert(fun_t.args, {name = arg.name, type = arg.type or T.Any}) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -401,22 +425,28 @@ local function analyze(ast, filename, on_require, settings)
 			assert(node.self_var_type) --[[SOL OUTPUT--]]  -- Set by analyze_function_head
 			local v = declare_local(node, func_scope, 'self') --[[SOL OUTPUT--]] 
 			v.type = node.self_var_type --[[SOL OUTPUT--]] 
+			v.num_writes = 1 --[[SOL OUTPUT--]] 
+			v.num_reads  = 1 --[[SOL OUTPUT--]]   -- It must have been for the function to be found (silences warnings)
 		end --[[SOL OUTPUT--]] 
 
 		for _,arg in ipairs(node.arguments) do
 			local v = declare_local(node, func_scope, arg.name) --[[SOL OUTPUT--]] 
 			v.type = arg.type --[[SOL OUTPUT--]] 
+			v.num_writes = 1 --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if node.vararg then
 			local v = declare_local(node, func_scope, '...') --[[SOL OUTPUT--]] 
 			v.type = node.vararg --[[SOL OUTPUT--]] 
+			v.num_writes = 1 --[[SOL OUTPUT--]] 
 			assert(T.is_type(v.type)) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		---
 
 		local ret_t = analyze_statlist(node.body, func_scope, fun_t) --[[SOL OUTPUT--]] 
+		discard_scope(func_scope) --[[SOL OUTPUT--]] 
+
 		ret_t = ret_t or T.Void --[[SOL OUTPUT--]] 
 
 		if fun_t.rets then
@@ -1048,7 +1078,7 @@ local function analyze(ast, filename, on_require, settings)
 						expr.name, var_.where) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-				var_.references = var_.references + 1 --[[SOL OUTPUT--]] 
+				var_.num_reads = var_.num_reads + 1 --[[SOL OUTPUT--]] 
 			else
 				if expr.name ~= '_' then  -- Implicit '_' var is OK
 					report_error(expr, "Declaring implicit global %q", expr.name) --[[SOL OUTPUT--]] 
@@ -1297,10 +1327,20 @@ local function analyze(ast, filename, on_require, settings)
 
 
 		elseif expr.ast_type == 'DotsExpr' then
-			local t = scope:get_var_args() --[[SOL OUTPUT--]] 
-			if t then
-				assert(t.tag == 'varargs') --[[SOL OUTPUT--]] 
-				return t --[[SOL OUTPUT--]] 
+			local v = scope:get_local('...') --[[SOL OUTPUT--]] 
+			if v then
+				v.num_reads = v.num_reads + 1 --[[SOL OUTPUT--]] 
+				local t = v.type --[[SOL OUTPUT--]] 
+				assert(t) --[[SOL OUTPUT--]] 
+				if t then
+					assert(t.tag == 'varargs') --[[SOL OUTPUT--]] 
+					return t --[[SOL OUTPUT--]] 
+				else
+					return {
+						tag  = 'varargs',
+						type = T.Any 
+					} --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 			else
 				report_error(expr, "No ... in scope") --[[SOL OUTPUT--]] 
 				return {
@@ -1430,14 +1470,14 @@ local function analyze(ast, filename, on_require, settings)
 						local this_key_type = analyze_expr_single(e.key, scope) --[[SOL OUTPUT--]] 
 						key_type = T.extend_variant( key_type, this_key_type ) --[[SOL OUTPUT--]] 
 
-						if type(this_key_type) == 'string' or
-						   type(this_key_type) == 'number' or
-						   type(this_key_type) == 'bool'
+						if this_key_type.tag == 'int_literal' or
+						   this_key_type.tag == 'num_literal' or
+						   this_key_type.tag == 'string_literal'
 						then
-							if map_keys[ this_key_type] then
-								report_error(e.value, "Map key %q declared twice", this_key_type) --[[SOL OUTPUT--]] 
+							if map_keys[ this_key_type.value ] then
+								report_error(e.value, "Map key %q declared twice", this_key_type.value) --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
-							map_keys[ this_key_type ] = true --[[SOL OUTPUT--]] 
+							map_keys[ this_key_type.value ] = true --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
@@ -1505,15 +1545,16 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
-	-- eg:  check_condition(stat, 'while', some_expr, scope)
+	-- eg:  check_condition('while', some_expr, scope)
 	-- examples:   if some_expr then ...
 	-- examples:   while true then ...
-	local check_condition = function(stat, name, expr, scope)
+	local check_condition = function(name, expr, scope)
+		local t = analyze_expr_single(expr, scope) --[[SOL OUTPUT--]] 
+
 		if expr.ast_type == 'BooleanExpr' then
-			-- 'true' or 'false' as explici argument - that's OK
+			-- 'true' or 'false' as explicit argument - that's OK
 			-- e.g. for   while true do  ... break ... end
 		else
-			local t = analyze_expr_single(expr, scope) --[[SOL OUTPUT--]] 
 			if not T.is_useful_boolean(t) then
 				report_error(expr, "Not a useful boolean expression in %q, type is %s", name, t) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1542,10 +1583,11 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 
 		var_.namespace = deduced_type.namespace --[[SOL OUTPUT--]]   -- If any
+		var_.num_writes = var_.num_writes + 1 --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
-	local function assign_to_obj_member(stat, scope,
+	local function assign_to_obj_member(stat, _,
 		                                 is_pre_analyze, is_declare, extend_existing_type,
 		                                 obj_t, name, right_type)
 	 											--> T.Type -- TODO: have this here
@@ -1781,7 +1823,11 @@ local function analyze(ast, filename, on_require, settings)
 			return true --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		local left_type = analyze_expr_single( left_expr, scope ) --[[SOL OUTPUT--]] 
+		local left_type, left_var = analyze_expr_single( left_expr, scope ) --[[SOL OUTPUT--]] 
+
+		if left_var then
+			left_var.num_writes = left_var.num_writes + 1 --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
 		if left_type.namespace then
 			report_error(stat, "Cannot assign to a namespace outside of declaration") --[[SOL OUTPUT--]] 
@@ -1938,7 +1984,7 @@ local function analyze(ast, filename, on_require, settings)
 					report_warning(stat, "Assignment discards values: left hand side has %i variables, right hand side evaluates to %s", nlhs, rt) --[[SOL OUTPUT--]] 
 				else
 					for i,v in ipairs(rt) do
-						do_assignment(stat, scope, stat.lhs[i], rt[i], is_pre_analyze) --[[SOL OUTPUT--]] 
+						do_assignment(stat, scope, stat.lhs[i], v, is_pre_analyze) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else
@@ -2027,24 +2073,27 @@ local function analyze(ast, filename, on_require, settings)
 
 			elseif #stat.init_list == 1 then
 				-- local a,b = foo()
-				local t = init_types --[[SOL OUTPUT--]] 
-				if t == T.AnyTypeList then
+				if init_types == T.AnyTypeList then
 					-- Nothing to do
+					for _,v in ipairs(vars) do
+						v.num_writes = v.num_writes + 1 --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 				else
-					local deduced_types = t --[[SOL OUTPUT--]] 
-					local nt = #deduced_types --[[SOL OUTPUT--]] 
+					local nt = #init_types --[[SOL OUTPUT--]] 
 					
 					if #vars < nt then
 						-- Ignoring a few return values is OK
+						--report_warning(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types)
+						report_spam(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types) --[[SOL OUTPUT--]] 
 					elseif #vars > nt then
 						report_error(stat, "Too many variables in 'local' declaration. Right hand side has type %s",
-							T.name(t)) --[[SOL OUTPUT--]] 
-					else
-						local N = #vars --[[SOL OUTPUT--]] 
-						for i = 1,N do
-							local v = vars[i] --[[SOL OUTPUT--]] 
-							decl_var_type(stat, v, deduced_types[i]) --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
+							T.name(init_types)) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
+					local N = math.min(nt, #vars) --[[SOL OUTPUT--]] 
+					for i = 1,N do
+						local v = vars[i] --[[SOL OUTPUT--]] 
+						decl_var_type(stat, v, init_types[i]) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			elseif #vars ~= #stat.init_list then
@@ -2072,29 +2121,29 @@ local function analyze(ast, filename, on_require, settings)
 
 
 		elseif stat.ast_type == 'IfStatement' then
-			check_condition( stat, 'if', stat.clauses[1].condition, scope ) --[[SOL OUTPUT--]] 
+			check_condition( 'if', stat.clauses[1].condition, scope ) --[[SOL OUTPUT--]] 
 
-			local ret = analyze_statlist( stat.clauses[1].body, scope, scope_fun ) --[[SOL OUTPUT--]] 
+			local ret = analyze_closed_off_statlist( stat.clauses[1].body, scope_fun ) --[[SOL OUTPUT--]] 
 
 			for i = 2, #stat.clauses do
 				local st = stat.clauses[i] --[[SOL OUTPUT--]] 
 				if st.condition then
-					check_condition( stat, 'elseif', st.condition, scope ) --[[SOL OUTPUT--]] 
+					check_condition( 'elseif', st.condition, scope ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				ret = T.combine_type_lists(ret, analyze_statlist( st.body, scope, scope_fun )) --[[SOL OUTPUT--]] 
+				ret = T.combine_type_lists(ret, analyze_closed_off_statlist( st.body, scope_fun )) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			return ret --[[SOL OUTPUT--]] 
 
 
 		elseif stat.ast_type == 'WhileStatement' then
-			check_condition( stat, 'while', stat.condition, scope ) --[[SOL OUTPUT--]] 
-			local ret = analyze_statlist(stat.body, scope, scope_fun) --[[SOL OUTPUT--]] 
+			check_condition( 'while', stat.condition, scope ) --[[SOL OUTPUT--]] 
+			local ret = analyze_closed_off_statlist(stat.body, scope_fun) --[[SOL OUTPUT--]] 
 			return ret --[[SOL OUTPUT--]] 
 
 
 		elseif stat.ast_type == 'DoStatement' then
-			local ret = analyze_statlist(stat.body, scope, scope_fun) --[[SOL OUTPUT--]] 
+			local ret = analyze_closed_off_statlist(stat.body, scope_fun) --[[SOL OUTPUT--]] 
 			return ret --[[SOL OUTPUT--]] 
 
 
@@ -2121,8 +2170,10 @@ local function analyze(ast, filename, on_require, settings)
 			-- TODO
 
 		elseif stat.ast_type == 'RepeatStatement' then
-			local ret = analyze_statlist(stat.body, stat.scope, scope_fun) --[[SOL OUTPUT--]] 
-			check_condition( stat, 'repeat', stat.condition, stat.scope ) --[[SOL OUTPUT--]] 
+			local loop_scope = stat.scope --[[SOL OUTPUT--]] 
+			local ret = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
+			check_condition( 'repeat', stat.condition, loop_scope ) --[[SOL OUTPUT--]] 
+			discard_scope(loop_scope) --[[SOL OUTPUT--]] 
 			return ret --[[SOL OUTPUT--]] 
 
 		elseif stat.ast_type == 'FunctionDeclStatement' then
@@ -2149,6 +2200,7 @@ local function analyze(ast, filename, on_require, settings)
 				report_spam(stat, "free function, name: %q", fun_t.name) --[[SOL OUTPUT--]] 
 
 				local v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t) --[[SOL OUTPUT--]] 
+				v.num_writes = v.num_writes + 1 --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			-- Now analyze body:
@@ -2156,7 +2208,8 @@ local function analyze(ast, filename, on_require, settings)
 
 
 		elseif stat.ast_type == 'GenericForStatement' then
-			assert(stat.scope.parent == scope) --[[SOL OUTPUT--]] 
+			local loop_scope = stat.scope --[[SOL OUTPUT--]] 
+			assert(loop_scope.parent == scope) --[[SOL OUTPUT--]] 
 
 			if #stat.generators > 1 then
 				report_warning(stat, "Sol currently only support one generator") --[[SOL OUTPUT--]] 
@@ -2171,18 +2224,21 @@ local function analyze(ast, filename, on_require, settings)
 			end --[[SOL OUTPUT--]] 
 
 			for i = 1,#stat.var_names do
-				local v = declare_local(stat, stat.scope, stat.var_names[i]) --[[SOL OUTPUT--]] 
+				local v = declare_local(stat, loop_scope, stat.var_names[i]) --[[SOL OUTPUT--]] 
+				v.num_writes = v.num_writes + 1 --[[SOL OUTPUT--]] 
 				if types ~= T.AnyTypeList then
 					v.type = types[i] --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			local ret = analyze_statlist(stat.body, stat.scope, scope_fun) --[[SOL OUTPUT--]] 
+			local ret = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
+			discard_scope(loop_scope) --[[SOL OUTPUT--]] 
 			return ret --[[SOL OUTPUT--]] 
 
 
 		elseif stat.ast_type == 'NumericForStatement' then
-			assert(stat.scope.parent == scope) --[[SOL OUTPUT--]] 
+			local loop_scope = stat.scope --[[SOL OUTPUT--]] 
+			assert(loop_scope.parent == scope) --[[SOL OUTPUT--]] 
 
 			local function check_num_arg(what, t)
 				if not T.isa(t, T.Num) then
@@ -2190,8 +2246,8 @@ local function analyze(ast, filename, on_require, settings)
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			local start_t = analyze_expr_single(stat.start, stat.scope) --[[SOL OUTPUT--]] 
-			local end_t   = analyze_expr_single(stat.end_, stat.scope) --[[SOL OUTPUT--]] 
+			local start_t = analyze_expr_single(stat.start, loop_scope) --[[SOL OUTPUT--]] 
+			local end_t   = analyze_expr_single(stat.end_, loop_scope) --[[SOL OUTPUT--]] 
 
 			check_num_arg('start', start_t) --[[SOL OUTPUT--]] 
 			check_num_arg('end',   end_t) --[[SOL OUTPUT--]] 
@@ -2199,15 +2255,18 @@ local function analyze(ast, filename, on_require, settings)
 			local iter_t = T.combine(start_t, end_t) --[[SOL OUTPUT--]] 
 
 			if stat.step then
-				local step_t   = analyze_expr_single(stat.step, stat.scope) --[[SOL OUTPUT--]] 
+				local step_t   = analyze_expr_single(stat.step, loop_scope) --[[SOL OUTPUT--]] 
 				check_num_arg('step', step_t) --[[SOL OUTPUT--]] 
 				iter_t = T.combine(iter_t, step_t) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			local iter_var = declare_local(stat, stat.scope, stat.var_name) --[[SOL OUTPUT--]] 
+			local iter_var = declare_local(stat, loop_scope, stat.var_name) --[[SOL OUTPUT--]] 
 			iter_var.type = iter_t --[[SOL OUTPUT--]] 
+			iter_var.num_writes = iter_var.num_writes + 1 --[[SOL OUTPUT--]] 
+			iter_var.num_reads  = iter_var.num_reads  + 1 --[[SOL OUTPUT--]]   -- Actual looping counts
 			
-			local ret = analyze_statlist(stat.body, stat.scope, scope_fun) --[[SOL OUTPUT--]] 
+			local ret = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
+			discard_scope(loop_scope) --[[SOL OUTPUT--]] 
 			return ret --[[SOL OUTPUT--]] 
 
 
@@ -2336,28 +2395,23 @@ local function analyze(ast, filename, on_require, settings)
 	-- Returns the list of types returned in these statements
 	-- or nil if no returns statements where found
 	analyze_statlist = function(stat_list, scope, scope_fun)
-		assert(stat_list) --[[SOL OUTPUT--]] 
-		assert(scope) --[[SOL OUTPUT--]] 
+		assert(stat_list.scope == scope) --[[SOL OUTPUT--]] 
+
 		local return_types = nil --[[SOL OUTPUT--]] 
 
-		local list_scope = stat_list.scope --[[SOL OUTPUT--]] 
-		--assert(list_scope.parent == scope)
-		assert(list_scope) --[[SOL OUTPUT--]] 
-
 		-- Look for function declarations:
-		-- This is so that we don't need to forward-declare function
+		-- This is so that we don't need to forward-declare functions
 		-- like we have to in lesser languages.
 
 		for _, stat in ipairs(stat_list.body) do
-			pre_analyze_statement(stat, list_scope) --[[SOL OUTPUT--]] 
+			pre_analyze_statement(stat, scope) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-
-		-- end_
 		for _, stat in ipairs(stat_list.body) do
-			local stat_rets = analyze_statement(stat, list_scope, scope_fun) --[[SOL OUTPUT--]] 
+			local stat_rets = analyze_statement(stat, scope, scope_fun) --[[SOL OUTPUT--]] 
 			return_types = T.combine_type_lists(return_types, stat_rets) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
+
 
 		return return_types --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

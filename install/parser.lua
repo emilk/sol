@@ -422,11 +422,9 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local VarUid = 0 --[[SOL OUTPUT--]] 
 
-	local VarDigits = {'_', 'a', 'b', 'c', 'd'} --[[SOL OUTPUT--]] 
 	local function create_scope(parent)
-		local scope = Scope.new(parent) --[[SOL OUTPUT--]] 
+		local scope = Scope.new(where_am_i(), parent) --[[SOL OUTPUT--]] 
 		--report_spam("New scope %s, parent: %s", tostring(scope), tostring(parent))
 		return scope --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -1375,7 +1373,6 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		                              scoping)
 
 		local is_local = (scoping ~= 'global') --[[SOL OUTPUT--]] 
-		local angle_bracket = (tok:peek().data == '<') --[[SOL OUTPUT--]] 
 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
 		local types = nil --[[SOL OUTPUT--]] 

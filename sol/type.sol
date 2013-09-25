@@ -13,12 +13,17 @@ local T = {}
 
 
 typedef Variable = {
-	scope      : Scope,
-	name       : string,
-	type       : T.Type?,
-	is_global  : bool,
-	references : int,
-	namespace  : { string => T.Type } ?,
+	scope            : Scope,
+	name             : string,
+	type             : T.Type?,
+	is_global        : bool,
+	namespace        : { string => T.Type } ?,
+	where            : string,
+	forward_declared : bool?,
+
+	-- Usage statistics:
+	num_reads        : int,
+	num_writes       : int,
 }
 
 typedef Scope = {
@@ -207,11 +212,13 @@ function T.follow_identifiers(t : T.Type, forgiving: bool?) -> T.Type
 			forgiving = true
 		end
 		--]]
+		
+		assert( t.scope )
 
 		if t.var_name then
 			local var_ = t.scope:get_var( t.var_name )  -- A namespace is always a variable
 			if not var_ then
-				T.on_error("Failed to find namespace variable %q", t.var_name)
+				T.on_error("%s: Failed to find namespace variable %q", t.first_usage, t.var_name)
 				t.type = T.Any
 			elseif not var_.namespace then
 				if forgiving then
@@ -222,6 +229,7 @@ function T.follow_identifiers(t : T.Type, forgiving: bool?) -> T.Type
 				end
 			else
 				t.type = var_.namespace[t.name]
+				var_.num_reads = var_.num_reads + 1
 				if not t.type then
 					T.on_error("%s: type %s not found in namespace '%s'", t.first_usage, t.name, var_.name)
 					t.type = T.Any
@@ -343,10 +351,15 @@ T.isa(T.False, T.Bool)
 -- true   -> yes, it is
 -- false  -> no, and no error string generated yet
 -- string -> no, and here's the error string
-var<{T.Type => {T.Type => true or false or string}}> isa_memo = {}
+local RECURSION = {'RECURSION'}
+var<{T.Type => {T.Type => true or false or string or [string]}}> isa_memo = {}
 
 function T.isa(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
+	D.assert(d)
+	D.assert(b)
 	local res = isa_memo[d] and isa_memo[d][b]
+	D.assert(res ~= RECURSION)
+
 	if res == true then
 		return true
 	end
@@ -354,10 +367,13 @@ function T.isa(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	if problem_rope then
 		if res == false or res == nil then
 			-- We need to generate a problem description:
+			isa_memo[d] = isa_memo[d] or {}
+			isa_memo[d][b] = RECURSION
+
 			local isa_rope = {}
 			T.isa_raw(d, b, isa_rope)
 			res = table.concat(isa_rope, '\n')
-			isa_memo[d] = isa_memo[d] or {}
+
 			isa_memo[d][b] = res
 		end
 		assert(type(res) == 'string')
@@ -366,8 +382,11 @@ function T.isa(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	else
 		-- No problem description needed
 		if res==nil then
-			res = T.isa_raw(d, b)
 			isa_memo[d] = isa_memo[d] or {}
+			isa_memo[d][b] = RECURSION
+
+			res = T.isa_raw(d, b)
+
 			isa_memo[d][b] = res
 		end
 
@@ -683,7 +702,7 @@ function T.could_be_tl(al: T.Typelist, bl: T.Typelist, problem_rope: [string]?) 
 		return true
 	end
 
-	assert(al and bl)
+	assert(al) assert(bl)
 	assert(T.is_type_list(al))
 	assert(T.is_type_list(bl))
 

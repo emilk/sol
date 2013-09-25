@@ -33,6 +33,11 @@ T
 
 
 
+
+
+
+
+
 .on_error = function(fmt, ...)
 	local msg = string.format(fmt, ...) --[[SOL OUTPUT--]] 
 	U.printf_err( "%s", msg ) --[[SOL OUTPUT--]] 
@@ -207,11 +212,13 @@ function T.follow_identifiers(t, forgiving)
 			forgiving = true
 		end
 		--]]
+		
+		assert( t.scope ) --[[SOL OUTPUT--]] 
 
 		if t.var_name then
 			local var_ = t.scope:get_var( t.var_name ) --[[SOL OUTPUT--]]   -- A namespace is always a variable
 			if not var_ then
-				T.on_error("Failed to find namespace variable %q", t.var_name) --[[SOL OUTPUT--]] 
+				T.on_error("%s: Failed to find namespace variable %q", t.first_usage, t.var_name) --[[SOL OUTPUT--]] 
 				t.type = T.Any --[[SOL OUTPUT--]] 
 			elseif not var_.namespace then
 				if forgiving then
@@ -222,6 +229,7 @@ function T.follow_identifiers(t, forgiving)
 				end --[[SOL OUTPUT--]] 
 			else
 				t.type = var_.namespace[t.name] --[[SOL OUTPUT--]] 
+				var_.num_reads = var_.num_reads + 1 --[[SOL OUTPUT--]] 
 				if not t.type then
 					T.on_error("%s: type %s not found in namespace '%s'", t.first_usage, t.name, var_.name) --[[SOL OUTPUT--]] 
 					t.type = T.Any --[[SOL OUTPUT--]] 
@@ -343,10 +351,15 @@ T.isa(T.False, T.Bool)
 -- true   -> yes, it is
 -- false  -> no, and no error string generated yet
 -- string -> no, and here's the error string
+local RECURSION = {'RECURSION'} --[[SOL OUTPUT--]] 
 local isa_memo = {} --[[SOL OUTPUT--]] 
 
 function T.isa(d, b, problem_rope)
+	D.assert(d) --[[SOL OUTPUT--]] 
+	D.assert(b) --[[SOL OUTPUT--]] 
 	local res = isa_memo[d] and isa_memo[d][b] --[[SOL OUTPUT--]] 
+	D.assert(res ~= RECURSION) --[[SOL OUTPUT--]] 
+
 	if res == true then
 		return true --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -354,10 +367,13 @@ function T.isa(d, b, problem_rope)
 	if problem_rope then
 		if res == false or res == nil then
 			-- We need to generate a problem description:
+			isa_memo[d] = isa_memo[d] or {} --[[SOL OUTPUT--]] 
+			isa_memo[d][b] = RECURSION --[[SOL OUTPUT--]] 
+
 			local isa_rope = {} --[[SOL OUTPUT--]] 
 			T.isa_raw(d, b, isa_rope) --[[SOL OUTPUT--]] 
 			res = table.concat(isa_rope, '\n') --[[SOL OUTPUT--]] 
-			isa_memo[d] = isa_memo[d] or {} --[[SOL OUTPUT--]] 
+
 			isa_memo[d][b] = res --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		assert(type(res) == 'string') --[[SOL OUTPUT--]] 
@@ -366,8 +382,11 @@ function T.isa(d, b, problem_rope)
 	else
 		-- No problem description needed
 		if res==nil then
-			res = T.isa_raw(d, b) --[[SOL OUTPUT--]] 
 			isa_memo[d] = isa_memo[d] or {} --[[SOL OUTPUT--]] 
+			isa_memo[d][b] = RECURSION --[[SOL OUTPUT--]] 
+
+			res = T.isa_raw(d, b) --[[SOL OUTPUT--]] 
+
 			isa_memo[d][b] = res --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -683,7 +702,7 @@ function T.could_be_tl(al, bl, problem_rope)
 		return true --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	assert(al and bl) --[[SOL OUTPUT--]] 
+	assert(al) --[[SOL OUTPUT--]]  assert(bl) --[[SOL OUTPUT--]] 
 	assert(T.is_type_list(al)) --[[SOL OUTPUT--]] 
 	assert(T.is_type_list(bl)) --[[SOL OUTPUT--]] 
 

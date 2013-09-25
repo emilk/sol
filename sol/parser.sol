@@ -422,11 +422,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		end
 	end
 
-	local VarUid = 0
 
-	local VarDigits = {'_', 'a', 'b', 'c', 'd'}
 	local function create_scope(parent)
-		local scope = Scope.new(parent)
+		local scope = Scope.new(where_am_i(), parent)
 		--report_spam("New scope %s, parent: %s", tostring(scope), tostring(parent))
 		return scope
 	end
@@ -1375,7 +1373,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		                              scoping: 'local' or 'global' or 'var') -> bool, StatNode_or_error
 
 		var is_local = (scoping ~= 'global')
-		var angle_bracket = (tok:peek().data == '<')
 
 		var where = where_am_i()
 		var types = nil : T.Typelist?

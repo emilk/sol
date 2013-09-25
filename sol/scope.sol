@@ -21,21 +21,24 @@ global typedef Variable = {
 	name             : string,
 	type             : T.Type?,
 	is_global        : bool,
-	references       : int,
 	namespace        : { string => T.Type } ?,
 	where            : string,
 	forward_declared : bool?,
+
+	-- Usage statistics:
+	num_reads        : int,
+	num_writes       : int,
 }
 
 
 typedef VarOptions = 'ignore_fwd_decl' or nil
 
 
-function Scope.new(parent: Scope?) -> Scope
+function Scope.new(where: string, parent: Scope?) -> Scope
 	--var s = {} : Scope
 	local s = {}
 	setmetatable(s, { __index = Scope })
-	s:init(parent)
+	s:init(where, parent)
 	return s
 end
 --[[
@@ -43,15 +46,16 @@ require 'class'
 local Scope = sol_class("Scope")
 --class Scope
 
-function Scope.new(parent: Scope?) -> Scope
-	return Scope(parent)
+function Scope.new(where: string, parent: Scope?) -> Scope
+	return Scope(where, parent)
 end
 --]]
 
 --------------------------------------------------
 
 -- Constructor
-function Scope:init(parent: Scope?)
+function Scope:init(where: string, parent: Scope?)
+	self.where           = where
 	self.parent          = parent 
 	self.children        = {}  : [Scope]
 	self.locals          = {}  : [Variable]
@@ -99,8 +103,9 @@ function Scope:create_local(name: string, where: string) -> Variable
 		scope      = self,
 		name       = name,
 		is_global  = false,
-		references = 1,
 		where      = where,
+		num_reads  = 0,
+		num_writes = 0,
 	}
 
 	table.insert(self.locals, v)
@@ -122,9 +127,10 @@ function Scope:create_global(name: string, where: string, typ: T.Type?) -> Varia
 		scope      = self,
 		name       = name,
 		is_global  = true,
-		references = 1,
 		where      = where,
 		type       = typ,
+		num_reads  = 0,
+		num_writes = 0,
 	}
 
 	self:add_global(v)
@@ -161,6 +167,11 @@ function Scope:get_global_type(name: string) -> T.Type ?
 end
 
 
+function Scope:locals_iterator()
+	return ipairs(self.locals)
+end
+
+
 -- Will only check local scope
 function Scope:get_scoped(name: string, options: VarOptions) -> Variable?
 	for _,v in ipairs(self.locals) do
@@ -188,7 +199,7 @@ end
 
 -- Global declared in this scope
 function Scope:get_scoped_global(name: string, options: VarOptions) -> Variable ?
-	for k, v in ipairs(self.globals) do
+	for _, v in ipairs(self.globals) do
 		if v.name == name then
 			if not v.forward_declared or options ~= 'ignore_fwd_decl' then
 				return v
@@ -220,21 +231,6 @@ function Scope:get_var(name: string, options: VarOptions) -> Variable ?
 end
 
 
-function Scope:get_var_args() -> T.Type?
-	local v = self:get_local('...')
-	
-	if v then
-		return v.type or T.Any
-	end
-
-	if self.parent then
-		return self.parent:get_var_args()
-	end
-
-	return nil
-end
-
-
 function Scope:get_global_vars(list: [Variable] or nil) -> [Variable]
 	list = list or {}
 	U.list_join(list, self.globals)
@@ -262,12 +258,12 @@ end
 
 function Scope.create_module_scope() -> Scope
 	local top_scope = Scope.get_global_scope()
-	return Scope.new( top_scope )
+	return Scope.new( "[MODULE_SCOPE]", top_scope )
 end
 
 
 function Scope.create_global_scope() -> Scope
-	var s = Scope.new()
+	var s = Scope.new("[GLOBAL_SCOPE]")
 	var where = "[intrinsic]"  -- var.where
 
 

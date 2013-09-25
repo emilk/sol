@@ -1,17 +1,18 @@
--- Compiled from sol/scope.sol at 2013 Sep 25  08:39:34
+-- Compiled from sol/scope.sol at 2013 Sep 25  21:40:09
 
-global typedef Variable = <0x01294a38>{
+global typedef Variable = <0x006ea940>{
 	forward_declared: bool?;
 	is_global:        bool;
 	name:             string;
 	namespace:        {string => Type}?;
-	references:       int;
+	num_reads:        int;
+	num_writes:       int;
 	scope:            Scope;
 	type:             Type?;
 	where:            string;
 }
 
-global typedef Scope = <instance><0x0188ca60>{
+global typedef Scope = <instance><0x0149fa98>{
 	children:        [Scope]?;
 	fixed:           false?;
 	global_typedefs: {string => Type}?;
@@ -20,8 +21,9 @@ global typedef Scope = <instance><0x0188ca60>{
 	parent:          Scope?;
 	typedefs:        {string => Type}?;
 	vararg:          Variable?;
+	where:           string?;
 
-	!! class_type:    <class><0x0188c9d8>{
+	!! class_type:    <class><0x0137b5c8>{
 		add_global:          (function(self, v) -> void) or nil;
 		add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 		create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -42,17 +44,17 @@ global typedef Scope = <instance><0x0188ca60>{
 		get_scoped_var:      (function(self, name: string, options: VarOptions) -> Variable?) or nil;
 		get_type:            (function(self, name: string) -> Type?) or nil;
 		get_var:             (function(self, name: string, options: VarOptions) -> Variable?) or nil;
-		get_var_args:        (function(self) -> Type?) or nil;
 		global_scope:        any;
-		init:                (function(self, parent: Scope?) -> void) or nil;
+		init:                (function(self, where: string, parent: Scope?) -> void) or nil;
 		is_module_level:     (function(self) -> bool) or nil;
-		new:                 (function(parent: Scope?) -> Scope) or nil;
+		locals_iterator:     (function(self) -> function(... : varargs) -> int, Variable) or nil;
+		new:                 (function(where: string, parent: Scope?) -> Scope) or nil;
 
-		!! instance_type: <RECURSION 0x0188ca60>
+		!! instance_type: <RECURSION 0x0149fa98>
 	}
 }
 
-global Scope : <class><0x0188c9d8>{
+global Scope : <class><0x0137b5c8>{
 	add_global:          (function(self, v) -> void) or nil;
 	add_global_type:     (function(self, name: string, typ: Type) -> void) or nil;
 	create_global:       (function(self, name: string, where: string, typ: Type?) -> Variable) or nil;
@@ -73,13 +75,13 @@ global Scope : <class><0x0188c9d8>{
 	get_scoped_var:      (function(self, name: string, options: VarOptions) -> Variable?) or nil;
 	get_type:            (function(self, name: string) -> Type?) or nil;
 	get_var:             (function(self, name: string, options: VarOptions) -> Variable?) or nil;
-	get_var_args:        (function(self) -> Type?) or nil;
 	global_scope:        any;
-	init:                (function(self, parent: Scope?) -> void) or nil;
+	init:                (function(self, where: string, parent: Scope?) -> void) or nil;
 	is_module_level:     (function(self) -> bool) or nil;
-	new:                 (function(parent: Scope?) -> Scope) or nil;
+	locals_iterator:     (function(self) -> function(... : varargs) -> int, Variable) or nil;
+	new:                 (function(where: string, parent: Scope?) -> Scope) or nil;
 
-	!! instance_type: <instance><0x0188ca60>{
+	!! instance_type: <instance><0x0149fa98>{
 		children:        [Scope]?;
 		fixed:           false?;
 		global_typedefs: {string => Type}?;
@@ -88,8 +90,9 @@ global Scope : <class><0x0188c9d8>{
 		parent:          Scope?;
 		typedefs:        {string => Type}?;
 		vararg:          Variable?;
+		where:           string?;
 
-		!! class_type:    <RECURSION 0x0188c9d8>
+		!! class_type:    <RECURSION 0x0137b5c8>
 	}
 }
 

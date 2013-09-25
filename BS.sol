@@ -2,19 +2,20 @@
 ----------------------------------------------------------------------------------
 -- Namespaces: 
 
-global Actor       = { }
-global Application = { }
-global Camera      = { }
-global Gui         = { }
-global Keyboard    = { }
-global Light       = { }
-global Material    = { }
-global Math        = { }
-global Mesh        = { }
-global Profiler    = { }
-global Script      = { }
-global Unit        = { }
-global World       = { }
+global Actor        = { }
+global Application  = { }
+global Camera       = { }
+global Gui          = { }
+global Keyboard     = { }
+global Light        = { }
+global Material     = { }
+global Math         = { }
+global Mesh         = { }
+global Profiler     = { }
+global Script       = { }
+global TimpaniWorld = { }
+global Unit         = { }
+global World        = { }
 
 
 ----------------------------------------------------------------------------------

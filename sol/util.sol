@@ -276,7 +276,7 @@ end
 
 function U.set(tb: [string]) -> {string}
 	var<{string}> set = {}
-	for ix,v in ipairs(tb) do
+	for _,v in ipairs(tb) do
 		set[v] = true
 	end
 	return set
@@ -284,7 +284,7 @@ end
 
 
 function U.list_join(out: [any], in_table: [any])
-	for ix,val in ipairs(in_table) do
+	for _,val in ipairs(in_table) do
 		out[#out + 1] = val
 	end
 end
@@ -317,7 +317,7 @@ function U.shallow_clone(t: table?) -> table?
 end
 
 function U.table_clear(t: table)
-	for k,v in pairs(t) do
+	for k,_ in pairs(t) do
 		t[k] = nil
 	end
 end
@@ -334,7 +334,7 @@ function U.const(table: table) -> object
 
 		return setmetatable({}, {
 			__index    = table,
-			__newindex = function(table, key, value)
+			__newindex = function(_,_,_) -- table, key, value
 				D.error("Attempt to modify read-only table")
 			end,
 			__metatable = 'This is a read-only table' -- disallow further meta-tabling
@@ -355,7 +355,7 @@ function U.make_const(table: object) -> void
 
 		setmetatable(table, {
 			__index    = clone,
-			__newindex = function(table, key, value)
+			__newindex = function(_,_,_) -- table, key, value
 				D.error("Attempt to modify read-only table")
 			end,
 			__metatable = 'This is a read-only table' -- disallow further meta-tabling
