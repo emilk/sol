@@ -296,7 +296,7 @@ function Scope.create_global_scope() -> Scope
 		'pcall', 'print',
 		'rawequal', 'rawget', 'rawset',
 		'select', 'setfenv',
-		'tonumber', 'tostring', 'unpack', 'xpcall',
+		'tonumber', 'tostring', 'xpcall',
 	}
 
 	for _,name in ipairs(tables) do

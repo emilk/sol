@@ -497,27 +497,32 @@ function T.isa_raw(d, b, problem_rope)
 
 		-- TODO: allow different arg count WRT vararg
 		if #d.args ~= #b.args then
+			if problem_rope then problem_rope[#problem_rope+1] = "Differing number of arguments" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		for i = 1, #d.args do
-			if not T.isa(d.args[i].type, b.args[i].type) then
+			if not T.isa(d.args[i].type, b.args[i].type, problem_rope) then
+				if problem_rope then problem_rope[#problem_rope+1] = "Argument "..i.." differs" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				return false --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if b.rets then
-			if not T.isa_typelists(d.rets, b.rets) then
+			if not T.isa_typelists(d.rets, b.rets, problem_rope) then
+				if problem_rope then problem_rope[#problem_rope+1] = "Return types differs" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				return false --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if (d.vararg==nil) ~= (b.vararg==nil) then
+			if problem_rope then problem_rope[#problem_rope+1] = "One fuction has var-args" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if d.vararg and b.vararg then
-			if not T.isa(d.vararg, b.vararg) then
+			if not T.isa(d.vararg, b.vararg, problem_rope) then
+				if problem_rope then problem_rope[#problem_rope+1] = "Var-arg types differ" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				return false --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1188,21 +1193,29 @@ function T.variant(a, b)
 end --[[SOL OUTPUT--]] 
 
 
+local function un_literal(t)
+	if t.tag == 'int_literal' then return T.Int --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if t.tag == 'num_literal' then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	return t --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
 -- used for expressions like "a + b"
 -- works for tables, or numerics, i.e.   num+int == num
 function T.combine(a, b)
 	if T.isa(a, b) then return b --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	if T.isa(b, a) then return a --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-	if a.tag == 'int_literal' and b.tag == 'int_literal' then
+	a = un_literal(a) --[[SOL OUTPUT--]] 
+	b = un_literal(b) --[[SOL OUTPUT--]] 
+
+	if a == T.Int and b == T.Int then
 		return T.Int --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local function is_num_literal(t)
-		return t.tag == 'int_literal' or t.tag == 'num_literal' --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
+	if a.tag == 'int' then a = T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if b.tag == 'int' then b = T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-	if is_num_literal(a) and is_num_literal(b) then
+	if a == T.Num and b == T.Num then
 		return T.Num --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 

@@ -1,4 +1,6 @@
 var INTRINSICS = [[
+	global unpack = extern : function(t: [any]) -> ...
+
 	global coroutine = {
 		yield = extern : function(...) -> ...;
 		wrap  = extern : function(...) -> ...;

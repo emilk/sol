@@ -497,27 +497,32 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 
 		-- TODO: allow different arg count WRT vararg
 		if #d.args ~= #b.args then
+			if problem_rope then problem_rope[#problem_rope+1] = "Differing number of arguments" end
 			return false
 		end
 
 		for i = 1, #d.args do
-			if not T.isa(d.args[i].type, b.args[i].type) then
+			if not T.isa(d.args[i].type, b.args[i].type, problem_rope) then
+				if problem_rope then problem_rope[#problem_rope+1] = "Argument "..i.." differs" end
 				return false
 			end
 		end
 
 		if b.rets then
-			if not T.isa_typelists(d.rets, b.rets) then
+			if not T.isa_typelists(d.rets, b.rets, problem_rope) then
+				if problem_rope then problem_rope[#problem_rope+1] = "Return types differs" end
 				return false
 			end
 		end
 
 		if (d.vararg==nil) ~= (b.vararg==nil) then
+			if problem_rope then problem_rope[#problem_rope+1] = "One fuction has var-args" end
 			return false
 		end
 
 		if d.vararg and b.vararg then
-			if not T.isa(d.vararg, b.vararg) then
+			if not T.isa(d.vararg, b.vararg, problem_rope) then
+				if problem_rope then problem_rope[#problem_rope+1] = "Var-arg types differ" end
 				return false
 			end
 		end
@@ -1188,21 +1193,29 @@ function T.variant(a: T.Type?, b: T.Type?) -> T.Type?
 end
 
 
+local function un_literal(t: T.Type) -> T.Type
+	if t.tag == 'int_literal' then return T.Int end
+	if t.tag == 'num_literal' then return T.Num end
+	return t
+end
+
 -- used for expressions like "a + b"
 -- works for tables, or numerics, i.e.   num+int == num
 function T.combine(a: T.Type, b: T.Type)
 	if T.isa(a, b) then return b end
 	if T.isa(b, a) then return a end
 
-	if a.tag == 'int_literal' and b.tag == 'int_literal' then
+	a = un_literal(a)
+	b = un_literal(b)
+
+	if a == T.Int and b == T.Int then
 		return T.Int
 	end
 
-	local function is_num_literal(t)
-		return t.tag == 'int_literal' or t.tag == 'num_literal'
-	end
+	if a.tag == 'int' then a = T.Num end
+	if b.tag == 'int' then b = T.Num end
 
-	if is_num_literal(a) and is_num_literal(b) then
+	if a == T.Num and b == T.Num then
 		return T.Num
 	end
 

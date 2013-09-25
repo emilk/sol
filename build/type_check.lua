@@ -88,6 +88,7 @@ local function analyze(ast, filename, on_require, settings)
 	local analyze_statlist, analyze_expr, analyze_expr_single --[[SOL OUTPUT--]] 
 	local analyze_expr_unchecked --[[SOL OUTPUT--]] 
 
+	local top_scope = ast.scope --[[SOL OUTPUT--]]   -- HACK
 	local error_count = 0 --[[SOL OUTPUT--]] 
 
 	local function where_is(node)
@@ -437,7 +438,7 @@ local function analyze(ast, filename, on_require, settings)
 
 	local function check_arguments(expr, fun_t, arg_ts)
 		assert(fun_t.args) --[[SOL OUTPUT--]] 
-		local fun_name = fun_t.name or "lambda" --[[SOL OUTPUT--]] 
+		local fun_name = fun_t.name or "<lambda>" --[[SOL OUTPUT--]] 
 		D.assert(type(fun_name) == 'string', "fun_name: %s", fun_name) --[[SOL OUTPUT--]] 
 		local all_passed = false --[[SOL OUTPUT--]] 
 
@@ -448,7 +449,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			if i <= #fun_t.args then
 				if fun_t.args[i].name == 'self' and i ~= 1 then
-					report_error(expr, "'self' must be the first arguemnt") --[[SOL OUTPUT--]] 
+					report_error(expr, "%s: 'self' must be the first arguemnt", fun_name) --[[SOL OUTPUT--]] 
 					all_passed = false --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
@@ -460,6 +461,7 @@ local function analyze(ast, filename, on_require, settings)
 					if given.tag == 'varargs' then
 						-- When calling with ..., if ... is empty we get nil:s
 						given = T.variant(given.type, T.Nil) --[[SOL OUTPUT--]] 
+						-- TODO: if last given, match against epxected
 					end --[[SOL OUTPUT--]] 
 
 					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
@@ -476,19 +478,19 @@ local function analyze(ast, filename, on_require, settings)
 						local problem_rope = {} --[[SOL OUTPUT--]] 
 						T.could_be(given, expected, problem_rope) --[[SOL OUTPUT--]] 
 						local err_msg = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
-						report_error(expr, "%s argument %i: could not convert from %s to %s: %s",
-						                    fun_name, i, given, expected, err_msg) --[[SOL OUTPUT--]] 
+						report_error(expr, "%s: %s argument %i: could not convert from %s to %s: %s",
+						                    fun_name, fun_name, i, given, expected, err_msg) --[[SOL OUTPUT--]] 
 						all_passed = false --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
 					if i == 1 and fun_t.args[i].name == 'self' then
-						report_error(expr, "Missing object argument ('self'). Did you forget to call with : ?") --[[SOL OUTPUT--]] 
+						report_error(expr, "%s: Missing object argument ('self'). Did you forget to call with : ?", fun_name) --[[SOL OUTPUT--]] 
 						all_passed = false --[[SOL OUTPUT--]] 
 					elseif not T.is_nilable(expected) then
-						report_error(expr, "Missing non-nilable argument %i: expected %s", i, expected) --[[SOL OUTPUT--]] 
+						report_error(expr, "%s: Missing non-nilable argument %i: expected %s", fun_name, i, expected) --[[SOL OUTPUT--]] 
 						all_passed = false --[[SOL OUTPUT--]] 
 					elseif _G.g_spam then
-						report_spam(expr, "Ignoring missing argument %i: it's nilable: %s", i, expected) --[[SOL OUTPUT--]] 
+						report_spam(expr, "%s: Ignoring missing argument %i: it's nilable: %s", fun_name, i, expected) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			elseif i <= #arg_ts then
@@ -509,12 +511,12 @@ local function analyze(ast, filename, on_require, settings)
 					end --[[SOL OUTPUT--]] 
 
 					if not T.could_be(given, expected) then
-						report_error(expr, "%s argument %i: could not convert from %s to varargs %s",
+						report_error(expr, "%s: argument %i: could not convert from %s to varargs %s",
 							                 fun_name, i, given, expected) --[[SOL OUTPUT--]] 
 						all_passed = false --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
-					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args) --[[SOL OUTPUT--]] 
+					report_error(expr, "%s: Too many arguments - got %i, expected %i", fun_name, #arg_ts, #fun_t.args) --[[SOL OUTPUT--]] 
 					all_passed = false --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else
@@ -1051,7 +1053,7 @@ local function analyze(ast, filename, on_require, settings)
 				if expr.name ~= '_' then  -- Implicit '_' var is OK
 					report_error(expr, "Declaring implicit global %q", expr.name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				var_ = scope:create_global( expr.name, where_is(expr) ) --[[SOL OUTPUT--]] 
+				var_ = top_scope:create_global( expr.name, where_is(expr) ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			--report_spam(expr, "IdExpr '%s': var_.type: '%s'", var_.name, var_.type)
@@ -2274,7 +2276,7 @@ local function analyze(ast, filename, on_require, settings)
 					else
 						-- Leave error reporting out of pre-analyzer
 						report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name) --[[SOL OUTPUT--]] 
-						v = scope:create_global( var_name, where_is(stat) ) --[[SOL OUTPUT--]] 
+						v = top_scope:create_global( var_name, where_is(stat) ) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
 					if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
@@ -2361,7 +2363,6 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
-	local top_scope = ast.scope --[[SOL OUTPUT--]]   -- HACK
 	local module_function = {
 		tag = 'function',
 		args = {}

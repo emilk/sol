@@ -88,6 +88,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local analyze_statlist, analyze_expr, analyze_expr_single
 	local analyze_expr_unchecked
 
+	local top_scope = ast.scope  -- HACK
 	local error_count = 0
 
 	local function where_is(node: P.Node?) -> string
@@ -437,7 +438,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	local function check_arguments(expr, fun_t: T.Function, arg_ts: [T.Type]) -> bool
 		assert(fun_t.args)
-		var fun_name = fun_t.name or "lambda"
+		var fun_name = fun_t.name or "<lambda>"
 		D.assert(type(fun_name) == 'string', "fun_name: %s", fun_name)
 		local all_passed = false
 
@@ -448,7 +449,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if i <= #fun_t.args then
 				if fun_t.args[i].name == 'self' and i ~= 1 then
-					report_error(expr, "'self' must be the first arguemnt")
+					report_error(expr, "%s: 'self' must be the first arguemnt", fun_name)
 					all_passed = false
 				end
 
@@ -460,6 +461,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					if given.tag == 'varargs' then
 						-- When calling with ..., if ... is empty we get nil:s
 						given = T.variant(given.type, T.Nil)
+						-- TODO: if last given, match against epxected
 					end
 
 					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
@@ -476,19 +478,19 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						local problem_rope = {}
 						T.could_be(given, expected, problem_rope)
 						local err_msg = rope_to_msg(problem_rope)
-						report_error(expr, "%s argument %i: could not convert from %s to %s: %s",
-						                    fun_name, i, given, expected, err_msg)
+						report_error(expr, "%s: %s argument %i: could not convert from %s to %s: %s",
+						                    fun_name, fun_name, i, given, expected, err_msg)
 						all_passed = false
 					end
 				else
 					if i == 1 and fun_t.args[i].name == 'self' then
-						report_error(expr, "Missing object argument ('self'). Did you forget to call with : ?")
+						report_error(expr, "%s: Missing object argument ('self'). Did you forget to call with : ?", fun_name)
 						all_passed = false
 					elseif not T.is_nilable(expected) then
-						report_error(expr, "Missing non-nilable argument %i: expected %s", i, expected)
+						report_error(expr, "%s: Missing non-nilable argument %i: expected %s", fun_name, i, expected)
 						all_passed = false
 					elseif _G.g_spam then
-						report_spam(expr, "Ignoring missing argument %i: it's nilable: %s", i, expected)
+						report_spam(expr, "%s: Ignoring missing argument %i: it's nilable: %s", fun_name, i, expected)
 					end
 				end
 			elseif i <= #arg_ts then
@@ -509,12 +511,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					end
 
 					if not T.could_be(given, expected) then
-						report_error(expr, "%s argument %i: could not convert from %s to varargs %s",
+						report_error(expr, "%s: argument %i: could not convert from %s to varargs %s",
 							                 fun_name, i, given, expected)
 						all_passed = false
 					end
 				else
-					report_error(expr, "Too many arguments to function %s, expected %i", fun_name, #fun_t.args)
+					report_error(expr, "%s: Too many arguments - got %i, expected %i", fun_name, #arg_ts, #fun_t.args)
 					all_passed = false
 				end
 			else
@@ -1051,7 +1053,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				if expr.name ~= '_' then  -- Implicit '_' var is OK
 					report_error(expr, "Declaring implicit global %q", expr.name)
 				end
-				var_ = scope:create_global( expr.name, where_is(expr) )
+				var_ = top_scope:create_global( expr.name, where_is(expr) )
 			end
 
 			--report_spam(expr, "IdExpr '%s': var_.type: '%s'", var_.name, var_.type)
@@ -2274,7 +2276,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					else
 						-- Leave error reporting out of pre-analyzer
 						report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name)
-						v = scope:create_global( var_name, where_is(stat) )
+						v = top_scope:create_global( var_name, where_is(stat) )
 					end
 
 					if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
@@ -2361,7 +2363,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local top_scope = ast.scope  -- HACK
 	local module_function = {
 		tag = 'function',
 		args = {}

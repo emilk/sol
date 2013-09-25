@@ -6,6 +6,7 @@ global Actor       = { }
 global Application = { }
 global Camera      = { }
 global Gui         = { }
+global Keyboard    = { }
 global Light       = { }
 global Material    = { }
 global Math        = { }
