@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 25  23:56:45 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 26  17:20:59 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -218,6 +218,7 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
+	-- second bool: returns true if all paths returns
 	local function analyze_closed_off_statlist(stat_list, scope_fun)
 		return analyze_statlist(stat_list, stat_list.scope, scope_fun) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -413,7 +414,7 @@ local function analyze(ast, filename, on_require, settings)
 	--[[ Will analyze body and check its return-statements against fun_t.
 	     If fun_t.rets is nil (no type deduced) then this function will fill it in via deduction.
 	--]]
-	local function analyze_function_body(node, fun_t)
+	local function analyze_function_body(node, scope, fun_t)
 		if not node.body then
 			-- body-less function - used by lua_intrinsics.sol
 			return --[[SOL OUTPUT--]] 
@@ -448,20 +449,32 @@ local function analyze(ast, filename, on_require, settings)
 
 		---
 
-		local ret_t = analyze_statlist(node.body, func_scope, fun_t) --[[SOL OUTPUT--]] 
+		local ret_t, all_paths_return = analyze_statlist(node.body, func_scope, fun_t) --[[SOL OUTPUT--]] 
 		discard_scope(func_scope) --[[SOL OUTPUT--]] 
 
-		ret_t = ret_t or T.Void --[[SOL OUTPUT--]] 
-
 		if fun_t.rets then
-			if not T.could_be_tl(ret_t, fun_t.rets) then
+			if ret_t and not T.could_be_tl(ret_t, fun_t.rets) then
 				report_error(node, "Return statement(s) does not match function return type declaration, returns: %s, expected: %s",
 					T.name(ret_t), T.name(fun_t.rets)) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			if fun_t.rets ~= T.Void and fun_t.rets ~= T.AnyTypeList and not all_paths_return then
+				report_error(node, "Not all paths returns - expected %s", fun_t.rets) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		else
 			-- Deduce return type:
 			if ret_t then
+				if not all_paths_return and #ret_t > 0 then
+					ret_t = U.shallow_clone(ret_t) --[[SOL OUTPUT--]] 
+					for ix,_ in ipairs(ret_t) do
+						ret_t[ix] = T.make_nilable(ret_t[ix]) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 				fun_t.rets = ret_t --[[SOL OUTPUT--]] 
+
+				if fun_t.rets ~= T.Void and fun_t.rets ~= T.AnyTypeList and not all_paths_return then
+					report_error(node, "Not all paths returns") --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 			else
 				fun_t.rets = T.Void --[[SOL OUTPUT--]]   -- No returns  == void
 			end --[[SOL OUTPUT--]] 
@@ -1427,7 +1440,7 @@ local function analyze(ast, filename, on_require, settings)
 			local is_pre_analyze = false --[[SOL OUTPUT--]] 
 			local fun_t = analyze_function_head( expr, scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
 			fun_t.name = '<lambda>' --[[SOL OUTPUT--]] 
-			analyze_function_body( expr, fun_t ) --[[SOL OUTPUT--]] 
+			analyze_function_body( expr, scope, fun_t ) --[[SOL OUTPUT--]] 
 			return fun_t --[[SOL OUTPUT--]] 
 
 
@@ -1563,6 +1576,8 @@ local function analyze(ast, filename, on_require, settings)
 				report_error(expr, "Not a useful boolean expression in %q, type is %s", name, t) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
+
+		return t --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -1965,7 +1980,8 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
-	-- Iff it is a return statement, will returns a list of types
+	-- Returns a list of types the statement returns to scope_fun
+	-- If the second return is 'true', all possible code paths return at some point.
 	-- Else nil
 	-- 'scope_fun' contains info about the enclosing function
 	local analyze_statement = function(stat, scope, scope_fun)
@@ -2096,8 +2112,8 @@ local function analyze(ast, filename, on_require, settings)
 					
 					if #vars < nt then
 						-- Ignoring a few return values is OK
-						--report_warning(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types)
-						report_spam(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types) --[[SOL OUTPUT--]] 
+						report_warning(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types) --[[SOL OUTPUT--]] 
+						--report_spam(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types)
 					elseif #vars > nt then
 						report_error(stat, "Too many variables in 'local' declaration. Right hand side has type %s",
 							T.name(init_types)) --[[SOL OUTPUT--]] 
@@ -2134,30 +2150,47 @@ local function analyze(ast, filename, on_require, settings)
 
 
 		elseif stat.ast_type == 'IfStatement' then
-			check_condition( 'if', stat.clauses[1].condition, scope ) --[[SOL OUTPUT--]] 
+			local ret = nil --[[SOL OUTPUT--]] 
+			local all_paths_return = true --[[SOL OUTPUT--]] 
 
-			local ret = analyze_closed_off_statlist( stat.clauses[1].body, scope_fun ) --[[SOL OUTPUT--]] 
-
-			for i = 2, #stat.clauses do
+			for i = 1, #stat.clauses do
 				local st = stat.clauses[i] --[[SOL OUTPUT--]] 
-				if st.condition then
+				if i == 1 then
+					check_condition( 'if',     st.condition, scope ) --[[SOL OUTPUT--]] 
+				elseif st.condition then
 					check_condition( 'elseif', st.condition, scope ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				ret = T.combine_type_lists(ret, analyze_closed_off_statlist( st.body, scope_fun )) --[[SOL OUTPUT--]] 
+				local clause_ret, clause_returns = analyze_closed_off_statlist( st.body, scope_fun ) --[[SOL OUTPUT--]] 
+				ret = T.combine_type_lists(ret, clause_ret) --[[SOL OUTPUT--]] 
+				if not clause_returns then
+					all_paths_return = false --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			return ret --[[SOL OUTPUT--]] 
+			return ret, all_paths_return --[[SOL OUTPUT--]] 
 
 
 		elseif stat.ast_type == 'WhileStatement' then
-			check_condition( 'while', stat.condition, scope ) --[[SOL OUTPUT--]] 
-			local ret = analyze_closed_off_statlist(stat.body, scope_fun) --[[SOL OUTPUT--]] 
-			return ret --[[SOL OUTPUT--]] 
+			local cond_t = check_condition( 'while', stat.condition, scope ) --[[SOL OUTPUT--]] 
+			local ret, always_return = analyze_closed_off_statlist(stat.body, scope_fun) --[[SOL OUTPUT--]] 
+
+			if cond_t == T.True then
+				-- while true:  Infinite loop
+				if always_return then
+					return ret, true --[[SOL OUTPUT--]] 
+				else
+					-- Do we return - don't know - depends on wether there is a goto or a break
+					-- Assume 'yes' to silence warnings
+					return ret, true --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			else
+				return ret, false --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 
 
 		elseif stat.ast_type == 'DoStatement' then
-			local ret = analyze_closed_off_statlist(stat.body, scope_fun) --[[SOL OUTPUT--]] 
-			return ret --[[SOL OUTPUT--]] 
+			local ret, all_paths_return = analyze_closed_off_statlist(stat.body, scope_fun) --[[SOL OUTPUT--]] 
+			return ret, all_paths_return --[[SOL OUTPUT--]] 
 
 
 		elseif stat.ast_type == 'ReturnStatement' then
@@ -2177,17 +2210,17 @@ local function analyze(ast, filename, on_require, settings)
 			--if scope_fun then
 				check_return_types(stat, what_to_return, scope_fun.rets) --[[SOL OUTPUT--]] 
 			--end
-			return what_to_return --[[SOL OUTPUT--]] 
+			return what_to_return, true --[[SOL OUTPUT--]] 
 
 		elseif stat.ast_type == 'BreakStatement' then
 			-- TODO
 
 		elseif stat.ast_type == 'RepeatStatement' then
 			local loop_scope = stat.scope --[[SOL OUTPUT--]] 
-			local ret = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
+			local ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
 			check_condition( 'repeat', stat.condition, loop_scope ) --[[SOL OUTPUT--]] 
 			discard_scope(loop_scope) --[[SOL OUTPUT--]] 
-			return ret --[[SOL OUTPUT--]] 
+			return ret, false --[[SOL OUTPUT--]] 
 
 		elseif stat.ast_type == 'FunctionDeclStatement' then
 			assert(stat.scope.parent == scope) --[[SOL OUTPUT--]] 
@@ -2218,7 +2251,7 @@ local function analyze(ast, filename, on_require, settings)
 			end --[[SOL OUTPUT--]] 
 
 			-- Now analyze body:
-			analyze_function_body( stat, fun_t ) --[[SOL OUTPUT--]] 
+			analyze_function_body( stat, scope, fun_t ) --[[SOL OUTPUT--]] 
 
 
 		elseif stat.ast_type == 'GenericForStatement' then
@@ -2246,9 +2279,9 @@ local function analyze(ast, filename, on_require, settings)
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			local ret = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
+			local ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
 			discard_scope(loop_scope) --[[SOL OUTPUT--]] 
-			return ret --[[SOL OUTPUT--]] 
+			return ret, false --[[SOL OUTPUT--]] 
 
 
 		elseif stat.ast_type == 'NumericForStatement' then
@@ -2281,16 +2314,14 @@ local function analyze(ast, filename, on_require, settings)
 			iter_var.num_reads  = iter_var.num_reads  + 1 --[[SOL OUTPUT--]]   -- Actual looping counts
 			iter_var.var_type = 'Loop variable' --[[SOL OUTPUT--]] 
 			
-			local ret = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
+			local ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
 			discard_scope(loop_scope) --[[SOL OUTPUT--]] 
-			return ret --[[SOL OUTPUT--]] 
+			return ret, false --[[SOL OUTPUT--]] 
 
 
 		elseif stat.ast_type == 'LabelStatement' then
 
 		elseif stat.ast_type == 'GotoStatement' then
-
-		elseif stat.ast_type == 'Eof' then
 
 		elseif stat.ast_type == 'Typedef' then
 			analyze_typedef( stat, scope ) --[[SOL OUTPUT--]] 
@@ -2302,7 +2333,7 @@ local function analyze(ast, filename, on_require, settings)
 			print("Unknown AST type: ", stat.ast_type) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		return nil --[[SOL OUTPUT--]]    -- Returns nothing
+		return nil, false --[[SOL OUTPUT--]]    -- Returns nothing
 	end --[[SOL OUTPUT--]] 
 
 
@@ -2410,7 +2441,8 @@ local function analyze(ast, filename, on_require, settings)
 
 	-- Returns the list of types returned in these statements
 	-- or nil if no returns statements where found
-	analyze_statlist = function(stat_list, scope, scope_fun)
+	-- Returns true if all paths returns.
+	analyze_statlist = function(stat_list, scope, scope_fun) -- TODO: try T.Typelist instead of [T.Type]
 		assert(stat_list.scope == scope) --[[SOL OUTPUT--]] 
 
 		local return_types = nil --[[SOL OUTPUT--]] 
@@ -2423,13 +2455,18 @@ local function analyze(ast, filename, on_require, settings)
 			pre_analyze_statement(stat, scope) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		for _, stat in ipairs(stat_list.body) do
-			local stat_rets = analyze_statement(stat, scope, scope_fun) --[[SOL OUTPUT--]] 
-			return_types = T.combine_type_lists(return_types, stat_rets) --[[SOL OUTPUT--]] 
+		local all_paths_return = false --[[SOL OUTPUT--]] 
+
+		for ix, stat in ipairs(stat_list.body) do
+			if stat.ast_type ~= 'Eof' then
+				local stat_rets, stat_all_return = analyze_statement(stat, scope, scope_fun) --[[SOL OUTPUT--]] 
+				return_types = T.combine_type_lists(return_types, stat_rets) --[[SOL OUTPUT--]] 
+
+				all_paths_return = stat_all_return --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-
-		return return_types --[[SOL OUTPUT--]] 
+		return return_types, all_paths_return --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -2439,7 +2476,11 @@ local function analyze(ast, filename, on_require, settings)
 		-- name = ???
 		-- rets = ???
 	} --[[SOL OUTPUT--]] 
-	local ret = analyze_statlist(ast, top_scope, module_function) --[[SOL OUTPUT--]] 
+	local ret, all_paths_return = analyze_statlist(ast, top_scope, module_function) --[[SOL OUTPUT--]] 
+
+	if ret and not all_paths_return then
+		report_error(ast, "Not all paths return a value, but some do") --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	if _G.g_ignore_errors or error_count == 0 then
 		return true, ret --[[SOL OUTPUT--]] 

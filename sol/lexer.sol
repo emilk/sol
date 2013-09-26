@@ -97,6 +97,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 					return get()
 				end
 			end
+			return nil
 		end
 
 		--shared stuff

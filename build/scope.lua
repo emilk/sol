@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Sep 25  23:56:45 --]] local T = require 'type' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Sep 26  17:20:59 --]] local T = require 'type' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
 
@@ -207,6 +207,7 @@ function Scope:get_scoped_global(name, options)
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
+	return nil --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 

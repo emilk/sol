@@ -218,7 +218,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function analyze_closed_off_statlist(stat_list: P.Statlist, scope_fun: T.Function) -> T.Typelist?
+	-- second bool: returns true if all paths returns
+	local function analyze_closed_off_statlist(stat_list: P.Statlist, scope_fun: T.Function) -> T.Typelist?, bool
 		return analyze_statlist(stat_list, stat_list.scope, scope_fun)
 	end
 
@@ -413,7 +414,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	--[[ Will analyze body and check its return-statements against fun_t.
 	     If fun_t.rets is nil (no type deduced) then this function will fill it in via deduction.
 	--]]
-	local function analyze_function_body(node: P.Node, fun_t: T.Function)
+	local function analyze_function_body(node: P.Node, scope: Scope, fun_t: T.Function)
 		if not node.body then
 			-- body-less function - used by lua_intrinsics.sol
 			return
@@ -448,20 +449,32 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		---
 
-		local ret_t = analyze_statlist(node.body, func_scope, fun_t)
+		var ret_t, all_paths_return = analyze_statlist(node.body, func_scope, fun_t)
 		discard_scope(func_scope)
 
-		ret_t = ret_t or T.Void
-
 		if fun_t.rets then
-			if not T.could_be_tl(ret_t, fun_t.rets) then
+			if ret_t and not T.could_be_tl(ret_t, fun_t.rets) then
 				report_error(node, "Return statement(s) does not match function return type declaration, returns: %s, expected: %s",
 					T.name(ret_t), T.name(fun_t.rets))
+			end
+
+			if fun_t.rets ~= T.Void and fun_t.rets ~= T.AnyTypeList and not all_paths_return then
+				report_error(node, "Not all paths returns - expected %s", fun_t.rets)
 			end
 		else
 			-- Deduce return type:
 			if ret_t then
+				if not all_paths_return and #ret_t > 0 then
+					ret_t = U.shallow_clone(ret_t)
+					for ix,_ in ipairs(ret_t) do
+						ret_t[ix] = T.make_nilable(ret_t[ix])
+					end
+				end
 				fun_t.rets = ret_t
+
+				if fun_t.rets ~= T.Void and fun_t.rets ~= T.AnyTypeList and not all_paths_return then
+					report_error(node, "Not all paths returns")
+				end
 			else
 				fun_t.rets = T.Void  -- No returns  == void
 			end
@@ -764,7 +777,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function handle_setmetatable(expr: P.Node, args: [P.Node], arg_ts: [T.Type])
+	local function handle_setmetatable(expr: P.Node, args: [P.Node], arg_ts: [T.Type]) -> void
 		if #args ~= 2 then
 			return
 		end
@@ -1427,7 +1440,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local is_pre_analyze = false
 			local fun_t = analyze_function_head( expr, scope, is_pre_analyze )
 			fun_t.name = '<lambda>'
-			analyze_function_body( expr, fun_t )
+			analyze_function_body( expr, scope, fun_t )
 			return fun_t
 
 
@@ -1563,6 +1576,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_error(expr, "Not a useful boolean expression in %q, type is %s", name, t)
 			end
 		end
+
+		return t
 	end
 
 
@@ -1965,10 +1980,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	-- Iff it is a return statement, will returns a list of types
+	-- Returns a list of types the statement returns to scope_fun
+	-- If the second return is 'true', all possible code paths return at some point.
 	-- Else nil
 	-- 'scope_fun' contains info about the enclosing function
-	local analyze_statement = function(stat: P.StatNode, scope: Scope, scope_fun: T.Function) -> T.Typelist?
+	local analyze_statement = function(stat: P.StatNode, scope: Scope, scope_fun: T.Function) -> T.Typelist?, bool
 		assert(scope)
 		var is_pre_analyze = false
 
@@ -2096,8 +2112,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					
 					if #vars < nt then
 						-- Ignoring a few return values is OK
-						--report_warning(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types)
-						report_spam(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types)
+						report_warning(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types)
+						--report_spam(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types)
 					elseif #vars > nt then
 						report_error(stat, "Too many variables in 'local' declaration. Right hand side has type %s",
 							T.name(init_types))
@@ -2134,30 +2150,47 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif stat.ast_type == 'IfStatement' then
-			check_condition( 'if', stat.clauses[1].condition, scope )
+			local ret = nil
+			local all_paths_return = true
 
-			local ret = analyze_closed_off_statlist( stat.clauses[1].body, scope_fun )
-
-			for i = 2, #stat.clauses do
+			for i = 1, #stat.clauses do
 				local st = stat.clauses[i]
-				if st.condition then
+				if i == 1 then
+					check_condition( 'if',     st.condition, scope )
+				elseif st.condition then
 					check_condition( 'elseif', st.condition, scope )
 				end
-				ret = T.combine_type_lists(ret, analyze_closed_off_statlist( st.body, scope_fun ))
+				var clause_ret, clause_returns = analyze_closed_off_statlist( st.body, scope_fun )
+				ret = T.combine_type_lists(ret, clause_ret)
+				if not clause_returns then
+					all_paths_return = false
+				end
 			end
 
-			return ret
+			return ret, all_paths_return
 
 
 		elseif stat.ast_type == 'WhileStatement' then
-			check_condition( 'while', stat.condition, scope )
-			local ret = analyze_closed_off_statlist(stat.body, scope_fun)
-			return ret
+			local cond_t = check_condition( 'while', stat.condition, scope )
+			local ret, always_return = analyze_closed_off_statlist(stat.body, scope_fun)
+
+			if cond_t == T.True then
+				-- while true:  Infinite loop
+				if always_return then
+					return ret, true
+				else
+					-- Do we return - don't know - depends on wether there is a goto or a break
+					-- Assume 'yes' to silence warnings
+					return ret, true
+				end
+			else
+				return ret, false
+			end
 
 
 		elseif stat.ast_type == 'DoStatement' then
-			local ret = analyze_closed_off_statlist(stat.body, scope_fun)
-			return ret
+			local ret, all_paths_return = analyze_closed_off_statlist(stat.body, scope_fun)
+			return ret, all_paths_return
 
 
 		elseif stat.ast_type == 'ReturnStatement' then
@@ -2177,22 +2210,22 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--if scope_fun then
 				check_return_types(stat, what_to_return, scope_fun.rets)
 			--end
-			return what_to_return
+			return what_to_return, true
 
 		elseif stat.ast_type == 'BreakStatement' then
 			-- TODO
 
 		elseif stat.ast_type == 'RepeatStatement' then
-			local loop_scope = stat.scope
-			local ret = analyze_statlist(stat.body, loop_scope, scope_fun)
+			var loop_scope = stat.scope
+			var ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun)
 			check_condition( 'repeat', stat.condition, loop_scope )
 			discard_scope(loop_scope)
-			return ret
+			return ret, false
 
 		elseif stat.ast_type == 'FunctionDeclStatement' then
 			assert(stat.scope.parent == scope)
 			var is_pre_analyze = false
-			local fun_t = analyze_function_head( stat, scope, is_pre_analyze )
+			var fun_t = analyze_function_head( stat, scope, is_pre_analyze )
 			fun_t.name = format_expr(stat.name_expr)
 
 			--[[ Assign type before recursing on body.
@@ -2218,7 +2251,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 
 			-- Now analyze body:
-			analyze_function_body( stat, fun_t )
+			analyze_function_body( stat, scope, fun_t )
 
 
 		elseif stat.ast_type == 'GenericForStatement' then
@@ -2246,9 +2279,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 			end
 
-			local ret = analyze_statlist(stat.body, loop_scope, scope_fun)
+			local ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun)
 			discard_scope(loop_scope)
-			return ret
+			return ret, false
 
 
 		elseif stat.ast_type == 'NumericForStatement' then
@@ -2281,16 +2314,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			iter_var.num_reads  = iter_var.num_reads  + 1  -- Actual looping counts
 			iter_var.var_type = 'Loop variable'
 			
-			local ret = analyze_statlist(stat.body, loop_scope, scope_fun)
+			local ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun)
 			discard_scope(loop_scope)
-			return ret
+			return ret, false
 
 
 		elseif stat.ast_type == 'LabelStatement' then
 
 		elseif stat.ast_type == 'GotoStatement' then
-
-		elseif stat.ast_type == 'Eof' then
 
 		elseif stat.ast_type == 'Typedef' then
 			analyze_typedef( stat, scope )
@@ -2302,7 +2333,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			print("Unknown AST type: ", stat.ast_type)
 		end
 
-		return nil   -- Returns nothing
+		return nil, false   -- Returns nothing
 	end
 
 
@@ -2410,7 +2441,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	-- Returns the list of types returned in these statements
 	-- or nil if no returns statements where found
-	analyze_statlist = function(stat_list: P.Statlist, scope: Scope, scope_fun: T.Function) -> T.Typelist?
+	-- Returns true if all paths returns.
+	analyze_statlist = function(stat_list: P.Statlist, scope: Scope, scope_fun: T.Function) -> [T.Type]?, bool -- TODO: try T.Typelist instead of [T.Type]
 		assert(stat_list.scope == scope)
 
 		local return_types = nil
@@ -2423,13 +2455,18 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			pre_analyze_statement(stat, scope)
 		end
 
-		for _, stat in ipairs(stat_list.body) do
-			local stat_rets = analyze_statement(stat, scope, scope_fun)
-			return_types = T.combine_type_lists(return_types, stat_rets)
+		var all_paths_return = false
+
+		for ix, stat in ipairs(stat_list.body) do
+			if stat.ast_type ~= 'Eof' then
+				var stat_rets, stat_all_return = analyze_statement(stat, scope, scope_fun)
+				return_types = T.combine_type_lists(return_types, stat_rets)
+
+				all_paths_return = stat_all_return
+			end
 		end
 
-
-		return return_types
+		return return_types, all_paths_return
 	end
 
 
@@ -2439,7 +2476,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		-- name = ???
 		-- rets = ???
 	}
-	local ret = analyze_statlist(ast, top_scope, module_function)
+	local ret, all_paths_return = analyze_statlist(ast, top_scope, module_function)
+
+	if ret and not all_paths_return then
+		report_error(ast, "Not all paths return a value, but some do")
+	end
 
 	if _G.g_ignore_errors or error_count == 0 then
 		return true, ret

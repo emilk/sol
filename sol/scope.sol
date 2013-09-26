@@ -207,6 +207,7 @@ function Scope:get_scoped_global(name: string, options: VarOptions) -> Variable 
 			end
 		end
 	end
+	return nil
 end
 
 

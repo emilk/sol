@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 25  23:54:09 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 26  17:20:59 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -551,7 +551,7 @@ function T.isa_raw(d, b, problem_rope)
 		return T.isa(d.type, b.type) --[[SOL OUTPUT--]] 
 	else
 		--error('isa failed: derived: ' .. U.pretty(d) .. ', base: ' .. U.pretty(b))
-		error('isa failed: derived: ' .. T.name(d) .. ', base: ' .. T.name(b)) --[[SOL OUTPUT--]] 
+		return error('isa failed: derived: ' .. T.name(d) .. ', base: ' .. T.name(b)) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -1282,7 +1282,7 @@ function T.combine_type_lists(a, b, forgiving)
 
 	if #a ~= #b then
 		local msg = string.format("Return statement with different number of values than the previous: %s vs %s", T.name(a), T.name(b)) --[[SOL OUTPUT--]] 
-		error( msg ) --[[SOL OUTPUT--]] 
+		return error( msg ) --[[SOL OUTPUT--]] 
 	else
 		local ret = {} --[[SOL OUTPUT--]] 
 		for i = 1, #a do

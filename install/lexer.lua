@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Sep 25  23:54:08 --]] local U = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Sep 26  17:20:59 --]] local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
@@ -97,6 +97,7 @@ function L.lex_sol(src, filename, settings)
 					return get() --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
+			return nil --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		--shared stuff

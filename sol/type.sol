@@ -551,7 +551,7 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 		return T.isa(d.type, b.type)
 	else
 		--error('isa failed: derived: ' .. U.pretty(d) .. ', base: ' .. U.pretty(b))
-		error('isa failed: derived: ' .. T.name(d) .. ', base: ' .. T.name(b))
+		return error('isa failed: derived: ' .. T.name(d) .. ', base: ' .. T.name(b))
 	end
 end
 
@@ -1282,7 +1282,7 @@ function T.combine_type_lists(a, b, forgiving: bool?) -> T.Typelist?
 
 	if #a ~= #b then
 		local msg = string.format("Return statement with different number of values than the previous: %s vs %s", T.name(a), T.name(b))
-		error( msg )
+		return error( msg )
 	else
 		var<T.Typelist> ret = {}
 		for i = 1, #a do
