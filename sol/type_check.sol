@@ -84,7 +84,7 @@ typedef OnRequireT = function(string, string) -> T.Type or T.Typelist
 
 
 local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
-	local analyze_statlist, analyze_expr, analyze_expr_single
+	local analyze_statlist, analyze_expr, analyze_expr_single_var, analyze_expr_single
 	local analyze_expr_unchecked
 
 	local top_scope = ast.scope  -- HACK
@@ -319,7 +319,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 	-- Will make sure to return a single type, never void or multiple returns
-	analyze_expr_single = function(expr: P.ExprNode, scope: Scope) -> T.Type, Variable?
+	analyze_expr_single_var = function(expr: P.ExprNode, scope: Scope) -> T.Type, Variable?
 		local t,v = analyze_expr(expr, scope)
 		if t == T.AnyTypeList then
 			return T.Any, v
@@ -334,6 +334,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			report_error(expr, "When analyzing '%s' expression: Expected single type, got: %s", expr.ast_type, t)
 			return T.Any, v
 		end
+	end
+
+	analyze_expr_single = function(expr: P.ExprNode, scope: Scope) -> T.Type
+		-- Ignore the variable
+		var t,_ = analyze_expr_single_var(expr, scope)
+		return t
 	end
 
 
@@ -368,7 +374,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				return T.Any, nil
 			end
 		else
-			return analyze_expr_single(expr, scope)
+			return analyze_expr_single_var(expr, scope)
 		end
 	end
 
@@ -386,7 +392,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		if node.is_mem_fun then
 			local name_expr = node.name_expr
 			assert(name_expr.ast_type == 'MemberExpr' and name_expr.indexer == ':')
-			local self_type = analyze_expr_single_custom(name_expr.base, scope, is_pre_analyze)
+			local self_type,_ = analyze_expr_single_custom(name_expr.base, scope, is_pre_analyze)
 			if self_type.instance_type then
 				report_spam(node, "Class method detected - setting 'self' type as the instance type")
 				self_type = self_type.instance_type
@@ -934,7 +940,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		var<[T.Type]> arg_ts = {}
 		for ix,v in ipairs(args) do
 			if ix < #args then
-				arg_ts[ix], _ = analyze_expr_single(v, scope)
+				arg_ts[ix] = analyze_expr_single(v, scope)
 			else
 				-- Last argument may evaluate to several values
 				local types = analyze_expr(v, scope)
@@ -1842,7 +1848,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return true
 		end
 
-		local left_type, left_var = analyze_expr_single( left_expr, scope )
+		local left_type, left_var = analyze_expr_single_var( left_expr, scope )
 
 		if left_var then
 			left_var.num_writes = left_var.num_writes + 1

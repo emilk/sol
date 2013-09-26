@@ -383,10 +383,6 @@ end
 
 local function parse_global_require(mod_name: string)
 	var mod_path = mod_name .. '.sol' -- FIXME
-	if not mod_path then
-		U.printf('Failed to find module %q', mod_name)
-		return false
-	end
 
 	var req_chain = { "[global require]" }
 	var mod_info = parse_module(req_chain, mod_path)

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 26  17:20:59 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 26  17:29:01 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -84,7 +84,7 @@ end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]
 
 
 local function analyze(ast, filename, on_require, settings)
-	local analyze_statlist, analyze_expr, analyze_expr_single --[[SOL OUTPUT--]] 
+	local analyze_statlist, analyze_expr, analyze_expr_single_var, analyze_expr_single --[[SOL OUTPUT--]] 
 	local analyze_expr_unchecked --[[SOL OUTPUT--]] 
 
 	local top_scope = ast.scope --[[SOL OUTPUT--]]   -- HACK
@@ -319,7 +319,7 @@ local function analyze(ast, filename, on_require, settings)
 
 
 	-- Will make sure to return a single type, never void or multiple returns
-	analyze_expr_single = function(expr, scope)
+	analyze_expr_single_var = function(expr, scope)
 		local t,v = analyze_expr(expr, scope) --[[SOL OUTPUT--]] 
 		if t == T.AnyTypeList then
 			return T.Any, v --[[SOL OUTPUT--]] 
@@ -334,6 +334,12 @@ local function analyze(ast, filename, on_require, settings)
 			report_error(expr, "When analyzing '%s' expression: Expected single type, got: %s", expr.ast_type, t) --[[SOL OUTPUT--]] 
 			return T.Any, v --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	analyze_expr_single = function(expr, scope)
+		-- Ignore the variable
+		local t,_ = analyze_expr_single_var(expr, scope) --[[SOL OUTPUT--]] 
+		return t --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -368,7 +374,7 @@ local function analyze(ast, filename, on_require, settings)
 				return T.Any, nil --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		else
-			return analyze_expr_single(expr, scope) --[[SOL OUTPUT--]] 
+			return analyze_expr_single_var(expr, scope) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -386,7 +392,7 @@ local function analyze(ast, filename, on_require, settings)
 		if node.is_mem_fun then
 			local name_expr = node.name_expr --[[SOL OUTPUT--]] 
 			assert(name_expr.ast_type == 'MemberExpr' and name_expr.indexer == ':') --[[SOL OUTPUT--]] 
-			local self_type = analyze_expr_single_custom(name_expr.base, scope, is_pre_analyze) --[[SOL OUTPUT--]] 
+			local self_type,_ = analyze_expr_single_custom(name_expr.base, scope, is_pre_analyze) --[[SOL OUTPUT--]] 
 			if self_type.instance_type then
 				report_spam(node, "Class method detected - setting 'self' type as the instance type") --[[SOL OUTPUT--]] 
 				self_type = self_type.instance_type --[[SOL OUTPUT--]] 
@@ -934,7 +940,7 @@ local function analyze(ast, filename, on_require, settings)
 		local arg_ts = {} --[[SOL OUTPUT--]] 
 		for ix,v in ipairs(args) do
 			if ix < #args then
-				arg_ts[ix], _ = analyze_expr_single(v, scope) --[[SOL OUTPUT--]] 
+				arg_ts[ix] = analyze_expr_single(v, scope) --[[SOL OUTPUT--]] 
 			else
 				-- Last argument may evaluate to several values
 				local types = analyze_expr(v, scope) --[[SOL OUTPUT--]] 
@@ -1842,7 +1848,7 @@ local function analyze(ast, filename, on_require, settings)
 			return true --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		local left_type, left_var = analyze_expr_single( left_expr, scope ) --[[SOL OUTPUT--]] 
+		local left_type, left_var = analyze_expr_single_var( left_expr, scope ) --[[SOL OUTPUT--]] 
 
 		if left_var then
 			left_var.num_writes = left_var.num_writes + 1 --[[SOL OUTPUT--]] 

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 26  17:20:59 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 26  17:29:01 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -383,10 +383,6 @@ end --[[SOL OUTPUT--]]
 
 local function parse_global_require(mod_name)
 	local mod_path = mod_name .. '.sol' --[[SOL OUTPUT--]]  -- FIXME
-	if not mod_path then
-		U.printf('Failed to find module %q', mod_name) --[[SOL OUTPUT--]] 
-		return false --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
 
 	local req_chain = { "[global require]" } --[[SOL OUTPUT--]] 
 	local mod_info = parse_module(req_chain, mod_path) --[[SOL OUTPUT--]] 
