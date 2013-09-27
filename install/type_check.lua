@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 27  16:21:37 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 28  01:13:15 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -6,8 +6,13 @@ local S   = require 'scope' --[[SOL OUTPUT--]]
 local D   = require 'sol_debug' --[[SOL OUTPUT--]] 
 
 
-local NumOps = set{
-	'+', '-', '*', '/', '%', '^'
+local NumOps = {
+	['+'] = '__add',
+	['-'] = '__sub',
+	['*'] = '__mul',
+	['/'] = '__div',
+	['%'] = '__mod',
+	['^'] = '__pow',
 } --[[SOL OUTPUT--]] 
 local NumCompOps = set{
 	'<', '<=', '>', '>='
@@ -207,7 +212,11 @@ local function analyze(ast, filename, on_require, settings)
 					if v.type and v.type.tag == 'function' then
 						print( report('WARNING', v.where, "Unused function %q", v.name) ) --[[SOL OUTPUT--]] 
 					else
-						local warning_name = (var_type == 'Argument' and 'unused-parameter' or 'unused-variable') --[[SOL OUTPUT--]] 
+						local var_type_to_warning_name = {
+							['Argument']      = 'unused-parameter';
+							['Loop variable'] = 'unused-loop-variable';
+						} --[[SOL OUTPUT--]] 
+						local warning_name = var_type_to_warning_name[var_type] or 'unused-variable' --[[SOL OUTPUT--]] 
 						if g_warnings[warning_name] then
 							print( report('WARNING', v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name) ) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
@@ -825,6 +834,8 @@ local function analyze(ast, filename, on_require, settings)
 		report_spam(expr, "Setting metatable") --[[SOL OUTPUT--]] 
 
 		target_var.type = target_type --[[SOL OUTPUT--]] 
+
+		--report_info(expr, "setmetatable: %s", target_type)
 	end --[[SOL OUTPUT--]] 
 
 
@@ -1225,6 +1236,19 @@ local function analyze(ast, filename, on_require, settings)
 			--report_spam(expr, "Binop: %s %s %s", lt, op, rt)
 
 			if NumOps[op] then
+				-- TODO: nicer.
+				--var l_obj = T.follow_identifiers(lt)
+				local l_obj = T.find(lt, T.Object) --[[SOL OUTPUT--]] 
+				if l_obj and l_obj.metatable and l_obj.metatable.members[NumOps[op]] then
+					return l_obj --[[SOL OUTPUT--]]  -- TODO - lookup
+				end --[[SOL OUTPUT--]] 
+
+				local r_obj = T.find(rt, T.Object) --[[SOL OUTPUT--]] 
+				if r_obj and r_obj.metatable and r_obj.metatable.members[NumOps[op]] then
+					return r_obj --[[SOL OUTPUT--]]  -- TODO - lookup
+				end --[[SOL OUTPUT--]] 
+
+
 				if T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
 					return T.combine( lt, rt ) --[[SOL OUTPUT--]]   -- int,int -> int,   int,num -> num,  etc
 				else
@@ -1977,9 +2001,11 @@ local function analyze(ast, filename, on_require, settings)
 			tag        = 'object',
 			members    = {},
 			class_type = class_type,
+			metatable  = class_type,  -- It generally will be!
 		} --[[SOL OUTPUT--]] 
 
 		class_type.instance_type = instance_type --[[SOL OUTPUT--]] 
+		class_type.metatable = class_type --[[SOL OUTPUT--]]  -- HACK FIXME for __call on Vector3
 
 		-- The name refers to the *instance* type.
 		scope:declare_type(name, instance_type, where_is(stat), is_local) --[[SOL OUTPUT--]] 

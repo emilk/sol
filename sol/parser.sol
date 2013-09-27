@@ -20,6 +20,7 @@ local P = {}
 -- Enabled warnings - names matches GCC - http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
 global g_warnings = set{
 	--'unused-parameter',
+	--'unused-loop-variable',
 	'unused-variable',
 }
 

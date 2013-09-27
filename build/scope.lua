@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Sep 27  16:21:37 --]] local T = require 'type' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Sep 28  01:13:15 --]] local T = require 'type' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
 

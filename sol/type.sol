@@ -940,88 +940,83 @@ function T.format_type(root: T.Type, verbose: bool?)
 	output_obj = function(obj: T.Object, indent: string) -> string
 		local next_indent = indent .. U.INDENTATION
 
-		if not obj.namespace
-		   and not obj.metatable
-		   and U.table_empty(obj.members)
-		then
-			return '{ }'
-			--return '['..T.table_id(obj)..'] { }' -- great for debugging
+		local str = ''
+		if obj.namespace then
+			str = str .. next_indent .. '-- Types:\n'
+
+			var<T.Typelist> type_list = {}
+			for k,v in pairs(obj.namespace) do
+				table.insert(type_list, {name = k, type = v})
+			end
+			table.sort(type_list, function(a,b) return a.name < b.name end)
+			--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
+			for _,m in ipairs(type_list) do
+				str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n"
+			end
+		end
+
+		if not U.table_empty(obj.members) then
+			if str ~= '' then
+				str = str .. '\n' .. next_indent .. '-- Members:\n'
+			end
+
+			var<[{name:string, type:T.Type}]> mem_list = {}
+			var widest_name = 0
+			for k,v in pairs(obj.members) do
+				table.insert(mem_list, {name = k, type = v})
+				widest_name = math.max(widest_name, #k)
+			end
+			table.sort(mem_list, function(a,b) return a.name < b.name end)
+
+			var type_indent = next_indent
+			for i = 1,widest_name+2 do
+				type_indent = type_indent..' '
+			end
+
+			for _,m in ipairs(mem_list) do
+				str = str .. next_indent .. m.name .. ": "
+
+				-- Align:
+				for i = #m.name, widest_name - 1 do
+					str = str .. ' '
+				end
+
+				str = str .. output(m.type, type_indent) .. ";\n"
+			end
+		end
+
+		if obj.metatable then
+			if str ~= '' then
+				--str = str .. '\n' .. next_indent .. '-- metatable:\n'
+				str = str .. '\n'
+			end
+
+			str = str .. next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n'
+		end
+
+		if obj.class_type then
+			if str ~= '' then str = str .. '\n' end
+			str = str .. next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n'
+		end
+
+		if obj.instance_type then
+			if str ~= '' then str = str .. '\n' end
+			str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n'
+		end
+
+		local full = '{\n' .. str .. indent ..'}'
+		if U.trim(str) == '' then
+			full = '{ }'
+		end
+
+		full = '<'..T.table_id(obj)..'>'..full -- great for debugging
+
+		if obj.class_type then
+			return '<instance>' .. full
+		elseif obj.instance_type then
+			return '<class>' .. full
 		else
-			local str = ''
-			if obj.namespace then
-				str = str .. next_indent .. '-- Types:\n'
-
-				var<T.Typelist> type_list = {}
-				for k,v in pairs(obj.namespace) do
-					table.insert(type_list, {name = k, type = v})
-				end
-				table.sort(type_list, function(a,b) return a.name < b.name end)
-				--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
-				for _,m in ipairs(type_list) do
-					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n"
-				end
-			end
-
-			if not U.table_empty(obj.members) then
-				if str ~= '' then
-					str = str .. '\n' .. next_indent .. '-- Members:\n'
-				end
-
-				var<[{name:string, type:T.Type}]> mem_list = {}
-				var widest_name = 0
-				for k,v in pairs(obj.members) do
-					table.insert(mem_list, {name = k, type = v})
-					widest_name = math.max(widest_name, #k)
-				end
-				table.sort(mem_list, function(a,b) return a.name < b.name end)
-
-				var type_indent = next_indent
-				for i = 1,widest_name+2 do
-					type_indent = type_indent..' '
-				end
-
-				for _,m in ipairs(mem_list) do
-					str = str .. next_indent .. m.name .. ": "
-
-					-- Align:
-					for i = #m.name, widest_name - 1 do
-						str = str .. ' '
-					end
-
-					str = str .. output(m.type, type_indent) .. ";\n"
-				end
-			end
-
-			if obj.metatable then
-				if str ~= '' then
-					--str = str .. '\n' .. next_indent .. '-- metatable:\n'
-					str = str .. '\n'
-				end
-
-				str = str .. next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n'
-			end
-
-			if obj.class_type then
-				if str ~= '' then str = str .. '\n' end
-				str = str .. next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n'
-			end
-
-			if obj.instance_type then
-				if str ~= '' then str = str .. '\n' end
-				str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n'
-			end
-
-			local full = '{\n' .. str .. indent ..'}'
-
-			full = '<'..T.table_id(obj)..'>'..full -- great for debugging
-
-			if obj.class_type then
-				return '<instance>' .. full
-			elseif obj.instance_type then
-				return '<class>' .. full
-			else
-				return full
-			end
+			return full
 		end
 	end
 

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 27  16:21:37 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 28  01:13:15 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -940,88 +940,83 @@ function T.format_type(root, verbose)
 	output_obj = function(obj, indent)
 		local next_indent = indent .. U.INDENTATION --[[SOL OUTPUT--]] 
 
-		if not obj.namespace
-		   and not obj.metatable
-		   and U.table_empty(obj.members)
-		then
-			return '{ }' --[[SOL OUTPUT--]] 
-			--return '['..T.table_id(obj)..'] { }' -- great for debugging
+		local str = '' --[[SOL OUTPUT--]] 
+		if obj.namespace then
+			str = str .. next_indent .. '-- Types:\n' --[[SOL OUTPUT--]] 
+
+			local type_list = {} --[[SOL OUTPUT--]] 
+			for k,v in pairs(obj.namespace) do
+				table.insert(type_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			table.sort(type_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
+			--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
+			for _,m in ipairs(type_list) do
+				str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n" --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		if not U.table_empty(obj.members) then
+			if str ~= '' then
+				str = str .. '\n' .. next_indent .. '-- Members:\n' --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			local mem_list = {} --[[SOL OUTPUT--]] 
+			local widest_name = 0 --[[SOL OUTPUT--]] 
+			for k,v in pairs(obj.members) do
+				table.insert(mem_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
+				widest_name = math.max(widest_name, #k) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			table.sort(mem_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
+
+			local type_indent = next_indent --[[SOL OUTPUT--]] 
+			for i = 1,widest_name+2 do
+				type_indent = type_indent..' ' --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			for _,m in ipairs(mem_list) do
+				str = str .. next_indent .. m.name .. ": " --[[SOL OUTPUT--]] 
+
+				-- Align:
+				for i = #m.name, widest_name - 1 do
+					str = str .. ' ' --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+				str = str .. output(m.type, type_indent) .. ";\n" --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		if obj.metatable then
+			if str ~= '' then
+				--str = str .. '\n' .. next_indent .. '-- metatable:\n'
+				str = str .. '\n' --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			str = str .. next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n' --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		if obj.class_type then
+			if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			str = str .. next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n' --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		if obj.instance_type then
+			if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n' --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		local full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
+		if U.trim(str) == '' then
+			full = '{ }' --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		full = '<'..T.table_id(obj)..'>'..full --[[SOL OUTPUT--]]  -- great for debugging
+
+		if obj.class_type then
+			return '<instance>' .. full --[[SOL OUTPUT--]] 
+		elseif obj.instance_type then
+			return '<class>' .. full --[[SOL OUTPUT--]] 
 		else
-			local str = '' --[[SOL OUTPUT--]] 
-			if obj.namespace then
-				str = str .. next_indent .. '-- Types:\n' --[[SOL OUTPUT--]] 
-
-				local type_list = {} --[[SOL OUTPUT--]] 
-				for k,v in pairs(obj.namespace) do
-					table.insert(type_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-				table.sort(type_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
-				--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
-				for _,m in ipairs(type_list) do
-					str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n" --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			if not U.table_empty(obj.members) then
-				if str ~= '' then
-					str = str .. '\n' .. next_indent .. '-- Members:\n' --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				local mem_list = {} --[[SOL OUTPUT--]] 
-				local widest_name = 0 --[[SOL OUTPUT--]] 
-				for k,v in pairs(obj.members) do
-					table.insert(mem_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
-					widest_name = math.max(widest_name, #k) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-				table.sort(mem_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
-
-				local type_indent = next_indent --[[SOL OUTPUT--]] 
-				for i = 1,widest_name+2 do
-					type_indent = type_indent..' ' --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				for _,m in ipairs(mem_list) do
-					str = str .. next_indent .. m.name .. ": " --[[SOL OUTPUT--]] 
-
-					-- Align:
-					for i = #m.name, widest_name - 1 do
-						str = str .. ' ' --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-
-					str = str .. output(m.type, type_indent) .. ";\n" --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			if obj.metatable then
-				if str ~= '' then
-					--str = str .. '\n' .. next_indent .. '-- metatable:\n'
-					str = str .. '\n' --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				str = str .. next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n' --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			if obj.class_type then
-				if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-				str = str .. next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n' --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			if obj.instance_type then
-				if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-				str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n' --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			local full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
-
-			full = '<'..T.table_id(obj)..'>'..full --[[SOL OUTPUT--]]  -- great for debugging
-
-			if obj.class_type then
-				return '<instance>' .. full --[[SOL OUTPUT--]] 
-			elseif obj.instance_type then
-				return '<class>' .. full --[[SOL OUTPUT--]] 
-			else
-				return full --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+			return full --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 

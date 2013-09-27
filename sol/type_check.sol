@@ -6,8 +6,13 @@ local S   = require 'scope'
 local D   = require 'sol_debug'
 
 
-var NumOps = set{
-	'+', '-', '*', '/', '%', '^'
+var NumOps = {
+	['+'] = '__add',
+	['-'] = '__sub',
+	['*'] = '__mul',
+	['/'] = '__div',
+	['%'] = '__mod',
+	['^'] = '__pow',
 }
 var NumCompOps = set{
 	'<', '<=', '>', '>='
@@ -207,7 +212,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					if v.type and v.type.tag == 'function' then
 						print( report('WARNING', v.where, "Unused function %q", v.name) )
 					else
-						local warning_name = (var_type == 'Argument' and 'unused-parameter' or 'unused-variable')
+						local var_type_to_warning_name = {
+							['Argument']      = 'unused-parameter';
+							['Loop variable'] = 'unused-loop-variable';
+						}
+						local warning_name = var_type_to_warning_name[var_type] or 'unused-variable'
 						if g_warnings[warning_name] then
 							print( report('WARNING', v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name) )
 						end
@@ -825,6 +834,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		report_spam(expr, "Setting metatable")
 
 		target_var.type = target_type
+
+		--report_info(expr, "setmetatable: %s", target_type)
 	end
 
 
@@ -1225,6 +1236,19 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--report_spam(expr, "Binop: %s %s %s", lt, op, rt)
 
 			if NumOps[op] then
+				-- TODO: nicer.
+				--var l_obj = T.follow_identifiers(lt)
+				var l_obj = T.find(lt, T.Object)
+				if l_obj and l_obj.metatable and l_obj.metatable.members[NumOps[op]] then
+					return l_obj -- TODO - lookup
+				end
+
+				var r_obj = T.find(rt, T.Object)
+				if r_obj and r_obj.metatable and r_obj.metatable.members[NumOps[op]] then
+					return r_obj -- TODO - lookup
+				end
+
+
 				if T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
 					return T.combine( lt, rt )  -- int,int -> int,   int,num -> num,  etc
 				else
@@ -1977,9 +2001,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			tag        = 'object',
 			members    = {},
 			class_type = class_type,
+			metatable  = class_type,  -- It generally will be!
 		}
 
 		class_type.instance_type = instance_type
+		class_type.metatable = class_type -- HACK FIXME for __call on Vector3
 
 		-- The name refers to the *instance* type.
 		scope:declare_type(name, instance_type, where_is(stat), is_local)

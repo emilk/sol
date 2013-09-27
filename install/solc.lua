@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 27  16:21:37 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 28  01:13:15 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -84,6 +84,9 @@ local   FAIL_INFO = { ast = nil, type = T.Any } --[[SOL OUTPUT--]]
 -- type is CURRENTLY_PARSING during parsing.
 local g_modules = {} --[[SOL OUTPUT--]] 
 
+-- Look for moduls in these dirs
+local g_mod_paths = { '' } --[[SOL OUTPUT--]] 
+
 -- Result of global includes:
 local g_globals = {
 	global_vars     = {};
@@ -96,17 +99,7 @@ local g_lex_only = false --[[SOL OUTPUT--]]
 local g_parse_only = false --[[SOL OUTPUT--]] 
 
 
--- Find path to a module given it's name, and the path to the file doing the require:ing
-local function find_moudle(path_in, mod_name)
-	local sol_path_local = mod_name .. '.sol' --[[SOL OUTPUT--]] 
-	if U.file_exists(sol_path_local) then
-		--U.printf("Found moudle at %q", sol_path)
-		return sol_path_local --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-	local dir = path.splitpath(path_in) .. '/' --[[SOL OUTPUT--]] 
-	if dir == '/' then dir = '' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-
+local function look_for_module_in(dir, mod_name)
 	local sol_path = dir .. mod_name .. '.sol' --[[SOL OUTPUT--]] 
 	if U.file_exists(sol_path) then
 		--U.printf("Found moudle at %q", sol_path)
@@ -122,8 +115,22 @@ local function find_moudle(path_in, mod_name)
 		return lua_path --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	--U.printf("No file at %q", sol_path)
-	--U.printf_err("No file at %q", sol_path)
+	return nil --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
+-- Find path to a module given it's name, and the path to the file doing the require:ing
+local function find_moudle(path_in, mod_name)
+	local dir = path.splitpath(path_in) .. '/' --[[SOL OUTPUT--]] 
+	if dir == '/' then dir = '' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+
+	local path = look_for_module_in(dir, mod_name) --[[SOL OUTPUT--]] 
+	if path then return path --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+
+	for _,dir in ipairs(g_mod_paths) do
+		local path = look_for_module_in(dir, mod_name) --[[SOL OUTPUT--]] 
+		if path then return path --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	return nil --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
@@ -451,6 +458,9 @@ local function print_help()
 			-l name
 				Require library 'name' 
 
+			-m dir
+				Look for modules here
+
 			-p
 				Parse mode: Compile but do not write any Lua. This is useful for syntax checking.
 
@@ -564,6 +574,11 @@ else
 				U.printf_err("Aborting") --[[SOL OUTPUT--]] 
 				os.exit(123) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
+
+		elseif a == '-m' then
+			local dir = arg[ix] --[[SOL OUTPUT--]] 
+			ix = ix + 1 --[[SOL OUTPUT--]] 
+			g_mod_paths[#g_mod_paths + 1] = dir --[[SOL OUTPUT--]] 
 
 		elseif a:match('^-') then
 			U.printf_err("Unknown option: %q", a) --[[SOL OUTPUT--]] 

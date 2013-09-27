@@ -84,6 +84,9 @@ local   FAIL_INFO = { ast = nil, type = T.Any }
 -- type is CURRENTLY_PARSING during parsing.
 var g_modules = {} : {string => parse_info or CURRENTLY_PARSING}
 
+-- Look for moduls in these dirs
+var g_mod_paths = { '' }
+
 -- Result of global includes:
 var g_globals = {
 	global_vars     = {} : [Variable];
@@ -96,17 +99,7 @@ var g_lex_only = false
 var g_parse_only = false
 
 
--- Find path to a module given it's name, and the path to the file doing the require:ing
-local function find_moudle(path_in: string, mod_name: string) -> string?
-	local sol_path_local = mod_name .. '.sol'
-	if U.file_exists(sol_path_local) then
-		--U.printf("Found moudle at %q", sol_path)
-		return sol_path_local
-	end
-
-	local dir = path.splitpath(path_in) .. '/'
-	if dir == '/' then dir = '' end
-
+local function look_for_module_in(dir: string, mod_name: string) -> string?
 	local sol_path = dir .. mod_name .. '.sol'
 	if U.file_exists(sol_path) then
 		--U.printf("Found moudle at %q", sol_path)
@@ -122,8 +115,22 @@ local function find_moudle(path_in: string, mod_name: string) -> string?
 		return lua_path
 	end
 
-	--U.printf("No file at %q", sol_path)
-	--U.printf_err("No file at %q", sol_path)
+	return nil
+end
+
+
+-- Find path to a module given it's name, and the path to the file doing the require:ing
+local function find_moudle(path_in: string, mod_name: string) -> string?
+	local dir = path.splitpath(path_in) .. '/'
+	if dir == '/' then dir = '' end
+
+	var path = look_for_module_in(dir, mod_name)
+	if path then return path end
+
+	for _,dir in ipairs(g_mod_paths) do
+		var path = look_for_module_in(dir, mod_name)
+		if path then return path end
+	end
 
 	return nil
 end
@@ -451,6 +458,9 @@ local function print_help()
 			-l name
 				Require library 'name' 
 
+			-m dir
+				Look for modules here
+
 			-p
 				Parse mode: Compile but do not write any Lua. This is useful for syntax checking.
 
@@ -564,6 +574,11 @@ else
 				U.printf_err("Aborting")
 				os.exit(123)
 			end
+
+		elseif a == '-m' then
+			var dir = arg[ix]
+			ix = ix + 1
+			g_mod_paths[#g_mod_paths + 1] = dir
 
 		elseif a:match('^-') then
 			U.printf_err("Unknown option: %q", a)
