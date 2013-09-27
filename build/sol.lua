@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/sol.sol on 2013 Sep 27  14:05:18 --]] -- For running a .sol without outputting a .lua to disk
+--[[ DO NOT MODIFY - COMPILED FROM sol/sol.sol on 2013 Sep 27  15:55:41 --]] -- For running a .sol without outputting a .lua to disk
 -- TODO: compiler.sol continaing thing common to sol.sol and solc.sol
 
 local lfs  = require 'lfs' --[[SOL OUTPUT--]] 

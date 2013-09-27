@@ -1,7 +1,7 @@
--- Compiled from sol/util.sol on 2013 Sep 27  14:05:17
+-- Compiled from sol/util.sol on 2013 Sep 27  15:55:40
 
-return <0x00627368>{
-	INDENTATION:       any;
+return <0x006031d8>{
+	INDENTATION:       "\9";
 	const:             function(table: table) -> object;
 	ellipsis:          function(msg: string, max_len: int?) -> string;
 	file_exists:       function(path: string) -> bool;

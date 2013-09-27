@@ -14,8 +14,16 @@ local U = require 'util'
 local printf_err = U.printf_err
 local set        = U.set
 
-
 local P = {}
+
+
+-- Enabled warnings - names matches GCC - http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+global g_warnings = set{
+	--'unused-parameter',
+	'unused-variable',
+}
+
+
 
 P.LUA_SETTINGS = {
 	-- Lexer:

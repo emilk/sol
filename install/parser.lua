@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Sep 27  14:05:18 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Sep 27  15:55:41 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -14,8 +14,16 @@ local U = require 'util' --[[SOL OUTPUT--]]
 local printf_err = U.printf_err --[[SOL OUTPUT--]] 
 local set        = U.set --[[SOL OUTPUT--]] 
 
-
 local P = {} --[[SOL OUTPUT--]] 
+
+
+-- Enabled warnings - names matches GCC - http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+ g_warnings = set{
+	--'unused-parameter',
+	'unused-variable',
+} --[[SOL OUTPUT--]] 
+
+
 
 P.LUA_SETTINGS = {
 	-- Lexer:

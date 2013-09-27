@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 27  14:05:18 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 27  15:55:41 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -207,7 +207,10 @@ local function analyze(ast, filename, on_require, settings)
 					if v.type and v.type.tag == 'function' then
 						print( report('WARNING', v.where, "Unused function %q", v.name) ) --[[SOL OUTPUT--]] 
 					else
-						print( report('WARNING', v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name) ) --[[SOL OUTPUT--]] 
+						local warning_name = (var_type == 'Argument' and 'unused-parameter' or 'unused-variable') --[[SOL OUTPUT--]] 
+						if g_warnings[warning_name] then
+							print( report('WARNING', v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name) ) --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				if v.num_writes == 0 then
@@ -530,8 +533,8 @@ local function analyze(ast, filename, on_require, settings)
 						local problem_rope = {} --[[SOL OUTPUT--]] 
 						T.could_be(given, expected, problem_rope) --[[SOL OUTPUT--]] 
 						local err_msg = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
-						report_error(expr, "%s: %s argument %i: could not convert from %s to %s: %s",
-						                    fun_name, fun_name, i, given, expected, err_msg) --[[SOL OUTPUT--]] 
+						report_error(expr, "%s: argument %i: could not convert from %s to %s: %s",
+						                    fun_name, i, given, expected, err_msg) --[[SOL OUTPUT--]] 
 						all_passed = false --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
@@ -975,7 +978,12 @@ local function analyze(ast, filename, on_require, settings)
 				end --[[SOL OUTPUT--]] 
 
 				if not called_as_mem_fun and is_mem_fun then
-					report_warning(expr, "Member function called as non-member function") --[[SOL OUTPUT--]] 
+					local first_is_self = (#args>0 and args[1].ast_type == 'IdExpr' and args[1].name == 'self') --[[SOL OUTPUT--]] 
+					if first_is_self then
+						-- Foo.bar(self)  is considered calling is as a member function
+					else
+						report_warning(expr, "Member function called as non-member function") --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 					--report_info(expr, "expr.base.ast_type: " .. expr.base.ast_type)
 					--report_info(expr, "expr.base.indexer: " .. expr2str(expr.base.indexer))
 				end --[[SOL OUTPUT--]] 
@@ -1857,13 +1865,21 @@ local function analyze(ast, filename, on_require, settings)
 			report_error(stat, "Cannot assign to a namespace outside of declaration") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		--if not T.isa(right_type, left_type) then
-		if not T.could_be(right_type, left_type) then
-			local problem_rope = {} --[[SOL OUTPUT--]] 
-			T.could_be(right_type, left_type, problem_rope) --[[SOL OUTPUT--]] 
-			local problem_str = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
-			report_error(stat, "[C] type clash: cannot assign to type %s with %s: %s", left_type, right_type, problem_str) --[[SOL OUTPUT--]] 
-			return false --[[SOL OUTPUT--]] 
+		if left_type.is_pre_analyze or (left_var and left_var.is_pre_analyze) then
+			if left_var then
+				left_var.type = right_type --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		else
+			if settings.is_sol then -- TODO: lua too!
+				--if not T.isa(right_type, left_type) then
+				if not T.could_be(right_type, left_type) then
+					local problem_rope = {} --[[SOL OUTPUT--]] 
+					T.could_be(right_type, left_type, problem_rope) --[[SOL OUTPUT--]] 
+					local problem_str = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
+					report_error(stat, "[C] type clash: cannot assign to type %s with %s: %s", left_type, right_type, problem_str) --[[SOL OUTPUT--]] 
+					return false --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return true --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -1999,7 +2015,29 @@ local function analyze(ast, filename, on_require, settings)
 			local nlhs = #stat.lhs --[[SOL OUTPUT--]] 
 			local nrhs = #stat.rhs --[[SOL OUTPUT--]] 
 			assert(nrhs > 0) --[[SOL OUTPUT--]] 
-			if nrhs == 1 then
+
+			if    nlhs == 1
+			  and nrhs == 1
+			  and stat.lhs[1].ast_type     == 'IdExpr'
+			  and stat.rhs[1].ast_type     == 'BinopExpr'
+			  and stat.rhs[1].op           == 'or'
+			  and stat.rhs[1].lhs.ast_type == 'IdExpr'
+			  and stat.rhs[1].lhs.name     == stat.lhs[1].name
+			  and not settings.is_sol
+			then
+				--[[
+				HACK: the above matches:
+				  Foo = Foo or EXPR
+
+				  This is a very common Lua idiom
+				--]]
+				local name = stat.lhs[1].name --[[SOL OUTPUT--]] 
+				local type_expr = stat.rhs[1].rhs --[[SOL OUTPUT--]] 
+				local rt = analyze_expr_single(type_expr, scope) --[[SOL OUTPUT--]] 
+
+				do_assignment(stat, scope, stat.lhs[1], rt, is_pre_analyze) --[[SOL OUTPUT--]] 
+
+			elseif nrhs == 1 then
 				local rt = analyze_expr(stat.rhs[1], scope) --[[SOL OUTPUT--]] 
 				if rt == T.AnyTypeList then
 					local N = nlhs --[[SOL OUTPUT--]] 
@@ -2015,17 +2053,17 @@ local function analyze(ast, filename, on_require, settings)
 
 					local N = math.min(nlhs, #rt) --[[SOL OUTPUT--]] 
 					for i=1,N do
-						do_assignment(stat, scope, stat.lhs[i], T.Any, is_pre_analyze) --[[SOL OUTPUT--]] 
+						do_assignment(stat, scope, stat.lhs[i], rt[i], is_pre_analyze) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
+
+			elseif nlhs ~= nrhs then
+				report_error(stat, "Unequal number of variables and values") --[[SOL OUTPUT--]] 
+
 			else
-				if #stat.lhs ~= #stat.rhs then
-					report_error(stat, "Unequal number of variables and values") --[[SOL OUTPUT--]] 
-				else
-					for i = 1,nrhs do
-						local rti = analyze_expr_single(stat.rhs[i], scope) --[[SOL OUTPUT--]] 
-						do_assignment(stat, scope, stat.lhs[i], rti, is_pre_analyze) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
+				for i = 1,nrhs do
+					local rti = analyze_expr_single(stat.rhs[i], scope) --[[SOL OUTPUT--]] 
+					do_assignment(stat, scope, stat.lhs[i], rti, is_pre_analyze) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -2271,7 +2309,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			if types ~= T.AnyTypeList then
 				if #types ~= #stat.var_names then
-					report_error(stat, "Expected %i variables", #types) --[[SOL OUTPUT--]] 
+					report_error(stat, "Expected %i loop variables", #types) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -2462,7 +2500,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		local all_paths_return = false --[[SOL OUTPUT--]] 
 
-		for ix, stat in ipairs(stat_list.body) do
+		for _, stat in ipairs(stat_list.body) do
 			if stat.ast_type ~= 'Eof' then
 				local stat_rets, stat_all_return = analyze_statement(stat, scope, scope_fun) --[[SOL OUTPUT--]] 
 				return_types = T.combine_type_lists(return_types, stat_rets) --[[SOL OUTPUT--]] 
