@@ -1957,11 +1957,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 	end
 
-
-	local function analyze_class_decl(stat: P.Node, scope: Scope)
-		local name     = stat.name
-		local is_local = stat.is_local
-
+	-- returns the CLASS type
+	local function declare_class(stat: P.Node, scope: Scope, name: string, is_local: bool, rhs: P.Node) -> T.Type
 		report_spam(stat, "Declaring class %q", name)
 
 		-------------------------------------------------
@@ -1989,14 +1986,22 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		-------------------------------------------------
 
-		local rhs_type = analyze_expr_single(stat.rhs, scope)
+		local rhs_type = analyze_expr_single(rhs, scope)
 		check_type_is_a("Class declaration", stat, rhs_type, T.Table, 'error')
 
 		-------------------------------------------------
-		-- Now for the variable:
+		return class_type
+	end
 
+	local function analyze_class_decl(stat: P.Node, scope: Scope)
+		local name     = stat.name
+		local is_local = stat.is_local
+
+		var class_type = declare_class(stat, scope, name, is_local, stat.rhs)
+
+		-- Now for the variable:
 		-- The variable represents the class - not an instance of it!
-		local v = declare_var(stat, scope, name, is_local, class_type)
+		var v = declare_var(stat, scope, name, is_local, class_type)
 		D.assert(v.type == class_type)
 	end
 
@@ -2026,16 +2031,44 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			  and not settings.is_sol
 			then
 				--[[
-				HACK: the above matches:
-				  Foo = Foo or EXPR
-
+				  HACK: Foo = Foo or EXPR
 				  This is a very common Lua idiom
 				--]]
-				local name = stat.lhs[1].name
-				local type_expr = stat.rhs[1].rhs
-				local rt = analyze_expr_single(type_expr, scope)
-
+				var name = stat.lhs[1].name
+				var type_expr = stat.rhs[1].rhs
+				var rt = analyze_expr_single(type_expr, scope)
 				do_assignment(stat, scope, stat.lhs[1], rt, is_pre_analyze)
+
+			elseif nlhs == 1
+			  and  nrhs == 1
+			  and  stat.lhs[1].ast_type      == 'IdExpr'
+			  and  stat.rhs[1].ast_type      == 'CallExpr'
+			  and  stat.rhs[1].base.ast_type == 'IdExpr'
+			  and  stat.rhs[1].base.name     == 'class'
+			  and  not settings.is_sol
+			then
+				--[[
+				HACK: Foo = class(...)
+				Common lua idiom
+				--]]
+				var name = stat.lhs[1].name
+				var is_local = false
+				var class_type = declare_class(stat, scope, name, is_local, stat.rhs[1])
+				-- Allow Foo(...):
+				class_type.metatable = {
+					tag='object',
+					members = {
+						__call = {
+							tag    = 'function';
+							args   = {};
+							vararg = { tag='varargs', type=T.Any };
+							rets   = T.AnyTypeList;
+							name   = '__call';
+						}
+					}
+				}
+				var v = declare_var(stat, scope, name, is_local, class_type)
+				v.type = class_type -- FIXME
 
 			elseif nrhs == 1 then
 				local rt = analyze_expr(stat.rhs[1], scope)

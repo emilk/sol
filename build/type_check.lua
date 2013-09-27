@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 27  15:55:41 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 27  16:21:37 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1957,11 +1957,8 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-
-	local function analyze_class_decl(stat, scope)
-		local name     = stat.name --[[SOL OUTPUT--]] 
-		local is_local = stat.is_local --[[SOL OUTPUT--]] 
-
+	-- returns the CLASS type
+	local function declare_class(stat, scope, name, is_local, rhs)
 		report_spam(stat, "Declaring class %q", name) --[[SOL OUTPUT--]] 
 
 		-------------------------------------------------
@@ -1989,12 +1986,20 @@ local function analyze(ast, filename, on_require, settings)
 
 		-------------------------------------------------
 
-		local rhs_type = analyze_expr_single(stat.rhs, scope) --[[SOL OUTPUT--]] 
+		local rhs_type = analyze_expr_single(rhs, scope) --[[SOL OUTPUT--]] 
 		check_type_is_a("Class declaration", stat, rhs_type, T.Table, 'error') --[[SOL OUTPUT--]] 
 
 		-------------------------------------------------
-		-- Now for the variable:
+		return class_type --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
+	local function analyze_class_decl(stat, scope)
+		local name     = stat.name --[[SOL OUTPUT--]] 
+		local is_local = stat.is_local --[[SOL OUTPUT--]] 
+
+		local class_type = declare_class(stat, scope, name, is_local, stat.rhs) --[[SOL OUTPUT--]] 
+
+		-- Now for the variable:
 		-- The variable represents the class - not an instance of it!
 		local v = declare_var(stat, scope, name, is_local, class_type) --[[SOL OUTPUT--]] 
 		D.assert(v.type == class_type) --[[SOL OUTPUT--]] 
@@ -2026,16 +2031,44 @@ local function analyze(ast, filename, on_require, settings)
 			  and not settings.is_sol
 			then
 				--[[
-				HACK: the above matches:
-				  Foo = Foo or EXPR
-
+				  HACK: Foo = Foo or EXPR
 				  This is a very common Lua idiom
 				--]]
 				local name = stat.lhs[1].name --[[SOL OUTPUT--]] 
 				local type_expr = stat.rhs[1].rhs --[[SOL OUTPUT--]] 
 				local rt = analyze_expr_single(type_expr, scope) --[[SOL OUTPUT--]] 
-
 				do_assignment(stat, scope, stat.lhs[1], rt, is_pre_analyze) --[[SOL OUTPUT--]] 
+
+			elseif nlhs == 1
+			  and  nrhs == 1
+			  and  stat.lhs[1].ast_type      == 'IdExpr'
+			  and  stat.rhs[1].ast_type      == 'CallExpr'
+			  and  stat.rhs[1].base.ast_type == 'IdExpr'
+			  and  stat.rhs[1].base.name     == 'class'
+			  and  not settings.is_sol
+			then
+				--[[
+				HACK: Foo = class(...)
+				Common lua idiom
+				--]]
+				local name = stat.lhs[1].name --[[SOL OUTPUT--]] 
+				local is_local = false --[[SOL OUTPUT--]] 
+				local class_type = declare_class(stat, scope, name, is_local, stat.rhs[1]) --[[SOL OUTPUT--]] 
+				-- Allow Foo(...):
+				class_type.metatable = {
+					tag='object',
+					members = {
+						__call = {
+							tag    = 'function';
+							args   = {};
+							vararg = { tag='varargs', type=T.Any };
+							rets   = T.AnyTypeList;
+							name   = '__call';
+						}
+					}
+				} --[[SOL OUTPUT--]] 
+				local v = declare_var(stat, scope, name, is_local, class_type) --[[SOL OUTPUT--]] 
+				v.type = class_type --[[SOL OUTPUT--]]  -- FIXME
 
 			elseif nrhs == 1 then
 				local rt = analyze_expr(stat.rhs[1], scope) --[[SOL OUTPUT--]] 
