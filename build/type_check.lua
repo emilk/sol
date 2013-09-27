@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 26  17:29:01 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 27  14:05:18 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -255,7 +255,6 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 	local function declare_global(node, scope, name, typ)
-		D.assert(node and scope and scope.parent) --[[SOL OUTPUT--]] 
 		D.assert(type(name) == 'string') --[[SOL OUTPUT--]] 
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 

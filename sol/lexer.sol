@@ -428,7 +428,8 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			local ix = math.min(#tokens, p+n)
 			return tokens[ix]
 		else
-			return tokens[math.min(#tokens, p)]
+			--return tokens[math.min(#tokens, p)]
+			return tokens[p]
 		end
 	end
 
@@ -450,7 +451,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 	end
 
 	function tok:is(t: TokID) -> bool
-		return tok:peek().type == t
+		return tokens[p].type == t
 	end
 
 	-- either cosumes and returns the given symbil if there is one, or nil

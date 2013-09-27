@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lua_intrinsics.sol on 2013 Sep 26  17:29:01 --]] local INTRINSICS = [[
+--[[ DO NOT MODIFY - COMPILED FROM sol/lua_intrinsics.sol on 2013 Sep 27  14:05:18 --]] local INTRINSICS = [[
 	global unpack = extern : function(t: [any]) -> ...
 
 	global coroutine = {
@@ -91,17 +91,19 @@ function M.add_intrinsics_to_global_scope()
 	local st, _ = TypeCheck(ast, filename, nil, settings) --[[SOL OUTPUT--]] 
 	assert(st) --[[SOL OUTPUT--]] 
 
-	global_scope.fixed = false --[[SOL OUTPUT--]] 
+	if not Scope.GLOBALS_IN_TOP_SCOPE then
+		global_scope.fixed = false --[[SOL OUTPUT--]] 
 
-	for _,v in ipairs(module_scope:get_global_vars()) do
-		global_scope:add_global(v) --[[SOL OUTPUT--]] 
+		for _,v in ipairs(module_scope:get_global_vars()) do
+			global_scope:add_global(v) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		for name,type in pairs(module_scope:get_global_typedefs()) do
+			global_scope:add_global_type( name, type ) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		global_scope.fixed = true --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
-
-	for name,type in pairs(module_scope:get_global_typedefs()) do
-		global_scope:add_global_type( name, type ) --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-	global_scope.fixed = true --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 return M --[[SOL OUTPUT--]] 

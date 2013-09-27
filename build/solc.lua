@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 26  17:29:01 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 27  14:05:18 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -93,6 +93,7 @@ local g_globals = {
 
 local g_did_warn_about  = {} --[[SOL OUTPUT--]] 
 local g_lex_only = false --[[SOL OUTPUT--]] 
+local g_parse_only = false --[[SOL OUTPUT--]] 
 
 
 -- Find path to a module given it's name, and the path to the file doing the require:ing
@@ -103,7 +104,8 @@ local function find_moudle(path_in, mod_name)
 		return sol_path_local --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local dir      = path.splitpath(path_in) .. '/' --[[SOL OUTPUT--]] 
+	local dir = path.splitpath(path_in) .. '/' --[[SOL OUTPUT--]] 
+	if dir == '/' then dir = '' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
 	local sol_path = dir .. mod_name .. '.sol' --[[SOL OUTPUT--]] 
 	if U.file_exists(sol_path) then
@@ -112,6 +114,9 @@ local function find_moudle(path_in, mod_name)
 	end --[[SOL OUTPUT--]] 
 
 	local lua_path = dir .. mod_name .. '.lua' --[[SOL OUTPUT--]] 
+
+	--U.printf("Looking in %s...", lua_path)
+
 	if U.file_exists(lua_path) then
 		--U.printf("Found moudle at %q", lua_path)
 		return lua_path --[[SOL OUTPUT--]] 
@@ -156,37 +161,39 @@ local function require_module(path_in, mod_name, module_scope, req_where, req_ch
 		return T.Any --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	for _,v in ipairs(mod_info.global_vars) do
-		--D.break_();
-		local existing = module_scope:get_global( v.name ) --[[SOL OUTPUT--]] 
-		if existing and existing ~= v then
-			printf_err("Global clash when including module '%s' in %s:"
-				     .. "Global variable '%s' re-declared in %s, previously declared in %s",
-				mod_name, req_where, v.name, v.where, existing.where) --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
-		if not existing then
-			if _G.g_spam then
-				U.printf("Adding global '%s'", v.name) --[[SOL OUTPUT--]] 
+	if not Scope.GLOBALS_IN_TOP_SCOPE then
+		for _,v in ipairs(mod_info.global_vars) do
+			--D.break_();
+			local existing = module_scope:get_global( v.name ) --[[SOL OUTPUT--]] 
+			if existing and existing ~= v then
+				printf_err("Global clash when including module '%s' in %s:"
+					     .. "Global variable '%s' re-declared in %s, previously declared in %s",
+					mod_name, req_where, v.name, v.where, existing.where) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			module_scope:add_global(v) --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
 
-	for name,type in pairs(mod_info.global_typedefs) do
-		--D.break_();
-		local existing = module_scope:get_global_type( name ) --[[SOL OUTPUT--]] 
-		if existing and existing ~= type then
-			printf_err("Global clash when including module '%s' in %s:"
-				     .. "Global type '%s' re-declared in %s, previously declared in %s",
-				mod_name, req_where, name, type.where, existing.where) --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
-		if not existing then
-			if _G.g_spam then
-				U.printf("Adding global '%s'", name) --[[SOL OUTPUT--]] 
+			if not existing then
+				if _G.g_spam then
+					U.printf("Adding global '%s'", v.name) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+				module_scope:add_global(v) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			module_scope:add_global_type( name, type ) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		for name,type in pairs(mod_info.global_typedefs) do
+			--D.break_();
+			local existing = module_scope:get_global_type( name ) --[[SOL OUTPUT--]] 
+			if existing and existing ~= type then
+				printf_err("Global clash when including module '%s' in %s:"
+					     .. "Global type '%s' re-declared in %s, previously declared in %s",
+					mod_name, req_where, name, type.where, existing.where) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			if not existing then
+				if _G.g_spam then
+					U.printf("Adding global '%s'", name) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+				module_scope:add_global_type( name, type ) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -261,6 +268,10 @@ local function parse_module_str(chain, path_in, source_text)
 		g_modules[module_name] = FAIL_INFO --[[SOL OUTPUT--]] 
 		os.exit(2) --[[SOL OUTPUT--]] 
 		return FAIL_INFO --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	if g_parse_only then
+		return {} --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local on_require = function(mod_name, req_where)
@@ -461,6 +472,9 @@ local function print_help()
 
 			-L
 				Lex only: Useful for profiling 
+
+			-P
+				Parse only: Useful for profiling 
 		]]) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -505,6 +519,11 @@ else
 			-- e.g. for syntax checking
 			print('Lex only') --[[SOL OUTPUT--]] 
 			g_lex_only = true --[[SOL OUTPUT--]] 
+
+		elseif a == '-P' then
+			-- e.g. for syntax checking
+			print('Parse only') --[[SOL OUTPUT--]] 
+			g_parse_only = true --[[SOL OUTPUT--]] 
 
 		elseif a == '-s' or a == '--spam' then
 			_G.g_spam = true --[[SOL OUTPUT--]] 

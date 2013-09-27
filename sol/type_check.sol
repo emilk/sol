@@ -255,7 +255,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	local function declare_global(node, scope: Scope, name: string, typ: T.Type?) -> Variable
-		D.assert(node and scope and scope.parent)
 		D.assert(type(name) == 'string')
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 

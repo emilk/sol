@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Sep 26  17:29:01 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Sep 27  14:05:18 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -36,7 +36,7 @@ P.LUA_SETTINGS = {
 
 P.SOL_SETTINGS = {
 	-- Lexer:
-	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#', '?', ':'};
+	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',  '?', ':', '!'};
 
 	keywords = set{
 		'and',    'break', 'do',   'else',     'elseif',
@@ -1326,7 +1326,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		local st,expr = parse_sub_expr(scope, 0) --[[SOL OUTPUT--]] 
 		if not st then return false, expr --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-		if tok:consume_symbol(':') then
+		if tok:consume_symbol(':') or tok:consume_symbol('!') then
 			-- A cast
 
 			local where = where_am_i() --[[SOL OUTPUT--]] 

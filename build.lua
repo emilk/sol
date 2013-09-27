@@ -1,3 +1,5 @@
+#! /usr/local/bin/luajit
+
 io.stdout:setvbuf 'no'
 local lfs = require 'lfs'
 

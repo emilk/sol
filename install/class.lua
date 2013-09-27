@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/class.sol on 2013 Sep 26  17:29:00 --]]  function sol_class(klass_name, super_name)
+--[[ DO NOT MODIFY - COMPILED FROM sol/class.sol on 2013 Sep 27  14:05:18 --]]  function sol_class(klass_name, super_name)
 	assert(klass_name, "You must specify a class name") --[[SOL OUTPUT--]] 
 
 	if super_name ~= nil then

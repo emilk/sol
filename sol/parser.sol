@@ -36,7 +36,7 @@ P.LUA_SETTINGS = {
 
 P.SOL_SETTINGS = {
 	-- Lexer:
-	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#', '?', ':'};
+	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',  '?', ':', '!'};
 
 	keywords = set{
 		'and',    'break', 'do',   'else',     'elseif',
@@ -1326,7 +1326,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		var st,expr = parse_sub_expr(scope, 0)
 		if not st then return false, expr end
 
-		if tok:consume_symbol(':') then
+		if tok:consume_symbol(':') or tok:consume_symbol('!') then
 			-- A cast
 
 			var where = where_am_i()

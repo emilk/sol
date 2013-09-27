@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Sep 26  17:29:00 --]] local U = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Sep 27  14:05:18 --]] local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
@@ -428,7 +428,8 @@ function L.lex_sol(src, filename, settings)
 			local ix = math.min(#tokens, p+n) --[[SOL OUTPUT--]] 
 			return tokens[ix] --[[SOL OUTPUT--]] 
 		else
-			return tokens[math.min(#tokens, p)] --[[SOL OUTPUT--]] 
+			--return tokens[math.min(#tokens, p)]
+			return tokens[p] --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -450,7 +451,7 @@ function L.lex_sol(src, filename, settings)
 	end --[[SOL OUTPUT--]] 
 
 	function tok:is(t)
-		return tok:peek().type == t --[[SOL OUTPUT--]] 
+		return tokens[p].type == t --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	-- either cosumes and returns the given symbil if there is one, or nil

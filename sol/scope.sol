@@ -35,6 +35,8 @@ global typedef Variable = {
 typedef VarOptions = 'ignore_fwd_decl' or nil
 
 
+Scope.GLOBALS_IN_TOP_SCOPE = true
+
 function Scope.new(where: string, parent: Scope?) -> Scope
 	--var s = {} : Scope
 	local s = {}
@@ -87,7 +89,11 @@ function Scope:declare_type(name: string, typ: T.Type, where: string, is_local: 
 	if is_local then
 		self.typedefs[name] = typ
 	else
-		self.global_typedefs[name] = typ
+		if Scope.GLOBALS_IN_TOP_SCOPE then
+			Scope.global_scope.global_typedefs[name] = typ
+		else
+			self.global_typedefs[name] = typ
+		end
 	end
 end
 
@@ -134,7 +140,11 @@ function Scope:create_global(name: string, where: string, typ: T.Type?) -> Varia
 		num_writes = 0,
 	}
 
-	self:add_global(v)
+	if Scope.GLOBALS_IN_TOP_SCOPE and self ~= Scope.global_scope then
+		Scope.global_scope:add_global(v)
+	else
+		self:add_global(v)
+	end
 
 	return v
 end
@@ -266,6 +276,7 @@ end
 
 function Scope.create_global_scope() -> Scope
 	var s = Scope.new("[GLOBAL_SCOPE]")
+	Scope.global_scope = s
 	var where = "[intrinsic]"  -- var.where
 
 
@@ -383,8 +394,10 @@ function Scope.create_global_scope() -> Scope
 	--s:declare_type( 'true',    T.True)
 	--s:declare_type( 'false',   T.False)
 
-	-- No more changes - user globals should be declared in module scope (a direct child)
-	s.fixed = true
+	if not Scope.GLOBALS_IN_TOP_SCOPE then
+		-- No more changes - user globals should be declared in module scope (a direct child)
+		s.fixed = true
+	end
 
 	return s
 end

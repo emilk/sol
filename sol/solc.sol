@@ -93,6 +93,7 @@ var g_globals = {
 
 var g_did_warn_about  = {} : {string => bool}
 var g_lex_only = false
+var g_parse_only = false
 
 
 -- Find path to a module given it's name, and the path to the file doing the require:ing
@@ -103,7 +104,8 @@ local function find_moudle(path_in: string, mod_name: string) -> string?
 		return sol_path_local
 	end
 
-	local dir      = path.splitpath(path_in) .. '/'
+	local dir = path.splitpath(path_in) .. '/'
+	if dir == '/' then dir = '' end
 
 	local sol_path = dir .. mod_name .. '.sol'
 	if U.file_exists(sol_path) then
@@ -112,6 +114,9 @@ local function find_moudle(path_in: string, mod_name: string) -> string?
 	end
 
 	local lua_path = dir .. mod_name .. '.lua'
+
+	--U.printf("Looking in %s...", lua_path)
+
 	if U.file_exists(lua_path) then
 		--U.printf("Found moudle at %q", lua_path)
 		return lua_path
@@ -156,37 +161,39 @@ local function require_module(path_in: string, mod_name: string, module_scope: S
 		return T.Any
 	end
 
-	for _,v in ipairs(mod_info.global_vars) do
-		--D.break_();
-		local existing = module_scope:get_global( v.name )
-		if existing and existing ~= v then
-			printf_err("Global clash when including module '%s' in %s:"
-				     .. "Global variable '%s' re-declared in %s, previously declared in %s",
-				mod_name, req_where, v.name, v.where, existing.where)
-		end
-
-		if not existing then
-			if _G.g_spam then
-				U.printf("Adding global '%s'", v.name)
+	if not Scope.GLOBALS_IN_TOP_SCOPE then
+		for _,v in ipairs(mod_info.global_vars) do
+			--D.break_();
+			local existing = module_scope:get_global( v.name )
+			if existing and existing ~= v then
+				printf_err("Global clash when including module '%s' in %s:"
+					     .. "Global variable '%s' re-declared in %s, previously declared in %s",
+					mod_name, req_where, v.name, v.where, existing.where)
 			end
-			module_scope:add_global(v)
-		end
-	end
 
-	for name,type in pairs(mod_info.global_typedefs) do
-		--D.break_();
-		local existing = module_scope:get_global_type( name )
-		if existing and existing ~= type then
-			printf_err("Global clash when including module '%s' in %s:"
-				     .. "Global type '%s' re-declared in %s, previously declared in %s",
-				mod_name, req_where, name, type.where, existing.where)
-		end
-
-		if not existing then
-			if _G.g_spam then
-				U.printf("Adding global '%s'", name)
+			if not existing then
+				if _G.g_spam then
+					U.printf("Adding global '%s'", v.name)
+				end
+				module_scope:add_global(v)
 			end
-			module_scope:add_global_type( name, type )
+		end
+
+		for name,type in pairs(mod_info.global_typedefs) do
+			--D.break_();
+			local existing = module_scope:get_global_type( name )
+			if existing and existing ~= type then
+				printf_err("Global clash when including module '%s' in %s:"
+					     .. "Global type '%s' re-declared in %s, previously declared in %s",
+					mod_name, req_where, name, type.where, existing.where)
+			end
+
+			if not existing then
+				if _G.g_spam then
+					U.printf("Adding global '%s'", name)
+				end
+				module_scope:add_global_type( name, type )
+			end
 		end
 	end
 
@@ -261,6 +268,10 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 		g_modules[module_name] = FAIL_INFO
 		os.exit(2)
 		return FAIL_INFO
+	end
+
+	if g_parse_only then
+		return {}
 	end
 
 	local on_require = function(mod_name, req_where)
@@ -461,6 +472,9 @@ local function print_help()
 
 			-L
 				Lex only: Useful for profiling 
+
+			-P
+				Parse only: Useful for profiling 
 		]])
 end
 
@@ -505,6 +519,11 @@ else
 			-- e.g. for syntax checking
 			print('Lex only')
 			g_lex_only = true
+
+		elseif a == '-P' then
+			-- e.g. for syntax checking
+			print('Parse only')
+			g_parse_only = true
 
 		elseif a == '-s' or a == '--spam' then
 			_G.g_spam = true

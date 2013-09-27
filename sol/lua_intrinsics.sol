@@ -91,17 +91,19 @@ function M.add_intrinsics_to_global_scope()
 	local st, _ = TypeCheck(ast, filename, nil, settings)
 	assert(st)
 
-	global_scope.fixed = false
+	if not Scope.GLOBALS_IN_TOP_SCOPE then
+		global_scope.fixed = false
 
-	for _,v in ipairs(module_scope:get_global_vars()) do
-		global_scope:add_global(v)
+		for _,v in ipairs(module_scope:get_global_vars()) do
+			global_scope:add_global(v)
+		end
+
+		for name,type in pairs(module_scope:get_global_typedefs()) do
+			global_scope:add_global_type( name, type )
+		end
+
+		global_scope.fixed = true
 	end
-
-	for name,type in pairs(module_scope:get_global_typedefs()) do
-		global_scope:add_global_type( name, type )
-	end
-
-	global_scope.fixed = true
 end
 
 return M

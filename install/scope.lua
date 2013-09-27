@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Sep 26  17:29:01 --]] local T = require 'type' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Sep 27  14:05:18 --]] local T = require 'type' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
 
@@ -17,6 +17,7 @@ User declared globals goes into the 'module_scope' and are marked as 'global'.
 } --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
+Scope
 
 
 
@@ -34,6 +35,7 @@ User declared globals goes into the 'module_scope' and are marked as 'global'.
 
 
 
+.GLOBALS_IN_TOP_SCOPE = true --[[SOL OUTPUT--]] 
 
 function Scope.new(where, parent)
 	--var s = {} : Scope
@@ -87,7 +89,11 @@ function Scope:declare_type(name, typ, where, is_local)
 	if is_local then
 		self.typedefs[name] = typ --[[SOL OUTPUT--]] 
 	else
-		self.global_typedefs[name] = typ --[[SOL OUTPUT--]] 
+		if Scope.GLOBALS_IN_TOP_SCOPE then
+			Scope.global_scope.global_typedefs[name] = typ --[[SOL OUTPUT--]] 
+		else
+			self.global_typedefs[name] = typ --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -134,7 +140,11 @@ function Scope:create_global(name, where, typ)
 		num_writes = 0,
 	} --[[SOL OUTPUT--]] 
 
-	self:add_global(v) --[[SOL OUTPUT--]] 
+	if Scope.GLOBALS_IN_TOP_SCOPE and self ~= Scope.global_scope then
+		Scope.global_scope:add_global(v) --[[SOL OUTPUT--]] 
+	else
+		self:add_global(v) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	return v --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
@@ -266,6 +276,7 @@ end --[[SOL OUTPUT--]]
 
 function Scope.create_global_scope()
 	local s = Scope.new("[GLOBAL_SCOPE]") --[[SOL OUTPUT--]] 
+	Scope.global_scope = s --[[SOL OUTPUT--]] 
 	local where = "[intrinsic]" --[[SOL OUTPUT--]]   -- var.where
 
 
@@ -383,8 +394,10 @@ function Scope.create_global_scope()
 	--s:declare_type( 'true',    T.True)
 	--s:declare_type( 'false',   T.False)
 
-	-- No more changes - user globals should be declared in module scope (a direct child)
-	s.fixed = true --[[SOL OUTPUT--]] 
+	if not Scope.GLOBALS_IN_TOP_SCOPE then
+		-- No more changes - user globals should be declared in module scope (a direct child)
+		s.fixed = true --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	return s --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
