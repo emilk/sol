@@ -475,23 +475,24 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					T.name(ret_t), T.name(fun_t.rets))
 			end
 
-			if fun_t.rets ~= T.Void and fun_t.rets ~= T.AnyTypeList and not all_paths_return then
-				report_error(node, "Not all paths returns - expected %s", fun_t.rets)
+			if not T.is_void(fun_t.rets) and fun_t.rets ~= T.AnyTypeList and not all_paths_return then
+				report_error(node, "Not all code paths return a value - expected %s", fun_t.rets)
 			end
 		else
 			-- Deduce return type:
 			if ret_t then
+				if not T.is_void(ret_t) and ret_t ~= T.AnyTypeList and not all_paths_return then
+					report_error(node, "Not all code paths return a value, but some return %s", ret_t)
+				end
+
 				if not all_paths_return and #ret_t > 0 then
 					ret_t = U.shallow_clone(ret_t)
 					for ix,_ in ipairs(ret_t) do
 						ret_t[ix] = T.make_nilable(ret_t[ix])
 					end
 				end
-				fun_t.rets = ret_t
 
-				if fun_t.rets ~= T.Void and fun_t.rets ~= T.AnyTypeList and not all_paths_return then
-					report_error(node, "Not all paths returns")
-				end
+				fun_t.rets = ret_t
 			else
 				fun_t.rets = T.Void  -- No returns  == void
 			end
@@ -1268,6 +1269,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				if r_mm_ret then return r_mm_ret end
 
 				if T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
+					report_spam(expr, "Combining types %s and %s", lt, rt)
 					return T.combine( lt, rt )  -- int,int -> int,   int,num -> num,  etc
 				else
 					report_error(expr,
@@ -2068,6 +2070,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local nrhs = #stat.rhs
 			assert(nrhs > 0)
 
+			--[-[
 			if    nlhs == 1
 			  and nrhs == 1
 			  and stat.lhs[1].ast_type     == 'IdExpr'
@@ -2118,6 +2121,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				v.type = class_type -- FIXME
 
 			elseif nrhs == 1 then
+			--]-]
+			--if nrhs == 1 then
 				local rt = analyze_expr(stat.rhs[1], scope)
 				if rt == T.AnyTypeList then
 					var N = nlhs
@@ -2474,9 +2479,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			-- HACK for forward-declaring namespaces:
 			if true then
 				for _,name in ipairs(stat.name_list) do
-					var is_local = (stat.scoping ~= 'global')
-					var v = declare_var(stat, scope, name, is_local)
-					v.forward_declared = true
+					if not scope:get_scoped(name) then -- On double-declare of local
+						var is_local = (stat.scoping ~= 'global')
+						var v = declare_var(stat, scope, name, is_local)
+						v.forward_declared = true
+					end
 				end
 			else
 				if #stat.name_list == 1 and #stat.init_list == 1 then
@@ -2497,32 +2504,81 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if #stat.lhs == 1 and #stat.rhs == 1 then
 				if stat.lhs[1].ast_type == 'IdExpr' then
-					var var_name = stat.lhs[1].name
-					var v = scope:get_var( var_name )
+					if    stat.rhs[1].ast_type     == 'BinopExpr'
+					  and stat.rhs[1].op           == 'or'
+					  and stat.rhs[1].lhs.ast_type == 'IdExpr'
+					  and stat.rhs[1].lhs.name     == stat.lhs[1].name
+					  and not settings.is_sol
+					then
+						--[[
+						  HACK: Foo = Foo or EXPR
+						  This is a very common Lua idiom
+						--]]
+						var name = stat.lhs[1].name
 
-					if v then
-						-- Assigning to something declared in an outer scope
-					else
-						-- Leave error reporting out of pre-analyzer
-						report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name)
-						v = top_scope:create_global( var_name, where_is(stat) )
-					end
-
-					if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
-						--do_assignment(stat, scope, stat.lhs[1], fun_t)
-					
-						if v.type then
-							report_error(stat, "Cannot forward declare %q: it already has type %s", v.name, v.type)
+						var v = scope:get_var( name )
+						if not v then
+							report_error(stat, "Pre-analyze: Declaring implicit global %q", name)
+							v = top_scope:create_global( name, where_is(stat) )
+							v.pre_analyzed = true
 						end
 
-						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze )
-						fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
-						fun_t.where = where_is(stat)
-						fun_t.name = var_name
+					elseif stat.rhs[1].ast_type      == 'CallExpr'
+					  and  stat.rhs[1].base.ast_type == 'IdExpr'
+					  and  stat.rhs[1].base.name     == 'class'
+					  and  not settings.is_sol
+					then
+						--[[
+						HACK: Foo = class(...)
+						Common lua idiom
+						--]]
+						var name = stat.lhs[1].name
+						var is_local = false
+						var class_type = declare_class(stat, scope, name, is_local, stat.rhs[1])
+						-- Allow Foo(...):
+						class_type.metatable = {
+							tag='object',
+							members = {
+								__call = {
+									tag    = 'function';
+									args   = {};
+									vararg = { tag='varargs', type=T.Any };
+									rets   = T.AnyTypeList;
+									name   = '__call';
+								}
+							}
+						}
+						var v = declare_var(stat, scope, name, is_local, class_type)
+						v.type = class_type -- FIXME
 
-						v.type = fun_t
+					else
+						var var_name = stat.lhs[1].name
+						var v = scope:get_var( var_name )
 
-						report_spam(stat, "Forward-declared %q as %s", v.name, fun_t)
+						if v then
+							-- Assigning to something declared in an outer scope
+						else
+							-- Leave error reporting out of pre-analyzer
+							report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name)
+							v = top_scope:create_global( var_name, where_is(stat) )
+						end
+
+						if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
+							--do_assignment(stat, scope, stat.lhs[1], fun_t)
+						
+							if v.type then
+								report_error(stat, "Cannot forward declare %q: it already has type %s", v.name, v.type)
+							end
+
+							local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze )
+							fun_t.pre_analyzed = true -- Rmember that this is a temporary 'guess'
+							fun_t.where = where_is(stat)
+							fun_t.name = var_name
+
+							v.type = fun_t
+
+							report_spam(stat, "Forward-declared %q as %s", v.name, fun_t)
+						end
 					end
 				end
 			end

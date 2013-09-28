@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 28  09:11:45 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 28  09:52:39 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -190,6 +190,10 @@ function T.is_empty_table(t)
 	--return t == T._empty_table
 end --[[SOL OUTPUT--]] 
 
+
+function T.is_void(ts)
+	return T.is_type_list(ts) and #ts == 0 --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 function T.follow_identifiers(t, forgiving)
 	if t.tag ~= 'identifier' then
@@ -654,6 +658,22 @@ function T.find(t, target)
 	return nil --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
+function T.find_tag(t, target)
+	t = T.follow_identifiers(t) --[[SOL OUTPUT--]] 
+
+	if t.tag == target then
+		return t --[[SOL OUTPUT--]] 
+	elseif T.is_variant(t) then
+		for _,v in ipairs(t.variants) do
+			--print("Find: searching variant " .. T.name(v))
+			if T.find_tag(v, target) then
+				return v --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+	return nil --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
 
 -- is a variant of 'a' a 'b' ?
 -- T.could_be(T.Bool, T.False)  == true
@@ -671,6 +691,9 @@ function T.could_be(a, b, problem_rope)
 
 	a = T.follow_identifiers(a) --[[SOL OUTPUT--]] 
 	b = T.follow_identifiers(b) --[[SOL OUTPUT--]] 
+
+	if a.tag == 'any' then return true --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if b.tag == 'any' then return true --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
 	if T.is_variant(a) then
 		for _,v in ipairs(a.variants) do
@@ -1216,26 +1239,35 @@ end --[[SOL OUTPUT--]]
 -- used for expressions like "a + b"
 -- works for tables, or numerics, i.e.   num+int == num
 function T.combine(a, b)
-	if T.isa(a, b) then return b --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if T.isa(b, a) then return a --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.find(a,     T.Any)         then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.find_tag(a, 'number')      then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.find_tag(a, 'num_literal') then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.find(b,     T.Any)         then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.find_tag(b, 'number')      then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.find_tag(b, 'num_literal') then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	return T.Int --[[SOL OUTPUT--]] 
+--[[
+	if T.isa(a, b) then return b end
+	if T.isa(b, a) then return a end
 
-	a = un_literal(a) --[[SOL OUTPUT--]] 
-	b = un_literal(b) --[[SOL OUTPUT--]] 
+	a = un_literal(a)
+	b = un_literal(b)
 
 	if a == T.Int and b == T.Int then
-		return T.Int --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
+		return T.Int
+	end
 
-	if a.tag == 'int' then a = T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if b.tag == 'int' then b = T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if a.tag == 'int' then a = T.Num end
+	if b.tag == 'int' then b = T.Num end
 
 	if a == T.Num and b == T.Num then
-		return T.Num --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
+		return T.Num
+	end
 
 	-- A true super-type
-	U.printf_err('TODO: T.combine(%s, %s)', T.name(a), T.name(b)) --[[SOL OUTPUT--]] 
-	return T.Any --[[SOL OUTPUT--]] 
+	U.printf_err('TODO: T.combine(%s, %s)', T.name(a), T.name(b))
+	return T.Any
+--]]
 end --[[SOL OUTPUT--]] 
 
 

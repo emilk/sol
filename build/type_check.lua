@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 28  09:11:45 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 28  09:52:39 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -475,23 +475,24 @@ local function analyze(ast, filename, on_require, settings)
 					T.name(ret_t), T.name(fun_t.rets)) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			if fun_t.rets ~= T.Void and fun_t.rets ~= T.AnyTypeList and not all_paths_return then
-				report_error(node, "Not all paths returns - expected %s", fun_t.rets) --[[SOL OUTPUT--]] 
+			if not T.is_void(fun_t.rets) and fun_t.rets ~= T.AnyTypeList and not all_paths_return then
+				report_error(node, "Not all code paths return a value - expected %s", fun_t.rets) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		else
 			-- Deduce return type:
 			if ret_t then
+				if not T.is_void(ret_t) and ret_t ~= T.AnyTypeList and not all_paths_return then
+					report_error(node, "Not all code paths return a value, but some return %s", ret_t) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
 				if not all_paths_return and #ret_t > 0 then
 					ret_t = U.shallow_clone(ret_t) --[[SOL OUTPUT--]] 
 					for ix,_ in ipairs(ret_t) do
 						ret_t[ix] = T.make_nilable(ret_t[ix]) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				fun_t.rets = ret_t --[[SOL OUTPUT--]] 
 
-				if fun_t.rets ~= T.Void and fun_t.rets ~= T.AnyTypeList and not all_paths_return then
-					report_error(node, "Not all paths returns") --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
+				fun_t.rets = ret_t --[[SOL OUTPUT--]] 
 			else
 				fun_t.rets = T.Void --[[SOL OUTPUT--]]   -- No returns  == void
 			end --[[SOL OUTPUT--]] 
@@ -1268,6 +1269,7 @@ local function analyze(ast, filename, on_require, settings)
 				if r_mm_ret then return r_mm_ret --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
 				if T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
+					report_spam(expr, "Combining types %s and %s", lt, rt) --[[SOL OUTPUT--]] 
 					return T.combine( lt, rt ) --[[SOL OUTPUT--]]   -- int,int -> int,   int,num -> num,  etc
 				else
 					report_error(expr,
@@ -2068,6 +2070,7 @@ local function analyze(ast, filename, on_require, settings)
 			local nrhs = #stat.rhs --[[SOL OUTPUT--]] 
 			assert(nrhs > 0) --[[SOL OUTPUT--]] 
 
+			--[-[
 			if    nlhs == 1
 			  and nrhs == 1
 			  and stat.lhs[1].ast_type     == 'IdExpr'
@@ -2118,6 +2121,8 @@ local function analyze(ast, filename, on_require, settings)
 				v.type = class_type --[[SOL OUTPUT--]]  -- FIXME
 
 			elseif nrhs == 1 then
+			--]-]
+			--if nrhs == 1 then
 				local rt = analyze_expr(stat.rhs[1], scope) --[[SOL OUTPUT--]] 
 				if rt == T.AnyTypeList then
 					local N = nlhs --[[SOL OUTPUT--]] 
@@ -2474,9 +2479,11 @@ local function analyze(ast, filename, on_require, settings)
 			-- HACK for forward-declaring namespaces:
 			if true then
 				for _,name in ipairs(stat.name_list) do
-					local is_local = (stat.scoping ~= 'global') --[[SOL OUTPUT--]] 
-					local v = declare_var(stat, scope, name, is_local) --[[SOL OUTPUT--]] 
-					v.forward_declared = true --[[SOL OUTPUT--]] 
+					if not scope:get_scoped(name) then -- On double-declare of local
+						local is_local = (stat.scoping ~= 'global') --[[SOL OUTPUT--]] 
+						local v = declare_var(stat, scope, name, is_local) --[[SOL OUTPUT--]] 
+						v.forward_declared = true --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else
 				if #stat.name_list == 1 and #stat.init_list == 1 then
@@ -2497,32 +2504,81 @@ local function analyze(ast, filename, on_require, settings)
 
 			if #stat.lhs == 1 and #stat.rhs == 1 then
 				if stat.lhs[1].ast_type == 'IdExpr' then
-					local var_name = stat.lhs[1].name --[[SOL OUTPUT--]] 
-					local v = scope:get_var( var_name ) --[[SOL OUTPUT--]] 
+					if    stat.rhs[1].ast_type     == 'BinopExpr'
+					  and stat.rhs[1].op           == 'or'
+					  and stat.rhs[1].lhs.ast_type == 'IdExpr'
+					  and stat.rhs[1].lhs.name     == stat.lhs[1].name
+					  and not settings.is_sol
+					then
+						--[[
+						  HACK: Foo = Foo or EXPR
+						  This is a very common Lua idiom
+						--]]
+						local name = stat.lhs[1].name --[[SOL OUTPUT--]] 
 
-					if v then
-						-- Assigning to something declared in an outer scope
-					else
-						-- Leave error reporting out of pre-analyzer
-						report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name) --[[SOL OUTPUT--]] 
-						v = top_scope:create_global( var_name, where_is(stat) ) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-
-					if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
-						--do_assignment(stat, scope, stat.lhs[1], fun_t)
-					
-						if v.type then
-							report_error(stat, "Cannot forward declare %q: it already has type %s", v.name, v.type) --[[SOL OUTPUT--]] 
+						local v = scope:get_var( name ) --[[SOL OUTPUT--]] 
+						if not v then
+							report_error(stat, "Pre-analyze: Declaring implicit global %q", name) --[[SOL OUTPUT--]] 
+							v = top_scope:create_global( name, where_is(stat) ) --[[SOL OUTPUT--]] 
+							v.pre_analyzed = true --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 
-						local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
-						fun_t.pre_analyzed = true --[[SOL OUTPUT--]]  -- Rmember that this is a temporary 'guess'
-						fun_t.where = where_is(stat) --[[SOL OUTPUT--]] 
-						fun_t.name = var_name --[[SOL OUTPUT--]] 
+					elseif stat.rhs[1].ast_type      == 'CallExpr'
+					  and  stat.rhs[1].base.ast_type == 'IdExpr'
+					  and  stat.rhs[1].base.name     == 'class'
+					  and  not settings.is_sol
+					then
+						--[[
+						HACK: Foo = class(...)
+						Common lua idiom
+						--]]
+						local name = stat.lhs[1].name --[[SOL OUTPUT--]] 
+						local is_local = false --[[SOL OUTPUT--]] 
+						local class_type = declare_class(stat, scope, name, is_local, stat.rhs[1]) --[[SOL OUTPUT--]] 
+						-- Allow Foo(...):
+						class_type.metatable = {
+							tag='object',
+							members = {
+								__call = {
+									tag    = 'function';
+									args   = {};
+									vararg = { tag='varargs', type=T.Any };
+									rets   = T.AnyTypeList;
+									name   = '__call';
+								}
+							}
+						} --[[SOL OUTPUT--]] 
+						local v = declare_var(stat, scope, name, is_local, class_type) --[[SOL OUTPUT--]] 
+						v.type = class_type --[[SOL OUTPUT--]]  -- FIXME
 
-						v.type = fun_t --[[SOL OUTPUT--]] 
+					else
+						local var_name = stat.lhs[1].name --[[SOL OUTPUT--]] 
+						local v = scope:get_var( var_name ) --[[SOL OUTPUT--]] 
 
-						report_spam(stat, "Forward-declared %q as %s", v.name, fun_t) --[[SOL OUTPUT--]] 
+						if v then
+							-- Assigning to something declared in an outer scope
+						else
+							-- Leave error reporting out of pre-analyzer
+							report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name) --[[SOL OUTPUT--]] 
+							v = top_scope:create_global( var_name, where_is(stat) ) --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+
+						if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
+							--do_assignment(stat, scope, stat.lhs[1], fun_t)
+						
+							if v.type then
+								report_error(stat, "Cannot forward declare %q: it already has type %s", v.name, v.type) --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
+
+							local fun_t = analyze_function_head( stat.rhs[1], scope, is_pre_analyze ) --[[SOL OUTPUT--]] 
+							fun_t.pre_analyzed = true --[[SOL OUTPUT--]]  -- Rmember that this is a temporary 'guess'
+							fun_t.where = where_is(stat) --[[SOL OUTPUT--]] 
+							fun_t.name = var_name --[[SOL OUTPUT--]] 
+
+							v.type = fun_t --[[SOL OUTPUT--]] 
+
+							report_spam(stat, "Forward-declared %q as %s", v.name, fun_t) --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 

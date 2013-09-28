@@ -191,6 +191,10 @@ function T.is_empty_table(t: T.Type) -> bool
 end
 
 
+function T.is_void(ts: T.Typelist) -> bool
+	return T.is_type_list(ts) and #ts == 0
+end
+
 function T.follow_identifiers(t : T.Type, forgiving: bool?) -> T.Type
 	if t.tag ~= 'identifier' then
 		-- Early out
@@ -654,6 +658,22 @@ function T.find(t: T.Type, target: T.Type)
 	return nil
 end
 
+function T.find_tag(t: T.Type, target: string)
+	t = T.follow_identifiers(t)
+
+	if t.tag == target then
+		return t
+	elseif T.is_variant(t) then
+		for _,v in ipairs(t.variants) do
+			--print("Find: searching variant " .. T.name(v))
+			if T.find_tag(v, target) then
+				return v
+			end
+		end
+	end
+	return nil
+end
+
 
 -- is a variant of 'a' a 'b' ?
 -- T.could_be(T.Bool, T.False)  == true
@@ -671,6 +691,9 @@ function T.could_be(a: T.Type, b: T.Type, problem_rope: [string]?)
 
 	a = T.follow_identifiers(a)
 	b = T.follow_identifiers(b)
+
+	if a.tag == 'any' then return true end
+	if b.tag == 'any' then return true end
 
 	if T.is_variant(a) then
 		for _,v in ipairs(a.variants) do
@@ -1216,6 +1239,14 @@ end
 -- used for expressions like "a + b"
 -- works for tables, or numerics, i.e.   num+int == num
 function T.combine(a: T.Type, b: T.Type)
+	if T.find(a,     T.Any)         then return T.Num end
+	if T.find_tag(a, 'number')      then return T.Num end
+	if T.find_tag(a, 'num_literal') then return T.Num end
+	if T.find(b,     T.Any)         then return T.Num end
+	if T.find_tag(b, 'number')      then return T.Num end
+	if T.find_tag(b, 'num_literal') then return T.Num end
+	return T.Int
+--[[
 	if T.isa(a, b) then return b end
 	if T.isa(b, a) then return a end
 
@@ -1236,6 +1267,7 @@ function T.combine(a: T.Type, b: T.Type)
 	-- A true super-type
 	U.printf_err('TODO: T.combine(%s, %s)', T.name(a), T.name(b))
 	return T.Any
+--]]
 end
 
 

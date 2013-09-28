@@ -183,7 +183,8 @@ local function cmd_print(expr)
 			result = result..(i ~= 2 and ", " or "")..pretty(results[i])
 		end
 		
-		dbg_writeln(expr.." => "..result)
+		--dbg_writeln("%s => %s", expr, result)
+		dbg_writeln("%s => %s", expr, result)
 	end
 	
 	return false
