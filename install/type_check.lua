@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 28  09:52:39 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 28  18:56:42 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -126,7 +126,6 @@ local function analyze(ast, filename, on_require, settings)
 		return string.format( fmt, unpack( buf ) ) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-
 	local function report(type, where, fmt, ...)
 		local inner_msg = fancy_format(fmt, ...) --[[SOL OUTPUT--]] 
 		local msg = string.format('%s: %s: %s', type, where, inner_msg) --[[SOL OUTPUT--]] 
@@ -167,6 +166,18 @@ local function analyze(ast, filename, on_require, settings)
 		if settings.is_sol then
 			report_error(node, fmt, ...) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	local function inform_at(issue_name, where, fmt, ...)
+		local level = settings.issues[issue_name] --[[SOL OUTPUT--]] 
+		assert(level) --[[SOL OUTPUT--]] 
+		if level ~= 'SPAM' or _G.g_spam then
+			print( report(level, where, fmt, ...)) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	local function inform(issue_name, node, fmt, ...)
+		return inform_at(issue_name, where_is(node), fmt, ...) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	--local member_missing_reporter = report_warning -- TODO
@@ -216,14 +227,13 @@ local function analyze(ast, filename, on_require, settings)
 							['Argument']      = 'unused-parameter';
 							['Loop variable'] = 'unused-loop-variable';
 						} --[[SOL OUTPUT--]] 
-						local warning_name = var_type_to_warning_name[var_type] or 'unused-variable' --[[SOL OUTPUT--]] 
-						if g_warnings[warning_name] then
-							print( report('WARNING', v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name) ) --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
+						local issue_name = var_type_to_warning_name[var_type] or 'unused-variable' --[[SOL OUTPUT--]] 
+						
+						inform_at(issue_name , v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				if v.num_writes == 0 then
-					print( report('WARNING', v.where, "%s %q is never written to (use _ to silence this warning)", var_type, v.name) ) --[[SOL OUTPUT--]] 
+					inform_at('unassigned-variable' , v.where, "%s %q is never written to (use _ to silence this warning)", var_type, v.name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -514,23 +524,41 @@ local function analyze(ast, filename, on_require, settings)
 
 			if i <= #fun_t.args then
 				if fun_t.args[i].name == 'self' and i ~= 1 then
-					report_error(expr, "%s: 'self' must be the first arguemnt", fun_name) --[[SOL OUTPUT--]] 
+					report_error(expr, "%s: 'self' must be the first argument", fun_name) --[[SOL OUTPUT--]] 
 					all_passed = false --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
 				local expected = fun_t.args[i].type --[[SOL OUTPUT--]] 
 
-				if i <= #arg_ts then
+				if i == #arg_ts and arg_ts[i].tag == 'varargs' then
+					-- When calling with ..., if ... is empty we get nil:s
+					local given = T.variant(arg_ts[i].type, T.Nil) --[[SOL OUTPUT--]] 
+
+					-- check against the remaining expected types:
+					while i <= #fun_t.args do
+						local expected = fun_t.args[i].type --[[SOL OUTPUT--]] 
+
+						if not T.could_be(given, expected) then
+							local problem_rope = {} --[[SOL OUTPUT--]] 
+							T.could_be(given, expected, problem_rope) --[[SOL OUTPUT--]] 
+							local err_msg = rope_to_msg(problem_rope) --[[SOL OUTPUT--]] 
+							report_error(expr, "%s: var-arg argument %i: could not convert from %s to %s: %s",
+							                    fun_name, i, given, expected, err_msg) --[[SOL OUTPUT--]] 
+							all_passed = false --[[SOL OUTPUT--]] 
+							break --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+						i = i + 1 --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+					break --[[SOL OUTPUT--]] 
+
+				elseif i <= #arg_ts then
 					local given = arg_ts[i] --[[SOL OUTPUT--]] 
 
 					if given.tag == 'varargs' then
-						-- When calling with ..., if ... is empty we get nil:s
-						given = T.variant(given.type, T.Nil) --[[SOL OUTPUT--]] 
-						-- TODO: if last given, match against epxected
+						report_error(expr, "Var-args must be the last argument") --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
 					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
-
 
 					if T.is_variant(given) then
 						-- ensure  string?  ->  int?   does NOT pass
@@ -2518,7 +2546,7 @@ local function analyze(ast, filename, on_require, settings)
 
 						local v = scope:get_var( name ) --[[SOL OUTPUT--]] 
 						if not v then
-							report_error(stat, "Pre-analyze: Declaring implicit global %q", name) --[[SOL OUTPUT--]] 
+							sol_error(stat, "Pre-analyze: Declaring global %q", name) --[[SOL OUTPUT--]] 
 							v = top_scope:create_global( name, where_is(stat) ) --[[SOL OUTPUT--]] 
 							v.pre_analyzed = true --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 

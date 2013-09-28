@@ -1,6 +1,6 @@
--- Compiled from sol/util.sol on 2013 Sep 28  09:52:38
+-- Compiled from sol/util.sol on 2013 Sep 28  18:56:41
 
-return <0x006602e0>{
+return <0x00621020>{
 	INDENTATION:       "\9";
 	const:             function(table: table) -> object;
 	ellipsis:          function(msg: string, max_len: int?) -> string;
@@ -11,8 +11,8 @@ return <0x006602e0>{
 	list_join:         function(out: [any], in_table: [any]) -> void;
 	make_const:        function(table: object) -> void;
 	pretty:            function(arg) -> string;
-	printf:            function(fmt: string, ... : varargs) -> void;
-	printf_err:        function(fmt: string, ... : varargs) -> void;
+	printf:            function(fmt: string, ... : any) -> void;
+	printf_err:        function(fmt: string, ... : any) -> void;
 	quote_or_indent:   function(str: string) -> string;
 	read_entire_file:  function(path: string) -> string?;
 	read_entire_stdin: function() -> string?;

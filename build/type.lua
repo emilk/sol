@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 28  09:52:39 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 28  18:56:42 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -929,7 +929,7 @@ function T.format_type(root, verbose)
 			if typ.vararg then
 				str = str .. "..." --[[SOL OUTPUT--]] 
 				if not T.is_any(typ.vararg) then
-					str = str .. " : " .. output(typ.vararg, next_indent) --[[SOL OUTPUT--]] 
+					str = str .. " : " .. output(typ.vararg.type, next_indent) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			str = str .. ')' --[[SOL OUTPUT--]] 

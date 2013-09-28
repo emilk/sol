@@ -929,7 +929,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 			if typ.vararg then
 				str = str .. "..."
 				if not T.is_any(typ.vararg) then
-					str = str .. " : " .. output(typ.vararg, next_indent)
+					str = str .. " : " .. output(typ.vararg.type, next_indent)
 				end
 			end
 			str = str .. ')'

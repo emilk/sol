@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Sep 28  09:52:39 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Sep 28  18:56:42 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -17,15 +17,6 @@ local set        = U.set --[[SOL OUTPUT--]]
 local P = {} --[[SOL OUTPUT--]] 
 
 
--- Enabled warnings - names matches GCC - http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
- g_warnings = set{
-	--'unused-parameter',
-	--'unused-loop-variable',
-	'unused-variable',
-} --[[SOL OUTPUT--]] 
-
-
-
 P.LUA_SETTINGS = {
 	-- Lexer:
 	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#'};
@@ -41,6 +32,14 @@ P.LUA_SETTINGS = {
 	-- Sol extensions all off:
 	is_sol         = false;
 	function_types = false;
+
+	-- Enabled warnings - names matches GCC - http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+	issues = {
+		['unused-parameter']     = 'SPAM',
+		['unused-loop-variable'] = 'SPAM',
+		['unused-variable']      = 'WARNING',
+		['unassigned-variable']  = 'WARNING';
+	}
 } --[[SOL OUTPUT--]] 
 
 P.SOL_SETTINGS = {
@@ -61,6 +60,14 @@ P.SOL_SETTINGS = {
 	-- Parser:
 	is_sol         = true;
 	function_types = true;  -- Support  foo(arg : int) -> int
+
+	-- Enabled warnings - names matches GCC - http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+	issues = {
+		['unused-parameter']     = 'WARNING';
+		['unused-loop-variable'] = 'WARNING';
+		['unused-variable']      = 'WARNING';
+		['unassigned-variable']  = 'ERROR';
+	}
 } --[[SOL OUTPUT--]] 
 
 

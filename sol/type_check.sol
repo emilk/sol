@@ -126,7 +126,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		return string.format( fmt, unpack( buf ) )
 	end
 
-
 	local function report(type: string, where: string, fmt: string, ...) -> string
 		local inner_msg = fancy_format(fmt, ...)
 		local msg = string.format('%s: %s: %s', type, where, inner_msg)
@@ -167,6 +166,18 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		if settings.is_sol then
 			report_error(node, fmt, ...)
 		end
+	end
+
+	local function inform_at(issue_name: string, where: string, fmt: string, ...)
+		local level = settings.issues[issue_name]
+		assert(level)
+		if level ~= 'SPAM' or _G.g_spam then
+			print( report(level, where, fmt, ...))
+		end
+	end
+
+	local function inform(issue_name: string, node: P.Node, fmt: string, ...)
+		return inform_at(issue_name, where_is(node), fmt, ...)
 	end
 
 	--local member_missing_reporter = report_warning -- TODO
@@ -216,14 +227,13 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							['Argument']      = 'unused-parameter';
 							['Loop variable'] = 'unused-loop-variable';
 						}
-						local warning_name = var_type_to_warning_name[var_type] or 'unused-variable'
-						if g_warnings[warning_name] then
-							print( report('WARNING', v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name) )
-						end
+						local issue_name = var_type_to_warning_name[var_type] or 'unused-variable'
+						
+						inform_at(issue_name , v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name)
 					end
 				end
 				if v.num_writes == 0 then
-					print( report('WARNING', v.where, "%s %q is never written to (use _ to silence this warning)", var_type, v.name) )
+					inform_at('unassigned-variable' , v.where, "%s %q is never written to (use _ to silence this warning)", var_type, v.name)
 				end
 			end
 		end
@@ -514,23 +524,41 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if i <= #fun_t.args then
 				if fun_t.args[i].name == 'self' and i ~= 1 then
-					report_error(expr, "%s: 'self' must be the first arguemnt", fun_name)
+					report_error(expr, "%s: 'self' must be the first argument", fun_name)
 					all_passed = false
 				end
 
-				local expected = fun_t.args[i].type
+				var expected = fun_t.args[i].type
 
-				if i <= #arg_ts then
+				if i == #arg_ts and arg_ts[i].tag == 'varargs' then
+					-- When calling with ..., if ... is empty we get nil:s
+					var given = T.variant(arg_ts[i].type, T.Nil)
+
+					-- check against the remaining expected types:
+					while i <= #fun_t.args do
+						var expected = fun_t.args[i].type
+
+						if not T.could_be(given, expected) then
+							local problem_rope = {}
+							T.could_be(given, expected, problem_rope)
+							local err_msg = rope_to_msg(problem_rope)
+							report_error(expr, "%s: var-arg argument %i: could not convert from %s to %s: %s",
+							                    fun_name, i, given, expected, err_msg)
+							all_passed = false
+							break
+						end
+						i = i + 1
+					end
+					break
+
+				elseif i <= #arg_ts then
 					local given = arg_ts[i]
 
 					if given.tag == 'varargs' then
-						-- When calling with ..., if ... is empty we get nil:s
-						given = T.variant(given.type, T.Nil)
-						-- TODO: if last given, match against epxected
+						report_error(expr, "Var-args must be the last argument")
 					end
 
 					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
-
 
 					if T.is_variant(given) then
 						-- ensure  string?  ->  int?   does NOT pass
@@ -2518,7 +2546,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 						var v = scope:get_var( name )
 						if not v then
-							report_error(stat, "Pre-analyze: Declaring implicit global %q", name)
+							sol_error(stat, "Pre-analyze: Declaring global %q", name)
 							v = top_scope:create_global( name, where_is(stat) )
 							v.pre_analyzed = true
 						end
