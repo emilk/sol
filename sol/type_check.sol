@@ -929,46 +929,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-
-	-- Returns a list of types
-	local function call_function(expr: P.Node, scope: Scope) -> T.Typelist
-		--------------------------------------------------------
-		-- Pick out function type:
-		report_spam(expr, "Analyzing function base...")
-		local fun_type = analyze_expr_single(expr.base, scope)
-		report_spam(expr, "function base analyzed.")
-
-		--------------------------------------------------------
-		-- get argument types (they will be evaluated regardless of function type):
-
-		var<[P.ExprNode]> args = U.shallow_clone( expr.arguments )
-
-		var called_as_mem_fun = (expr.base.ast_type == 'MemberExpr' and expr.base.indexer == ':')
-
-		if called_as_mem_fun then
-			local obj_expr = expr.base.base
-			table.insert(args, 1, obj_expr)
-		end
-
-		var<[T.Type]> arg_ts = {}
-		for ix,v in ipairs(args) do
-			if ix < #args then
-				arg_ts[ix] = analyze_expr_single(v, scope)
-			else
-				-- Last argument may evaluate to several values
-				local types = analyze_expr(v, scope)
-				if types == T.AnyTypeList then
-					arg_ts[ix] = { tag = 'varargs', type = T.Any }
-				elseif #types == 0 then
-					report_error(expr, "Last argument evaluates to no values")
-				else
-					for _,t in ipairs(types) do
-						table.insert(arg_ts, t)
-					end
-				end
-			end
-		end
-
+	local function try_calling(expr: P.Node, fun_type: T.Type, args: [P.ExprNode], arg_ts: [T.Type], called_as_mem_fun: bool, report_errors: bool) -> [T.Type]?
 		--------------------------------------------------------
 		-- Do we know the function type?
 
@@ -1031,20 +992,84 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 		end
 
-		local rets = try_call(fun_type, false)
+		var rets = try_call(fun_type, false)
+		return rets
+	end
+
+	-- Returns a list of types
+	local function call_function(expr: P.Node, scope: Scope) -> T.Typelist
+		--------------------------------------------------------
+		-- Pick out function type:
+		report_spam(expr, "Analyzing function base...")
+		local fun_type = analyze_expr_single(expr.base, scope)
+		report_spam(expr, "function base analyzed.")
+
+		--------------------------------------------------------
+		-- get argument types (they will be evaluated regardless of function type):
+
+		var<[P.ExprNode]> args = U.shallow_clone( expr.arguments )
+
+		var called_as_mem_fun = (expr.base.ast_type == 'MemberExpr' and expr.base.indexer == ':')
+
+		if called_as_mem_fun then
+			local obj_expr = expr.base.base
+			table.insert(args, 1, obj_expr)
+		end
+
+		var<[T.Type]> arg_ts = {}
+		for ix,v in ipairs(args) do
+			if ix < #args then
+				arg_ts[ix] = analyze_expr_single(v, scope)
+			else
+				-- Last argument may evaluate to several values
+				local types = analyze_expr(v, scope)
+				if types == T.AnyTypeList then
+					arg_ts[ix] = { tag = 'varargs', type = T.Any }
+				elseif #types == 0 then
+					report_error(expr, "Last argument evaluates to no values")
+				else
+					for _,t in ipairs(types) do
+						table.insert(arg_ts, t)
+					end
+				end
+			end
+		end
+
+		var rets = try_calling(expr, fun_type, args, arg_ts, called_as_mem_fun, false)
 
 		if rets then
 			report_spam(expr, "Function deduced to returning: %s", rets)
 			D.assert( T.is_type_list(rets) )
 			return rets
 		else
-			-- Show errors:
 			report_error(expr, "Cannot call %s", fun_type)
-			try_call(fun_type, true)
+			try_calling(expr, fun_type, args, arg_ts, called_as_mem_fun, true) -- Report errors
 			return T.AnyTypeList
 		end
 	end
 
+
+	--[[
+	Will look for the meta-method 'name'.
+	If found, will match arguments and return the type that it returns, or default_ret if no returns.
+	Returns nil on no mm found
+	--]]
+	local function try_metamethod(expr: P.Node, t: T.Type, name: string, args: [P.ExprNode], arg_ts: [T.Type], default_ret: T.Type)
+		var mm = T.find_meta_method(t, name)
+		if mm then
+			var rets = try_calling(expr, mm, args, arg_ts, false, false)
+			if rets then
+				if #rets == 1 then
+					return rets[1]
+				else
+					report_error(expr, "Bad metamethod %q: expected only one return type", name)
+				end
+			end
+
+			return default_ret
+		end
+		return nil
+	end
 
 
 	-- for k,v in some_expr
@@ -1236,18 +1261,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--report_spam(expr, "Binop: %s %s %s", lt, op, rt)
 
 			if NumOps[op] then
-				-- TODO: nicer.
-				--var l_obj = T.follow_identifiers(lt)
-				var l_obj = T.find(lt, T.Object)
-				if l_obj and l_obj.metatable and l_obj.metatable.members[NumOps[op]] then
-					return l_obj -- TODO - lookup
-				end
+				var l_mm_ret = try_metamethod(expr, lt, NumOps[op], {expr.lhs, expr.rhs}, {lt,rt}, lt)
+				if l_mm_ret then return l_mm_ret end
 
-				var r_obj = T.find(rt, T.Object)
-				if r_obj and r_obj.metatable and r_obj.metatable.members[NumOps[op]] then
-					return r_obj -- TODO - lookup
-				end
-
+				var r_mm_ret = try_metamethod(expr, rt, NumOps[op], {expr.lhs, expr.rhs}, {lt,rt}, rt)
+				if r_mm_ret then return r_mm_ret end
 
 				if T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
 					return T.combine( lt, rt )  -- int,int -> int,   int,num -> num,  etc
@@ -1353,6 +1371,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local arg_t = analyze_expr_single(expr.rhs, scope)
 
 			if expr.op == '-' then
+				var mm_ret = try_metamethod(expr, arg_t, '__unm', {expr.rhs}, {arg_t}, arg_t)
+				if mm_ret then return mm_ret end
+
 				if T.could_be(arg_t, T.Num) then
 					return T.Num
 				elseif T.could_be(arg_t, T.Int) then

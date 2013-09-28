@@ -1390,4 +1390,19 @@ function T.should_extend_in_situ(typ: T.Type) -> bool
 	return T.is_instance(typ)
 end
 
+function T.find_meta_method(t: T.Type, name: string) -> T.Type?
+	t = T.follow_identifiers(t)
+	if t.tag == 'variant' then
+		for _,v in ipairs(t.variants) do
+			var mm = T.find_meta_method(v, name)
+			if mm then return mm end
+		end
+	elseif t.tag == 'object' then
+		if t.metatable then
+			return t.metatable[name]
+		end
+	end
+	return nil
+end
+
 return T

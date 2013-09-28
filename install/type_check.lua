@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 28  01:13:15 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 28  09:11:45 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -929,46 +929,7 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
-
-	-- Returns a list of types
-	local function call_function(expr, scope)
-		--------------------------------------------------------
-		-- Pick out function type:
-		report_spam(expr, "Analyzing function base...") --[[SOL OUTPUT--]] 
-		local fun_type = analyze_expr_single(expr.base, scope) --[[SOL OUTPUT--]] 
-		report_spam(expr, "function base analyzed.") --[[SOL OUTPUT--]] 
-
-		--------------------------------------------------------
-		-- get argument types (they will be evaluated regardless of function type):
-
-		local args = U.shallow_clone( expr.arguments ) --[[SOL OUTPUT--]] 
-
-		local called_as_mem_fun = (expr.base.ast_type == 'MemberExpr' and expr.base.indexer == ':') --[[SOL OUTPUT--]] 
-
-		if called_as_mem_fun then
-			local obj_expr = expr.base.base --[[SOL OUTPUT--]] 
-			table.insert(args, 1, obj_expr) --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
-		local arg_ts = {} --[[SOL OUTPUT--]] 
-		for ix,v in ipairs(args) do
-			if ix < #args then
-				arg_ts[ix] = analyze_expr_single(v, scope) --[[SOL OUTPUT--]] 
-			else
-				-- Last argument may evaluate to several values
-				local types = analyze_expr(v, scope) --[[SOL OUTPUT--]] 
-				if types == T.AnyTypeList then
-					arg_ts[ix] = { tag = 'varargs', type = T.Any } --[[SOL OUTPUT--]] 
-				elseif #types == 0 then
-					report_error(expr, "Last argument evaluates to no values") --[[SOL OUTPUT--]] 
-				else
-					for _,t in ipairs(types) do
-						table.insert(arg_ts, t) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
+	local function try_calling(expr, fun_type, args, arg_ts, called_as_mem_fun, report_errors)
 		--------------------------------------------------------
 		-- Do we know the function type?
 
@@ -1032,19 +993,83 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 
 		local rets = try_call(fun_type, false) --[[SOL OUTPUT--]] 
+		return rets --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	-- Returns a list of types
+	local function call_function(expr, scope)
+		--------------------------------------------------------
+		-- Pick out function type:
+		report_spam(expr, "Analyzing function base...") --[[SOL OUTPUT--]] 
+		local fun_type = analyze_expr_single(expr.base, scope) --[[SOL OUTPUT--]] 
+		report_spam(expr, "function base analyzed.") --[[SOL OUTPUT--]] 
+
+		--------------------------------------------------------
+		-- get argument types (they will be evaluated regardless of function type):
+
+		local args = U.shallow_clone( expr.arguments ) --[[SOL OUTPUT--]] 
+
+		local called_as_mem_fun = (expr.base.ast_type == 'MemberExpr' and expr.base.indexer == ':') --[[SOL OUTPUT--]] 
+
+		if called_as_mem_fun then
+			local obj_expr = expr.base.base --[[SOL OUTPUT--]] 
+			table.insert(args, 1, obj_expr) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		local arg_ts = {} --[[SOL OUTPUT--]] 
+		for ix,v in ipairs(args) do
+			if ix < #args then
+				arg_ts[ix] = analyze_expr_single(v, scope) --[[SOL OUTPUT--]] 
+			else
+				-- Last argument may evaluate to several values
+				local types = analyze_expr(v, scope) --[[SOL OUTPUT--]] 
+				if types == T.AnyTypeList then
+					arg_ts[ix] = { tag = 'varargs', type = T.Any } --[[SOL OUTPUT--]] 
+				elseif #types == 0 then
+					report_error(expr, "Last argument evaluates to no values") --[[SOL OUTPUT--]] 
+				else
+					for _,t in ipairs(types) do
+						table.insert(arg_ts, t) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		local rets = try_calling(expr, fun_type, args, arg_ts, called_as_mem_fun, false) --[[SOL OUTPUT--]] 
 
 		if rets then
 			report_spam(expr, "Function deduced to returning: %s", rets) --[[SOL OUTPUT--]] 
 			D.assert( T.is_type_list(rets) ) --[[SOL OUTPUT--]] 
 			return rets --[[SOL OUTPUT--]] 
 		else
-			-- Show errors:
 			report_error(expr, "Cannot call %s", fun_type) --[[SOL OUTPUT--]] 
-			try_call(fun_type, true) --[[SOL OUTPUT--]] 
+			try_calling(expr, fun_type, args, arg_ts, called_as_mem_fun, true) --[[SOL OUTPUT--]]  -- Report errors
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
+
+	--[[
+	Will look for the meta-method 'name'.
+	If found, will match arguments and return the type that it returns, or default_ret if no returns.
+	Returns nil on no mm found
+	--]]
+	local function try_metamethod(expr, t, name, args, arg_ts, default_ret)
+		local mm = T.find_meta_method(t, name) --[[SOL OUTPUT--]] 
+		if mm then
+			local rets = try_calling(expr, mm, args, arg_ts, false, false) --[[SOL OUTPUT--]] 
+			if rets then
+				if #rets == 1 then
+					return rets[1] --[[SOL OUTPUT--]] 
+				else
+					report_error(expr, "Bad metamethod %q: expected only one return type", name) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			return default_ret --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+		return nil --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 
 	-- for k,v in some_expr
@@ -1236,18 +1261,11 @@ local function analyze(ast, filename, on_require, settings)
 			--report_spam(expr, "Binop: %s %s %s", lt, op, rt)
 
 			if NumOps[op] then
-				-- TODO: nicer.
-				--var l_obj = T.follow_identifiers(lt)
-				local l_obj = T.find(lt, T.Object) --[[SOL OUTPUT--]] 
-				if l_obj and l_obj.metatable and l_obj.metatable.members[NumOps[op]] then
-					return l_obj --[[SOL OUTPUT--]]  -- TODO - lookup
-				end --[[SOL OUTPUT--]] 
+				local l_mm_ret = try_metamethod(expr, lt, NumOps[op], {expr.lhs, expr.rhs}, {lt,rt}, lt) --[[SOL OUTPUT--]] 
+				if l_mm_ret then return l_mm_ret --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-				local r_obj = T.find(rt, T.Object) --[[SOL OUTPUT--]] 
-				if r_obj and r_obj.metatable and r_obj.metatable.members[NumOps[op]] then
-					return r_obj --[[SOL OUTPUT--]]  -- TODO - lookup
-				end --[[SOL OUTPUT--]] 
-
+				local r_mm_ret = try_metamethod(expr, rt, NumOps[op], {expr.lhs, expr.rhs}, {lt,rt}, rt) --[[SOL OUTPUT--]] 
+				if r_mm_ret then return r_mm_ret --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
 				if T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
 					return T.combine( lt, rt ) --[[SOL OUTPUT--]]   -- int,int -> int,   int,num -> num,  etc
@@ -1353,6 +1371,9 @@ local function analyze(ast, filename, on_require, settings)
 			local arg_t = analyze_expr_single(expr.rhs, scope) --[[SOL OUTPUT--]] 
 
 			if expr.op == '-' then
+				local mm_ret = try_metamethod(expr, arg_t, '__unm', {expr.rhs}, {arg_t}, arg_t) --[[SOL OUTPUT--]] 
+				if mm_ret then return mm_ret --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+
 				if T.could_be(arg_t, T.Num) then
 					return T.Num --[[SOL OUTPUT--]] 
 				elseif T.could_be(arg_t, T.Int) then

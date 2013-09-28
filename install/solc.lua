@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 28  01:13:15 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 28  09:11:45 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -219,7 +219,7 @@ end --[[SOL OUTPUT--]]
 local function parse_module_str(chain, path_in, source_text)
 	local filename = path.basename( path_in ) --[[SOL OUTPUT--]]   -- Keep error messages short
 
-	local module_name = path_in:lower() --[[SOL OUTPUT--]] 
+	local module_id = path.abspath( path_in:lower() ) --[[SOL OUTPUT--]] 
 
 	local is_sol = (path.extension(filename) == '.sol') --[[SOL OUTPUT--]] 
 
@@ -228,7 +228,7 @@ local function parse_module_str(chain, path_in, source_text)
 	local st, tokens = Lexer.lex_sol(source_text, filename, settings) --[[SOL OUTPUT--]] 
 	if not st then
 		printf_err("Failed to lex %q", path_in) --[[SOL OUTPUT--]] 
-		g_modules[module_name] = FAIL_INFO --[[SOL OUTPUT--]] 
+		g_modules[module_id] = FAIL_INFO --[[SOL OUTPUT--]] 
 		os.exit(1) --[[SOL OUTPUT--]] 
 		return FAIL_INFO --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -272,7 +272,7 @@ local function parse_module_str(chain, path_in, source_text)
 	if not st then
 		--we failed to parse the file, show why
 		printf_err("Failed to parse %q", path_in) --[[SOL OUTPUT--]] 
-		g_modules[module_name] = FAIL_INFO --[[SOL OUTPUT--]] 
+		g_modules[module_id] = FAIL_INFO --[[SOL OUTPUT--]] 
 		os.exit(2) --[[SOL OUTPUT--]] 
 		return FAIL_INFO --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -294,7 +294,7 @@ local function parse_module_str(chain, path_in, source_text)
 	if not success then
 		--printf_err("TypeCheck failed: " .. type)
 		local info = { ast = ast, type = T.Any } --[[SOL OUTPUT--]] 
-		g_modules[module_name] = info --[[SOL OUTPUT--]] 
+		g_modules[module_id] = info --[[SOL OUTPUT--]] 
 		os.exit(3) --[[SOL OUTPUT--]] 
 		return info --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -306,22 +306,22 @@ local function parse_module_str(chain, path_in, source_text)
 	end --[[SOL OUTPUT--]] 
 
 	local info = {
-		name            = module_name;
+		--name            = module_name;
 		ast             = ast;
 		type            = type;
 		global_vars     = module_scope:get_global_vars();
 		global_typedefs = module_scope:get_global_typedefs();
 	} --[[SOL OUTPUT--]] 
-	g_modules[module_name] = info --[[SOL OUTPUT--]] 
+	g_modules[module_id] = info --[[SOL OUTPUT--]] 
 	return info --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
 -- Returns { ast, type }
 parse_module = function(chain, path_in)
-	local module_name = path_in:lower() --[[SOL OUTPUT--]] 
+	local module_id = path.abspath( path_in:lower() ) --[[SOL OUTPUT--]] 
 
-	local old_info = g_modules[module_name] --[[SOL OUTPUT--]] 
+	local old_info = g_modules[module_id] --[[SOL OUTPUT--]] 
 	if old_info == CURRENTLY_PARSING then
 		printf_err("Module 'require' recusion detected: dependency chain: " .. U.pretty(chain)) --[[SOL OUTPUT--]] 
 		error(-42) --[[SOL OUTPUT--]] 
@@ -331,7 +331,7 @@ parse_module = function(chain, path_in)
 		return old_info --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	g_modules[module_name] = CURRENTLY_PARSING --[[SOL OUTPUT--]] 
+	g_modules[module_id] = CURRENTLY_PARSING --[[SOL OUTPUT--]] 
 
 	if _G.g_spam then
 		U.printf("Parsing %q...", path_in) --[[SOL OUTPUT--]] 
@@ -341,7 +341,7 @@ parse_module = function(chain, path_in)
 
 	if not source_text then
 		printf_err("'Failed to read %q", path_in) --[[SOL OUTPUT--]] 
-		g_modules[module_name] = FAIL_INFO --[[SOL OUTPUT--]] 
+		g_modules[module_id] = FAIL_INFO --[[SOL OUTPUT--]] 
 		return FAIL_INFO --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 28  01:13:15 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 28  09:11:45 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -1388,6 +1388,21 @@ end --[[SOL OUTPUT--]]
 
 function T.should_extend_in_situ(typ)
 	return T.is_instance(typ) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+function T.find_meta_method(t, name)
+	t = T.follow_identifiers(t) --[[SOL OUTPUT--]] 
+	if t.tag == 'variant' then
+		for _,v in ipairs(t.variants) do
+			local mm = T.find_meta_method(v, name) --[[SOL OUTPUT--]] 
+			if mm then return mm --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	elseif t.tag == 'object' then
+		if t.metatable then
+			return t.metatable[name] --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+	return nil --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 return T --[[SOL OUTPUT--]] 

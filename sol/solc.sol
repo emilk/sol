@@ -219,7 +219,7 @@ end
 local function parse_module_str(chain: [string], path_in: string, source_text: string) -> parse_info
 	local filename = path.basename( path_in )  -- Keep error messages short
 
-	local module_name = path_in:lower()
+	local module_id = path.abspath( path_in:lower() )
 
 	local is_sol = (path.extension(filename) == '.sol')
 
@@ -228,7 +228,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	local st, tokens = Lexer.lex_sol(source_text, filename, settings)
 	if not st then
 		printf_err("Failed to lex %q", path_in)
-		g_modules[module_name] = FAIL_INFO
+		g_modules[module_id] = FAIL_INFO
 		os.exit(1)
 		return FAIL_INFO
 	end
@@ -272,7 +272,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	if not st then
 		--we failed to parse the file, show why
 		printf_err("Failed to parse %q", path_in)
-		g_modules[module_name] = FAIL_INFO
+		g_modules[module_id] = FAIL_INFO
 		os.exit(2)
 		return FAIL_INFO
 	end
@@ -294,7 +294,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	if not success then
 		--printf_err("TypeCheck failed: " .. type)
 		local info = { ast = ast, type = T.Any }
-		g_modules[module_name] = info
+		g_modules[module_id] = info
 		os.exit(3)
 		return info
 	end
@@ -306,22 +306,22 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	end
 
 	local info = {
-		name            = module_name;
+		--name            = module_name;
 		ast             = ast;
 		type            = type;
 		global_vars     = module_scope:get_global_vars();
 		global_typedefs = module_scope:get_global_typedefs();
 	}
-	g_modules[module_name] = info
+	g_modules[module_id] = info
 	return info
 end
 
 
 -- Returns { ast, type }
 parse_module = function(chain: [string], path_in: string) -> parse_info
-	local module_name = path_in:lower()
+	local module_id = path.abspath( path_in:lower() )
 
-	local old_info = g_modules[module_name]
+	local old_info = g_modules[module_id]
 	if old_info == CURRENTLY_PARSING then
 		printf_err("Module 'require' recusion detected: dependency chain: " .. U.pretty(chain))
 		error(-42)
@@ -331,7 +331,7 @@ parse_module = function(chain: [string], path_in: string) -> parse_info
 		return old_info
 	end
 
-	g_modules[module_name] = CURRENTLY_PARSING
+	g_modules[module_id] = CURRENTLY_PARSING
 
 	if _G.g_spam then
 		U.printf("Parsing %q...", path_in)
@@ -341,7 +341,7 @@ parse_module = function(chain: [string], path_in: string) -> parse_info
 
 	if not source_text then
 		printf_err("'Failed to read %q", path_in)
-		g_modules[module_name] = FAIL_INFO
+		g_modules[module_id] = FAIL_INFO
 		return FAIL_INFO
 	end
 
