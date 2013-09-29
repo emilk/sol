@@ -994,6 +994,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 						end
 					end
 				end
+				--U.make_const(obj.members)
 				return obj
 			else
 				-- a map or a set
@@ -1611,7 +1612,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				local st, end_ex = parse_expr(scope)
 				if not st then return false, end_ex end
 
-				var<P.ExprNode?> step_ex = nil
+				var<P.ExprNode or string or nil> step_ex = nil
 				if tok:consume_symbol(',', token_list) then
 					st, step_ex = parse_expr(scope)
 					if not st then return false, step_ex end

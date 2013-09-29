@@ -416,7 +416,7 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 
 	if b.tag == 'variant' then
 		for _,v in ipairs(b.variants) do
-			if T.isa(d, v) then
+			if T.isa(d, v, problem_rope) then
 				return true
 			end
 		end
@@ -425,7 +425,7 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	if d.tag == 'variant' then
 		local function all_are_b()
 			for _,v in ipairs(d.variants) do
-				if not T.isa(v, b) then
+				if not T.isa(v, b, problem_rope) then
 					return false
 				end
 			end
@@ -501,12 +501,12 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	elseif d.tag == 'list' then
 		--if b == T.EmptyTable then return true end
 		return b.tag == 'list'
-		  and  T.isa(d.type, b.type) -- [int] isa [num]  -- FIXME: make strictly equal?
+		  and  T.isa(d.type, b.type, problem_rope) -- [int] isa [num]  -- FIXME: make strictly equal?
 	elseif d.tag == 'map' then
 		--if b == T.EmptyTable then return true end
 		return b.tag == 'map'
-		  and  T.isa(d.key_type,   b.key_type)    -- {int, string}  isa  {num, string}  -- FIXME: make strictly equal?
-		  and  T.isa(d.value_type, b.value_type)  -- {string, int}  isa  {string, num}  -- FIXME: make strictly equal?
+		  and  T.isa(d.key_type,   b.key_type, problem_rope)    -- {int, string}  isa  {num, string}  -- FIXME: make strictly equal?
+		  and  T.isa(d.value_type, b.value_type, problem_rope)  -- {string, int}  isa  {string, num}  -- FIXME: make strictly equal?
 	elseif d.tag == 'object' then
 		if b.tag == 'object' then
 			return T.is_obj_obj(d, b, problem_rope)
@@ -585,25 +585,28 @@ function T.is_nilable(a: T.Type) -> bool
 	a = T.follow_identifiers(a)
 	if a == T.Any then return true end
 	if a == T.Nil then return false end
-	return T.could_be(a, T.Nil)
-	--[[
-	if a.tag == 'variant' then
-		if #a.variants < 2 then
-			-- It has to be able to be either nil or somethign else
-			return false
-		end
 
-		for _,t in pairs(a.variants) do
-			if T.isa(t, T.Nil) or T.is_nilable(a) then
-				return true
+	var has_nil     = false
+	var has_non_nil = false
+
+	local function recurse(t)
+		if t.tag == 'variant' then
+			for _,v in pairs(t.variants) do
+				recurse(v)
 			end
+		elseif t == T.Any then
+			has_nil = true
+			has_non_nil = true
+		elseif t == T.Nil then
+			has_nil = true
+		else
+			has_non_nil = true
 		end
-
-		return false
 	end
+	recurse(a)
 
-	return false
-	--]]
+	--return T.could_be(a, T.Nil)
+	return has_nil and has_non_nil
 end
 
 
@@ -697,19 +700,24 @@ function T.could_be(a: T.Type, b: T.Type, problem_rope: [string]?)
 
 	if T.is_variant(a) then
 		for _,v in ipairs(a.variants) do
-			if T.could_be(v, b, problem_rope) then
+			if v==b then
+				return true
+			elseif v~=T.Nil and T.could_be(v, b, problem_rope) then
 				return true
 			end
 		end
 		return false
 	elseif T.is_variant(b) then
 		for _,v in ipairs(b.variants) do
-			if T.could_be(a, v, problem_rope) then
+			if v==a then
+				return true
+			elseif v~=T.Nil and T.could_be(a, v, problem_rope) then
 				return true
 			end
 		end
 		return false
 	else
+
 		if T.isa(a, b, problem_rope) then
 			return true
 		elseif T.isa(b, a, problem_rope) then

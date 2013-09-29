@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lua_intrinsics.sol on 2013 Sep 28  18:56:42 --]] local INTRINSICS = [[
+--[[ DO NOT MODIFY - COMPILED FROM sol/lua_intrinsics.sol on 2013 Sep 29  15:38:48 --]] local INTRINSICS = [[
 	global unpack = extern : function(t: [any]) -> ...
 
 	global coroutine = {
@@ -53,7 +53,8 @@
 		sub    = extern : function(...) -> ...;
 		gsub   = extern : function(...) -> ...;
 		find   = extern : function(...) -> ...;
-		gmatch = extern : function(...) -> ...;   -- a generator
+		match  = extern : function(...) -> ...;
+		gmatch = extern : function(...) -> ...;   -- TODO: a generator
 	}
 
 	global table = {

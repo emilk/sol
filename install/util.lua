@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/util.sol on 2013 Sep 28  18:56:42 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/util.sol on 2013 Sep 29  15:38:48 --]] --[[
 Util.lua
 
 Provides some common utilities shared throughout the project.
@@ -325,19 +325,21 @@ end --[[SOL OUTPUT--]]
 
 ------------------------------------------------------
 -- TODO: only in debug/development
-local DEBUG = false --[[SOL OUTPUT--]] 
+local DEBUG = true --[[SOL OUTPUT--]] 
 
 -- Returns a write-protected version of the input table
 function U.const(table)
 	if DEBUG then
 		assert(getmetatable(table) == nil) --[[SOL OUTPUT--]] 
 
-		return setmetatable({}, {
-			__index    = table,
-			__newindex = function(_,_,_) -- table, key, value
-				D.error("Attempt to modify read-only table") --[[SOL OUTPUT--]] 
-			end,
-			__metatable = 'This is a read-only table' -- disallow further meta-tabling
+		return setmetatable({
+				__protected = table  -- Visible in debugger
+			}, {
+				__index    = table,
+				__newindex = function(_,_,_) -- table, key, value
+					D.error("Attempt to modify read-only table") --[[SOL OUTPUT--]] 
+				end,
+				__metatable = 'This is a read-only table' -- disallow further meta-tabling
 		}) --[[SOL OUTPUT--]] 
 	else
 		return table --[[SOL OUTPUT--]] 
@@ -352,6 +354,8 @@ function U.make_const(table)
 		local clone = U.shallow_clone(table) --[[SOL OUTPUT--]] 
 
 		U.table_clear(table) --[[SOL OUTPUT--]] 
+		
+		table.__protected = clone --[[SOL OUTPUT--]]   -- Visible in debugger
 
 		setmetatable(table, {
 			__index    = clone,

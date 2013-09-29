@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Sep 28  18:56:42 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Sep 29  15:38:48 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -994,6 +994,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
+				--U.make_const(obj.members)
 				return obj --[[SOL OUTPUT--]] 
 			else
 				-- a map or a set

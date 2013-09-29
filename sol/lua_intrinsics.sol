@@ -53,7 +53,8 @@ var INTRINSICS = [[
 		sub    = extern : function(...) -> ...;
 		gsub   = extern : function(...) -> ...;
 		find   = extern : function(...) -> ...;
-		gmatch = extern : function(...) -> ...;   -- a generator
+		match  = extern : function(...) -> ...;
+		gmatch = extern : function(...) -> ...;   -- TODO: a generator
 	}
 
 	global table = {

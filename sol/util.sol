@@ -325,19 +325,21 @@ end
 
 ------------------------------------------------------
 -- TODO: only in debug/development
-local DEBUG = false
+local DEBUG = true
 
 -- Returns a write-protected version of the input table
 function U.const(table: table) -> object
 	if DEBUG then
 		assert(getmetatable(table) == nil)
 
-		return setmetatable({}, {
-			__index    = table,
-			__newindex = function(_,_,_) -- table, key, value
-				D.error("Attempt to modify read-only table")
-			end,
-			__metatable = 'This is a read-only table' -- disallow further meta-tabling
+		return setmetatable({
+				__protected = table  -- Visible in debugger
+			}, {
+				__index    = table,
+				__newindex = function(_,_,_) -- table, key, value
+					D.error("Attempt to modify read-only table")
+				end,
+				__metatable = 'This is a read-only table' -- disallow further meta-tabling
 		})
 	else
 		return table
@@ -345,13 +347,15 @@ function U.const(table: table) -> object
 end
 
 -- Write-protects existing table against all modification
-function U.make_const(table: object) -> void
+function U.make_const(table: table) -> void
 	if DEBUG then
 		assert(getmetatable(table) == nil)
 
 		local clone = U.shallow_clone(table)
 
 		U.table_clear(table)
+		
+		table.__protected = clone  -- Visible in debugger
 
 		setmetatable(table, {
 			__index    = clone,

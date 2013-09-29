@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/edit_distance.sol on 2013 Sep 28  18:56:41 --]] -- From  http://nayruden.com/?p=115  -  https://gist.github.com/Nayruden/427389
+--[[ DO NOT MODIFY - COMPILED FROM sol/edit_distance.sol on 2013 Sep 29  15:38:48 --]] -- From  http://nayruden.com/?p=115  -  https://gist.github.com/Nayruden/427389
 -- Translated to Sol by Emil Ernerfeldt in 2013
 --[[
 	Function: EditDistance
@@ -92,7 +92,7 @@ local function edit_distance( s, t, lim )
 			d[ i_pos + j ] = val --[[SOL OUTPUT--]] 
 			
 			-- is this eligible for tranposition?
-			if i > 1 and j > 1 and s[ i ] == t[ j - 1 ] and s[ i - 1 ] == t[ j ] then
+				if i > 1 and j > 1 and s[ i ] == t[ j - 1 ] and s[ i - 1 ] == t[ j ] then
 				d[ i_pos + j ] = min(
 					val,                                                        -- Current cost
 					d[ i_pos - num_columns - num_columns + j - 2 ] + add_cost   -- Cost of transposition

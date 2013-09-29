@@ -1,6 +1,6 @@
--- Compiled from sol/util.sol on 2013 Sep 28  18:56:41
+-- Compiled from sol/util.sol on 2013 Sep 29  15:38:47
 
-return <0x00621020>{
+return <0x00651168>{
 	INDENTATION:       "\9";
 	const:             function(table: table) -> object;
 	ellipsis:          function(msg: string, max_len: int?) -> string;
@@ -9,7 +9,7 @@ return <0x00621020>{
 	is_array:          function(val) -> bool;
 	list_concat:       function(a: [any], b: [any]) -> [any];
 	list_join:         function(out: [any], in_table: [any]) -> void;
-	make_const:        function(table: object) -> void;
+	make_const:        function(table: table) -> void;
 	pretty:            function(arg) -> string;
 	printf:            function(fmt: string, ... : any) -> void;
 	printf_err:        function(fmt: string, ... : any) -> void;

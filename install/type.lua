@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 28  18:56:42 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 29  15:38:48 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -416,7 +416,7 @@ function T.isa_raw(d, b, problem_rope)
 
 	if b.tag == 'variant' then
 		for _,v in ipairs(b.variants) do
-			if T.isa(d, v) then
+			if T.isa(d, v, problem_rope) then
 				return true --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -425,7 +425,7 @@ function T.isa_raw(d, b, problem_rope)
 	if d.tag == 'variant' then
 		local function all_are_b()
 			for _,v in ipairs(d.variants) do
-				if not T.isa(v, b) then
+				if not T.isa(v, b, problem_rope) then
 					return false --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -501,12 +501,12 @@ function T.isa_raw(d, b, problem_rope)
 	elseif d.tag == 'list' then
 		--if b == T.EmptyTable then return true end
 		return b.tag == 'list'
-		  and  T.isa(d.type, b.type) --[[SOL OUTPUT--]]  -- [int] isa [num]  -- FIXME: make strictly equal?
+		  and  T.isa(d.type, b.type, problem_rope) --[[SOL OUTPUT--]]  -- [int] isa [num]  -- FIXME: make strictly equal?
 	elseif d.tag == 'map' then
 		--if b == T.EmptyTable then return true end
 		return b.tag == 'map'
-		  and  T.isa(d.key_type,   b.key_type)    -- {int, string}  isa  {num, string}  -- FIXME: make strictly equal?
-		  and  T.isa(d.value_type, b.value_type) --[[SOL OUTPUT--]]   -- {string, int}  isa  {string, num}  -- FIXME: make strictly equal?
+		  and  T.isa(d.key_type,   b.key_type, problem_rope)    -- {int, string}  isa  {num, string}  -- FIXME: make strictly equal?
+		  and  T.isa(d.value_type, b.value_type, problem_rope) --[[SOL OUTPUT--]]   -- {string, int}  isa  {string, num}  -- FIXME: make strictly equal?
 	elseif d.tag == 'object' then
 		if b.tag == 'object' then
 			return T.is_obj_obj(d, b, problem_rope) --[[SOL OUTPUT--]] 
@@ -585,25 +585,28 @@ function T.is_nilable(a)
 	a = T.follow_identifiers(a) --[[SOL OUTPUT--]] 
 	if a == T.Any then return true --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	if a == T.Nil then return false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	return T.could_be(a, T.Nil) --[[SOL OUTPUT--]] 
-	--[[
-	if a.tag == 'variant' then
-		if #a.variants < 2 then
-			-- It has to be able to be either nil or somethign else
-			return false
-		end
 
-		for _,t in pairs(a.variants) do
-			if T.isa(t, T.Nil) or T.is_nilable(a) then
-				return true
-			end
-		end
+	local has_nil     = false --[[SOL OUTPUT--]] 
+	local has_non_nil = false --[[SOL OUTPUT--]] 
 
-		return false
-	end
+	local function recurse(t)
+		if t.tag == 'variant' then
+			for _,v in pairs(t.variants) do
+				recurse(v) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		elseif t == T.Any then
+			has_nil = true --[[SOL OUTPUT--]] 
+			has_non_nil = true --[[SOL OUTPUT--]] 
+		elseif t == T.Nil then
+			has_nil = true --[[SOL OUTPUT--]] 
+		else
+			has_non_nil = true --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+	recurse(a) --[[SOL OUTPUT--]] 
 
-	return false
-	--]]
+	--return T.could_be(a, T.Nil)
+	return has_nil and has_non_nil --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -697,19 +700,24 @@ function T.could_be(a, b, problem_rope)
 
 	if T.is_variant(a) then
 		for _,v in ipairs(a.variants) do
-			if T.could_be(v, b, problem_rope) then
+			if v==b then
+				return true --[[SOL OUTPUT--]] 
+			elseif v~=T.Nil and T.could_be(v, b, problem_rope) then
 				return true --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return false --[[SOL OUTPUT--]] 
 	elseif T.is_variant(b) then
 		for _,v in ipairs(b.variants) do
-			if T.could_be(a, v, problem_rope) then
+			if v==a then
+				return true --[[SOL OUTPUT--]] 
+			elseif v~=T.Nil and T.could_be(a, v, problem_rope) then
 				return true --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return false --[[SOL OUTPUT--]] 
 	else
+
 		if T.isa(a, b, problem_rope) then
 			return true --[[SOL OUTPUT--]] 
 		elseif T.isa(b, a, problem_rope) then
