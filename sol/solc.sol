@@ -386,14 +386,6 @@ end
 
 
 local function compile_file(path_in: string, lua_path_out: string?, header_path_out: string?)
-	local settings = (function()
-		if path.extension(path_in):lower() == '.sol' then
-			return Parser.SOL_SETTINGS
-		else
-			return Parser.LUA_SETTINGS
-		end
-	end)()
-
 	local info = parse_module({}, path_in)
 	output_module(info, path_in, lua_path_out, header_path_out)
 end

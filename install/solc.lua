@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 29  15:38:48 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Sep 29  22:57:05 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -386,14 +386,6 @@ end --[[SOL OUTPUT--]]
 
 
 local function compile_file(path_in, lua_path_out, header_path_out)
-	local settings = (function()
-		if path.extension(path_in):lower() == '.sol' then
-			return Parser.SOL_SETTINGS --[[SOL OUTPUT--]] 
-		else
-			return Parser.LUA_SETTINGS --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-	end)() --[[SOL OUTPUT--]] 
-
 	local info = parse_module({}, path_in) --[[SOL OUTPUT--]] 
 	output_module(info, path_in, lua_path_out, header_path_out) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 

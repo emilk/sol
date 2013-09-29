@@ -351,7 +351,7 @@ typedef P.Typedef : P.StatNode = {
 	namespace_name: string?;
 	type_name:      string;
 	is_local:       bool;
-	base_types:     [T.Type];  -- Inherits
+	base_types:     [T.Type]?;  -- Inherits
 	type:           T.Type?;  -- nil == forward declare (TODO)
 }
 

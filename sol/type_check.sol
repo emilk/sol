@@ -248,7 +248,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 	local function declare_local(node: P.Node, scope: Scope, name: string, typ: T.Type?) -> Variable
-		D.assert(node and scope and name)
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
 		var old = scope:get_scoped(name)
@@ -441,7 +440,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	--[[ Will analyze body and check its return-statements against fun_t.
 	     If fun_t.rets is nil (no type deduced) then this function will fill it in via deduction.
 	--]]
-	local function analyze_function_body(node: P.Node, scope: Scope, fun_t: T.Function)
+	local function analyze_function_body(node: P.Node, _: Scope, fun_t: T.Function)
 		if not node.body then
 			-- body-less function - used by lua_intrinsics.sol
 			return
@@ -513,7 +512,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	local function check_arguments(expr, fun_t: T.Function, arg_ts: [T.Type]) -> bool
 		assert(fun_t.args)
-		var fun_name = fun_t.name or "<lambda>"
+		assert(fun_t.name)
+		var fun_name = fun_t.name
 		D.assert(type(fun_name) == 'string', "fun_name: %s", fun_name)
 		local all_passed = false
 
@@ -1021,7 +1021,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 		end
 
-		var rets = try_call(fun_type, false)
+		var rets = try_call(fun_type, report_errors)
 		return rets
 	end
 
@@ -1467,7 +1467,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if T.is_empty_table(base_t) then
 				-- Indexing what? We don't know
-				sol_warning(expr, 'Indexing unkown table')
+				sol_warning(expr, 'Indexing unkown table') -- FIXME: silent if explicitly typed 'table', loud if implict from {}
 				return T.Any
 			end
 
@@ -1846,11 +1846,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					sol_warning(stat, "[B] Trying to index type 'any' with %q", name)
+					sol_warning(stat, "[B] Indexing type 'any' with %q", name)
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Trying to index non-object of type %s with %q", var_t, name)
+					report_warning(stat, "[B] Indexing non-object of type %s with %q", var_t, name)
 					--D.break_()
 				end
 
@@ -1914,9 +1914,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				elseif T.is_any(base_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					sol_warning(stat, "[A] Trying to index type 'any' with %q", name)
+					sol_warning(stat, "[A] Indexing type 'any' with %q", name)
 				else
-					report_warning(stat, "[A] Trying to index non-object of type %s with %q", base_t, name)
+					report_warning(stat, "[A] Indexing non-object of type %s with %q", base_t, name)
 				end
 			end
 		end

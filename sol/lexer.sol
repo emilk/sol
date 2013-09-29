@@ -30,7 +30,7 @@ typedef L.TokenList = [L.Token]
 
 
 local function extract_chars(str: string) -> [string]
-	var chars = {}
+	var chars = {} : [string]
 	if true then
 		-- Fastest
 		for i = 1, #str do

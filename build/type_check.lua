@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 29  15:38:48 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Sep 29  22:57:05 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -248,7 +248,6 @@ local function analyze(ast, filename, on_require, settings)
 
 
 	local function declare_local(node, scope, name, typ)
-		D.assert(node and scope and name) --[[SOL OUTPUT--]] 
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
 		local old = scope:get_scoped(name) --[[SOL OUTPUT--]] 
@@ -441,7 +440,7 @@ local function analyze(ast, filename, on_require, settings)
 	--[[ Will analyze body and check its return-statements against fun_t.
 	     If fun_t.rets is nil (no type deduced) then this function will fill it in via deduction.
 	--]]
-	local function analyze_function_body(node, scope, fun_t)
+	local function analyze_function_body(node, _, fun_t)
 		if not node.body then
 			-- body-less function - used by lua_intrinsics.sol
 			return --[[SOL OUTPUT--]] 
@@ -513,7 +512,8 @@ local function analyze(ast, filename, on_require, settings)
 
 	local function check_arguments(expr, fun_t, arg_ts)
 		assert(fun_t.args) --[[SOL OUTPUT--]] 
-		local fun_name = fun_t.name or "<lambda>" --[[SOL OUTPUT--]] 
+		assert(fun_t.name) --[[SOL OUTPUT--]] 
+		local fun_name = fun_t.name --[[SOL OUTPUT--]] 
 		D.assert(type(fun_name) == 'string', "fun_name: %s", fun_name) --[[SOL OUTPUT--]] 
 		local all_passed = false --[[SOL OUTPUT--]] 
 
@@ -1021,7 +1021,7 @@ local function analyze(ast, filename, on_require, settings)
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		local rets = try_call(fun_type, false) --[[SOL OUTPUT--]] 
+		local rets = try_call(fun_type, report_errors) --[[SOL OUTPUT--]] 
 		return rets --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -1467,7 +1467,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			if T.is_empty_table(base_t) then
 				-- Indexing what? We don't know
-				sol_warning(expr, 'Indexing unkown table') --[[SOL OUTPUT--]] 
+				sol_warning(expr, 'Indexing unkown table') --[[SOL OUTPUT--]]  -- FIXME: silent if explicitly typed 'table', loud if implict from {}
 				return T.Any --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -1846,11 +1846,11 @@ local function analyze(ast, filename, on_require, settings)
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					sol_warning(stat, "[B] Trying to index type 'any' with %q", name) --[[SOL OUTPUT--]] 
+					sol_warning(stat, "[B] Indexing type 'any' with %q", name) --[[SOL OUTPUT--]] 
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Trying to index non-object of type %s with %q", var_t, name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[B] Indexing non-object of type %s with %q", var_t, name) --[[SOL OUTPUT--]] 
 					--D.break_()
 				end --[[SOL OUTPUT--]] 
 
@@ -1914,9 +1914,9 @@ local function analyze(ast, filename, on_require, settings)
 				elseif T.is_any(base_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					sol_warning(stat, "[A] Trying to index type 'any' with %q", name) --[[SOL OUTPUT--]] 
+					sol_warning(stat, "[A] Indexing type 'any' with %q", name) --[[SOL OUTPUT--]] 
 				else
-					report_warning(stat, "[A] Trying to index non-object of type %s with %q", base_t, name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[A] Indexing non-object of type %s with %q", base_t, name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

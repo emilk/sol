@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 29  15:38:48 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 29  22:57:05 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -173,21 +173,21 @@ function T.is_type(x)
 	return type(x) == 'table' and type(x.tag) == 'string' --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
---T._empty_table = { tag = 'table' }
+T._empty_table = { tag = 'table' } --[[SOL OUTPUT--]] 
 
 -- TODO: disallow=
 function T.create_empty_table()
 	--return { tag='object', members={} }
-	return T.Table --[[SOL OUTPUT--]] 
-	--return T._empty_table
+	--return T.Table
+	return T._empty_table --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 -- TODO: remove
 function T.is_empty_table(t)
 	--return t.tag == 'object' and next(t.members) == nil
 	--return t.tag == 'table'
-	return T.follow_identifiers(t).tag == 'table' --[[SOL OUTPUT--]] 
-	--return t == T._empty_table
+	--return T.follow_identifiers(t).tag == 'table'
+	return t == T._empty_table --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -717,7 +717,6 @@ function T.could_be(a, b, problem_rope)
 		end --[[SOL OUTPUT--]] 
 		return false --[[SOL OUTPUT--]] 
 	else
-
 		if T.isa(a, b, problem_rope) then
 			return true --[[SOL OUTPUT--]] 
 		elseif T.isa(b, a, problem_rope) then
