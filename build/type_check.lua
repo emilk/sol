@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 01  22:14:26 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 01  22:25:08 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -123,7 +123,14 @@ local function analyze(ast, filename, on_require, settings)
 			end --[[SOL OUTPUT--]] 
 			buf[i] = a --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-		return string.format( fmt, unpack( buf ) ) --[[SOL OUTPUT--]] 
+
+		local str = U.trim( string.format( fmt, unpack( buf ) ) ) --[[SOL OUTPUT--]] 
+
+		if U.count_line_breaks(str) == 0 then
+			return str --[[SOL OUTPUT--]] 
+		else
+			return str..'\n' --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local function report(type, where, fmt, ...)
@@ -1673,6 +1680,7 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 
 		if var_.type then
+			report_spam(stat, "decl_var_type: var aldready has type %s (pre_analyzed: %s)", var_.type, var_.type.pre_analyzed) --[[SOL OUTPUT--]] 
 			-- .type must have been deduced by pre-parsing
 			check_type_is_a("Variable declaration", stat, deduced_type, var_.type, 'error') --[[SOL OUTPUT--]] 
 		else

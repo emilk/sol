@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/util.sol on 2013 Oct 01  22:14:26 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/util.sol on 2013 Oct 01  22:25:08 --]] --[[
 Util.lua
 
 Provides some common utilities shared throughout the project.
@@ -187,6 +187,22 @@ function U.printf_err(fmt, ...)
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
+
+-- Returns the number of line breaks
+function U.count_line_breaks(str)
+	if not str:find('\n') then
+		-- Early out
+		return 0 --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	local n = 0 --[[SOL OUTPUT--]] 
+	for i = 1,#str do
+		if str:sub(i,i) == '\n' then
+			n = n + 1 --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+	return n --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 ------------------------------------------------------
 -- Files:

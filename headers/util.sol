@@ -1,8 +1,9 @@
--- Compiled from sol/util.sol on 2013 Oct 01  22:14:25
+-- Compiled from sol/util.sol on 2013 Oct 01  22:25:06
 
 return {
 	INDENTATION:       "\9";
 	const:             function(table: table) -> object;
+	count_line_breaks: function(str: string) -> int;
 	ellipsis:          function(msg: string, max_len: int?) -> string;
 	file_exists:       function(path: string) -> bool;
 	indent:            function(str: string) -> string;

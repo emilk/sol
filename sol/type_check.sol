@@ -123,7 +123,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 			buf[i] = a
 		end
-		return string.format( fmt, unpack( buf ) )
+
+		local str = U.trim( string.format( fmt, unpack( buf ) ) )
+
+		if U.count_line_breaks(str) == 0 then
+			return str
+		else
+			return str..'\n'
+		end
 	end
 
 	local function report(type: string, where: string, fmt: string, ...) -> string
@@ -1673,6 +1680,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		if var_.type then
+			report_spam(stat, "decl_var_type: var aldready has type %s (pre_analyzed: %s)", var_.type, var_.type.pre_analyzed)
 			-- .type must have been deduced by pre-parsing
 			check_type_is_a("Variable declaration", stat, deduced_type, var_.type, 'error')
 		else

@@ -1,7 +1,8 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 01  22:14:26 --]] require 'parser' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 01  22:25:08 --]] require 'parser' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
 local printf_err = U.printf_err --[[SOL OUTPUT--]] 
+local count_line_breaks = U.count_line_breaks --[[SOL OUTPUT--]] 
 
 local function debug_printf(...)
 	--[[
@@ -18,21 +19,6 @@ end --[[SOL OUTPUT--]]
 -- an AST.
 --
 
--- Returns the number of line breaks
-local function count_line_breaks(str)
-	if not str:find('\n') then
-		-- Early out
-		return 0 --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-	local n = 0 --[[SOL OUTPUT--]] 
-	for i = 1,#str do
-		if str:sub(i,i) == '\n' then
-			n = n + 1 --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-	return n --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
 
 assert(count_line_breaks("hello") == 0) --[[SOL OUTPUT--]] 
 assert(count_line_breaks("hello\n") == 1) --[[SOL OUTPUT--]] 

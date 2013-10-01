@@ -2,6 +2,7 @@ require 'parser'
 local D = require 'sol_debug'
 local U = require 'util'
 local printf_err = U.printf_err
+local count_line_breaks = U.count_line_breaks
 
 local function debug_printf(...)
 	--[[
@@ -18,21 +19,6 @@ end
 -- an AST.
 --
 
--- Returns the number of line breaks
-local function count_line_breaks(str: string) -> int
-	if not str:find('\n') then
-		-- Early out
-		return 0
-	end
-
-	local n = 0
-	for i = 1,#str do
-		if str:sub(i,i) == '\n' then
-			n = n + 1
-		end
-	end
-	return n
-end
 
 assert(count_line_breaks("hello") == 0)
 assert(count_line_breaks("hello\n") == 1)

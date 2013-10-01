@@ -188,6 +188,22 @@ function U.printf_err(fmt: string, ...)
 end
 
 
+-- Returns the number of line breaks
+function U.count_line_breaks(str: string) -> int
+	if not str:find('\n') then
+		-- Early out
+		return 0
+	end
+
+	local n = 0
+	for i = 1,#str do
+		if str:sub(i,i) == '\n' then
+			n = n + 1
+		end
+	end
+	return n
+end
+
 ------------------------------------------------------
 -- Files:
 
