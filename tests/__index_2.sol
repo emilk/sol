@@ -1,24 +1,14 @@
---	©2013 Arrowhead Game Studios AB
---	This file is part of the Arrowhead Foundation.
-
-local FlowCallbackRouter = { routers = {} }
+local Singleton = { routers = {} }
 
 local receiver_meta = {
-	__index = function(t, key)
-		return function(...)
-			for _, router in pairs(FlowCallbackRouter.routers) do
-				router:trigger(key, ...)
-			end
+	__index = function(_, _)
+		return function(_ : 'argument')
 		end
 	end,
 }
-setmetatable(FlowCallbackRouter, receiver_meta)
+setmetatable(Singleton, receiver_meta)
 
-function FlowCallbackRouter.register_router(key, router)
-	FlowCallbackRouter.routers[key] = router
-end
-function FlowCallbackRouter.unregister_router(key)
-	FlowCallbackRouter.routers[key] = nil
+function Singleton.some_member()
 end
 
-return FlowCallbackRouter
+Singleton.routers['key'] = nil

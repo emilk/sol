@@ -655,6 +655,7 @@ function T.has_tag(t: T.Type, target: string)
 
 	if t.tag == target then
 		return true
+
 	elseif T.is_variant(t) then
 		for _,v in ipairs(t.variants) do
 			--print("Find: searching variant " .. T.name(v))
@@ -1435,7 +1436,8 @@ end
 
 -- Recurses on variants and calls lambda on all non-variants.
 -- It combines the results into a variant.
-function T.visit_and_combine(t: T.Type, lambda: function(T.Type)->T.Type?) -> T.Type?
+typedef TypeVisitor = function(T.Type)->T.Type?
+function T.visit_and_combine(t: T.Type, lambda: TypeVisitor) -> T.Type?
 	t = T.follow_identifiers(t)
 
 	if t.tag == 'variant' then

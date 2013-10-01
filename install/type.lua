@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 01  21:36:21 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 01  21:43:16 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -655,6 +655,7 @@ function T.has_tag(t, target)
 
 	if t.tag == target then
 		return true --[[SOL OUTPUT--]] 
+
 	elseif T.is_variant(t) then
 		for _,v in ipairs(t.variants) do
 			--print("Find: searching variant " .. T.name(v))
@@ -1431,10 +1432,11 @@ function T.find_meta_method(t, name)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 	return nil --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
--- Recurses on variants and calls lambda on all non-variants.
--- It combines the results into a variant.
+
+
+
 function T.visit_and_combine(t, lambda)
 	t = T.follow_identifiers(t) --[[SOL OUTPUT--]] 
 
