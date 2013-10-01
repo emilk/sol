@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 01  21:32:06 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 01  21:36:21 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -627,9 +627,19 @@ end --[[SOL OUTPUT--]]
 function T.is_any(a)
 	local forgiving = true --[[SOL OUTPUT--]] 
 	a = T.follow_identifiers(a, forgiving) --[[SOL OUTPUT--]] 
-	return a == T.AnyTypeList
-	    or a == T.Any
-	    or a.tag == 'variant' and #a.variants == 1 and T.is_any(a.variants[1]) --[[SOL OUTPUT--]] 
+
+	if a.tag == 'any' then
+		return true --[[SOL OUTPUT--]] 
+
+	elseif a.tag == 'variant' then
+		for _,v in ipairs(a.variants) do
+			if T.is_any(v) then
+				return true --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	return false --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -640,42 +650,20 @@ function T.is_bool(a)
 end --[[SOL OUTPUT--]] 
 
 
--- Will look through a way for a type to match a given type
-function T.find(t, target)
-	--U.printf("T.find(%s, %s)", T.name(t), T.name(target))
-	D.assert( T.is_type(t) ) --[[SOL OUTPUT--]] 
-	D.assert( T.is_type(target) ) --[[SOL OUTPUT--]] 
-
-	t = T.follow_identifiers(t) --[[SOL OUTPUT--]] 
-
-	if T.isa(t, target) then
-		return t --[[SOL OUTPUT--]] 
-	elseif T.is_variant(t) then
-		for _,v in ipairs(t.variants) do
-			--print("Find: searching variant " .. T.name(v))
-			local found = T.find(v, target) --[[SOL OUTPUT--]] 
-			if found then
-				return found --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-	return nil --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
-
-function T.find_tag(t, target)
+function T.has_tag(t, target)
 	t = T.follow_identifiers(t) --[[SOL OUTPUT--]] 
 
 	if t.tag == target then
-		return t --[[SOL OUTPUT--]] 
+		return true --[[SOL OUTPUT--]] 
 	elseif T.is_variant(t) then
 		for _,v in ipairs(t.variants) do
 			--print("Find: searching variant " .. T.name(v))
-			if T.find_tag(v, target) then
-				return v --[[SOL OUTPUT--]] 
+			if T.has_tag(v, target) then
+				return true --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
-	return nil --[[SOL OUTPUT--]] 
+	return false --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -1247,12 +1235,12 @@ end --[[SOL OUTPUT--]]
 -- used for expressions like "a + b"
 -- works for tables, or numerics, i.e.   num+int == num
 function T.combine(a, b)
-	if T.find(a,     T.Any)         then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if T.find_tag(a, 'number')      then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if T.find_tag(a, 'num_literal') then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if T.find(b,     T.Any)         then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if T.find_tag(b, 'number')      then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if T.find_tag(b, 'num_literal') then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.is_any(a)                  then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.has_tag(a, 'number')      then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.has_tag(a, 'num_literal') then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.is_any(a)                  then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.has_tag(b, 'number')      then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.has_tag(b, 'num_literal') then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	return T.Int --[[SOL OUTPUT--]] 
 --[[
 	if T.isa(a, b) then return b end

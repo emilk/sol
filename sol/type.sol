@@ -627,9 +627,19 @@ end
 function T.is_any(a: T.Type)
 	local forgiving = true
 	a = T.follow_identifiers(a, forgiving)
-	return a == T.AnyTypeList
-	    or a == T.Any
-	    or a.tag == 'variant' and #a.variants == 1 and T.is_any(a.variants[1])
+
+	if a.tag == 'any' then
+		return true
+
+	elseif a.tag == 'variant' then
+		for _,v in ipairs(a.variants) do
+			if T.is_any(v) then
+				return true
+			end
+		end
+	end
+
+	return false
 end
 
 
@@ -640,42 +650,20 @@ function T.is_bool(a: T.Type)
 end
 
 
--- Will look through a way for a type to match a given type
-function T.find(t: T.Type, target: T.Type)
-	--U.printf("T.find(%s, %s)", T.name(t), T.name(target))
-	D.assert( T.is_type(t) )
-	D.assert( T.is_type(target) )
-
-	t = T.follow_identifiers(t)
-
-	if T.isa(t, target) then
-		return t
-	elseif T.is_variant(t) then
-		for _,v in ipairs(t.variants) do
-			--print("Find: searching variant " .. T.name(v))
-			local found = T.find(v, target)
-			if found then
-				return found
-			end
-		end
-	end
-	return nil
-end
-
-function T.find_tag(t: T.Type, target: string)
+function T.has_tag(t: T.Type, target: string)
 	t = T.follow_identifiers(t)
 
 	if t.tag == target then
-		return t
+		return true
 	elseif T.is_variant(t) then
 		for _,v in ipairs(t.variants) do
 			--print("Find: searching variant " .. T.name(v))
-			if T.find_tag(v, target) then
-				return v
+			if T.has_tag(v, target) then
+				return true
 			end
 		end
 	end
-	return nil
+	return false
 end
 
 
@@ -1247,12 +1235,12 @@ end
 -- used for expressions like "a + b"
 -- works for tables, or numerics, i.e.   num+int == num
 function T.combine(a: T.Type, b: T.Type)
-	if T.find(a,     T.Any)         then return T.Num end
-	if T.find_tag(a, 'number')      then return T.Num end
-	if T.find_tag(a, 'num_literal') then return T.Num end
-	if T.find(b,     T.Any)         then return T.Num end
-	if T.find_tag(b, 'number')      then return T.Num end
-	if T.find_tag(b, 'num_literal') then return T.Num end
+	if T.is_any(a)                  then return T.Num end
+	if T.has_tag(a, 'number')      then return T.Num end
+	if T.has_tag(a, 'num_literal') then return T.Num end
+	if T.is_any(a)                  then return T.Num end
+	if T.has_tag(b, 'number')      then return T.Num end
+	if T.has_tag(b, 'num_literal') then return T.Num end
 	return T.Int
 --[[
 	if T.isa(a, b) then return b end
