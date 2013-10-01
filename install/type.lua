@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Sep 29  22:57:05 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 01  21:32:06 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -653,8 +653,9 @@ function T.find(t, target)
 	elseif T.is_variant(t) then
 		for _,v in ipairs(t.variants) do
 			--print("Find: searching variant " .. T.name(v))
-			if T.find(v, target) then
-				return v --[[SOL OUTPUT--]] 
+			local found = T.find(v, target) --[[SOL OUTPUT--]] 
+			if found then
+				return found --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -1438,11 +1439,29 @@ function T.find_meta_method(t, name)
 		end --[[SOL OUTPUT--]] 
 	elseif t.tag == 'object' then
 		if t.metatable then
-			return t.metatable[name] --[[SOL OUTPUT--]] 
+			return t.metatable.members[name] --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 	return nil --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
+
+-- Recurses on variants and calls lambda on all non-variants.
+-- It combines the results into a variant.
+function T.visit_and_combine(t, lambda)
+	t = T.follow_identifiers(t) --[[SOL OUTPUT--]] 
+
+	if t.tag == 'variant' then
+		local ret = nil --[[SOL OUTPUT--]] 
+		for _,v in ipairs(t.variants) do
+			ret = T.variant(ret, T.visit_and_combine(v, lambda)) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+		return ret --[[SOL OUTPUT--]] 
+
+	else
+		return lambda(t) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
 
 return T --[[SOL OUTPUT--]] 
  --[[SOL OUTPUT--]] 

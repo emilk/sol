@@ -329,7 +329,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	analyze_expr = function(expr: P.Node, scope: Scope) --> T.Typelist, Variable?  -- TODO
+	analyze_expr = function(expr: P.Node, scope: Scope) -> T.Typelist, Variable?
 		local types, var_ = analyze_expr_unchecked(expr, scope)
 
 		D.assert(T.is_type_list(types))
@@ -1051,7 +1051,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				arg_ts[ix] = analyze_expr_single(v, scope)
 			else
 				-- Last argument may evaluate to several values
-				local types = analyze_expr(v, scope)
+				local types, _ = analyze_expr(v, scope)
 				if types == T.AnyTypeList then
 					arg_ts[ix] = { tag = 'varargs', type = T.Any }
 				elseif #types == 0 then
@@ -1107,7 +1107,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		report_spam(expr, "extract_iterator_type...")
 
 		--[-[
-		var<T.Typelist> types = analyze_expr(expr, scope)
+		var types, _ = analyze_expr(expr, scope)
 		if types == T.AnyTypeList then
 			-- e.g.   for line in src:gmatch("[^\n]*\n?") do
 			return T.AnyTypeList
@@ -1457,48 +1457,43 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		elseif expr.ast_type == 'IndexExpr' then
 			-- base[index]
-			-- TODO: var
-			local base_t  = analyze_expr_single(expr.base, scope)
-			local index_t = analyze_expr_single(expr.index, scope)
+			var base_t  = analyze_expr_single(expr.base,  scope)
+			var index_t = analyze_expr_single(expr.index, scope)
 
-			if T.is_any(base_t) then
-				return T.Any
-			end
+			var ret = T.visit_and_combine(base_t, function(t: T.Type)->T.Type?
+				if T.is_any(t) then
+					return T.Any
 
-			if T.is_empty_table(base_t) then
-				-- Indexing what? We don't know
-				sol_warning(expr, 'Indexing unkown table') -- FIXME: silent if explicitly typed 'table', loud if implict from {}
-				return T.Any
-			end
+				elseif T.is_empty_table(t) then
+					-- Indexing what? We don't know
+					sol_warning(expr, 'Indexing unkown table')
+					return T.Any
 
-			local list = T.find(base_t, T.List) -- TODO: find all lists and variant the reuslts
-			if list then
-				report_spam(expr, "List index")
-				check_type_is_a("List index", expr.index, index_t, T.Uint, 'error')
-				if list.type then
-					report_spam(expr, "List index: indexing %s, element type is %s", list, list.type)
-					return list.type
+				elseif t.tag == 'table' then
+					return T.Any
+
+				elseif t.tag == 'list' then
+					assert(t.type)
+					check_type_is_a("List index", expr.index, index_t, T.Uint, 'error')
+					return t.type
+
+				elseif t.tag == 'map' then
+					report_spam(expr, "Map index")
+					check_type_is_a("Map index", expr.index, index_t, t.key_type, 'error')
+					return T.variant(t.value_type, T.Nil)  -- Nil on not found
+
 				else
-					return T.Any -- FIXME
+					-- Not indexable
+					return nil
 				end
-			end
+			end)
 
-			local map = T.find(base_t, T.Map) -- TODO: find all maps and variant the results
-			if map then
-				report_spam(expr, "Map index")
-				check_type_is_a("Map index", expr.index, index_t, map.key_type, 'error')
-				return T.variant(map.value_type, T.Nil)  -- Nil on not found
-			end
-
-			if T.find(base_t, T.Table) then
-				report_spam(expr, "Table index")
+			if ret then
+				return ret
+			else
+				report_error(expr, 'Cannot index type %s with %s', base_t, index_t)
 				return T.Any
 			end
-
-			report_error(expr, 'Cannot index type %s with %s - not a list, table or map', base_t, index_t)
-			--error("FATAL")
-			return T.Any
-
 
 		elseif expr.ast_type == 'MemberExpr' then
 			-- .  or  :
@@ -1964,7 +1959,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		local name = stat.type_name
 
 		if stat.namespace_name then
-			var v = scope:get_var( stat.namespace_name ) -- TODO: var
+			var v = scope:get_var( stat.namespace_name )
 
 			if not v then
 				report_error(stat, "namespaced typedef: %s is not a previously defined variable", stat.namespace_name)
@@ -2151,7 +2146,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			elseif nrhs == 1 then
 			--]-]
 			--if nrhs == 1 then
-				local rt = analyze_expr(stat.rhs[1], scope)
+				var rt, _ = analyze_expr(stat.rhs[1], scope)
 				if rt == T.AnyTypeList then
 					var N = nlhs
 					for i=1,N do
@@ -2193,7 +2188,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			var<[T.Type]> init_types = {}
 
 			if #stat.init_list == 1 then
-				init_types = analyze_expr( stat.init_list[1], scope )
+				init_types, _ = analyze_expr( stat.init_list[1], scope )
 			else
 				for _,exp in ipairs(stat.init_list) do
 					init_types[#init_types + 1] = analyze_expr_single( exp, scope )
@@ -2354,7 +2349,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if #stat.arguments == 0 then
 				what_to_return = T.Void
 			elseif #stat.arguments == 1 then
-				what_to_return = analyze_expr( stat.arguments[1], scope )
+				what_to_return, _ = analyze_expr( stat.arguments[1], scope )
 			else
 				var<[T.Type]> type_list = {}
 				for i = 1, #stat.arguments do
@@ -2649,7 +2644,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	-- Returns the list of types returned in these statements
 	-- or nil if no returns statements where found
 	-- Returns true if all paths returns.
-	analyze_statlist = function(stat_list: P.Statlist, scope: Scope, scope_fun: T.Function) -> [T.Type]?, bool -- TODO: try T.Typelist instead of [T.Type]
+	analyze_statlist = function(stat_list: P.Statlist, scope: Scope, scope_fun: T.Function) -> T.Typelist?, bool
 		assert(stat_list.scope == scope)
 
 		local return_types = nil

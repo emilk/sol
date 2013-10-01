@@ -1,8 +1,8 @@
--- Compiled from sol/parser.sol on 2013 Sep 29  22:57:03
+-- Compiled from sol/parser.sol on 2013 Oct 01  21:32:05
 
-return <0x0135a150>{
+return <0x0069a0e0>{
 	-- Types:
-	typedef AssignmentStatement = <0x006d7f28>{
+	typedef AssignmentStatement = <0x00695ee0>{
 		ast_type: "AssignmentStatement";
 		lhs:      [ExprNode];
 		rhs:      [ExprNode];
@@ -10,7 +10,7 @@ return <0x0135a150>{
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef BinopExpr = <0x006bcb70>{
+	typedef BinopExpr = <0x0064ed40>{
 		ast_type: "BinopExpr";
 		lhs:      ExprNode;
 		op:       string;
@@ -18,39 +18,39 @@ return <0x0135a150>{
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef BooleanExpr = <0x00659938>{
+	typedef BooleanExpr = <0x003614f8>{
 		ast_type: "BooleanExpr";
 		tokens:   [Token];
 		value:    bool;
 		where:    string;
 	};
-	typedef BreakStatement = <0x004f1f30>{
+	typedef BreakStatement = <0x00694c70>{
 		ast_type: "BreakStatement";
 		scope:    Scope?;
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef CallExpr = <0x006d06f8>{
+	typedef CallExpr = <0x00342350>{
 		arguments: [ExprNode];
 		ast_type:  "CallExpr";
 		base:      ExprNode;
 		tokens:    [Token];
 		where:     string;
 	};
-	typedef CallStatement = <0x006e5e28>{
+	typedef CallStatement = <0x0069a568>{
 		ast_type:   "CallStatement";
 		expression: ExprNode;
 		scope:      Scope?;
 		tokens:     [Token];
 		where:      string;
 	};
-	typedef CastExpr = <0x006742a0>{
+	typedef CastExpr = <0x00674488>{
 		ast_type: "CastExpr";
 		expr:     ExprNode;
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef ClassDeclStatement = <0x00600638>{
+	typedef ClassDeclStatement = <0x006bfdf0>{
 		ast_type: "ClassDeclStatement";
 		is_local: bool;
 		name:     string;
@@ -59,43 +59,43 @@ return <0x0135a150>{
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef ConstructorExpr = <0x00665730>{
+	typedef ConstructorExpr = <0x00623018>{
 		ast_type:   "ConstructorExpr";
 		entry_list: [ConstructorExprEntry];
 		tokens:     [Token];
 		where:      string;
 	};
-	typedef DoStatement = <0x006c1298>{
+	typedef DoStatement = <0x003f27d8>{
 		ast_type: "DoStatement";
 		body:     Statlist;
 		scope:    Scope?;
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef DotsExpr = <0x006c96c8>{
+	typedef DotsExpr = <0x0053ffa0>{
 		ast_type: "DotsExpr";
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef Eof = <0x00706540>{
+	typedef Eof = <0x005cf0c0>{
 		ast_type: "Eof";
 		scope:    Scope?;
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef ExprNode = <0x006003e0>{
+	typedef ExprNode = <0x006a05b8>{
 		ast_type: ExprType;
 		tokens:   [Token];
 		where:    string;
 	};
 	typedef ExprType = "IdExpr" or "NumberExpr" or "StringExpr" or "BooleanExpr" or "NilExpr" or "ExternExpr" or "BinopExpr" or "UnopExpr" or "DotsExpr" or "CallExpr" or "TableCallExpr" or "StringCallExpr" or "IndexExpr" or "MemberExpr" or "LambdaFunctionExpr" or "ConstructorExpr" or "ParenthesesExpr" or "CastExpr";
-	typedef ExternExpr = <0x006b39f0>{
+	typedef ExternExpr = <0x004e42c0>{
 		ast_type: "ExternExpr";
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef FunctionDeclStatement = <0x00635920>{
-		arguments:    [<0x00638da8>{
+	typedef FunctionDeclStatement = <0x006b5780>{
+		arguments:    [<0x005c66c8>{
 		              		name: string;
 		              		type: Type?;
 		              	}];
@@ -110,7 +110,7 @@ return <0x0135a150>{
 		vararg:       VarArgs?;
 		where:        string;
 	};
-	typedef GenericForStatement = <0x006d6e08>{
+	typedef GenericForStatement = <0x00618000>{
 		ast_type:   "GenericForStatement";
 		body:       Statlist;
 		generators: [ExprNode];
@@ -119,43 +119,43 @@ return <0x0135a150>{
 		var_names:  [string];
 		where:      string;
 	};
-	typedef GotoStatement = <0x0068ac98>{
+	typedef GotoStatement = <0x00641300>{
 		ast_type: "GotoStatement";
 		label:    string;
 		scope:    Scope?;
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef IdExpr = <0x00601808>{
+	typedef IdExpr = <0x005fb650>{
 		ast_type: "IdExpr";
 		name:     string;
 		tokens:   [Token];
 		variable: Variable;
 		where:    string;
 	};
-	typedef IfStatement = <0x00678518>{
+	typedef IfStatement = <0x00690d08>{
 		ast_type: "IfStatement";
 		clauses:  [IfStatementClause];
 		scope:    Scope?;
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef IndexExpr = <0x005e0b40>{
+	typedef IndexExpr = <0x005b8d90>{
 		ast_type: "IndexExpr";
 		base:     ExprNode;
 		index:    ExprNode;
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef LabelStatement = <0x0038af40>{
+	typedef LabelStatement = <0x00639ae8>{
 		ast_type: "LabelStatement";
 		label:    string;
 		scope:    Scope?;
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef LambdaFunctionExpr = <0x00671f38>{
-		arguments:    [<0x005e4fb8>{
+	typedef LambdaFunctionExpr = <0x005cb210>{
+		arguments:    [<0x005c4a58>{
 		              		name: string;
 		              		type: Type?;
 		              	}];
@@ -167,7 +167,7 @@ return <0x0135a150>{
 		vararg:       VarArgs?;
 		where:        string;
 	};
-	typedef MemberExpr = <0x005ea040>{
+	typedef MemberExpr = <0x005c7648>{
 		ast_type: "MemberExpr";
 		base:     ExprNode;
 		ident:    string;
@@ -175,24 +175,24 @@ return <0x0135a150>{
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef NilExpr = <0x006a0088>{
+	typedef NilExpr = <0x00627b38>{
 		ast_type: "NilExpr";
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef Node = <0x005f9f68>{
+	typedef Node = <0x004e7b10>{
 		ast_type: NodeType;
 		tokens:   [Token];
 		where:    string;
 	};
 	typedef NodeType = ExprType or StatType or "Statlist";
-	typedef NumberExpr = <0x0061a670>{
+	typedef NumberExpr = <0x00692128>{
 		ast_type: "NumberExpr";
 		tokens:   [Token];
 		value:    string;
 		where:    string;
 	};
-	typedef NumericForStatement = <0x0109f6d0>{
+	typedef NumericForStatement = <0x005e15b0>{
 		ast_type: "NumericForStatement";
 		body:     Statlist;
 		end_:     ExprNode;
@@ -203,13 +203,13 @@ return <0x0135a150>{
 		var_name: string;
 		where:    string;
 	};
-	typedef ParenthesesExpr = <0x0066d018>{
+	typedef ParenthesesExpr = <0x0063d108>{
 		ast_type: "ParenthesesExpr";
 		inner:    ExprNode;
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef RepeatStatement = <0x006aa708>{
+	typedef RepeatStatement = <0x006330e0>{
 		ast_type:  "RepeatStatement";
 		body:      Statlist;
 		condition: ExprNode;
@@ -217,47 +217,47 @@ return <0x0135a150>{
 		tokens:    [Token];
 		where:     string;
 	};
-	typedef ReturnStatement = <0x006285a8>{
+	typedef ReturnStatement = <0x006484c0>{
 		arguments: [ExprNode];
 		ast_type:  "ReturnStatement";
 		scope:     Scope?;
 		tokens:    [Token];
 		where:     string;
 	};
-	typedef StatNode = <0x00676de8>{
+	typedef StatNode = <0x005d88a0>{
 		ast_type: StatType;
 		scope:    Scope?;
 		tokens:   [Token];
 		where:    string;
 	};
 	typedef StatType = "AssignmentStatement" or "CallStatement" or "VarDeclareStatement" or "IfStatement" or "WhileStatement" or "DoStatement" or "RepeatStatement" or "GenericForStatement" or "NumericForStatement" or "ReturnStatement" or "BreakStatement" or "LabelStatement" or "GotoStatement" or "FunctionDeclStatement" or "Typedef" or "ClassDeclStatement" or "Eof";
-	typedef Statlist = <0x005fd598>{
+	typedef Statlist = <0x0067dc20>{
 		ast_type: "Statlist";
 		body:     [StatNode];
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef StringCallExpr = <0x006e8240>{
+	typedef StringCallExpr = <0x00591400>{
 		arguments: [StringExpr];
 		ast_type:  "StringCallExpr";
 		base:      ExprNode;
 		tokens:    [Token];
 		where:     string;
 	};
-	typedef StringExpr = <0x0063a970>{
+	typedef StringExpr = <0x006b74b0>{
 		ast_type: "StringExpr";
 		tokens:   [Token];
 		value:    string;
 		where:    string;
 	};
-	typedef TableCallExpr = <0x006dcfa8>{
+	typedef TableCallExpr = <0x0049e2c8>{
 		arguments: [ConstructorExpr];
 		ast_type:  "TableCallExpr";
 		base:      ExprNode;
 		tokens:    [Token];
 		where:     string;
 	};
-	typedef Typedef = <0x00683e90>{
+	typedef Typedef = <0x005e8f10>{
 		ast_type:       "Typedef";
 		base_types:     [Type]?;
 		is_local:       bool;
@@ -268,14 +268,14 @@ return <0x0135a150>{
 		type_name:      string;
 		where:          string;
 	};
-	typedef UnopExpr = <0x006c4c70>{
+	typedef UnopExpr = <0x004fc578>{
 		ast_type: "UnopExpr";
 		op:       string;
 		rhs:      ExprNode;
 		tokens:   [Token];
 		where:    string;
 	};
-	typedef VarDeclareStatement = <0x005d9f88>{
+	typedef VarDeclareStatement = <0x0069f7e8>{
 		ast_type:  "VarDeclareStatement";
 		init_list: [ExprNode];
 		is_local:  bool;
@@ -286,7 +286,7 @@ return <0x0135a150>{
 		type_list: [Type]?;
 		where:     string;
 	};
-	typedef WhileStatement = <0x00681440>{
+	typedef WhileStatement = <0x006c2358>{
 		ast_type:  "WhileStatement";
 		body:      Statlist;
 		condition: ExprNode;
@@ -296,14 +296,14 @@ return <0x0135a150>{
 	};
 
 	-- Members:
-	LUA_SETTINGS: <0x012f7560>{
+	LUA_SETTINGS: <0x01268130>{
 	              	function_types: false;
 	              	is_sol:         false;
 	              	issues:         {"unused-parameter" or "unused-loop-variable" or "unused-variable" or "unassigned-variable" => "SPAM" or "WARNING"};
 	              	keywords:       {string};
 	              	symbols:        {string};
 	              };
-	SOL_SETTINGS: <0x01621d70>{
+	SOL_SETTINGS: <0x019956a8>{
 	              	function_types: true;
 	              	is_sol:         true;
 	              	issues:         {"unused-parameter" or "unused-loop-variable" or "unused-variable" or "unassigned-variable" => "WARNING" or "ERROR"};

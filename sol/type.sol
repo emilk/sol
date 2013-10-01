@@ -653,8 +653,9 @@ function T.find(t: T.Type, target: T.Type)
 	elseif T.is_variant(t) then
 		for _,v in ipairs(t.variants) do
 			--print("Find: searching variant " .. T.name(v))
-			if T.find(v, target) then
-				return v
+			local found = T.find(v, target)
+			if found then
+				return found
 			end
 		end
 	end
@@ -1115,7 +1116,7 @@ function T.name_verbose(typ: T.Type or [T.Type] or nil)
 end
 
 
-function T.is_variant(v)
+function T.is_variant(v) -> bool
 	v = T.follow_identifiers(v)
 	return v and type(v) == 'table' and v.tag == 'variant'
 end
@@ -1438,10 +1439,28 @@ function T.find_meta_method(t: T.Type, name: string) -> T.Type?
 		end
 	elseif t.tag == 'object' then
 		if t.metatable then
-			return t.metatable[name]
+			return t.metatable.members[name]
 		end
 	end
 	return nil
 end
+
+-- Recurses on variants and calls lambda on all non-variants.
+-- It combines the results into a variant.
+function T.visit_and_combine(t: T.Type, lambda: function(T.Type)->T.Type?) -> T.Type?
+	t = T.follow_identifiers(t)
+
+	if t.tag == 'variant' then
+		var ret = nil : T.Type?
+		for _,v in ipairs(t.variants) do
+			ret = T.variant(ret, T.visit_and_combine(v, lambda))
+		end
+		return ret
+
+	else
+		return lambda(t)
+	end
+end
+
 
 return T

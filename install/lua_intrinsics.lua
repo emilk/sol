@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lua_intrinsics.sol on 2013 Sep 29  22:57:05 --]] local INTRINSICS = [[
+--[[ DO NOT MODIFY - COMPILED FROM sol/lua_intrinsics.sol on 2013 Oct 01  21:32:06 --]] local INTRINSICS = [[
 	global unpack = extern : function(t: [any]) -> ...
 
 	global coroutine = {
@@ -83,7 +83,7 @@ function M.add_intrinsics_to_global_scope()
 	local scope = module_scope --[[SOL OUTPUT--]] 
 
 	local filename = "INTRINSICS" --[[SOL OUTPUT--]] 
-	local settings = P.SOL_SETTINGS --[[SOL OUTPUT--]]   -- TODO: var
+	local settings = P.SOL_SETTINGS --[[SOL OUTPUT--]] 
 
 	local st, tokens = L.lex_sol(INTRINSICS, filename, settings) --[[SOL OUTPUT--]] 
 	assert(st) --[[SOL OUTPUT--]] 
