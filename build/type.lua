@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 01  21:43:16 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 01  22:14:26 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -1029,7 +1029,7 @@ function T.format_type(root, verbose)
 			full = '{ }' --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		full = '<'..T.table_id(obj)..'>'..full --[[SOL OUTPUT--]]  -- great for debugging
+		--full = '<'..T.table_id(obj)..'>'..full -- great for debugging
 
 		if obj.class_type then
 			return '<instance>' .. full --[[SOL OUTPUT--]] 

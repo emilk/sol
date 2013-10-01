@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 01  21:43:16 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 01  22:14:26 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -1188,7 +1188,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		local list = nil --[[SOL OUTPUT--]] 
 		while true do
 			if tok:consume_symbol('...') then
-				if false then
+				if false then  -- TODO: varargs as last thing returned by function
 					local var_arg_t = T.Any --[[SOL OUTPUT--]] 
 
 					if tok:consume_symbol(':') then

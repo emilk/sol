@@ -1,4 +1,4 @@
-local Singleton = { routers = {} }
+local Singleton = { list = {} }
 
 local receiver_meta = {
 	__index = function(_, _)
@@ -8,7 +8,7 @@ local receiver_meta = {
 }
 setmetatable(Singleton, receiver_meta)
 
-function Singleton.some_member()
+function Singleton.fun()
 end
 
-Singleton.routers['key'] = nil
+Singleton.list['key'] = nil

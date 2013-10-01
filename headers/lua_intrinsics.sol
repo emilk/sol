@@ -1,5 +1,5 @@
--- Compiled from sol/lua_intrinsics.sol on 2013 Oct 01  21:43:15
+-- Compiled from sol/lua_intrinsics.sol on 2013 Oct 01  22:14:25
 
-return <0x029c3538>{
+return {
 	add_intrinsics_to_global_scope: function() -> void;
 }

@@ -1748,7 +1748,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 			--]]
 
-			--extend_existing_type = true -- HACK FIXME TODO osv
+			--extend_existing_type = true -- don't do this
 
 			if extend_existing_type then
 				report_spam(stat, "Extending class with %q - class: %s", name, tostring(obj_t))
@@ -1817,6 +1817,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 				local var_t = T.follow_identifiers(base_var.type)
 
+				-- TODO: use T.visit_and_combine
 				if var_t.tag == 'variant' then
 					--var extend_variant_member = extend_existing_type
 					var extend_variant_member = false
@@ -1856,6 +1857,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				base_t = T.follow_identifiers(base_t)
 				--assert(base_t ~= T.EmptyTable)
 
+				-- TODO: use T.visit_and_combine or T.find_all(base_t, 'object')
 				if base_t.tag == 'object' then
 					report_spam(stat, "Exisiting object")
 
@@ -1911,7 +1913,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					-- eg.   local foo = som_fun()   foo.var_ = ...
 					sol_warning(stat, "[A] Indexing type 'any' with %q", name)
 				else
-					report_warning(stat, "[A] Indexing non-object of type %s with %q", base_t, name)
+					report_warning(stat, "[A] Indexing non-object (tag: %s) of type %s with %q", base_t.tag, base_t, name)
 				end
 			end
 		end
@@ -2051,7 +2053,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		}
 
 		class_type.instance_type = instance_type
-		class_type.metatable = class_type -- HACK FIXME for __call on Vector3
+		class_type.metatable = class_type -- This is a common idiom for storing meta-methods (__add, ..) as class members
 
 		-- The name refers to the *instance* type.
 		scope:declare_type(name, instance_type, where_is(stat), is_local)
@@ -2572,7 +2574,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							}
 						}
 						var v = declare_var(stat, scope, name, is_local, class_type)
-						v.type = class_type -- FIXME
+						v.type = class_type
 
 					else
 						var var_name = stat.lhs[1].name

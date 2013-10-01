@@ -1029,7 +1029,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 			full = '{ }'
 		end
 
-		full = '<'..T.table_id(obj)..'>'..full -- great for debugging
+		--full = '<'..T.table_id(obj)..'>'..full -- great for debugging
 
 		if obj.class_type then
 			return '<instance>' .. full

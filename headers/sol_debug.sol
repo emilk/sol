@@ -1,6 +1,6 @@
--- Compiled from sol/sol_debug.sol on 2013 Oct 01  21:43:15
+-- Compiled from sol/sol_debug.sol on 2013 Oct 01  22:14:25
 
-return <0x005b8d40>{
+return {
 	activate: function() -> void;
 	active:   false;
 	assert:   function(bool_expr, fmt: string?, ... : any) -> void;

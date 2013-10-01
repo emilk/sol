@@ -1,6 +1,6 @@
--- Compiled from sol/util.sol on 2013 Oct 01  21:43:15
+-- Compiled from sol/util.sol on 2013 Oct 01  22:14:25
 
-return <0x006352a8>{
+return {
 	INDENTATION:       "\9";
 	const:             function(table: table) -> object;
 	ellipsis:          function(msg: string, max_len: int?) -> string;

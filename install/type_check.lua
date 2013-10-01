@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 01  21:43:16 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 01  22:14:26 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1748,7 +1748,7 @@ local function analyze(ast, filename, on_require, settings)
 			end
 			--]]
 
-			--extend_existing_type = true -- HACK FIXME TODO osv
+			--extend_existing_type = true -- don't do this
 
 			if extend_existing_type then
 				report_spam(stat, "Extending class with %q - class: %s", name, tostring(obj_t)) --[[SOL OUTPUT--]] 
@@ -1817,6 +1817,7 @@ local function analyze(ast, filename, on_require, settings)
 
 				local var_t = T.follow_identifiers(base_var.type) --[[SOL OUTPUT--]] 
 
+				-- TODO: use T.visit_and_combine
 				if var_t.tag == 'variant' then
 					--var extend_variant_member = extend_existing_type
 					local extend_variant_member = false --[[SOL OUTPUT--]] 
@@ -1856,6 +1857,7 @@ local function analyze(ast, filename, on_require, settings)
 				base_t = T.follow_identifiers(base_t) --[[SOL OUTPUT--]] 
 				--assert(base_t ~= T.EmptyTable)
 
+				-- TODO: use T.visit_and_combine or T.find_all(base_t, 'object')
 				if base_t.tag == 'object' then
 					report_spam(stat, "Exisiting object") --[[SOL OUTPUT--]] 
 
@@ -1911,7 +1913,7 @@ local function analyze(ast, filename, on_require, settings)
 					-- eg.   local foo = som_fun()   foo.var_ = ...
 					sol_warning(stat, "[A] Indexing type 'any' with %q", name) --[[SOL OUTPUT--]] 
 				else
-					report_warning(stat, "[A] Indexing non-object of type %s with %q", base_t, name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[A] Indexing non-object (tag: %s) of type %s with %q", base_t.tag, base_t, name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -2051,7 +2053,7 @@ local function analyze(ast, filename, on_require, settings)
 		} --[[SOL OUTPUT--]] 
 
 		class_type.instance_type = instance_type --[[SOL OUTPUT--]] 
-		class_type.metatable = class_type --[[SOL OUTPUT--]]  -- HACK FIXME for __call on Vector3
+		class_type.metatable = class_type --[[SOL OUTPUT--]]  -- This is a common idiom for storing meta-methods (__add, ..) as class members
 
 		-- The name refers to the *instance* type.
 		scope:declare_type(name, instance_type, where_is(stat), is_local) --[[SOL OUTPUT--]] 
@@ -2572,7 +2574,7 @@ local function analyze(ast, filename, on_require, settings)
 							}
 						} --[[SOL OUTPUT--]] 
 						local v = declare_var(stat, scope, name, is_local, class_type) --[[SOL OUTPUT--]] 
-						v.type = class_type --[[SOL OUTPUT--]]  -- FIXME
+						v.type = class_type --[[SOL OUTPUT--]] 
 
 					else
 						local var_name = stat.lhs[1].name --[[SOL OUTPUT--]] 

@@ -1188,7 +1188,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		local list = nil
 		while true do
 			if tok:consume_symbol('...') then
-				if false then
+				if false then  -- TODO: varargs as last thing returned by function
 					var<T.Type> var_arg_t = T.Any
 
 					if tok:consume_symbol(':') then
