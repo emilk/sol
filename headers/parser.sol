@@ -1,4 +1,4 @@
--- Compiled from sol/parser.sol on 2013 Oct 02  20:15:55
+-- Compiled from sol/parser.sol on 2013 Oct 02  20:39:13
 
 return {
 	-- Types:
@@ -95,10 +95,7 @@ return {
 		where:    string;
 	};
 	typedef FunctionDeclStatement = {
-		arguments:    [{
-		              		name: string;
-		              		type: Type?;
-		              	}];
+		arguments:    [{ name: string;  type: Type?; }];
 		ast_type:     "FunctionDeclStatement";
 		body:         Statlist;
 		is_aggregate: bool;
@@ -155,10 +152,7 @@ return {
 		where:    string;
 	};
 	typedef LambdaFunctionExpr = {
-		arguments:    [{
-		              		name: string;
-		              		type: Type?;
-		              	}];
+		arguments:    [{ name: string;  type: Type?; }];
 		ast_type:     "LambdaFunctionExpr";
 		body:         Statlist?;
 		is_mem_fun:   bool;
@@ -310,5 +304,5 @@ return {
 	              	keywords:       {string};
 	              	symbols:        {string};
 	              };
-	parse_sol:    function(src: string, tok, filename: string?, settings, module_scope) -> false or true, Statlist or string;
+	parse_sol:    function(src: string, tok, filename: string?, settings, module_scope) -> true or false, Statlist or string;
 }

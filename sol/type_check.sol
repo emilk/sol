@@ -1731,7 +1731,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			else
 				--v.type = T.Any
-				report_warning(stat, "Can't deduce type of %q", v.name)
+				sol_warning(stat, "Can't deduce type of %q", v.name)
 			end
 		end
 

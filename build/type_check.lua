@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  20:15:57 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  20:39:15 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1731,7 +1731,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			else
 				--v.type = T.Any
-				report_warning(stat, "Can't deduce type of %q", v.name) --[[SOL OUTPUT--]] 
+				sol_warning(stat, "Can't deduce type of %q", v.name) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 

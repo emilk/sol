@@ -1,4 +1,4 @@
--- Compiled from sol/type.sol on 2013 Oct 02  20:15:55
+-- Compiled from sol/type.sol on 2013 Oct 02  20:39:13
 
 return {
 	-- Types:
@@ -13,10 +13,7 @@ return {
 		where:        string?;
 	};
 	typedef Function = {
-		args:           [{
-		                		name: string?;
-		                		type: Type?;
-		                	}];
+		args:           [{ name: string?;  type: Type?; }];
 		intrinsic_name: string?;
 		name:           string;
 		pre_analyzed:   bool?;
@@ -128,68 +125,30 @@ return {
 	};
 
 	-- Members:
-	Any:                   {
-	                       	tag: "any";
-	                       };
+	Any:                   { tag: "any"; };
 	AnyTypeList:           table;
 	Bool:                  {
 	                       	tag:      "variant";
-	                       	variants: [{
-	                       	          			tag: "false";
-	                       	          		} or {
-	                       	          			tag: "true";
-	                       	          		}];
+	                       	variants: [{ tag: "true"; } or { tag: "false"; }];
 	                       };
-	False:                 {
-	                       	tag: "false";
-	                       };
-	Int:                   {
-	                       	tag: "int";
-	                       };
-	List:                  {
-	                       	tag:  "list";
-	                       	type: {
-	                       	      	tag: "any";
-	                       	      };
-	                       };
+	False:                 { tag: "false"; };
+	Int:                   { tag: "int"; };
+	List:                  { tag: "list";  type: { tag: "any"; }; };
 	Map:                   {
-	                       	key_type:   {
-	                       	            	tag: "any";
-	                       	            };
+	                       	key_type:   { tag: "any"; };
 	                       	tag:        "map";
-	                       	value_type: {
-	                       	            	tag: "any";
-	                       	            };
+	                       	value_type: { tag: "any"; };
 	                       };
-	Nil:                   {
-	                       	tag: "nil";
-	                       };
-	Nilable:               {
-	                       	tag: "any";
-	                       };
-	Num:                   {
-	                       	tag: "number";
-	                       };
-	Object:                {
-	                       	members: table;
-	                       	tag:     "object";
-	                       };
-	String:                {
-	                       	tag: "string";
-	                       };
-	Table:                 {
-	                       	tag: "table";
-	                       };
-	True:                  {
-	                       	tag: "true";
-	                       };
-	Uint:                  {
-	                       	tag: "int";
-	                       };
+	Nil:                   { tag: "nil"; };
+	Nilable:               { tag: "any"; };
+	Num:                   { tag: "number"; };
+	Object:                { members: table;  tag: "object"; };
+	String:                { tag: "string"; };
+	Table:                 { tag: "table"; };
+	True:                  { tag: "true"; };
+	Uint:                  { tag: "int"; };
 	Void:                  table;
-	_empty_table:          {
-	                       	tag: "table";
-	                       };
+	_empty_table:          { tag: "table"; };
 	all_variants:          function(typ: Type) -> function() -> Type?;
 	as_type_list:          function(t: Type or [Type]) -> Type or [Type] or [{
 	                       					pre_analyzed: bool?;
@@ -198,11 +157,7 @@ return {
 	                       				} or [Type]];
 	broaden:               function(t: Type?) -> Type?;
 	clone_variant:         function(v) -> Variant;
-	combine:               function(a: Type, b: Type) -> {
-	                       			tag: "number";
-	                       		} or {
-	                       			tag: "int";
-	                       		};
+	combine:               function(a: Type, b: Type) -> { tag: "number"; } or { tag: "int"; };
 	combine_type_lists:    function(a, b, forgiving: bool?) -> Typelist?;
 	could_be:              function(a: Type, b: Type, problem_rope: [string]?) -> true or false or true or false or true or false or true;
 	could_be_false:        function(a: Type) -> true or false or true or false or true or false or true;
@@ -219,7 +174,7 @@ return {
 	has_tag:               function(t: Type, target: string) -> true or false;
 	is_any:                function(a: Type) -> true or false;
 	is_atomic:             function(t: Type) -> bool;
-	is_bool:               function(a: Type) -> false or true;
+	is_bool:               function(a: Type) -> true or false;
 	is_class:              function(typ: Object) -> bool;
 	is_empty_table:        function(t: Type) -> bool;
 	is_instance:           function(typ: Object) -> bool;

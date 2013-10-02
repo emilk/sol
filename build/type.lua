@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 02  20:15:57 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 02  20:39:15 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -152,7 +152,7 @@ T.Void     = {} --[[SOL OUTPUT--]]  -- empty type-list
 T.Nilable  = T.Any --[[SOL OUTPUT--]]   -- TODO
 
 T.Uint = T.Int --[[SOL OUTPUT--]]                -- TODO
-T.Bool = { tag = 'variant',  variants = { T.False, T.True } } --[[SOL OUTPUT--]] 
+T.Bool = { tag = 'variant',  variants = { T.True, T.False } } --[[SOL OUTPUT--]] 
 
 
 -- General table - could be an object, list or map:
@@ -1034,7 +1034,15 @@ function T.format_type(root, verbose)
 			-- One-liner - e.g.   { foo: int }
 			full = '{ ' .. str_timmed ..' }' --[[SOL OUTPUT--]] 
 		else
-			full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
+			local shortened = str_timmed:gsub('%s%s+', '  ') --[[SOL OUTPUT--]] 
+			shortened = shortened:gsub(":%s+", ': ') --[[SOL OUTPUT--]] 
+
+			if #shortened < 50 then
+				-- One-line - e.g.  { x: number  y: number }
+				full = '{ ' .. shortened ..' }' --[[SOL OUTPUT--]] 
+			else
+				full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		--full = '<'..T.table_id(obj)..'>'..full -- great for debugging

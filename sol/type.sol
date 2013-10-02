@@ -152,7 +152,7 @@ T.Void     = {} -- empty type-list
 T.Nilable  = T.Any  -- TODO
 
 T.Uint = T.Int               -- TODO
-T.Bool = { tag = 'variant',  variants = { T.False, T.True } }
+T.Bool = { tag = 'variant',  variants = { T.True, T.False } }
 
 
 -- General table - could be an object, list or map:
@@ -1034,7 +1034,15 @@ function T.format_type(root: T.Type, verbose: bool?)
 			-- One-liner - e.g.   { foo: int }
 			full = '{ ' .. str_timmed ..' }'
 		else
-			full = '{\n' .. str .. indent ..'}'
+			local shortened = str_timmed:gsub('%s%s+', '  ')
+			shortened = shortened:gsub(":%s+", ': ')
+
+			if #shortened < 50 then
+				-- One-line - e.g.  { x: number  y: number }
+				full = '{ ' .. shortened ..' }'
+			else
+				full = '{\n' .. str .. indent ..'}'
+			end
 		end
 
 		--full = '<'..T.table_id(obj)..'>'..full -- great for debugging
