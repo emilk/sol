@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  22:00:47 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  22:23:36 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -151,6 +151,10 @@ local function analyze(ast, filename, on_require, settings)
 
 	local function report_warning(node, fmt, ...)
 		print( report('WARNING', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	local function report_solc_todo(node, fmt, ...)
+		--print( report('SOLC_TODO', where_is(node), fmt, ...) )
 	end --[[SOL OUTPUT--]] 
 
 	local function sol_warning(node, fmt, ...)
@@ -630,92 +634,96 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
-	local function do_member_lookup(node, type, name, suggestions)
-		--report_spam(node, "Looking for member %q in %s", name, type)
+	local function do_member_lookup(node, start_type, name, suggestions)
+		return T.visit_and_combine(start_type, function(type)
+			if type.tag == 'object' then
+				local obj = type --[[SOL OUTPUT--]] 
+				local member_type = obj.members[name] --[[SOL OUTPUT--]] 
 
-		type = T.follow_identifiers(type) --[[SOL OUTPUT--]] 
+				if not member_type and obj.class_type then
+					member_type = do_member_lookup(node, obj.class_type, name, suggestions) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 
-		if type.tag == 'variant' then
-			local indexed_type = nil --[[SOL OUTPUT--]] 
+				if not member_type and obj.metatable then
+					local index = obj.metatable.members['__index'] --[[SOL OUTPUT--]] 
 
-			for _,v in ipairs(type.variants) do
-				indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name, suggestions)) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+					if index then
+						index = T.follow_identifiers(index) --[[SOL OUTPUT--]] 
 
-			return indexed_type --[[SOL OUTPUT--]] 
-		elseif type.tag == 'object' then
-			local obj = type --[[SOL OUTPUT--]] 
-			local indexed_type = obj.members[name] --[[SOL OUTPUT--]] 
-
-			if not indexed_type and obj.metatable then
-				local indexer = obj.metatable.members['__index'] --[[SOL OUTPUT--]] 
-				if indexer then
-					if indexer.tag == 'function' then
-						report_spam(node, "metatable has __index function") --[[SOL OUTPUT--]] 
-						-- First member is the 'self'
-
-						local ignore_indexer = false --[[SOL OUTPUT--]] 
 						local given_t = {tag='string_literal', value=name} --[[SOL OUTPUT--]] 
 
-						local indexer_fun = indexer --[[SOL OUTPUT--]] 
-						if #indexer_fun.args == 2 then
-							local expected_t = indexer_fun.args[2].type --[[SOL OUTPUT--]] 
-							if not T.isa(given_t, expected_t) then
-								-- e.g. indexer only accepts "x" or "y" or "z"
-								-- Ignoring mis-matches gives much better error messages
-								ignore_indexer = true --[[SOL OUTPUT--]] 
-							end --[[SOL OUTPUT--]] 
-						else
-							if not check_arguments(node, indexer_fun, { T.Any, given_t }) then
-								ignore_indexer = true --[[SOL OUTPUT--]] 
-							end --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
+						if index.tag == 'function' then
+							report_spam(node, "metatable has __index function") --[[SOL OUTPUT--]] 
+							-- First member is the 'self'
 
-						if not ignore_indexer then
-							if indexer_fun.rets and #indexer_fun.rets > 0 then
-								return indexer_fun.rets[1] --[[SOL OUTPUT--]] 
+							local ignore_indexer = false --[[SOL OUTPUT--]] 
+
+							local indexer_fun = index --[[SOL OUTPUT--]] 
+							if #indexer_fun.args == 2 then
+								local expected_t = indexer_fun.args[2].type --[[SOL OUTPUT--]] 
+								if not T.isa(given_t, expected_t) then
+									-- e.g. index only accepts "x" or "y" or "z"
+									-- Ignoring mis-matches gives much better error messages
+									ignore_indexer = true --[[SOL OUTPUT--]] 
+								end --[[SOL OUTPUT--]] 
 							else
-								-- TODO: warnings should be written on __index set
-								report_error(node, "Unexpected __index function - no returns values") --[[SOL OUTPUT--]] 
-								return T.Any --[[SOL OUTPUT--]] 
+								if not check_arguments(node, indexer_fun, { T.Any, given_t }) then
+									ignore_indexer = true --[[SOL OUTPUT--]] 
+								end --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
+
+							if not ignore_indexer then
+								if indexer_fun.rets and #indexer_fun.rets > 0 then
+									return indexer_fun.rets[1] --[[SOL OUTPUT--]] 
+								else
+									-- TODO: warnings should be written on __index set
+									report_error(node, "Unexpected __index function - no returns values") --[[SOL OUTPUT--]] 
+									return T.Any --[[SOL OUTPUT--]] 
+								end --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
+
+						elseif index.tag == 'map' then
+							-- Vector3.__index = extern : { 'x' or 'y' or 'z' or 1 or 2 or 3  =>  number }
+							if T.isa(given_t, index.value_type) then
+								return index.key_type --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
+
+						else
+							report_spam(node, "Looking up member %q in metatbale __index", name) --[[SOL OUTPUT--]] 
+							return do_member_lookup(node, index, name, suggestions) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
-					else
-						report_spam(node, "Looking up member %q in metatbale __index", name) --[[SOL OUTPUT--]] 
-						return do_member_lookup(node, indexer, name, suggestions) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
 
-			if not indexed_type and obj.class_type then
-				indexed_type = do_member_lookup(node, obj.class_type, name, suggestions) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+				member_type = T.broaden( member_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
 
-			indexed_type = T.broaden( indexed_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
-
-			if obj.derived then
-				for _,v in ipairs(obj.derived) do
-					indexed_type = T.variant(indexed_type, do_member_lookup(node, v, name, suggestions)) --[[SOL OUTPUT--]] 
+				if obj.derived then
+					for _,v in ipairs(obj.derived) do
+						member_type = T.variant(member_type, do_member_lookup(node, v, name, suggestions)) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
 
-			if not indexed_type then
-				local close_name = loose_lookup(obj.members, name) --[[SOL OUTPUT--]] 
+				if not member_type then
+					local close_name = loose_lookup(obj.members, name) --[[SOL OUTPUT--]] 
 
-				if close_name then
-					suggestions[#suggestions + 1] = close_name --[[SOL OUTPUT--]] 
+					if close_name then
+						suggestions[#suggestions + 1] = close_name --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
 
-			return indexed_type --[[SOL OUTPUT--]] 
-		elseif T.isa(type, T.String) then
-			-- TODO:  'example':upper()
-			return T.Any --[[SOL OUTPUT--]] 
-		elseif T.is_any(type) then
-			return T.Any --[[SOL OUTPUT--]] 
-		else
-			return nil --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
+				return member_type --[[SOL OUTPUT--]] 
+
+			elseif T.isa(type, T.String) then
+				-- TODO:  'example':upper()
+				return T.Any --[[SOL OUTPUT--]] 
+
+			elseif T.is_any(type) then
+				return T.Any --[[SOL OUTPUT--]] 
+
+			else
+				return nil --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -1516,7 +1524,7 @@ local function analyze(ast, filename, on_require, settings)
 					return t --[[SOL OUTPUT--]] 
 				else
 					if #suggestions > 0 then
-						report_warning(expr, "Failed to find member %q (%s) - did you mean %s?", name, expr, table.concat(suggestions, " or ")) --[[SOL OUTPUT--]] 
+						report_warning(expr, "Failed to find member %q (%s) - did you mean %q?", name, expr, table.concat(suggestions, " or ")) --[[SOL OUTPUT--]] 
 					else
 						member_missing_reporter(expr, "Failed to find member %q (%s)", name, expr) --[[SOL OUTPUT--]]  -- TODO: warn
 					end --[[SOL OUTPUT--]] 
@@ -1905,7 +1913,7 @@ local function analyze(ast, filename, on_require, settings)
 
 			else -- no variable we can update the type of
 				-- e.g.:   foo.bar.baz
-				report_warning(stat, "Left hand side of assignment: tried to index non-variable: %s", left_expr.base) --[[SOL OUTPUT--]] 
+				report_solc_todo(stat, "Left hand side of assignment: tried to access non-variable: %s", left_expr.base) --[[SOL OUTPUT--]] 
 				assert(base_t) --[[SOL OUTPUT--]] 
 
 				local success = false --[[SOL OUTPUT--]] 
@@ -1915,7 +1923,7 @@ local function analyze(ast, filename, on_require, settings)
 					if T.is_any(t) then
 						-- not an object? then no need to extend the type
 						-- eg.   local foo = som_fun()   foo.var_ = ...
-						sol_warning(stat, "[A] Indexing type 'any' with %q", name) --[[SOL OUTPUT--]] 
+						sol_warning(stat, "[A] Member-accessing type 'any' with %q", name) --[[SOL OUTPUT--]] 
 						fail = true --[[SOL OUTPUT--]] 
 
 					elseif t.tag == 'object' then
