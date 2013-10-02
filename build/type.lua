@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 02  22:23:36 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 02  22:55:13 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -1455,17 +1455,22 @@ end --[[SOL OUTPUT--]]
 --typedef TypeVisitor = function(T.Type)->T.Type?
 --function T.visit_and_combine(t: T.Type, lambda: TypeVisitor) -> T.Type?
 function T.visit_and_combine(t, lambda)
+	D.assert(T.is_type(t)) --[[SOL OUTPUT--]] 
 	t = T.follow_identifiers(t) --[[SOL OUTPUT--]] 
+	D.assert(T.is_type(t)) --[[SOL OUTPUT--]] 
 
 	if t.tag == 'variant' then
 		local ret = nil --[[SOL OUTPUT--]] 
 		for _,v in ipairs(t.variants) do
-			ret = T.variant(ret, T.visit_and_combine(v, lambda)) --[[SOL OUTPUT--]] 
+			D.assert(T.is_type(v)) --[[SOL OUTPUT--]] 
+			local tmp = T.visit_and_combine(v, lambda) --[[SOL OUTPUT--]] 
+			ret = T.variant(ret, tmp) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return ret --[[SOL OUTPUT--]] 
 
 	else
-		return lambda(t) --[[SOL OUTPUT--]] 
+		local ret = lambda(t) --[[SOL OUTPUT--]] 
+		return ret --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 

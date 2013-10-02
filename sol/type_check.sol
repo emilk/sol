@@ -634,6 +634,51 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
+	local function try_match_index(node: P.Node, index_top: T.Type, member: T.Type) -> T.Type?
+		D.assert(T.is_type(index_top))
+		return T.visit_and_combine(index_top, function(index: T.Type)
+			index = T.follow_identifiers(index)
+
+			if index.tag == 'function' then
+				report_spam(node, "metatable has __index function")
+				-- First member is the 'self'
+
+				-- e.g. index only accepts "x" or "y" or "z"
+				-- Ignoring mis-matches gives much better error messages
+
+				var<T.Function> indexer_fun = index
+				if #indexer_fun.args == 2 then
+					var expected_t = indexer_fun.args[2].type
+					if not T.isa(member, expected_t) then
+						return nil
+					end
+				else
+					if not check_arguments(node, indexer_fun, { T.Any, member }) then
+						return nil
+					end
+				end
+
+				if indexer_fun.rets and #indexer_fun.rets > 0 then
+					return indexer_fun.rets[1]
+				else
+					-- TODO: warnings should be written on __index set
+					report_error(node, "Unexpected __index function - no returns values")
+					return T.Any
+				end
+
+			elseif index.tag == 'map' then
+				-- Vector3.__index = extern : { 'x' or 'y' or 'z' or 1 or 2 or 3  =>  number }
+				if T.isa(member, index.value_type) then
+					return index.key_type
+				end
+
+			end
+
+			return nil
+		end)
+	end
+
+
 	local function do_member_lookup(node: P.Node, start_type: T.Type, name: string, suggestions: [string]) -> T.Type?
 		return T.visit_and_combine(start_type, function(type: T.Type)
 			if type.tag == 'object' then
@@ -648,46 +693,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					local index = obj.metatable.members['__index']
 
 					if index then
-						index = T.follow_identifiers(index)
-
 						var given_t = {tag='string_literal', value=name}
+						var t = try_match_index(node, index, given_t)
 
-						if index.tag == 'function' then
-							report_spam(node, "metatable has __index function")
-							-- First member is the 'self'
-
-							local ignore_indexer = false
-
-							var<T.Function> indexer_fun = index
-							if #indexer_fun.args == 2 then
-								var expected_t = indexer_fun.args[2].type
-								if not T.isa(given_t, expected_t) then
-									-- e.g. index only accepts "x" or "y" or "z"
-									-- Ignoring mis-matches gives much better error messages
-									ignore_indexer = true
-								end
-							else
-								if not check_arguments(node, indexer_fun, { T.Any, given_t }) then
-									ignore_indexer = true
-								end
-							end
-
-							if not ignore_indexer then
-								if indexer_fun.rets and #indexer_fun.rets > 0 then
-									return indexer_fun.rets[1]
-								else
-									-- TODO: warnings should be written on __index set
-									report_error(node, "Unexpected __index function - no returns values")
-									return T.Any
-								end
-							end
-
-						elseif index.tag == 'map' then
-							-- Vector3.__index = extern : { 'x' or 'y' or 'z' or 1 or 2 or 3  =>  number }
-							if T.isa(given_t, index.value_type) then
-								return index.key_type
-							end
-
+						if t then
+							return t
 						else
 							report_spam(node, "Looking up member %q in metatbale __index", name)
 							return do_member_lookup(node, index, name, suggestions)
@@ -1475,7 +1485,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			var base_t  = analyze_expr_single(expr.base,  scope)
 			var index_t = analyze_expr_single(expr.index, scope)
 
+			D.assert(T.is_type(base_t))
+
 			var ret = T.visit_and_combine(base_t, function(t: T.Type)->T.Type?
+				D.assert(T.is_type(t))
+
 				if T.is_any(t) then
 					return T.Any
 
@@ -1496,6 +1510,17 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					report_spam(expr, "Map index")
 					check_type_is_a("Map index", expr.index, index_t, t.key_type, 'error')
 					return T.variant(t.value_type, T.Nil)  -- Nil on not found
+
+				elseif t.tag == 'object' then
+					if t.metatable then
+						-- e.g.  v[3]  where v is a Vector3
+						local index = t.metatable.members['__index']
+						if index then
+							return try_match_index(expr, index, index_t)
+						end
+					end
+					
+					return nil
 
 				else
 					-- Not indexable

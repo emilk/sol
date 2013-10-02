@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lua_intrinsics.sol on 2013 Oct 02  22:23:36 --]] local INTRINSICS = [[
+--[[ DO NOT MODIFY - COMPILED FROM sol/lua_intrinsics.sol on 2013 Oct 02  22:55:13 --]] local INTRINSICS = [[
 	global unpack = extern : function(t: [any]) -> ...
 
 	global coroutine = {

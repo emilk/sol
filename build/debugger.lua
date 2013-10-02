@@ -324,7 +324,7 @@ end
 
 function dbg.assert(condition, message)
 	if not condition then
-		dbg_writeln("Debugger stopped on assert(..., %s)", message)
+		dbg_writeln("Debugger stopped on assert(..., %s)", message or "nil")
 		dbg(false, 1)
 	end
 	assert(condition, message)

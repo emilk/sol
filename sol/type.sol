@@ -1455,17 +1455,22 @@ end
 --typedef TypeVisitor = function(T.Type)->T.Type?
 --function T.visit_and_combine(t: T.Type, lambda: TypeVisitor) -> T.Type?
 function T.visit_and_combine(t: T.Type, lambda: function(T.Type)->T.Type?) -> T.Type?
+	D.assert(T.is_type(t))
 	t = T.follow_identifiers(t)
+	D.assert(T.is_type(t))
 
 	if t.tag == 'variant' then
 		var ret = nil : T.Type?
 		for _,v in ipairs(t.variants) do
-			ret = T.variant(ret, T.visit_and_combine(v, lambda))
+			D.assert(T.is_type(v))
+			local tmp = T.visit_and_combine(v, lambda)
+			ret = T.variant(ret, tmp)
 		end
 		return ret
 
 	else
-		return lambda(t)
+		local ret = lambda(t)
+		return ret
 	end
 end
 

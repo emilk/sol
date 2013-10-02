@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  22:23:36 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  22:55:13 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -634,6 +634,51 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
+	local function try_match_index(node, index_top, member)
+		D.assert(T.is_type(index_top)) --[[SOL OUTPUT--]] 
+		return T.visit_and_combine(index_top, function(index)
+			index = T.follow_identifiers(index) --[[SOL OUTPUT--]] 
+
+			if index.tag == 'function' then
+				report_spam(node, "metatable has __index function") --[[SOL OUTPUT--]] 
+				-- First member is the 'self'
+
+				-- e.g. index only accepts "x" or "y" or "z"
+				-- Ignoring mis-matches gives much better error messages
+
+				local indexer_fun = index --[[SOL OUTPUT--]] 
+				if #indexer_fun.args == 2 then
+					local expected_t = indexer_fun.args[2].type --[[SOL OUTPUT--]] 
+					if not T.isa(member, expected_t) then
+						return nil --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				else
+					if not check_arguments(node, indexer_fun, { T.Any, member }) then
+						return nil --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+				if indexer_fun.rets and #indexer_fun.rets > 0 then
+					return indexer_fun.rets[1] --[[SOL OUTPUT--]] 
+				else
+					-- TODO: warnings should be written on __index set
+					report_error(node, "Unexpected __index function - no returns values") --[[SOL OUTPUT--]] 
+					return T.Any --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+			elseif index.tag == 'map' then
+				-- Vector3.__index = extern : { 'x' or 'y' or 'z' or 1 or 2 or 3  =>  number }
+				if T.isa(member, index.value_type) then
+					return index.key_type --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+			end --[[SOL OUTPUT--]] 
+
+			return nil --[[SOL OUTPUT--]] 
+		end) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+
 	local function do_member_lookup(node, start_type, name, suggestions)
 		return T.visit_and_combine(start_type, function(type)
 			if type.tag == 'object' then
@@ -648,46 +693,11 @@ local function analyze(ast, filename, on_require, settings)
 					local index = obj.metatable.members['__index'] --[[SOL OUTPUT--]] 
 
 					if index then
-						index = T.follow_identifiers(index) --[[SOL OUTPUT--]] 
-
 						local given_t = {tag='string_literal', value=name} --[[SOL OUTPUT--]] 
+						local t = try_match_index(node, index, given_t) --[[SOL OUTPUT--]] 
 
-						if index.tag == 'function' then
-							report_spam(node, "metatable has __index function") --[[SOL OUTPUT--]] 
-							-- First member is the 'self'
-
-							local ignore_indexer = false --[[SOL OUTPUT--]] 
-
-							local indexer_fun = index --[[SOL OUTPUT--]] 
-							if #indexer_fun.args == 2 then
-								local expected_t = indexer_fun.args[2].type --[[SOL OUTPUT--]] 
-								if not T.isa(given_t, expected_t) then
-									-- e.g. index only accepts "x" or "y" or "z"
-									-- Ignoring mis-matches gives much better error messages
-									ignore_indexer = true --[[SOL OUTPUT--]] 
-								end --[[SOL OUTPUT--]] 
-							else
-								if not check_arguments(node, indexer_fun, { T.Any, given_t }) then
-									ignore_indexer = true --[[SOL OUTPUT--]] 
-								end --[[SOL OUTPUT--]] 
-							end --[[SOL OUTPUT--]] 
-
-							if not ignore_indexer then
-								if indexer_fun.rets and #indexer_fun.rets > 0 then
-									return indexer_fun.rets[1] --[[SOL OUTPUT--]] 
-								else
-									-- TODO: warnings should be written on __index set
-									report_error(node, "Unexpected __index function - no returns values") --[[SOL OUTPUT--]] 
-									return T.Any --[[SOL OUTPUT--]] 
-								end --[[SOL OUTPUT--]] 
-							end --[[SOL OUTPUT--]] 
-
-						elseif index.tag == 'map' then
-							-- Vector3.__index = extern : { 'x' or 'y' or 'z' or 1 or 2 or 3  =>  number }
-							if T.isa(given_t, index.value_type) then
-								return index.key_type --[[SOL OUTPUT--]] 
-							end --[[SOL OUTPUT--]] 
-
+						if t then
+							return t --[[SOL OUTPUT--]] 
 						else
 							report_spam(node, "Looking up member %q in metatbale __index", name) --[[SOL OUTPUT--]] 
 							return do_member_lookup(node, index, name, suggestions) --[[SOL OUTPUT--]] 
@@ -1475,7 +1485,11 @@ local function analyze(ast, filename, on_require, settings)
 			local base_t  = analyze_expr_single(expr.base,  scope) --[[SOL OUTPUT--]] 
 			local index_t = analyze_expr_single(expr.index, scope) --[[SOL OUTPUT--]] 
 
+			D.assert(T.is_type(base_t)) --[[SOL OUTPUT--]] 
+
 			local ret = T.visit_and_combine(base_t, function(t)
+				D.assert(T.is_type(t)) --[[SOL OUTPUT--]] 
+
 				if T.is_any(t) then
 					return T.Any --[[SOL OUTPUT--]] 
 
@@ -1496,6 +1510,17 @@ local function analyze(ast, filename, on_require, settings)
 					report_spam(expr, "Map index") --[[SOL OUTPUT--]] 
 					check_type_is_a("Map index", expr.index, index_t, t.key_type, 'error') --[[SOL OUTPUT--]] 
 					return T.variant(t.value_type, T.Nil) --[[SOL OUTPUT--]]   -- Nil on not found
+
+				elseif t.tag == 'object' then
+					if t.metatable then
+						-- e.g.  v[3]  where v is a Vector3
+						local index = t.metatable.members['__index'] --[[SOL OUTPUT--]] 
+						if index then
+							return try_match_index(expr, index, index_t) --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+					
+					return nil --[[SOL OUTPUT--]] 
 
 				else
 					-- Not indexable
