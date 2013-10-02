@@ -1025,9 +1025,16 @@ function T.format_type(root: T.Type, verbose: bool?)
 			str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n'
 		end
 
-		local full = '{\n' .. str .. indent ..'}'
-		if U.trim(str) == '' then
+		var str_timmed = U.trim(str)
+
+		local full
+		if str_timmed == '' then
 			full = '{ }'
+		elseif U.count_line_breaks(str_timmed) == 0 then
+			-- One-liner - e.g.   { foo: int }
+			full = '{ ' .. str_timmed ..' }'
+		else
+			full = '{\n' .. str .. indent ..'}'
 		end
 
 		--full = '<'..T.table_id(obj)..'>'..full -- great for debugging

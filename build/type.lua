@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 02  20:09:53 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 02  20:15:57 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -1025,9 +1025,16 @@ function T.format_type(root, verbose)
 			str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n' --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		local full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
-		if U.trim(str) == '' then
+		local str_timmed = U.trim(str) --[[SOL OUTPUT--]] 
+
+		local full --[[SOL OUTPUT--]] 
+		if str_timmed == '' then
 			full = '{ }' --[[SOL OUTPUT--]] 
+		elseif U.count_line_breaks(str_timmed) == 0 then
+			-- One-liner - e.g.   { foo: int }
+			full = '{ ' .. str_timmed ..' }' --[[SOL OUTPUT--]] 
+		else
+			full = '{\n' .. str .. indent ..'}' --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		--full = '<'..T.table_id(obj)..'>'..full -- great for debugging
