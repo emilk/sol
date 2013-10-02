@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 01  22:25:08 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 02  20:09:53 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -220,6 +220,7 @@ function T.follow_identifiers(t, forgiving)
 		assert( t.scope ) --[[SOL OUTPUT--]] 
 
 		if t.var_name then
+			-- TODO: var
 			local var_ = t.scope:get_var( t.var_name ) --[[SOL OUTPUT--]]   -- A namespace is always a variable
 			if not var_ then
 				T.on_error("%s: Failed to find namespace variable %q", t.first_usage, t.var_name) --[[SOL OUTPUT--]] 
@@ -1276,7 +1277,7 @@ function T.combine_type_lists(a, b, forgiving)
 	end --[[SOL OUTPUT--]] 
 
 	if _G.g_spam then
-		U.printf('combine_type_lists(%s, %s)', T.name(a), T.name(b)) --[[SOL OUTPUT--]] 
+		--U.printf('combine_type_lists(%s, %s)', T.name(a), T.name(b))
 	end --[[SOL OUTPUT--]] 
 
 	if a == nil then return b --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
@@ -1432,11 +1433,12 @@ function T.find_meta_method(t, name)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 	return nil --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
-
-
-
+-- Recurses on variants and calls lambda on all non-variants.
+-- It combines the results into a variant.
+--typedef TypeVisitor = function(T.Type)->T.Type?
+--function T.visit_and_combine(t: T.Type, lambda: TypeVisitor) -> T.Type?
 function T.visit_and_combine(t, lambda)
 	t = T.follow_identifiers(t) --[[SOL OUTPUT--]] 
 
@@ -1449,6 +1451,19 @@ function T.visit_and_combine(t, lambda)
 
 	else
 		return lambda(t) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+function T.visit(t, lambda)
+	t = T.follow_identifiers(t) --[[SOL OUTPUT--]] 
+
+	if t.tag == 'variant' then
+		for _,v in ipairs(t.variants) do
+			T.visit(v, lambda) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+	else
+		lambda(t) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 

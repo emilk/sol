@@ -220,6 +220,7 @@ function T.follow_identifiers(t : T.Type, forgiving: bool?) -> T.Type
 		assert( t.scope )
 
 		if t.var_name then
+			-- TODO: var
 			local var_ = t.scope:get_var( t.var_name )  -- A namespace is always a variable
 			if not var_ then
 				T.on_error("%s: Failed to find namespace variable %q", t.first_usage, t.var_name)
@@ -1276,7 +1277,7 @@ function T.combine_type_lists(a, b, forgiving: bool?) -> T.Typelist?
 	end
 
 	if _G.g_spam then
-		U.printf('combine_type_lists(%s, %s)', T.name(a), T.name(b))
+		--U.printf('combine_type_lists(%s, %s)', T.name(a), T.name(b))
 	end
 
 	if a == nil then return b end
@@ -1436,8 +1437,9 @@ end
 
 -- Recurses on variants and calls lambda on all non-variants.
 -- It combines the results into a variant.
-typedef TypeVisitor = function(T.Type)->T.Type?
-function T.visit_and_combine(t: T.Type, lambda: TypeVisitor) -> T.Type?
+--typedef TypeVisitor = function(T.Type)->T.Type?
+--function T.visit_and_combine(t: T.Type, lambda: TypeVisitor) -> T.Type?
+function T.visit_and_combine(t: T.Type, lambda: function(T.Type)->T.Type?) -> T.Type?
 	t = T.follow_identifiers(t)
 
 	if t.tag == 'variant' then
@@ -1449,6 +1451,19 @@ function T.visit_and_combine(t: T.Type, lambda: TypeVisitor) -> T.Type?
 
 	else
 		return lambda(t)
+	end
+end
+
+function T.visit(t: T.Type, lambda: function(T.Type))
+	t = T.follow_identifiers(t)
+
+	if t.tag == 'variant' then
+		for _,v in ipairs(t.variants) do
+			T.visit(v, lambda)
+		end
+
+	else
+		lambda(t)
 	end
 end
 

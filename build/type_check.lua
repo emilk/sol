@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 01  22:25:08 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  20:09:53 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -439,7 +439,7 @@ local function analyze(ast, filename, on_require, settings)
 			fun_t.vararg = node.vararg --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		report_spam(node, "analyze_function_head: %s", fun_t) --[[SOL OUTPUT--]] 
+		--report_spam(node, "analyze_function_head: %s", fun_t)
 
 		return fun_t --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -858,7 +858,7 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 
 		if target_type.tag ~= 'object' then
-			report_error(expr, "setmetatable: first argument must name an object; got: %s", target_type) --[[SOL OUTPUT--]] 
+			report_warning(expr, "setmetatable: first argument should name an object; got: %s", target_type) --[[SOL OUTPUT--]] 
 			return --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -1671,29 +1671,74 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 
-	local function decl_var_type(stat, var_, deduced_type)
-		D.assert( T.is_type(deduced_type) ) --[[SOL OUTPUT--]] 
+	-- TODO: tow type args: explicit (if any) and deduced (right hand side, if any)
+	-- if explicit: use it, and ensure deduced and pre-analyzed type (v.type) is compatible
+	-- if no explicit, use a combinarion of deduced and pre-analyzed.
+	local function decl_var_type(stat, v, deduced_type, explicit_type)
+		local pre_analyzed_type = v.type --[[SOL OUTPUT--]] 
 
-		if deduced_type.tag == 'function' and deduced_type.name == '<lambda>' then
+		--report_info(stat, "decl_var_type %q pre-analyzed: %s, explicit: %s, deduced: %s\n", v.name, pre_analyzed_type, explicit_type, deduced_type)
+
+		if deduced_type and deduced_type.tag == 'function' and deduced_type.name == '<lambda>' then
 			-- Give the lmabda-function a more helpful name:
-			deduced_type.name = var_.name --[[SOL OUTPUT--]] 
+			deduced_type.name = v.name --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		if var_.type then
-			report_spam(stat, "decl_var_type: var aldready has type %s (pre_analyzed: %s)", var_.type, var_.type.pre_analyzed) --[[SOL OUTPUT--]] 
-			-- .type must have been deduced by pre-parsing
-			check_type_is_a("Variable declaration", stat, deduced_type, var_.type, 'error') --[[SOL OUTPUT--]] 
+		if explicit_type then
+			-- TODO: remove explicit types and rely on casts
+			if deduced_type then
+				check_type_is_a("Variable declaration", stat, deduced_type, explicit_type, 'error') --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			if pre_analyzed_type then
+				check_type_is_a("Variable declaration", stat, pre_analyzed_type, explicit_type, 'error') --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			v.type = explicit_type --[[SOL OUTPUT--]] 
+
+		elseif pre_analyzed_type then
+			if deduced_type then
+				--report_spam(stat, "decl_var_type %q pre-analyzed: %s, deduced: %s\n", v.name, pre_analyzed_type, deduced_type)
+
+				if pre_analyzed_type.tag == 'object' then
+					-- Combine with deduced type(s):
+					local comb_obj = U.shallow_clone( pre_analyzed_type ) --[[SOL OUTPUT--]] 
+					comb_obj.members = U.shallow_clone( comb_obj.members ) --[[SOL OUTPUT--]] 
+
+					T.visit(deduced_type, function(t)
+						if t.tag == 'object' then
+							for name, mem_type in pairs(t.members) do
+								--report_spam(stat, "Combining member %q, deduced: %s", name, mem_type)
+								comb_obj.members[name] = T.variant(comb_obj.members[name], mem_type) --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+					end) --[[SOL OUTPUT--]] 
+
+					report_spam(stat, "decl_var_type %q pre-analyzed: %s, deduced: %s, combined: %s\n", v.name, pre_analyzed_type, deduced_type, comb_obj) --[[SOL OUTPUT--]] 
+
+					v.type = comb_obj --[[SOL OUTPUT--]] 
+				else
+					check_type_is_a("Variable declaration", stat, deduced_type, pre_analyzed_type, 'error') --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
 		else
 			if deduced_type == T.Nil then
-				--sol_warning(stat, "Initializing value with nil - type cannot be deduced")
-				var_.type  = T.Nilable --[[SOL OUTPUT--]] 
+				inform('nil-init', stat, "Initializing %q with nil - type cannot be deduced", v.name) --[[SOL OUTPUT--]] 
+				v.type = T.Nilable --[[SOL OUTPUT--]] 
+
+			elseif deduced_type then
+				v.type = T.broaden( deduced_type ) --[[SOL OUTPUT--]] 
+
 			else
-				var_.type  = T.broaden( deduced_type ) --[[SOL OUTPUT--]] 
+				--v.type = T.Any
+				report_warning(stat, "Can't deduce type of %q", v.name) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		var_.namespace = deduced_type.namespace --[[SOL OUTPUT--]]   -- If any
-		var_.num_writes = var_.num_writes + 1 --[[SOL OUTPUT--]] 
+		v.namespace = deduced_type and deduced_type.namespace --[[SOL OUTPUT--]]   -- If any
+		v.num_writes = v.num_writes + 1 --[[SOL OUTPUT--]] 
+
+		--report_info(stat, "decl_var_type %q pre-analyzed: %s, explicit: %s, deduced: %s, RESULT: %s\n", v.name, pre_analyzed_type, explicit_type, deduced_type, v.type)
 	end --[[SOL OUTPUT--]] 
 
 
@@ -2234,39 +2279,24 @@ local function analyze(ast, filename, on_require, settings)
 						table.insert(explicit_types, explicit_types[1]) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-
-				local N = #vars --[[SOL OUTPUT--]] 
-				for i = 1,N do
-					local v = vars[i] --[[SOL OUTPUT--]] 
-					v.type = explicit_types[i] --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			if #stat.init_list == 0 then
 				-- local a,b
 				if stat.scoping == 'var' then
-					report_error(stat, "'var' must be initialized at declaration") --[[SOL OUTPUT--]] 
-				elseif explicit_types then
-					for _,v in ipairs(vars) do
-						if not T.is_nilable(v.type) then
-							report_error(stat, "Variable %q of non-nilable type %s missing its definition", v.name, v.type) --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-				else
-					for _,v in ipairs(vars) do
-						if not v.type then   -- It could have a forward-type (local foo; foo = function() ... )
-							sol_warning(stat, "Un-initialized local - type cannot be deduced!") --[[SOL OUTPUT--]] 
-							v.type = T.Nilable --[[SOL OUTPUT--]] 
-						end --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
+					report_error(stat, "'var' must always be initialized at declaration") --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+				for ix, v in ipairs(vars) do
+					decl_var_type(stat, v, nil, explicit_types and explicit_types[ix]) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
 			elseif #stat.init_list == 1 then
 				-- local a,b = foo()
 				if init_types == T.AnyTypeList then
 					-- Nothing to do
-					for _,v in ipairs(vars) do
-						v.num_writes = v.num_writes + 1 --[[SOL OUTPUT--]] 
+					for ix, v in ipairs(vars) do
+						decl_var_type(stat, v, T.Any, explicit_types and explicit_types[ix]) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
 					local nt = #init_types --[[SOL OUTPUT--]] 
@@ -2280,10 +2310,8 @@ local function analyze(ast, filename, on_require, settings)
 							T.name(init_types)) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
-					local N = math.min(nt, #vars) --[[SOL OUTPUT--]] 
-					for i = 1,N do
-						local v = vars[i] --[[SOL OUTPUT--]] 
-						decl_var_type(stat, v, init_types[i]) --[[SOL OUTPUT--]] 
+					for ix, v in ipairs(vars) do
+						decl_var_type(stat, v, init_types[ix], explicit_types and explicit_types[ix]) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			elseif #vars ~= #stat.init_list then
@@ -2292,19 +2320,19 @@ local function analyze(ast, filename, on_require, settings)
 					#vars, #stat.init_list) --[[SOL OUTPUT--]] 
 			else
 				-- local a,b,c = 1,2,3
-				local N = #vars --[[SOL OUTPUT--]] 
-				for i = 1,N do
-					local v = vars[i] --[[SOL OUTPUT--]] 
-					local deduced_type = init_types[i] --[[SOL OUTPUT--]] 
+				for ix, v in ipairs(vars) do
+					local deduced_type = init_types[ix] --[[SOL OUTPUT--]] 
 					assert( T.is_type(deduced_type) ) --[[SOL OUTPUT--]] 
-					decl_var_type(stat, v, deduced_type) --[[SOL OUTPUT--]] 
+					decl_var_type(stat, v, deduced_type, explicit_types and explicit_types[ix]) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			if stat.scoping == 'var' and not explicit_types then
-				for _,v in ipairs(vars) do
-					if v.type==nil or T.is_any(v.type) then
-						report_error(stat, "Undeducible type - the type of a 'var' must be compile-time deducible") --[[SOL OUTPUT--]] 
+			if stat.scoping == 'var' then
+				for ix, v in ipairs(vars) do
+					if explicit_types and explicit_types[ix] == T.Any then
+						-- explicit any is ok
+					elseif v.type==nil or T.is_any(v.type) then
+						report_error(stat, "%q has undeducible type - the type of a 'var' must be compile-time deducible", v.name) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 

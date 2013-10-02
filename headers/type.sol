@@ -1,4 +1,4 @@
--- Compiled from sol/type.sol on 2013 Oct 01  22:25:06
+-- Compiled from sol/type.sol on 2013 Oct 02  20:09:51
 
 return {
 	-- Types:
@@ -249,5 +249,6 @@ return {
 	                       		tag:          TypeID;
 	                       		where:        string?;
 	                       	};
-	visit_and_combine:     function(t: Type, lambda: TypeVisitor) -> Type?;
+	visit:                 function(t: Type, lambda: function(: Type) -> void) -> void;
+	visit_and_combine:     function(t: Type, lambda: function(: Type) -> Type?) -> Type?;
 }

@@ -39,6 +39,8 @@ P.LUA_SETTINGS = {
 		['unused-loop-variable'] = 'SPAM',
 		['unused-variable']      = 'WARNING',
 		['unassigned-variable']  = 'WARNING';
+
+		['nil-init']             = 'SPAM'
 	}
 }
 
@@ -67,6 +69,8 @@ P.SOL_SETTINGS = {
 		['unused-loop-variable'] = 'WARNING';
 		['unused-variable']      = 'WARNING';
 		['unassigned-variable']  = 'ERROR';
+
+		['nil-init']             = 'SPAM'
 	}
 }
 

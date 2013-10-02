@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 01  22:25:08 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 02  20:09:52 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -39,6 +39,8 @@ P.LUA_SETTINGS = {
 		['unused-loop-variable'] = 'SPAM',
 		['unused-variable']      = 'WARNING',
 		['unassigned-variable']  = 'WARNING';
+
+		['nil-init']             = 'SPAM'
 	}
 } --[[SOL OUTPUT--]] 
 
@@ -67,6 +69,8 @@ P.SOL_SETTINGS = {
 		['unused-loop-variable'] = 'WARNING';
 		['unused-variable']      = 'WARNING';
 		['unassigned-variable']  = 'ERROR';
+
+		['nil-init']             = 'SPAM'
 	}
 } --[[SOL OUTPUT--]] 
 
