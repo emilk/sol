@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  22:55:13 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  23:01:53 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1932,7 +1932,7 @@ local function analyze(ast, filename, on_require, settings)
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Indexing non-object of type %s with %q", var_t, name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[B] Looking up %q in non-object of type %s", name, var_t) --[[SOL OUTPUT--]] 
 					--D.break_()
 				end --[[SOL OUTPUT--]] 
 
@@ -2007,7 +2007,7 @@ local function analyze(ast, filename, on_require, settings)
 				elseif fail then
 					return false --[[SOL OUTPUT--]] 
 				else
-					report_warning(stat, "[A] Indexing non-object of type %s with %q", base_t, name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[B] Looking up %q in non-object of type %s", name, base_t) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

@@ -1,4 +1,4 @@
--- Compiled from sol/lexer.sol on 2013 Oct 02  22:55:11
+-- Compiled from sol/lexer.sol on 2013 Oct 02  23:01:51
 
 return {
 	-- Types:

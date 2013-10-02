@@ -1932,7 +1932,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Indexing non-object of type %s with %q", var_t, name)
+					report_warning(stat, "[B] Looking up %q in non-object of type %s", name, var_t)
 					--D.break_()
 				end
 
@@ -2007,7 +2007,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				elseif fail then
 					return false
 				else
-					report_warning(stat, "[A] Indexing non-object of type %s with %q", base_t, name)
+					report_warning(stat, "[B] Looking up %q in non-object of type %s", name, base_t)
 				end
 			end
 		end

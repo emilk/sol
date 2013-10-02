@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 02  22:55:13 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 02  23:01:53 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
