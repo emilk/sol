@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  20:39:15 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  22:00:47 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1907,66 +1907,74 @@ local function analyze(ast, filename, on_require, settings)
 				-- e.g.:   foo.bar.baz
 				report_warning(stat, "Left hand side of assignment: tried to index non-variable: %s", left_expr.base) --[[SOL OUTPUT--]] 
 				assert(base_t) --[[SOL OUTPUT--]] 
-				base_t = T.follow_identifiers(base_t) --[[SOL OUTPUT--]] 
-				--assert(base_t ~= T.EmptyTable)
 
-				-- TODO: use T.visit_and_combine or T.find_all(base_t, 'object')
-				if base_t.tag == 'object' then
-					report_spam(stat, "Exisiting object") --[[SOL OUTPUT--]] 
+				local success = false --[[SOL OUTPUT--]] 
+				local fail    = false --[[SOL OUTPUT--]] 
 
-					local left_type = base_t.members[name] --[[SOL OUTPUT--]] 
+				T.visit(base_t, function(t)
+					if T.is_any(t) then
+						-- not an object? then no need to extend the type
+						-- eg.   local foo = som_fun()   foo.var_ = ...
+						sol_warning(stat, "[A] Indexing type 'any' with %q", name) --[[SOL OUTPUT--]] 
+						fail = true --[[SOL OUTPUT--]] 
 
-					if left_type and left_type.pre_analyzed then
-						-- The member type was reached by the pre-analyzer - overwrite with refined info:
-						assert(not right_type.pre_analyzed) --[[SOL OUTPUT--]] 
-						--var_t.members[name] = nil  -- TODO: makes compilation hang!
-						left_type = nil --[[SOL OUTPUT--]] 
+					elseif t.tag == 'object' then
+						local left_type = t.members[name] --[[SOL OUTPUT--]] 
 
-						report_spam(stat, "Replacing pre-analyzed type with refined type: %s", right_type) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
+						if left_type and left_type.pre_analyzed then
+							-- The member type was reached by the pre-analyzer - overwrite with refined info:
+							assert(not right_type.pre_analyzed) --[[SOL OUTPUT--]] 
+							--var_t.members[name] = nil  -- TODO: makes compilation hang!
+							left_type = nil --[[SOL OUTPUT--]] 
 
-					if left_type then
-						report_spam(stat, "Object already has member") --[[SOL OUTPUT--]] 
-						left_type = T.broaden( left_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
-
-						if not T.could_be(right_type, left_type) then
-							report_error(stat, "[A] type clash: cannot assign to %q (of type %s) with %s", name, left_type, right_type) --[[SOL OUTPUT--]] 
-							return false --[[SOL OUTPUT--]] 
-						else
-							return true --[[SOL OUTPUT--]] 
+							report_spam(stat, "Replacing pre-analyzed type with refined type: %s", right_type) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
-					else
-						if not is_declare and not base_t.members[name] then
-							local close_name = loose_lookup(base_t.members, name) --[[SOL OUTPUT--]] 
 
-							if close_name then
-								report_warning(stat, "Could not find %q - Did you mean %q?", name, close_name) --[[SOL OUTPUT--]] 
+						if left_type then
+							report_spam(stat, "Object already has member") --[[SOL OUTPUT--]] 
+							left_type = T.broaden( left_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
+
+							if not T.could_be(right_type, left_type) then
+								report_error(stat, "[A] type clash: cannot assign to %q (of type %s) with %s", name, left_type, right_type) --[[SOL OUTPUT--]] 
+								fail = true --[[SOL OUTPUT--]] 
+							else
+								success = true --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
+						else
+							if not is_declare and not t.members[name] then
+								local close_name = loose_lookup(t.members, name) --[[SOL OUTPUT--]] 
+
+								if close_name then
+									report_warning(stat, "Could not find %q - Did you mean %q?", name, close_name) --[[SOL OUTPUT--]] 
+								end --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
+
+							report_spam(stat, "Adding member") --[[SOL OUTPUT--]] 
+							report_warning(stat, "Adding member %q to %q", name, t) --[[SOL OUTPUT--]] 
+
+							--[[
+							We do not broaden the type here, to make sure the following code works:
+
+							typedef Foo = { tag : 'foo '}
+
+							function fun() -> Foo
+								local ret = {}
+								ret.tag = 'foo'  -- No broadeding! tag is 'foo', not string
+								return ret
+							end
+							--]]
+							t.members[name] = right_type --[[SOL OUTPUT--]] 
+							success = true --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
-
-						report_spam(stat, "Adding member") --[[SOL OUTPUT--]] 
-						report_warning(stat, "Adding member %q to %q", name, base_t) --[[SOL OUTPUT--]] 
-
-						--[[
-						We do not broaden the type here, to make sure the following code works:
-
-						typedef Foo = { tag : 'foo '}
-
-						function fun() -> Foo
-							local ret = {}
-							ret.tag = 'foo'  -- No broadeding! tag is 'foo', not string
-							return ret
-						end
-						--]]
-						base_t.members[name] = right_type --[[SOL OUTPUT--]] 
-						return true --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
-				elseif T.is_any(base_t) then
-					-- not an object? then no need to extend the type
-					-- eg.   local foo = som_fun()   foo.var_ = ...
-					sol_warning(stat, "[A] Indexing type 'any' with %q", name) --[[SOL OUTPUT--]] 
+				end) --[[SOL OUTPUT--]] 
+
+				if success then
+					return true --[[SOL OUTPUT--]] 
+				elseif fail then
+					return false --[[SOL OUTPUT--]] 
 				else
-					report_warning(stat, "[A] Indexing non-object (tag: %s) of type %s with %q", base_t.tag, base_t, name) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[A] Indexing non-object of type %s with %q", base_t, name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
