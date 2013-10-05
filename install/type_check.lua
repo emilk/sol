@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 05  08:59:04 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 05  09:10:16 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1039,7 +1039,7 @@ local function analyze(ast, filename, on_require, settings)
 				return rets --[[SOL OUTPUT--]] 
 
 			elseif report_errors then
-				report_error(expr, "Cannot call %s", typ) --[[SOL OUTPUT--]] 
+				report_error(expr, "Cannot call %s of type %s", expr, typ) --[[SOL OUTPUT--]] 
 				return nil --[[SOL OUTPUT--]] 
 			else
 				return nil --[[SOL OUTPUT--]] 
@@ -1096,7 +1096,7 @@ local function analyze(ast, filename, on_require, settings)
 			D.assert( T.is_type_list(rets) ) --[[SOL OUTPUT--]] 
 			return rets --[[SOL OUTPUT--]] 
 		else
-			report_error(expr, "Cannot call %s", fun_type) --[[SOL OUTPUT--]] 
+			report_error(expr, "Expected %s to be a fucntion was %s", expr.base, fun_type) --[[SOL OUTPUT--]] 
 			try_calling(expr, fun_type, args, arg_ts, called_as_mem_fun, true) --[[SOL OUTPUT--]]  -- Report errors
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
