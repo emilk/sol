@@ -313,7 +313,7 @@ function Scope.create_global_scope() -> Scope
 	end
 
 	for _,name in ipairs(functions) do
-		var<T.Function> fun_t = {
+		var fun_t = {
 			tag            = 'function',
 			args           = { },
 			vararg         = { tag = 'varargs', type = T.Any },

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 05  08:28:39 --]] require 'parser' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 05  08:47:55 --]] require 'parser' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
 local printf_err = U.printf_err --[[SOL OUTPUT--]] 
@@ -65,9 +65,9 @@ local function output(ast, filename, strip_white_space)
 		end,
 
 		append_white = function(self, token)
-			if token.all_leading_white then
+			if token.leading_white then
 				if not strip_white_space or #self.rope>0 then
-					self:append_str( token.all_leading_white ) --[[SOL OUTPUT--]] 
+					self:append_str( token.leading_white ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end

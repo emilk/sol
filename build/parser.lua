@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 05  08:28:39 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 05  08:47:55 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -618,7 +618,9 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			local token_list = {} --[[SOL OUTPUT--]] 
 			local where = where_am_i() --[[SOL OUTPUT--]] 
 
-			if tok:is_symbol('.') or tok:is_symbol(':') then
+			if tok:is_symbol('.') or
+				   (tok:is_symbol(':') and tok:peek().leading_white=="")
+		   then
 				local symb = tok:get(token_list).data --[[SOL OUTPUT--]] 
 				if not tok:is('ident') then
 					return false, report_error("<ident> expected.") --[[SOL OUTPUT--]] 
@@ -881,9 +883,9 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 	} --[[SOL OUTPUT--]] 
 
 	parse_sub_expr = function(scope, prio_level)
-		local    st    = false --[[SOL OUTPUT--]] 
+		local st    = false --[[SOL OUTPUT--]] 
 		local exp   = nil --[[SOL OUTPUT--]] 
-		local          where = where_am_i() --[[SOL OUTPUT--]] 
+		local where = where_am_i() --[[SOL OUTPUT--]] 
 
 		--base item, possibly with unop prefix
 		if unops[tok:peek().data] then
@@ -956,7 +958,11 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			if tok:consume_symbol('}') then
 				report_error("Use 'object'") --[[SOL OUTPUT--]] 
 				return T.create_empty_table() --[[SOL OUTPUT--]] 
-			elseif tok:is('ident') and tok:peek(1).data == ':' then
+
+			elseif tok:is('ident')
+			   and tok:peek(1).data == ':'
+			   --and #tok:peek(1).leading_white > 0
+			then
 				-- key-value-pairs - an object
 				local obj = {
 					tag     = 'object',
@@ -1046,10 +1052,10 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			local fun_t = {
 				tag    = 'function',
 				args   = {},
-				vararg = nil,
-				rets   = nil,
+				vararg = nil ,--: T:VarArgs?,  -- TODO
+				rets   = nil ,--: [T.Type]?,
 				name   = '<lambda>',
-			} --[[SOL OUTPUT--]] 
+			} --[[SOL OUTPUT--]]   -- TODO: remove
 
 			if not tok:consume_symbol(')') then
 				while true do
@@ -1258,7 +1264,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 		user.sol:
 		  local Mod = require 'module'
-		  var<Mod.Foo> foo = 42
+		  var foo = {} : Mod.Foo
 		--]]
 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
@@ -1347,7 +1353,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		local st,expr = parse_sub_expr(scope, 0) --[[SOL OUTPUT--]] 
 		if not st then return false, expr --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-		if tok:consume_symbol(':') or tok:consume_symbol('!') then
+		if #tok:peek().leading_white>0 and tok:consume_symbol(':') then
 			-- A cast
 
 			local where = where_am_i() --[[SOL OUTPUT--]] 
@@ -1533,7 +1539,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 			--else clause
 			if tok:consume_keyword('else', token_list) then
-				if tok:peek().data == 'if' and tok:peek().all_leading_white == ' ' then
+				if tok:peek().data == 'if' and tok:peek().leading_white == ' ' then
 					-- Warn agains C-style 'else if'
 					report_error("Dangerous 'else if' here - did you mean 'elseif' ? (insert extra space to mute this error)") --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 

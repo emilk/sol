@@ -885,7 +885,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 		elseif typ.tag == 'object' then
 			--verbose = false -- FIXME 
 
-			var<T.Object> obj = typ
+			var obj = typ : T.Object
 
 			if written_objs[obj] then
 				return '<RECURSION '..T.table_id(obj)..'>'

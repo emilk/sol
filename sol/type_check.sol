@@ -414,11 +414,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local analyze_function_head = function(node: P.Node, scope: Scope, is_pre_analyze: bool) -> T.Function
 		assert(node.return_types == nil or T.is_type_list(node.return_types))
 
-		var<T.Function> fun_t = {
+		var fun_t = {
 			tag = 'function',
 			args = {},
 			rets = node.return_types  -- If any
-		}
+		} : T.Function
 
 		if node.is_mem_fun then
 			local name_expr = node.name_expr
@@ -1151,7 +1151,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		if gen_t.tag ~= 'function' then
-			var<string> suggestion = 'pairs'
+			var suggestion = 'pairs'
 			if T.isa(gen_t, T.List) then
 				suggestion = 'ipairs'
 			end

@@ -618,7 +618,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			local token_list = {}
 			local where = where_am_i()
 
-			if tok:is_symbol('.') or tok:is_symbol(':') then
+			if tok:is_symbol('.') or
+				   (tok:is_symbol(':') and tok:peek().leading_white=="")
+		   then
 				local symb = tok:get(token_list).data
 				if not tok:is('ident') then
 					return false, report_error("<ident> expected.")
@@ -881,9 +883,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	}
 
 	parse_sub_expr = function(scope: Scope, prio_level: int) -> bool, ExprNode_or_error
-		var<bool>    st    = false
+		var st    = false
 		var exp   = nil : object?
-		var          where = where_am_i()
+		var where = where_am_i()
 
 		--base item, possibly with unop prefix
 		if unops[tok:peek().data] then
@@ -956,9 +958,13 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			if tok:consume_symbol('}') then
 				report_error("Use 'object'")
 				return T.create_empty_table()
-			elseif tok:is('ident') and tok:peek(1).data == ':' then
+
+			elseif tok:is('ident')
+			   and tok:peek(1).data == ':'
+			   --and #tok:peek(1).leading_white > 0
+			then
 				-- key-value-pairs - an object
-				var<T.Object> obj = {
+				var obj = {
 					tag     = 'object',
 					members = {}
 				}
@@ -1043,13 +1049,13 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				return T.Any
 			end
 
-			var<T.Function> fun_t = {
+			var fun_t = {
 				tag    = 'function',
 				args   = {},
-				vararg = nil,
-				rets   = nil,
+				vararg = nil ,--: T:VarArgs?,  -- TODO
+				rets   = nil ,--: [T.Type]?,
 				name   = '<lambda>',
-			}
+			} : T.Function  -- TODO: remove
 
 			if not tok:consume_symbol(')') then
 				while true do
@@ -1193,7 +1199,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		while true do
 			if tok:consume_symbol('...') then
 				if false then  -- TODO: varargs as last thing returned by function
-					var<T.Type> var_arg_t = T.Any
+					var var_arg_t = T.Any
 
 					if tok:consume_symbol(':') then
 						var_arg_t = parse_type(scope)
@@ -1258,7 +1264,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		user.sol:
 		  local Mod = require 'module'
-		  var<Mod.Foo> foo = 42
+		  var foo = {} : Mod.Foo
 		--]]
 
 		local where = where_am_i()
@@ -1347,7 +1353,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		var st,expr = parse_sub_expr(scope, 0)
 		if not st then return false, expr end
 
-		if tok:consume_symbol(':') or tok:consume_symbol('!') then
+		if #tok:peek().leading_white>0 and tok:consume_symbol(':') then
 			-- A cast
 
 			var where = where_am_i()
@@ -1533,7 +1539,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 			--else clause
 			if tok:consume_keyword('else', token_list) then
-				if tok:peek().data == 'if' and tok:peek().all_leading_white == ' ' then
+				if tok:peek().data == 'if' and tok:peek().leading_white == ' ' then
 					-- Warn agains C-style 'else if'
 					report_error("Dangerous 'else if' here - did you mean 'elseif' ? (insert extra space to mute this error)")
 				end

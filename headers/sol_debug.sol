@@ -1,4 +1,4 @@
--- Compiled from sol/sol_debug.sol on 2013 Oct 05  08:28:37
+-- Compiled from sol/sol_debug.sol on 2013 Oct 05  08:47:54
 
 return {
 	activate: function() -> void;

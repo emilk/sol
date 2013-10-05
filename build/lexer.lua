@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Oct 05  08:28:38 --]] local U = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Oct 05  08:47:55 --]] local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
@@ -15,6 +15,7 @@ local HexDigits    = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                        'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'} --[[SOL OUTPUT--]] 
 
 local L = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+
 
 
 
@@ -237,8 +238,8 @@ function L.lex_sol(src, filename, settings)
 			--get leading whitespace. The leading whitespace will include any comments
 			--preceding the token. This prevents the parser needing to deal with comments
 			--separately.
-			--local all_leading_white, leading_tokens = get_leading_white_old()
-			local all_leading_white = get_leading_white() --[[SOL OUTPUT--]] 
+			--local leading_white, leading_tokens = get_leading_white_old()
+			local leading_white = get_leading_white() --[[SOL OUTPUT--]] 
 			local leading_tokens = nil --[[SOL OUTPUT--]] 
 
 			--get the initial char
@@ -384,8 +385,8 @@ function L.lex_sol(src, filename, settings)
 			end --[[SOL OUTPUT--]] 
 
 			--add the emitted symbol, after adding some common data
-			to_emit.leading_white     = leading_tokens --[[SOL OUTPUT--]]  -- table of leading whitespace/comments
-			to_emit.all_leading_white = all_leading_white --[[SOL OUTPUT--]] 
+			--to_emit.lading_white_token_list = leading_tokens -- table of leading whitespace/comments
+			to_emit.leading_white = leading_white --[[SOL OUTPUT--]] 
 			--for k, tok in pairs(leading_tokens) do
 			--  tokens[#tokens + 1] = tok
 			--end

@@ -65,9 +65,9 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 		end,
 
 		append_white = function(self, token)
-			if token.all_leading_white then
+			if token.leading_white then
 				if not strip_white_space or #self.rope>0 then
-					self:append_str( token.all_leading_white )
+					self:append_str( token.leading_white )
 				end
 			end
 		end

@@ -19,10 +19,11 @@ local L = {}
 typedef TokID = 'Keyword' or 'ident' or 'Number' or 'String' or 'Symbol' or 'Eof'
 
 typedef Token = {
-	type : TokID,
-	data : string?,
-	line : int?,
-	char : int?,
+	type          : TokID,
+	data          : string?,
+	line          : int?,
+	char          : int?,
+	leading_white : string? -- TODO: no '?'
 }
 
 typedef L.Token = Token
@@ -237,8 +238,8 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			--get leading whitespace. The leading whitespace will include any comments
 			--preceding the token. This prevents the parser needing to deal with comments
 			--separately.
-			--local all_leading_white, leading_tokens = get_leading_white_old()
-			local all_leading_white = get_leading_white()
+			--local leading_white, leading_tokens = get_leading_white_old()
+			local leading_white = get_leading_white()
 			local leading_tokens = nil
 
 			--get the initial char
@@ -384,8 +385,8 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			end
 
 			--add the emitted symbol, after adding some common data
-			to_emit.leading_white     = leading_tokens -- table of leading whitespace/comments
-			to_emit.all_leading_white = all_leading_white
+			--to_emit.lading_white_token_list = leading_tokens -- table of leading whitespace/comments
+			to_emit.leading_white = leading_white
 			--for k, tok in pairs(leading_tokens) do
 			--  tokens[#tokens + 1] = tok
 			--end
