@@ -1519,6 +1519,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							return try_match_index(expr, index, index_t)
 						end
 					end
+
+					if T.could_be(index_t, T.String) then
+						-- Indexing the keys of an object - OK.
+						sol_warning(expr, "Indexing object with string")
+						return T.Any  -- TODO: combine types of members?
+					end
 					
 					return nil
 
@@ -1957,7 +1963,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						if left_type and left_type.pre_analyzed then
 							-- The member type was reached by the pre-analyzer - overwrite with refined info:
 							assert(not right_type.pre_analyzed)
-							--var_t.members[name] = nil  -- TODO: makes compilation hang!
 							left_type = nil
 
 							report_spam(stat, "Replacing pre-analyzed type with refined type: %s", right_type)
@@ -2443,7 +2448,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return what_to_return, true
 
 		elseif stat.ast_type == 'BreakStatement' then
-			-- TODO
+			-- Nothing to do
 
 		elseif stat.ast_type == 'RepeatStatement' then
 			var loop_scope = stat.scope

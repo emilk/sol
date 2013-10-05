@@ -229,7 +229,7 @@ typedef P.CastExpr : P.ExprNode = {
 
 typedef P.StatNode : P.Node = {
 	ast_type: P.StatType;
-	scope:    Scope?;  -- TODO: REMOVE!
+	scope:    Scope?;  -- TODO: remove?
 }
 
 typedef P.AssignmentStatement : P.StatNode = {
@@ -1055,7 +1055,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				vararg = nil ,--: T:VarArgs?,  -- TODO
 				rets   = nil ,--: [T.Type]?,
 				name   = '<lambda>',
-			} : T.Function  -- TODO: remove
+			} : T.Function
 
 			if not tok:consume_symbol(')') then
 				while true do

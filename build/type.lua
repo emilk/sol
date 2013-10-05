@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 05  09:10:16 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 05  22:23:20 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 

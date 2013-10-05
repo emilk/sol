@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 05  09:10:16 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 05  22:23:20 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1096,7 +1096,7 @@ local function analyze(ast, filename, on_require, settings)
 			D.assert( T.is_type_list(rets) ) --[[SOL OUTPUT--]] 
 			return rets --[[SOL OUTPUT--]] 
 		else
-			report_error(expr, "Expected %s to be a fucntion was %s", expr.base, fun_type) --[[SOL OUTPUT--]] 
+			report_error(expr, "Expected %s to be a fucntion, got %s", expr.base, fun_type) --[[SOL OUTPUT--]] 
 			try_calling(expr, fun_type, args, arg_ts, called_as_mem_fun, true) --[[SOL OUTPUT--]]  -- Report errors
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1518,6 +1518,11 @@ local function analyze(ast, filename, on_require, settings)
 						if index then
 							return try_match_index(expr, index, index_t) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+
+					if T.could_be(index_t, T.String) then
+						sol_warning(expr, "Indexing object with string") --[[SOL OUTPUT--]] 
+						return T.Any --[[SOL OUTPUT--]]   -- TODO: combine types of members?
 					end --[[SOL OUTPUT--]] 
 					
 					return nil --[[SOL OUTPUT--]] 
@@ -1957,7 +1962,6 @@ local function analyze(ast, filename, on_require, settings)
 						if left_type and left_type.pre_analyzed then
 							-- The member type was reached by the pre-analyzer - overwrite with refined info:
 							assert(not right_type.pre_analyzed) --[[SOL OUTPUT--]] 
-							--var_t.members[name] = nil  -- TODO: makes compilation hang!
 							left_type = nil --[[SOL OUTPUT--]] 
 
 							report_spam(stat, "Replacing pre-analyzed type with refined type: %s", right_type) --[[SOL OUTPUT--]] 
@@ -2443,7 +2447,7 @@ local function analyze(ast, filename, on_require, settings)
 			return what_to_return, true --[[SOL OUTPUT--]] 
 
 		elseif stat.ast_type == 'BreakStatement' then
-			-- TODO
+			-- Nothing to do
 
 		elseif stat.ast_type == 'RepeatStatement' then
 			local loop_scope = stat.scope --[[SOL OUTPUT--]] 

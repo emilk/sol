@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 05  09:10:16 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 05  22:23:20 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -1055,7 +1055,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				vararg = nil ,--: T:VarArgs?,  -- TODO
 				rets   = nil ,--: [T.Type]?,
 				name   = '<lambda>',
-			} --[[SOL OUTPUT--]]   -- TODO: remove
+			} --[[SOL OUTPUT--]] 
 
 			if not tok:consume_symbol(')') then
 				while true do
