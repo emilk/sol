@@ -291,7 +291,7 @@ end
 
 
 function U.set(tb: [string]) -> {string}
-	var<{string}> set = {}
+	var set = {} : {string}
 	for _,v in ipairs(tb) do
 		set[v] = true
 	end
@@ -307,7 +307,7 @@ end
 
 
 function U.list_concat(a: [any], b: [any]) -> [any]
-	var<[any]> ret = {}
+	var ret = {} : [any]
 	for _,v in ipairs(a) do
 		ret[#ret + 1] = v
 	end
@@ -325,7 +325,7 @@ end
 
 function U.shallow_clone(t: table?) -> table?
 	if not t then return t end
-	var<table> t2 = {}
+	var t2 = {} : table
 	for k,v in pairs(t) do
 		t2[k] = v
 	end

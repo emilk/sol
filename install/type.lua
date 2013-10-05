@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 02  23:01:53 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 05  08:28:39 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -1358,7 +1358,10 @@ function T.broaden(t)
 		} --[[SOL OUTPUT--]] 
 	elseif t.tag == 'variant' then
 		-- false?   ->  bool?
-		local ret = { tag='variant', variants={} } --[[SOL OUTPUT--]] 
+		local ret = {
+			tag      = 'variant',
+			variants = {}
+		} --[[SOL OUTPUT--]] 
 		for ix,v in ipairs(t.variants) do
 			ret.variants[ix] = T.broaden(v) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

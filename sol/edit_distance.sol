@@ -66,7 +66,7 @@ local function edit_distance( s: string or [int], t: string or [int], lim: int? 
 	var< function(...:int)->int > min = math.min -- Localize for performance
 	var num_columns = t_len + 1 -- We use this a lot
 	
-	var<[int]> d = {} -- (s_len+1) * (t_len+1) is going to be the size of this array
+	var d = {} : [int] -- (s_len+1) * (t_len+1) is going to be the size of this array
 	-- This is technically a 2D array, but we're treating it as 1D. Remember that 2D access in the
 	-- form my_2d_array[ i, j ] can be converted to my_1d_array[ i * num_columns + j ], where
 	-- num_columns is the number of columns you had in the 2D array assuming row-major order and

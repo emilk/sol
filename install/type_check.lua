@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 02  23:01:53 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 05  08:28:39 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1549,9 +1549,9 @@ local function analyze(ast, filename, on_require, settings)
 					return t --[[SOL OUTPUT--]] 
 				else
 					if #suggestions > 0 then
-						report_warning(expr, "Failed to find member %q (%s) - did you mean %q?", name, expr, table.concat(suggestions, " or ")) --[[SOL OUTPUT--]] 
+						report_warning(expr, "%s: Failed to find member %q - did you mean %q?", expr, name, table.concat(suggestions, " or ")) --[[SOL OUTPUT--]] 
 					else
-						member_missing_reporter(expr, "Failed to find member %q (%s)", name, expr) --[[SOL OUTPUT--]]  -- TODO: warn
+						member_missing_reporter(expr, "%s: Failed to find member %q (%s)", expr, name, expr) --[[SOL OUTPUT--]]  -- TODO: warn
 					end --[[SOL OUTPUT--]] 
 					return T.Any --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 

@@ -66,7 +66,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 	local keywords = settings.keywords
 
 	--token dump
-	var<[L.Token]> tokens = {}
+	var tokens = {} : [L.Token]
 
 	local function local_lexer()
 		--line / char / pointer tracking
@@ -248,7 +248,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			local c = chars[p]
 
 			--symbol to emit
-			var<Token?> to_emit = nil
+			var to_emit = nil : Token?
 
 			--branch on type
 			if c == '' then

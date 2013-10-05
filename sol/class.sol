@@ -51,7 +51,7 @@ global function sol_class(klass_name, super_name)
 
 		-- if some_obj:isa(Widget) then ...
 		function klass:isa( some_class )
-			var<table?> c = klass
+			local c = klass
 			repeat
 				if c == some_class then return true end
 				c = c.base_class -- Walk up inheritence chain

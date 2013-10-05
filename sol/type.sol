@@ -357,7 +357,7 @@ T.isa(T.False, T.Bool)
 -- false  -> no, and no error string generated yet
 -- string -> no, and here's the error string
 local RECURSION = {'RECURSION'}
-var<{T.Type => {T.Type => true or false or string or [string]}}> isa_memo = {}
+var isa_memo = {} : {T.Type => {T.Type => true or false or string or [string]}}
 
 function T.isa(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	D.assert(d)
@@ -965,7 +965,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 		if obj.namespace then
 			str = str .. next_indent .. '-- Types:\n'
 
-			var<T.Typelist> type_list = {}
+			var type_list = {} : T.Typelist
 			for k,v in pairs(obj.namespace) do
 				table.insert(type_list, {name = k, type = v})
 			end
@@ -981,7 +981,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 				str = str .. '\n' .. next_indent .. '-- Members:\n'
 			end
 
-			var<[{name:string, type:T.Type}]> mem_list = {}
+			var mem_list = {} : [{name:string, type:T.Type}]
 			var widest_name = 0
 			for k,v in pairs(obj.members) do
 				table.insert(mem_list, {name = k, type = v})
@@ -1324,7 +1324,7 @@ function T.combine_type_lists(a, b, forgiving: bool?) -> T.Typelist?
 		local msg = string.format("Return statement with different number of values than the previous: %s vs %s", T.name(a), T.name(b))
 		return error( msg )
 	else
-		var<T.Typelist> ret = {}
+		var ret = {} : T.Typelist
 		for i = 1, #a do
 			ret[i] = T.variant( a[i], b[i] )
 			if _G.g_spam then
@@ -1358,7 +1358,10 @@ function T.broaden(t: T.Type?) -> T.Type?
 		}
 	elseif t.tag == 'variant' then
 		-- false?   ->  bool?
-		var<T.Variant> ret = { tag='variant', variants={} }
+		var ret = {
+			tag      = 'variant',
+			variants = {} : [T.Variant]
+		}
 		for ix,v in ipairs(t.variants) do
 			ret.variants[ix] = T.broaden(v)
 		end

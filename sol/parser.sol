@@ -478,8 +478,8 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			name: string;
 			type: T.Type?;
 		}
-		var<[ArgInfo]>  arg_list = {}
-		var<T.VarArgs?> vararg  = nil
+		var arg_list = {}  : [ArgInfo]
+		var vararg   = nil : T.VarArgs?
 
 		while not tok:consume_symbol(')', token_list) do
 			if tok:is('ident') then
@@ -513,7 +513,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					end
 				end
 
-				var<T.VarArgs> var_arg_type = {
+				var var_arg_type = {
 					tag  = 'varargs',
 					type = elem_type,
 				}
@@ -650,7 +650,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				prim = node_index
 
 			elseif not only_dot_colon and tok:consume_symbol('(', token_list) then
-				var<[P.ExprNode]> args = {}
+				var args = {} : [P.ExprNode]
 				while not tok:consume_symbol(')', token_list) do
 					local st, ex = parse_expr(scope)
 					if not st then return false, ex end
@@ -710,9 +710,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 
 	parse_simple_expr = function(scope) -> bool, ExprNode_or_error
-		var<TokenList> token_list = {}
-		var<object?>   node       = nil
-		var            where      = where_am_i()
+		var token_list = {}  : TokenList
+		var node       = nil : object?
+		var where      = where_am_i()
 
 		if tok:is('Number') then
 			node = {
@@ -882,7 +882,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 	parse_sub_expr = function(scope: Scope, prio_level: int) -> bool, ExprNode_or_error
 		var<bool>    st    = false
-		var<object?> exp   = nil
+		var exp   = nil : object?
 		var          where = where_am_i()
 
 		--base item, possibly with unop prefix
@@ -1069,7 +1069,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 						break
 					end
 
-					var<string?> arg_name = nil
+					var arg_name = nil : string?
 					if tok:is('ident') and tok:peek(1).data == ':' then
 						-- named type
 						arg_name = tok:get_ident()
@@ -1420,7 +1420,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			name_list[#name_list+1] = tok:get(token_list).data
 		end
 
-		var<[P.ExprNode]> init_list = {}
+		var init_list = {} : [P.ExprNode]
 		if tok:consume_symbol('=', token_list) then
 			repeat
 				local st, ex = parse_expr(scope)
@@ -1501,8 +1501,8 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 	local function parse_statement(scope) -> bool, StatNode_or_error
 		var            st         = true -- Success?
-		var<object?>   stat       = nil
-		var<TokenList> token_list = {}
+		var   stat       = nil : object?
+		var token_list = {} : TokenList
 		var            where      = where_am_i()
 
 		if tok:consume_keyword('if', token_list) then
@@ -1514,7 +1514,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				condition: P.ExprNode?;
 				body:      P.Statlist;
 			}
-			var<[Clause]> clauses = {}
+			var clauses = {} : [Clause]
 
 			--clauses
 			repeat
@@ -1616,7 +1616,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				local st, end_ex = parse_expr(scope)
 				if not st then return false, end_ex end
 
-				var<P.ExprNode or string or nil> step_ex = nil
+				var step_ex = nil : P.ExprNode or string or nil
 				if tok:consume_symbol(',', token_list) then
 					st, step_ex = parse_expr(scope)
 					if not st then return false, step_ex end
@@ -1656,7 +1656,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				if not tok:consume_keyword('in', token_list) then
 					return false, report_error("`in` expected.")
 				end
-				var<[P.ExprNode]> generators = {}
+				var generators = {} : [P.ExprNode]
 				local st, first_generator = parse_expr(scope)
 				if not st then return false, first_generator end
 				generators[#generators+1] = first_generator
@@ -1766,7 +1766,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			stat = node_label
 
 		elseif tok:consume_keyword('return', token_list) then
-			var<[P.ExprNode]> ex_list = {}
+			var ex_list = {} : [P.ExprNode]
 			if not tok:is_keyword('end') and not tok:is_keyword('else') and not tok:is_keyword('elseif') then
 				local st, first_ex = parse_expr(scope)
 				if st then
@@ -1831,7 +1831,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				end
 
 				--rhs
-				var<[P.ExprNode]> rhs = {}
+				var rhs = {} : [P.ExprNode]
 				local st, first_rhs = parse_expr(scope)
 				if not st then return false, first_rhs end
 				rhs[1] = first_rhs
@@ -1888,7 +1888,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			tokens   = { };
 		}
 
-		var<[P.StatNode]> stats = {}
+		var stats = {} : [P.StatNode]
 
 		while not stat_list_close_keywords[tok:peek().data] and not tok:is_eof() do
 			local st, node_statement = parse_statement(node.scope)

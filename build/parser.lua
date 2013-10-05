@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 02  23:01:53 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 05  08:28:39 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -473,13 +473,13 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		if not tok:consume_symbol('(', token_list) then
 			return false, report_error("`(` expected.") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
-		local  arg_list 
+		local arg_list 
 
 
 
 
 = {} --[[SOL OUTPUT--]] 
-		local vararg  = nil --[[SOL OUTPUT--]] 
+		local vararg   = nil --[[SOL OUTPUT--]] 
 
 		while not tok:consume_symbol(')', token_list) do
 			if tok:is('ident') then
@@ -711,8 +711,8 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 	parse_simple_expr = function(scope)
 		local token_list = {} --[[SOL OUTPUT--]] 
-		local   node       = nil --[[SOL OUTPUT--]] 
-		local            where      = where_am_i() --[[SOL OUTPUT--]] 
+		local node       = nil --[[SOL OUTPUT--]] 
+		local where      = where_am_i() --[[SOL OUTPUT--]] 
 
 		if tok:is('Number') then
 			node = {

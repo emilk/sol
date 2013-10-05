@@ -46,7 +46,7 @@ local function loose_lookup(table: {string => any}, id: string) -> string?
 	var edit_distance = require 'edit_distance'
 
 	var<number>  closest_dist = math.huge
-	var<string?> closest_key  = nil
+	var closest_key  = nil : string?
 
 	for k,_ in pairs(table) do
 		D.assert(type(k) == 'string')
@@ -108,7 +108,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	local function fancy_format(fmt: string, ...)
-		var<[any]> buf = {}
+		var buf = {} : [any]
 		for i = 1, select( '#', ... ) do
 			local a = select( i, ... )
 			if type(a) == 'table' and a.ast_type then
@@ -330,7 +330,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		if T.could_be(expr_type, expected_type) then
 			return true
 		else
-			var<[string]> error_rope = {}
+			var error_rope = {} : [string]
 			T.could_be(expr_type, expected_type, error_rope)
 			local error_msg = rope_to_msg(error_rope)
 			var reporter = (severity == 'error' and report_error or report_warning)
@@ -380,7 +380,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			assert(T.is_type_list(should_return))
 
 			if not T.could_be_tl(does_return, should_return) then
-				var<[string]> problem_rope = {}
+				var problem_rope = {} : [string]
 				T.could_be_tl(does_return, should_return, problem_rope)
 				local problem_str = rope_to_msg(problem_rope)
 				report_error(node, "Return statement does not match function return type declaration, returns: %s, expected: %s.\n%s", does_return, should_return, problem_str)
@@ -764,7 +764,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						assert( typ.type )
 						return { T.Uint, typ.type }
 					elseif typ.tag == 'variant' then
-						var<T.Typelist?> types = nil
+						var types = nil : T.Typelist?
 
 						for _,v in ipairs(typ.variants) do
 							types = T.combine_type_lists(types, pairs_type(v, error_rope))
@@ -785,7 +785,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					assert(#types == 2)
 					return types
 				else
-					var<[string]> error_rope = {}
+					var error_rope = {} : [string]
 					pairs_type( arg_ts[1], error_rope )
 					report_error(expr, "'pairs' called on incompatible type: " .. rope_to_msg(error_rope))
 					return { T.Any, T.Any }
@@ -811,7 +811,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					elseif typ.tag == 'list' then
 						return {T.Uint, typ.type}
 					elseif typ.tag == 'variant' then
-						var<T.Typelist?> types = nil
+						var types = nil : T.Typelist?
 
 						for _,v in ipairs(typ.variants) do
 							types = T.combine_type_lists(types, ipairs_type(v, error_rope))
@@ -825,7 +825,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					end
 				end
 
-				var<[string]> error_rope = {}
+				var error_rope = {} : [string]
 				local types = ipairs_type( arg_ts[1], error_rope )
 				if types then
 					assert(#types == 2)
@@ -911,7 +911,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		if typ.tag == 'variant' then
-			var<T.Typelist?> ret = nil
+			var ret = nil : T.Typelist?
 
 			for _,v in ipairs(typ.variants) do
 				ret = T.combine_type_lists(ret, analyze_fun_call(expr, v, args, arg_ts, report_errors))
@@ -1019,7 +1019,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				return rets
 
 			elseif typ.tag == 'variant' then
-				var<T.Typelist?> rets = nil
+				var rets = nil : T.Typelist?
 				for _,v in ipairs(typ.variants) do
 					local list = try_call(v, report_errors)
 					rets = T.combine_type_lists(rets, list)
@@ -1070,7 +1070,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			table.insert(args, 1, obj_expr)
 		end
 
-		var<[T.Type]> arg_ts = {}
+		var arg_ts = {} : [T.Type]
 		for ix,v in ipairs(args) do
 			if ix < #args then
 				arg_ts[ix] = analyze_expr_single(v, scope)
@@ -1549,9 +1549,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					return t
 				else
 					if #suggestions > 0 then
-						report_warning(expr, "Failed to find member %q (%s) - did you mean %q?", name, expr, table.concat(suggestions, " or "))
+						report_warning(expr, "%s: Failed to find member %q - did you mean %q?", expr, name, table.concat(suggestions, " or "))
 					else
-						member_missing_reporter(expr, "Failed to find member %q (%s)", name, expr) -- TODO: warn
+						member_missing_reporter(expr, "%s: Failed to find member %q (%s)", expr, name, expr) -- TODO: warn
 					end
 					return T.Any
 				end
@@ -2281,7 +2281,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			-- Analyze init_list before declaring variables to prevent
 			-- local x = x
 
-			var<[T.Type]> init_types = {}
+			var init_types = {} : [T.Type]
 
 			if #stat.init_list == 1 then
 				init_types, _ = analyze_expr( stat.init_list[1], scope )
@@ -2295,7 +2295,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			-- Declare variables:
 			var is_local = (stat.scoping ~= 'global')
-			var<[Variable]> vars = {}
+			var vars = {} : [Variable]
 			for _,name in ipairs(stat.name_list) do
 				report_spam(stat, "Declaration: %s %s", stat.type, name)
 				local v = declare_var(stat, scope, name, is_local)
@@ -2424,13 +2424,13 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif stat.ast_type == 'ReturnStatement' then
-			var<[T.Type]?> what_to_return = nil
+			var what_to_return = nil : [T.Type]?
 			if #stat.arguments == 0 then
 				what_to_return = T.Void
 			elseif #stat.arguments == 1 then
 				what_to_return, _ = analyze_expr( stat.arguments[1], scope )
 			else
-				var<[T.Type]> type_list = {}
+				var type_list = {} : [T.Type]
 				for i = 1, #stat.arguments do
 					local t = analyze_expr_single( stat.arguments[i], scope )
 					type_list[i] = t
