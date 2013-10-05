@@ -504,7 +504,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					end
 				end
 			elseif tok:consume_symbol('...', token_list) then
-				var<T.Type?> elem_type = T.Any
+				var elem_type = T.Any
 
 				if settings.function_types and tok:consume_symbol(':') then
 					elem_type = parse_type(func_scope)
@@ -1060,7 +1060,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			if not tok:consume_symbol(')') then
 				while true do
 					if tok:consume_symbol('...') then
-						var<T.Type> var_arg_t = T.Any
+						var var_arg_t = T.Any
 
 						if tok:consume_symbol(':') then
 							var_arg_t = parse_type(scope)
@@ -1404,11 +1404,14 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		var where = where_am_i()
 		var types = nil : T.Typelist?
 
+		--[[
+		--parse var<type>
 		if scoping == 'var' then
 			types = parse_type_args(scope)
 		elseif parse_type_args(scope) then
 			return false, report_error("%s cannot have type list - did you want 'var' ?")
 		end
+		--]]
 
 		if types and #types == 0 then
 			return false, report_error("Empty type list")

@@ -1,1 +1,1 @@
-var<string> ai = 42
+var ai = 42 : string

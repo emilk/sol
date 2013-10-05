@@ -1,3 +1,3 @@
 local M = {}
-var<M.T> i = 0
+var i = 0 : M.T
 typedef M.T int

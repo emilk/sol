@@ -1,1 +1,1 @@
-var<[int]?> list = {}
+var list = {} : [int]

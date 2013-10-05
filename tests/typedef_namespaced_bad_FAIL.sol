@@ -1,2 +1,2 @@
 local M = {}
-var<M.NoSuchType> i = 42
+var i = 42 : M.NoSuchType

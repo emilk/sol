@@ -1,2 +1,2 @@
-var<T> i = 0
+var i = 0 : T
 typedef T = int

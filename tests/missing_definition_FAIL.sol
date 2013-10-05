@@ -1,1 +1,1 @@
-var<int> i   -- FAIL: Missing definition of non-nilable type
+var i   -- FAIL: Missing definition of non-nilable type

@@ -1,4 +1,4 @@
-var<int?> v = nil
+var v = nil : int?
 if not v then
 	v = 42
 end

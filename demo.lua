@@ -134,7 +134,7 @@ local ok
 
 
 = 'yes'
---var<Tribool> bad = 'wrong'
+--var bad = 'wrong' : Tribool
 
 local function do_stuff(how)
 

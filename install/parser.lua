@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 05  08:47:55 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 05  08:59:04 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -1404,11 +1404,14 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		local where = where_am_i() --[[SOL OUTPUT--]] 
 		local types = nil --[[SOL OUTPUT--]] 
 
+		--[[
+		--parse var<type>
 		if scoping == 'var' then
-			types = parse_type_args(scope) --[[SOL OUTPUT--]] 
+			types = parse_type_args(scope)
 		elseif parse_type_args(scope) then
-			return false, report_error("%s cannot have type list - did you want 'var' ?") --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
+			return false, report_error("%s cannot have type list - did you want 'var' ?")
+		end
+		--]]
 
 		if types and #types == 0 then
 			return false, report_error("Empty type list") --[[SOL OUTPUT--]] 

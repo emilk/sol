@@ -116,9 +116,9 @@ local win, err_msg, too_many = win_or_fail()
 -----------------------------------------------------
 -- var vs local
 
-local     local_can_be_anything = require 'unfindable'
-var       var_must_be_deducible = some_lua_function()
-var<int>  var_can_be_explicit   = require 'unfindable'
+local local_can_be_anything = require 'unfindable'
+var   var_must_be_deducible = some_lua_function()
+var   var_can_be_explicit   = (require 'unfindable') : int
 
 
 
@@ -131,7 +131,7 @@ do
 	list[2] = '1337'
 
 	typedef Int2str = {int => string} 
-	var<Int2str> map = {}
+	var map = {} : Int2str
 	map[1] = 'one'
 	map[2] = 'two'
 	map['three'] = 3
@@ -144,8 +144,8 @@ end
 
 typedef Tribool = 'yes' or 'no' or 'maybe'
 
-var<Tribool> ok  = 'yes'
-var<Tribool> bad = 'wrong'
+var ok  = 'yes'   : Tribool
+var bad = 'wrong' : Tribool
 
 local function do_stuff(how: "quickly" or "slowly")
 
@@ -195,7 +195,7 @@ typedef BarNode : Node = {
 
 local function work_on_node(n: Node)
 	if n.tag == 'Foo' then
-		var<FooNode> f = n
+		var f = n : FooNode
 	end
 
 	var<[string]> a = n.wild

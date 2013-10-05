@@ -45,7 +45,7 @@ local function loose_lookup(table: {string => any}, id: string) -> string?
 
 	var edit_distance = require 'edit_distance'
 
-	var<number>  closest_dist = math.huge
+	var closest_dist = math.huge
 	var closest_key  = nil : string?
 
 	for k,_ in pairs(table) do
@@ -296,7 +296,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 		end
 
-		var<Variable?> old = scope:get_var(name)
+		var old = scope:get_var(name)
 
 		if old and old.forward_declared then
 			old.forward_declared = false -- Properly declared now
@@ -646,7 +646,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				-- e.g. index only accepts "x" or "y" or "z"
 				-- Ignoring mis-matches gives much better error messages
 
-				var<T.Function> indexer_fun = index
+				var indexer_fun = index : T.Function
 				if #indexer_fun.args == 2 then
 					var expected_t = indexer_fun.args[2].type
 					if not T.isa(member, expected_t) then
@@ -682,7 +682,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local function do_member_lookup(node: P.Node, start_type: T.Type, name: string, suggestions: [string]) -> T.Type?
 		return T.visit_and_combine(start_type, function(type: T.Type)
 			if type.tag == 'object' then
-				var<T.Object> obj = type
+				var obj = type : T.Object
 				local member_type = obj.members[name]
 
 				if not member_type and obj.class_type then
@@ -863,7 +863,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return
 		end
 
-		var<Variable> target_var = args[1].variable
+		var target_var = args[1].variable
 		D.assert(target_var)
 		local target_type = target_var.type
 
@@ -928,7 +928,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return nil
 		end
 
-		var<T.Function> fun_t = typ
+		var fun_t = typ : T.Function
 		D.assert(fun_t.name)
 
 		--------------------------------------------------------
@@ -951,13 +951,13 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			-- generators returns function that returns 'it_types':
 			local it_types = generator_types(expr, fun_t, arg_ts)
 
-			var<T.Function> ret = {
+			var ret = {
 				tag    = 'function',
 				args   = {},
 				vararg = { tag='varargs', type=T.Any },
 				rets   = it_types,
 				name   = '<pairs/ipairs iterator>',
-			}
+			} : T.Function
 			return { ret }
 		end
 
@@ -996,15 +996,15 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				return T.AnyTypeList
 
 			elseif typ.tag == 'function' then
-				var<T.Function> fun_t = typ
-				local is_mem_fun = (#fun_t.args > 0 and fun_t.args[1].name == 'self')
+				var fun_t = typ : T.Function
+				var is_mem_fun = (#fun_t.args > 0 and fun_t.args[1].name == 'self')
 
 				if called_as_mem_fun and not is_mem_fun then
 					report_error(expr, "Calling non-member function as member function")
 				end
 
 				if not called_as_mem_fun and is_mem_fun then
-					local first_is_self = (#args>0 and args[1].ast_type == 'IdExpr' and args[1].name == 'self')
+					var first_is_self = (#args>0 and args[1].ast_type == 'IdExpr' and args[1].name == 'self')
 					if first_is_self then
 						-- Foo.bar(self)  is considered calling is as a member function
 					else
@@ -1014,7 +1014,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					--report_info(expr, "expr.base.indexer: " .. expr2str(expr.base.indexer))
 				end
 
-				local rets = analyze_fun_call(expr, fun_t, args, arg_ts, report_errors)
+				var rets = analyze_fun_call(expr, fun_t, args, arg_ts, report_errors)
 				D.assert( rets==nil or T.is_type_list(rets) )
 				return rets
 
@@ -1029,7 +1029,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			elseif typ.tag == 'object' and typ.metatable and typ.metatable.members['__call'] then
 				report_spam(expr, "__call")
-				var<T.Type> call_t = typ.metatable.members['__call']
+				var call_t = typ.metatable.members['__call']
 
 				var ext_args   = U.list_concat({expr.base}, args)
 				var ext_arg_ts = U.list_concat({fun_type}, arg_ts)
@@ -1061,7 +1061,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		--------------------------------------------------------
 		-- get argument types (they will be evaluated regardless of function type):
 
-		var<[P.ExprNode]> args = U.shallow_clone( expr.arguments )
+		var args = U.shallow_clone( expr.arguments ) : [P.ExprNode]
 
 		var called_as_mem_fun = (expr.base.ast_type == 'MemberExpr' and expr.base.indexer == ':')
 
@@ -1161,7 +1161,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return T.AnyTypeList
 		end
 
-		var<T.Function> fun_t = gen_t
+		var fun_t = gen_t : T.Function
 
 		var arg_ts = {} : [T.Type]
 		for i = 2,#types do
@@ -1190,7 +1190,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_error(expr, "You may not read from discard variable '_'")
 			end
 
-			var<Variable?> var_ = scope:get_var( expr.name, 'ignore_fwd_decl' )
+			var var_ = scope:get_var( expr.name, 'ignore_fwd_decl' )
 
 			if var_ then
 				if var_.forward_declared then

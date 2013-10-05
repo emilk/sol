@@ -27,7 +27,7 @@ The Sol compiler is written in Sol.
 	use{foo: 42, bar: "fortytwo"}
 	
 	typedef Option = "A" or "B" or "C"
-	var<Option> x = "B"
+	var x = "B" : Option
 	
 	
 	-- Stuff the compiler catches:
@@ -64,7 +64,7 @@ Based on MetaLua. Cumbersome syntax:
 
 Compard to Sol:
 
-	var<number> n = 42
+	var n = 42 : number
 
 ### [Lua analyzer](https://bitbucket.org/kevinclancy/love-studio/wiki/OptionalTypeSystem)
 

@@ -1,1 +1,1 @@
-var<int?> x
+var x

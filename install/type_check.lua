@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 05  08:47:55 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 05  08:59:04 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -45,7 +45,7 @@ local function loose_lookup(table, id)
 
 	local edit_distance = require 'edit_distance' --[[SOL OUTPUT--]] 
 
-	local  closest_dist = math.huge --[[SOL OUTPUT--]] 
+	local closest_dist = math.huge --[[SOL OUTPUT--]] 
 	local closest_key  = nil --[[SOL OUTPUT--]] 
 
 	for k,_ in pairs(table) do

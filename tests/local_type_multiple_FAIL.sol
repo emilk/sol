@@ -1,1 +1,0 @@
-var<int,string> a,b = 42, 1337

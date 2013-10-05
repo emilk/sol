@@ -63,7 +63,7 @@ local function edit_distance( s: string or [int], t: string or [int], lim: int? 
 		t = { string.byte( t, 1, t_len ) }
 	end
 	
-	var< function(...:int)->int > min = math.min -- Localize for performance
+	var min = math.min : function(...:int)->int -- Localize for performance
 	var num_columns = t_len + 1 -- We use this a lot
 	
 	var d = {} : [int] -- (s_len+1) * (t_len+1) is going to be the size of this array
