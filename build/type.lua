@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 05  22:23:20 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 06  11:22:21 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -41,7 +41,7 @@ T
 .on_error = function(fmt, ...)
 	local msg = string.format(fmt, ...) --[[SOL OUTPUT--]] 
 	U.printf_err( "%s", msg ) --[[SOL OUTPUT--]] 
-	error(msg, 2) --[[SOL OUTPUT--]] 
+	--error(msg, 2)
 end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 local ATOMIC_TAGS 

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 05  22:23:20 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 06  11:22:21 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -66,7 +66,7 @@ local printf_err = U.printf_err --[[SOL OUTPUT--]]
 _G.g_local_parse    = false --[[SOL OUTPUT--]]  -- If true, ignore 'require'
 _G.g_spam           = false --[[SOL OUTPUT--]] 
 _G.g_ignore_errors  = false --[[SOL OUTPUT--]] 
-_G.g_break_on_error = true --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+_G.g_break_on_error = false --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 local     CURRENTLY_PARSING 
 
 

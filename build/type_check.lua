@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 05  22:23:20 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 06  11:22:21 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1521,6 +1521,7 @@ local function analyze(ast, filename, on_require, settings)
 					end --[[SOL OUTPUT--]] 
 
 					if T.could_be(index_t, T.String) then
+						-- Indexing the keys of an object - OK.
 						sol_warning(expr, "Indexing object with string") --[[SOL OUTPUT--]] 
 						return T.Any --[[SOL OUTPUT--]]   -- TODO: combine types of members?
 					end --[[SOL OUTPUT--]] 
@@ -1878,7 +1879,8 @@ local function analyze(ast, filename, on_require, settings)
 			right_type.name = format_expr(left_expr) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		local is_declare = (stat.ast_type == 'FunctionDeclStatement') --[[SOL OUTPUT--]] 
+		local is_declare = stat.ast_type == 'FunctionDeclStatement'
+			or right_type.tag == 'function' --[[SOL OUTPUT--]] 
 
 		if right_type.namespace then
 			report_error(stat, "Cannot assign namespace outside of declaration") --[[SOL OUTPUT--]] 

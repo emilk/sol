@@ -1879,7 +1879,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			right_type.name = format_expr(left_expr)
 		end
 
-		var is_declare = (stat.ast_type == 'FunctionDeclStatement')
+		var is_declare = stat.ast_type == 'FunctionDeclStatement'
+			or right_type.tag == 'function'
 
 		if right_type.namespace then
 			report_error(stat, "Cannot assign namespace outside of declaration")
