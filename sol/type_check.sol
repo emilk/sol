@@ -28,45 +28,48 @@ local function rope_to_msg(rope: [string]) -> string
 	end
 end
 
-
 local function loose_lookup(table: {string => any}, id: string) -> string?
-	D.assert(type(id) == 'string')
-
-	if table[id] then
-		return id
-	end
-
-	var MAX_DIST = 2
-
-	if #id < MAX_DIST then
-		-- Don't suggest 'x' over 'y'
+	if true then
 		return nil
-	end
+	else
+		D.assert(type(id) == 'string')
 
-	var edit_distance = require 'edit_distance'
+		if table[id] then
+			return id
+		end
 
-	var closest_dist = math.huge
-	var closest_key  = nil : string?
+		var MAX_DIST = 2
 
-	for k,_ in pairs(table) do
-		D.assert(type(k) == 'string')
+		if #id < MAX_DIST then
+			-- Don't suggest 'x' over 'y'
+			return nil
+		end
 
-		var dist = edit_distance(k, id, MAX_DIST)
-		if dist < MAX_DIST then
-			--U.printf("Dist between '%s' and '%s' is %d", k, id, dist)
-			if dist < closest_dist then
-				closest_dist = dist
-				closest_key = k
+		var edit_distance = require 'edit_distance'
+
+		var closest_dist = math.huge
+		var closest_key  = nil : string?
+
+		for k,_ in pairs(table) do
+			D.assert(type(k) == 'string')
+
+			var dist = edit_distance(k, id, MAX_DIST)
+			if dist < MAX_DIST then
+				--U.printf("Dist between '%s' and '%s' is %d", k, id, dist)
+				if dist < closest_dist then
+					closest_dist = dist
+					closest_key = k
+				end
 			end
 		end
-	end
 
-	if closest_dist >= MAX_DIST then
-		return nil
-	end
+		if closest_dist >= MAX_DIST then
+			return nil
+		end
 
-	assert(type(closest_key) == 'string')
-	return closest_key
+		assert(type(closest_key) == 'string')
+		return closest_key
+	end
 end
 
 

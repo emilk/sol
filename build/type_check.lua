@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 07  14:34:10 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 07  15:32:15 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -28,45 +28,48 @@ local function rope_to_msg(rope)
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
-
 local function loose_lookup(table, id)
-	D.assert(type(id) == 'string') --[[SOL OUTPUT--]] 
-
-	if table[id] then
-		return id --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-	local MAX_DIST = 2 --[[SOL OUTPUT--]] 
-
-	if #id < MAX_DIST then
-		-- Don't suggest 'x' over 'y'
+	if true then
 		return nil --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
+	else
+		D.assert(type(id) == 'string') --[[SOL OUTPUT--]] 
 
-	local edit_distance = require 'edit_distance' --[[SOL OUTPUT--]] 
+		if table[id] then
+			return id --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
-	local closest_dist = math.huge --[[SOL OUTPUT--]] 
-	local closest_key  = nil --[[SOL OUTPUT--]] 
+		local MAX_DIST = 2 --[[SOL OUTPUT--]] 
 
-	for k,_ in pairs(table) do
-		D.assert(type(k) == 'string') --[[SOL OUTPUT--]] 
+		if #id < MAX_DIST then
+			-- Don't suggest 'x' over 'y'
+			return nil --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
-		local dist = edit_distance(k, id, MAX_DIST) --[[SOL OUTPUT--]] 
-		if dist < MAX_DIST then
-			--U.printf("Dist between '%s' and '%s' is %d", k, id, dist)
-			if dist < closest_dist then
-				closest_dist = dist --[[SOL OUTPUT--]] 
-				closest_key = k --[[SOL OUTPUT--]] 
+		local edit_distance = require 'edit_distance' --[[SOL OUTPUT--]] 
+
+		local closest_dist = math.huge --[[SOL OUTPUT--]] 
+		local closest_key  = nil --[[SOL OUTPUT--]] 
+
+		for k,_ in pairs(table) do
+			D.assert(type(k) == 'string') --[[SOL OUTPUT--]] 
+
+			local dist = edit_distance(k, id, MAX_DIST) --[[SOL OUTPUT--]] 
+			if dist < MAX_DIST then
+				--U.printf("Dist between '%s' and '%s' is %d", k, id, dist)
+				if dist < closest_dist then
+					closest_dist = dist --[[SOL OUTPUT--]] 
+					closest_key = k --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
 
-	if closest_dist >= MAX_DIST then
-		return nil --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
+		if closest_dist >= MAX_DIST then
+			return nil --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
-	assert(type(closest_key) == 'string') --[[SOL OUTPUT--]] 
-	return closest_key --[[SOL OUTPUT--]] 
+		assert(type(closest_key) == 'string') --[[SOL OUTPUT--]] 
+		return closest_key --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
