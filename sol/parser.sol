@@ -973,7 +973,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				var obj = {
 					tag     = 'object',
 					members = {}
-				}
+				} : T.Object
 				while true do
 					if tok:consume_symbol('}') then break end
 
