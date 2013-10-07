@@ -152,8 +152,22 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		print( report('Info', where_is(node), fmt, ...) )
 	end
 
+	local function report_error(node: P.Node, fmt, ...)
+		if settings.is_sol then
+			U.printf_err( "%s", report('ERROR', where_is(node), fmt, ...) )
+			error_count = error_count + 1
+		else
+			-- Forgive lua code
+			print( report('WARNING', where_is(node), fmt, ...) )
+		end
+	end
+
 	local function report_warning(node: P.Node, fmt: string, ...)
-		print( report('WARNING', where_is(node), fmt, ...) )
+		if _G.g_warnings_as_errors then
+			report_error(node, fmt, ...)
+		else
+			print( report('WARNING', where_is(node), fmt, ...) )
+		end
 	end
 
 	local function report_solc_todo(node: P.Node, fmt: string, ...)
@@ -163,16 +177,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local function sol_warning(node: P.Node, fmt: string, ...)
 		if settings.is_sol then
 			report_warning(node, fmt, ...)
-		end
-	end
-
-	local function report_error(node: P.Node, fmt, ...)
-		if settings.is_sol then
-			U.printf_err( "%s", report('ERROR', where_is(node), fmt, ...) )
-			error_count = error_count + 1
-		else
-			-- Forgive lua code
-			print( report('WARNING', where_is(node), fmt, ...) )
 		end
 	end
 

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 07  15:54:28 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 07  17:03:13 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -422,9 +422,13 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 	end --[[SOL OUTPUT--]] 
 
 	local function report_warning(msg_fmt, ...)
-		local msg = generate_msg(msg_fmt, ...) --[[SOL OUTPUT--]] 
-		print( msg ) --[[SOL OUTPUT--]] 
-		return msg --[[SOL OUTPUT--]] 
+		if _G.g_warnings_as_errors then
+			return report_error(msg_fmt, ...) --[[SOL OUTPUT--]] 
+		else
+			local msg = generate_msg(msg_fmt, ...) --[[SOL OUTPUT--]] 
+			print( msg ) --[[SOL OUTPUT--]] 
+			return msg --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local function report_spam(msg_fmt, ...)

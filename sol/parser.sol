@@ -422,9 +422,13 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 	local function report_warning(msg_fmt, ...)
-		local msg = generate_msg(msg_fmt, ...)
-		print( msg )
-		return msg
+		if _G.g_warnings_as_errors then
+			return report_error(msg_fmt, ...)
+		else
+			local msg = generate_msg(msg_fmt, ...)
+			print( msg )
+			return msg
+		end
 	end
 
 	local function report_spam(msg_fmt, ...)

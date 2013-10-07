@@ -63,10 +63,11 @@ local printf_err = U.printf_err
 
 ------------------------------------------------
 
-_G.g_local_parse    = false -- If true, ignore 'require'
-_G.g_spam           = false
-_G.g_ignore_errors  = false
-_G.g_break_on_error = false
+_G.g_local_parse        = false -- If true, ignore 'require'
+_G.g_spam               = false
+_G.g_ignore_errors      = false
+_G.g_break_on_error     = false
+_G.g_warnings_as_errors = false
 
 
 typedef parse_info = {
@@ -477,6 +478,9 @@ local function print_help()
 
 			-P
 				Parse only: Useful for profiling 
+
+			-Werror
+				Make all warnings into errors. 
 		]])
 end
 
@@ -571,6 +575,9 @@ else
 			var dir = arg[ix]
 			ix = ix + 1
 			g_mod_paths[#g_mod_paths + 1] = dir
+
+		elseif a == '-Werror' then
+			_G.g_warnings_as_errors = true
 
 		elseif a:match('^-') then
 			U.printf_err("Unknown option: %q", a)

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 07  15:54:28 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 07  17:03:13 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -63,10 +63,11 @@ local printf_err = U.printf_err --[[SOL OUTPUT--]]
 
 ------------------------------------------------
 
-_G.g_local_parse    = false --[[SOL OUTPUT--]]  -- If true, ignore 'require'
-_G.g_spam           = false --[[SOL OUTPUT--]] 
-_G.g_ignore_errors  = false --[[SOL OUTPUT--]] 
-_G.g_break_on_error = false --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+_G.g_local_parse        = false --[[SOL OUTPUT--]]  -- If true, ignore 'require'
+_G.g_spam               = false --[[SOL OUTPUT--]] 
+_G.g_ignore_errors      = false --[[SOL OUTPUT--]] 
+_G.g_break_on_error     = false --[[SOL OUTPUT--]] 
+_G.g_warnings_as_errors = false --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 local     CURRENTLY_PARSING 
 
 
@@ -477,6 +478,9 @@ local function print_help()
 
 			-P
 				Parse only: Useful for profiling 
+
+			-Werror
+				Make all warnings into errors. 
 		]]) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -546,7 +550,7 @@ else
 			local path_in = arg[ix] --[[SOL OUTPUT--]] 
 			ix = ix + 1 --[[SOL OUTPUT--]] 
 			
-			--_G.g_local_parse = true -- FIXME: else too slow for live-parsing
+			--_G.g_local_parse = true
 
 			-- Read entire stdin
 			print("Reading from stdin...") --[[SOL OUTPUT--]] 
@@ -571,6 +575,9 @@ else
 			local dir = arg[ix] --[[SOL OUTPUT--]] 
 			ix = ix + 1 --[[SOL OUTPUT--]] 
 			g_mod_paths[#g_mod_paths + 1] = dir --[[SOL OUTPUT--]] 
+
+		elseif a == '-Werror' then
+			_G.g_warnings_as_errors = true --[[SOL OUTPUT--]] 
 
 		elseif a:match('^-') then
 			U.printf_err("Unknown option: %q", a) --[[SOL OUTPUT--]] 

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 07  15:54:28 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 07  17:03:13 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -152,8 +152,22 @@ local function analyze(ast, filename, on_require, settings)
 		print( report('Info', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
+	local function report_error(node, fmt, ...)
+		if settings.is_sol then
+			U.printf_err( "%s", report('ERROR', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
+			error_count = error_count + 1 --[[SOL OUTPUT--]] 
+		else
+			-- Forgive lua code
+			print( report('WARNING', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
 	local function report_warning(node, fmt, ...)
-		print( report('WARNING', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
+		if _G.g_warnings_as_errors then
+			report_error(node, fmt, ...) --[[SOL OUTPUT--]] 
+		else
+			print( report('WARNING', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local function report_solc_todo(node, fmt, ...)
@@ -163,16 +177,6 @@ local function analyze(ast, filename, on_require, settings)
 	local function sol_warning(node, fmt, ...)
 		if settings.is_sol then
 			report_warning(node, fmt, ...) --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-	local function report_error(node, fmt, ...)
-		if settings.is_sol then
-			U.printf_err( "%s", report('ERROR', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
-			error_count = error_count + 1 --[[SOL OUTPUT--]] 
-		else
-			-- Forgive lua code
-			print( report('WARNING', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
