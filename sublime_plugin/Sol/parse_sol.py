@@ -5,6 +5,25 @@ import re
 import os
 from subprocess import Popen, PIPE
 
+
+def get_setting(key, default=None):
+	window = sublime.active_window()
+	if window != None:
+		project_data = window.project_data()
+		if project_data != None and "settings" in project_data:
+			settings = project_data["settings"]
+			if key in settings:
+				return settings[key]
+
+	us = sublime.load_settings("sublime_tools (User).sublime-settings")
+	val = us.get(key, None)
+	if val == None:
+		ds = sublime.load_settings("sublime_tools.sublime-settings")
+		val = ds.get(key, default)
+
+	return val
+
+
 #settings = sublime.load_settings("Sol.sublime-settings")
 
 #solc_path = 'solc'  # TODO FIXME
@@ -52,7 +71,7 @@ class ParseSolCommand(sublime_plugin.EventListener):
 		filename = view.file_name()
 		if not filename:
 			return
-			
+
 		if not filename.endswith('.sol') and not filename.endswith('.lua'):
 			sublime.status_message("not sol or lua")
 			return
@@ -81,9 +100,12 @@ class ParseSolCommand(sublime_plugin.EventListener):
 		#print('--------------------------------------------')
 
 		try:
+			# Often projects will use module paths that are relative to the root of the project_path
+			# This allows solc to understand where to look for modules
+			root_mod_path = get_setting("project_path", ".") + '/'
+
 			# Run solc with the parse option
-			p = Popen(solc_path + ' -p --check ' + file_path, stdin=PIPE, stderr=PIPE, shell=True)
-			#p = Popen(solc_path + ' -p ' + file_path, stdin=PIPE, stderr=PIPE, shell=True)
+			p = Popen(solc_path + ' -m ' + root_mod_path + ' -p --check ' + file_path, stdin=PIPE, stderr=PIPE, shell=True)
 
 			# Extract text:
 			out_err = p.communicate(text.encode('utf-8'))
@@ -107,7 +129,7 @@ class ParseSolCommand(sublime_plugin.EventListener):
 		except Exception as e:
 			msg = str(e) + ' ' + traceback.format_exc()
 			msg = msg.replace('\n', '   ')
-			show_errors("parse_sol.py: " + msg)
+			self.show_errors(view, "parse_sol.py: " + msg)
 
 
 
