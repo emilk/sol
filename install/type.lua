@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 07  13:10:53 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 07  14:34:10 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -352,6 +352,9 @@ function T.is_obj_obj(d, b, problem_rope)
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
+
+	-- TODO: check metatables, super-classes etc?
+
 	return true --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -426,6 +429,13 @@ function T.isa_raw(d, b, problem_rope)
 		return true --[[SOL OUTPUT--]]  -- Early out optimization
 	end --[[SOL OUTPUT--]] 
 
+
+	if b.tag == 'any' or d.tag == 'any' then
+		-- 'any' can become anything
+		-- Anything can become 'any'
+		return true --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
 	if b.tag == 'variant' then
 		for _,v in ipairs(b.variants) do
 			if T.isa(d, v, problem_rope) then
@@ -444,13 +454,6 @@ function T.isa_raw(d, b, problem_rope)
 			return true --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return all_are_b() --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-
-	if b.tag == 'any' or d.tag == 'any' then
-		-- 'any' can become anything
-		-- Anything can become 'any'
-		return true --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -746,10 +749,14 @@ function T.could_be_raw(a, b, problem_rope)
 	a = T.follow_identifiers(a) --[[SOL OUTPUT--]] 
 	b = T.follow_identifiers(b) --[[SOL OUTPUT--]] 
 
+	if a == b then
+		return true --[[SOL OUTPUT--]]  -- Early out optimization
+	end --[[SOL OUTPUT--]] 
+
 	if a.tag == 'any' then return true --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	if b.tag == 'any' then return true --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-	if T.is_variant(a) then
+	if a.tag == 'variant' then
 		for _,v in ipairs(a.variants) do
 			if v==b then
 				return true --[[SOL OUTPUT--]] 
@@ -758,7 +765,7 @@ function T.could_be_raw(a, b, problem_rope)
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return false --[[SOL OUTPUT--]] 
-	elseif T.is_variant(b) then
+	elseif b.tag == 'variant' then
 		for _,v in ipairs(b.variants) do
 			if v==a then
 				return true --[[SOL OUTPUT--]] 
@@ -767,6 +774,41 @@ function T.could_be_raw(a, b, problem_rope)
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return false --[[SOL OUTPUT--]] 
+
+	elseif b.tag == 'table' then
+		return a.tag == 'table'
+		    or a.tag == 'list'
+		    or a.tag == 'map'
+		    or a.tag == 'object' --[[SOL OUTPUT--]] 
+
+	elseif a.tag == 'list' then
+		return b.tag == 'list'
+		   and T.could_be(a.type, b.type, problem_rope) --[[SOL OUTPUT--]] 
+
+	elseif a.tag == 'map' then
+		return b.tag == 'map'
+		   and T.could_be(a.key_type,   b.key_type,   problem_rope)
+		   and T.could_be(a.value_type, b.value_type, problem_rope) --[[SOL OUTPUT--]] 
+
+	elseif a.tag == 'object' then
+		if b.tag ~= 'object' then return false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+
+		for id, b_type in pairs(b.members) do
+			local a_type = a.members[id] --[[SOL OUTPUT--]] 
+			if a_type and not T.could_be(a_type, b_type, problem_rope) then
+				if problem_rope then
+					table.insert(problem_rope,
+						string.format("member '%s' of wrong type (got: %s, expected: %s)",
+						              id, U.quote_or_indent(T.name(a_type)), U.quote_or_indent(T.name(b_type)))) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+				return false --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		-- TODO: check metatables, super-classes etc?
+
+		return true --[[SOL OUTPUT--]] 
+
 	else
 		if T.isa(a, b, problem_rope) then
 			return true --[[SOL OUTPUT--]] 

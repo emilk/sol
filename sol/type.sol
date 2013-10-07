@@ -352,6 +352,9 @@ function T.is_obj_obj(d: T.Object, b: T.Object, problem_rope: [string]?) -> bool
 			return false
 		end
 	end
+
+	-- TODO: check metatables, super-classes etc?
+
 	return true
 end
 
@@ -426,6 +429,13 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 		return true -- Early out optimization
 	end
 
+
+	if b.tag == 'any' or d.tag == 'any' then
+		-- 'any' can become anything
+		-- Anything can become 'any'
+		return true
+	end
+
 	if b.tag == 'variant' then
 		for _,v in ipairs(b.variants) do
 			if T.isa(d, v, problem_rope) then
@@ -444,13 +454,6 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 			return true
 		end
 		return all_are_b()
-	end
-
-
-	if b.tag == 'any' or d.tag == 'any' then
-		-- 'any' can become anything
-		-- Anything can become 'any'
-		return true
 	end
 
 
@@ -746,10 +749,14 @@ function T.could_be_raw(a: T.Type, b: T.Type, problem_rope: [string]?)
 	a = T.follow_identifiers(a)
 	b = T.follow_identifiers(b)
 
+	if a == b then
+		return true -- Early out optimization
+	end
+
 	if a.tag == 'any' then return true end
 	if b.tag == 'any' then return true end
 
-	if T.is_variant(a) then
+	if a.tag == 'variant' then
 		for _,v in ipairs(a.variants) do
 			if v==b then
 				return true
@@ -758,7 +765,7 @@ function T.could_be_raw(a: T.Type, b: T.Type, problem_rope: [string]?)
 			end
 		end
 		return false
-	elseif T.is_variant(b) then
+	elseif b.tag == 'variant' then
 		for _,v in ipairs(b.variants) do
 			if v==a then
 				return true
@@ -767,6 +774,41 @@ function T.could_be_raw(a: T.Type, b: T.Type, problem_rope: [string]?)
 			end
 		end
 		return false
+
+	elseif b.tag == 'table' then
+		return a.tag == 'table'
+		    or a.tag == 'list'
+		    or a.tag == 'map'
+		    or a.tag == 'object'
+
+	elseif a.tag == 'list' then
+		return b.tag == 'list'
+		   and T.could_be(a.type, b.type, problem_rope)
+
+	elseif a.tag == 'map' then
+		return b.tag == 'map'
+		   and T.could_be(a.key_type,   b.key_type,   problem_rope)
+		   and T.could_be(a.value_type, b.value_type, problem_rope)
+
+	elseif a.tag == 'object' then
+		if b.tag ~= 'object' then return false end
+
+		for id, b_type in pairs(b.members) do
+			local a_type = a.members[id]
+			if a_type and not T.could_be(a_type, b_type, problem_rope) then
+				if problem_rope then
+					table.insert(problem_rope,
+						string.format("member '%s' of wrong type (got: %s, expected: %s)",
+						              id, U.quote_or_indent(T.name(a_type)), U.quote_or_indent(T.name(b_type))))
+				end
+				return false
+			end
+		end
+
+		-- TODO: check metatables, super-classes etc?
+
+		return true
+
 	else
 		if T.isa(a, b, problem_rope) then
 			return true
