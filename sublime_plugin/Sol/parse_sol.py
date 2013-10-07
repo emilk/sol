@@ -6,6 +6,15 @@ import os
 from subprocess import Popen, PIPE
 
 
+#solc_path = 'solc'  # TODO FIXME
+#solc_path = 'luajit /Users/emilk/Sol/install/solc.lua'
+#solc_path = 'lua /Users/emilk/Sol/install/solc.lua'
+solc_path = os.environ.get('SOLC')  # SOLC should be an environment variable on the form 'luajit /path/to/solc.lua'
+if not solc_path:
+	print("Failed to find environment variable SOLC - it should be on the form 'luajit /path/to/solc.lua'")
+	os.exit()
+
+
 def get_setting(key, default=None):
 	window = sublime.active_window()
 	if window != None:
@@ -24,15 +33,17 @@ def get_setting(key, default=None):
 	return val
 
 
+# bytes to string
+def decode(bytes):
+	str = bytes.decode('utf-8')
+	#str = bytes.decode(encoding='UTF-8')
+	str = str.replace("\r", "")  # Damn windows
+	return str
+
+
+
 #settings = sublime.load_settings("Sol.sublime-settings")
 
-#solc_path = 'solc'  # TODO FIXME
-#solc_path = 'luajit /Users/emilk/Sol/install/solc.lua'
-#solc_path = 'lua /Users/emilk/Sol/install/solc.lua'
-solc_path = os.environ.get('SOLC')  # SOLC should be an environment variable on the form 'luajit /path/to/solc.lua'
-if not solc_path:
-	print("Failed to find environment variable SOLC - it should be on the form 'luajit /path/to/solc.lua'")
-	solc_path = 'luajit /Users/emilk/Sol/install/solc.lua'
 
 
 class ParseSolCommand(sublime_plugin.EventListener):
@@ -105,26 +116,25 @@ class ParseSolCommand(sublime_plugin.EventListener):
 			root_mod_path = get_setting("project_path", ".") + '/'
 
 			# Run solc with the parse option
-			p = Popen(solc_path + ' -m ' + root_mod_path + ' -p --check ' + file_path, stdin=PIPE, stderr=PIPE, shell=True)
+			cmd = solc_path + ' -m ' + root_mod_path + ' -p'
 
-			# Extract text:
-			out_err = p.communicate(text.encode('utf-8'))
-			#errors = out_err[0] # None
-			errors = out_err[1]  # Length 0
+			sol_core = get_setting("sol_core")
+			if sol_core:
+				cmd += ' -l ' + sol_core
+
+			cmd += ' --check ' + file_path
+			print("cmd: " + cmd)
+			p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
+
+			# Extract output:
+			solc_out = p.communicate(text.encode('utf-8'))
+			warnings = decode( solc_out[0] )  # stdout
+			errors   = decode( solc_out[1] )  # stderr
 			result = p.wait()
 
-			if errors is None:
-				#print("no errors")
-				errors = None
+			print("solc stdout: " + warnings)
 
-			else:
-				errors = errors.decode('utf-8')
-				#errors = errors.decode(encoding='UTF-8')  # bytes -> string
-
-			if errors == "":
-				errors = None
-
-			sublime.set_timeout(lambda: self.show_errors(view, errors), 0)
+			sublime.set_timeout(lambda: self.show_errors(view, warnings, errors), 0)
 
 		except Exception as e:
 			msg = str(e) + ' ' + traceback.format_exc()
@@ -132,28 +142,39 @@ class ParseSolCommand(sublime_plugin.EventListener):
 			self.show_errors(view, "parse_sol.py: " + msg)
 
 
-
-	def show_errors(self, view, errors):
-		#print("parse_sol.py: show_errors")
+	def show_errors(self, view, warnings, errors):
+		print("parse_sol.py: show_errors")
 		
 		try:
 			#sublime.status_message("parse_sol.py: show_errors")
 
 			# Clear out any old region markers
-			view.erase_regions('sol')
+			view.erase_regions('sol_warnings')
+			view.erase_regions('sol_serrors')
 
-			if errors is None:
-				#sublime.status_message("No Lua errors")
-				pass
+			filename = view.file_name()
+			pattern = re.compile(r'(\w+.\w+):([0-9]+):')
 
-			else:
+			if warnings != "":
+				print("sol warnings: \n" + warnings)
+
+				# Add regions
+				regions = []
+
+				for file,line in pattern.findall(warnings):
+					if filename.find( file ) != -1:
+						region = view.full_line(view.text_point(int(line) - 1, 0))
+						regions.append( region )
+
+				view.add_regions('sol_warnings', regions, 'invalid', 'dot', sublime.HIDDEN)
+
+
+			if errors != "":
 				print("sol errors: \n" + errors)
 
 				# Add regions and place the error message in the status bar
 				sublime.status_message("solc: " + errors.replace('\n', '    '))
 				
-				filename = view.file_name()
-				pattern = re.compile(r'(\w+.\w+):([0-9]+):')
 				regions = []
 
 				for file,line in pattern.findall(errors):
@@ -161,7 +182,7 @@ class ParseSolCommand(sublime_plugin.EventListener):
 						region = view.full_line(view.text_point(int(line) - 1, 0))
 						regions.append( region )
 
-				view.add_regions('sol', regions, 'invalid', 'DOT', sublime.HIDDEN)
+				view.add_regions('sol_serrors', regions, 'invalid', 'circle', sublime.DRAW_OUTLINED)
 
 
 		except Exception as e:
