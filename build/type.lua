@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 06  11:22:21 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 07  08:05:11 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -42,7 +42,7 @@ T
 	local msg = string.format(fmt, ...) --[[SOL OUTPUT--]] 
 	U.printf_err( "%s", msg ) --[[SOL OUTPUT--]] 
 	--error(msg, 2)
-end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  -- TODO: implement fully
 
 local ATOMIC_TAGS 
 
@@ -53,8 +53,9 @@ local ATOMIC_TAGS
 
 
 
+
 = U.set{'any', 'int_literal', 'num_literal', 'string_literal',
-                        'nil', 'true', 'false', 'int', 'number', 'string'} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+                        'nil', 'true', 'false', 'int', 'number', 'string'} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 ------------------------------------------------------------------
 -- Prototypes for common stuff:
@@ -63,6 +64,14 @@ local ATOMIC_TAGS
 -- Any: implicit convert to and from anything.
 -- Used for interaction with Lua code.
 T
+
+
+
+
+
+
+
+
 
 
 
@@ -196,6 +205,8 @@ function T.is_void(ts)
 end --[[SOL OUTPUT--]] 
 
 function T.follow_identifiers(t, forgiving)
+	D.assert(t) --[[SOL OUTPUT--]] 
+
 	if t.tag ~= 'identifier' then
 		-- Early out
 		return t --[[SOL OUTPUT--]] 
@@ -499,6 +510,8 @@ function T.isa_raw(d, b, problem_rope)
 		    or b.tag == 'int' --[[SOL OUTPUT--]] 
 	elseif d.tag == 'table' then
 		return false --[[SOL OUTPUT--]]  -- Already covered
+	elseif d.tag == 'extern' then
+		return d == b --[[SOL OUTPUT--]]   -- Same extern!
 	elseif d.tag == 'list' then
 		--if b == T.EmptyTable then return true end
 		return b.tag == 'list'
@@ -952,6 +965,12 @@ function T.format_type(root, verbose)
 				return string.format('%s', typ.name) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
+		elseif typ.tag == 'extern' then
+			if typ.name then
+				return typ.name .. '<extern>' --[[SOL OUTPUT--]] 
+			else
+				return '<extern>' --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		else
 			return typ.tag --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1027,7 +1046,8 @@ function T.format_type(root, verbose)
 
 		local str_timmed = U.trim(str) --[[SOL OUTPUT--]] 
 
-		local full --[[SOL OUTPUT--]] 
+		local full = '' --[[SOL OUTPUT--]] 
+
 		if str_timmed == '' then
 			full = '{ }' --[[SOL OUTPUT--]] 
 		elseif U.count_line_breaks(str_timmed) == 0 then

@@ -1,4 +1,4 @@
--- Compiled from sol/type.sol on 2013 Oct 06  11:22:19
+-- Compiled from sol/type.sol on 2013 Oct 07  08:05:10
 
 return {
 	-- Types:
@@ -6,6 +6,12 @@ return {
 		pre_analyzed: bool?;
 		tag:          "any";
 		where:        string?;
+	};
+	typedef Extern = {
+		name:         string?;
+		pre_analyzed: bool?;
+		tag:          "extern";
+		where:        string;
 	};
 	typedef False = {
 		pre_analyzed: bool?;
@@ -109,7 +115,7 @@ return {
 		tag:          TypeID;
 		where:        string?;
 	};
-	typedef TypeID = "any" or "int_literal" or "num_literal" or "string_literal" or "nil" or "true" or "false" or "int" or "number" or "string" or "table" or "list" or "map" or "object" or "function" or "variant" or "identifier" or "varargs";
+	typedef TypeID = "any" or "int_literal" or "num_literal" or "string_literal" or "nil" or "true" or "false" or "int" or "number" or "string" or "table" or "list" or "map" or "object" or "function" or "variant" or "identifier" or "varargs" or "extern";
 	typedef Typelist = [Type];
 	typedef VarArgs = {
 		pre_analyzed: bool?;

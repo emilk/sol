@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 06  11:22:21 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 07  08:05:11 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -934,6 +934,8 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 
 	parse_simple_type = function(scope)
+		local where = where_am_i() --[[SOL OUTPUT--]] 
+
 		if tok:consume_symbol('[') then
 			local type = parse_type(scope) --[[SOL OUTPUT--]] 
 			if not type then
@@ -1127,8 +1129,10 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		elseif tok:consume_keyword('false') then
 			return T.False --[[SOL OUTPUT--]] 
 
+		elseif tok:consume_keyword('extern') then
+			return { tag = 'extern', where = where } --[[SOL OUTPUT--]] 
+
 		elseif tok:is('ident') then
-			local where = where_am_i() --[[SOL OUTPUT--]] 
 			local name = tok:get().data --[[SOL OUTPUT--]] 
 
 			if tok:consume_symbol('.') then

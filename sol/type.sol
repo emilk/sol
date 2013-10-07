@@ -52,6 +52,7 @@ typedef T.TypeID = 'any'
                  or 'table' or 'list' or 'map' or 'object' or 'function'
                  or 'variant' or 'identifier'
                  or 'varargs'
+                 or 'extern' -- TODO: implement fully
 
 var ATOMIC_TAGS = U.set{'any', 'int_literal', 'num_literal', 'string_literal',
                         'nil', 'true', 'false', 'int', 'number', 'string'}
@@ -129,6 +130,14 @@ typedef T.Identifier : T.Type = {
 	type        : T.Type?,   -- Filled in by TypeCheck on declaration/assignement on typedef or declaration of 'var_' if any
 }
 
+-- An opaque type, e.g. a userdata.
+-- Provides type-safety for identifiers passed around.
+typedef T.Extern : T.Type = {
+	tag   : 'extern',
+	where : string,   -- Point of declaration (file:line)
+	name  : string?,  -- Name of primary typedef, if any
+}
+
 ------------------------------------------------------------------
 -- Prototypes for common stuff:
 
@@ -195,7 +204,9 @@ function T.is_void(ts: T.Typelist) -> bool
 	return T.is_type_list(ts) and #ts == 0
 end
 
-function T.follow_identifiers(t : T.Type, forgiving: bool?) -> T.Type
+function T.follow_identifiers(t: T.Type, forgiving: bool?) -> T.Type
+	D.assert(t)
+
 	if t.tag ~= 'identifier' then
 		-- Early out
 		return t
@@ -499,6 +510,8 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 		    or b.tag == 'int'
 	elseif d.tag == 'table' then
 		return false -- Already covered
+	elseif d.tag == 'extern' then
+		return d == b  -- Same extern!
 	elseif d.tag == 'list' then
 		--if b == T.EmptyTable then return true end
 		return b.tag == 'list'
@@ -952,6 +965,12 @@ function T.format_type(root: T.Type, verbose: bool?)
 				return string.format('%s', typ.name)
 			end
 
+		elseif typ.tag == 'extern' then
+			if typ.name then
+				return typ.name .. '<extern>'
+			else
+				return '<extern>'
+			end
 		else
 			return typ.tag
 		end
@@ -1027,7 +1046,8 @@ function T.format_type(root: T.Type, verbose: bool?)
 
 		var str_timmed = U.trim(str)
 
-		local full
+		var full = ''
+
 		if str_timmed == '' then
 			full = '{ }'
 		elseif U.count_line_breaks(str_timmed) == 0 then

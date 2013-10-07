@@ -504,7 +504,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					end
 				end
 			elseif tok:consume_symbol('...', token_list) then
-				var elem_type = T.Any
+				var elem_type = T.Any : T.Type?
 
 				if settings.function_types and tok:consume_symbol(':') then
 					elem_type = parse_type(func_scope)
@@ -934,6 +934,8 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 
 	parse_simple_type = function(scope) -> T.Type?
+		local where = where_am_i()
+
 		if tok:consume_symbol('[') then
 			local type = parse_type(scope)
 			if not type then
@@ -1127,8 +1129,10 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		elseif tok:consume_keyword('false') then
 			return T.False
 
+		elseif tok:consume_keyword('extern') then
+			return { tag = 'extern', where = where }
+
 		elseif tok:is('ident') then
-			local where = where_am_i()
 			local name = tok:get().data
 
 			if tok:consume_symbol('.') then

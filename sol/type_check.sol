@@ -679,7 +679,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function do_member_lookup(node: P.Node, start_type: T.Type, name: string, suggestions: [string]) -> T.Type?
+	local function do_member_lookup(node: P.Node, start_type: T.Type, name: string, suggestions: [string]?) -> T.Type?
 		return T.visit_and_combine(start_type, function(type: T.Type)
 			if type.tag == 'object' then
 				var obj = type : T.Object
@@ -713,7 +713,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					end
 				end
 
-				if not member_type then
+				if suggestions and not member_type then
 					local close_name = loose_lookup(obj.members, name)
 
 					if close_name then
@@ -723,11 +723,13 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 				return member_type
 
-			elseif T.isa(type, T.String) then
+			--elseif T.isa(type, T.String) then
+			elseif type == T.String or type.tag == 'string_literal' then
 				-- TODO:  'example':upper()
 				return T.Any
 
-			elseif T.is_any(type) then
+			--elseif T.is_any(type) then
+			elseif type == T.Any then
 				return T.Any
 
 			else
@@ -2059,6 +2061,16 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	local function analyze_typedef(stat: P.Node, scope: Scope)
 		local name = stat.type_name
+
+		-- Assign names:
+		if stat.type then
+			T.visit(stat.type, function(t: T.Type)
+				if t.tag == 'extern' then
+					assert(not t.name)
+					t.name = name
+				end
+			end)
+		end
 
 		if stat.namespace_name then
 			var v = scope:get_var( stat.namespace_name )

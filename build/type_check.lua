@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 06  11:22:21 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 07  08:05:11 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -713,7 +713,7 @@ local function analyze(ast, filename, on_require, settings)
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-				if not member_type then
+				if suggestions and not member_type then
 					local close_name = loose_lookup(obj.members, name) --[[SOL OUTPUT--]] 
 
 					if close_name then
@@ -723,11 +723,13 @@ local function analyze(ast, filename, on_require, settings)
 
 				return member_type --[[SOL OUTPUT--]] 
 
-			elseif T.isa(type, T.String) then
+			--elseif T.isa(type, T.String) then
+			elseif type == T.String or type.tag == 'string_literal' then
 				-- TODO:  'example':upper()
 				return T.Any --[[SOL OUTPUT--]] 
 
-			elseif T.is_any(type) then
+			--elseif T.is_any(type) then
+			elseif type == T.Any then
 				return T.Any --[[SOL OUTPUT--]] 
 
 			else
@@ -2059,6 +2061,16 @@ local function analyze(ast, filename, on_require, settings)
 
 	local function analyze_typedef(stat, scope)
 		local name = stat.type_name --[[SOL OUTPUT--]] 
+
+		-- Assign names:
+		if stat.type then
+			T.visit(stat.type, function(t)
+				if t.tag == 'extern' then
+					assert(not t.name) --[[SOL OUTPUT--]] 
+					t.name = name --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
 		if stat.namespace_name then
 			local v = scope:get_var( stat.namespace_name ) --[[SOL OUTPUT--]] 
