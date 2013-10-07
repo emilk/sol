@@ -1615,6 +1615,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					count[e.type] = count[e.type] + 1
 
 					local this_val_type = analyze_expr_single(e.value, scope)
+					
+					--if this_val_type == T.Nil then -- TODO!
+					if e.value.ast_type == 'NilExpr' then
+						inform('nil-in-list', expr, "Nil in list.")
+					end
+
 					if this_val_type.tag == 'varargs' then
 						this_val_type = this_val_type.type -- Many of these
 					end

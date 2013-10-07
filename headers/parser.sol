@@ -1,4 +1,4 @@
--- Compiled from sol/parser.sol on 2013 Oct 07  17:55:21
+-- Compiled from sol/parser.sol on 2013 Oct 07  22:08:40
 
 return {
 	-- Types:
@@ -293,14 +293,14 @@ return {
 	LUA_SETTINGS: {
 	              	function_types: false;
 	              	is_sol:         false;
-	              	issues:         {"unused-parameter" or "unused-loop-variable" or "unused-variable" or "unassigned-variable" or "nil-init" => "SPAM" or "WARNING"};
+	              	issues:         {"unused-parameter" or "unused-loop-variable" or "unused-variable" or "unassigned-variable" or "nil-init" or "nil-in-list" => "SPAM" or "WARNING"};
 	              	keywords:       {string};
 	              	symbols:        {string};
 	              };
 	SOL_SETTINGS: {
 	              	function_types: true;
 	              	is_sol:         true;
-	              	issues:         {"unused-parameter" or "unused-loop-variable" or "unused-variable" or "unassigned-variable" or "nil-init" => "WARNING" or "ERROR" or "SPAM"};
+	              	issues:         {"unused-parameter" or "unused-loop-variable" or "unused-variable" or "unassigned-variable" or "nil-init" or "nil-in-list" => "WARNING" or "ERROR"};
 	              	keywords:       {string};
 	              	symbols:        {string};
 	              };

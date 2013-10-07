@@ -35,12 +35,14 @@ P.LUA_SETTINGS = {
 
 	-- Enabled warnings - names matches GCC - http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
 	issues = {
-		['unused-parameter']     = 'SPAM',
-		['unused-loop-variable'] = 'SPAM',
-		['unused-variable']      = 'WARNING',
+		['unused-parameter']     = 'SPAM';
+		['unused-loop-variable'] = 'SPAM';
+		['unused-variable']      = 'WARNING';
 		['unassigned-variable']  = 'WARNING';
 
-		['nil-init']             = 'SPAM'
+		['nil-init']             = 'SPAM';
+
+		['nil-in-list'] = 'WARNING';  -- { nil }
 	}
 }
 
@@ -70,7 +72,9 @@ P.SOL_SETTINGS = {
 		['unused-variable']      = 'WARNING';
 		['unassigned-variable']  = 'ERROR';
 
-		['nil-init']             = 'SPAM'
+		['nil-init']             = 'WARNING';
+
+		['nil-in-list'] = 'ERROR';  -- { nil }
 	}
 }
 

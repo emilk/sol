@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 07  17:55:22 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 07  22:08:42 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -35,12 +35,14 @@ P.LUA_SETTINGS = {
 
 	-- Enabled warnings - names matches GCC - http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
 	issues = {
-		['unused-parameter']     = 'SPAM',
-		['unused-loop-variable'] = 'SPAM',
-		['unused-variable']      = 'WARNING',
+		['unused-parameter']     = 'SPAM';
+		['unused-loop-variable'] = 'SPAM';
+		['unused-variable']      = 'WARNING';
 		['unassigned-variable']  = 'WARNING';
 
-		['nil-init']             = 'SPAM'
+		['nil-init']             = 'SPAM';
+
+		['nil-in-list'] = 'WARNING';  -- { nil }
 	}
 } --[[SOL OUTPUT--]] 
 
@@ -70,7 +72,9 @@ P.SOL_SETTINGS = {
 		['unused-variable']      = 'WARNING';
 		['unassigned-variable']  = 'ERROR';
 
-		['nil-init']             = 'SPAM'
+		['nil-init']             = 'WARNING';
+
+		['nil-in-list'] = 'ERROR';  -- { nil }
 	}
 } --[[SOL OUTPUT--]] 
 
