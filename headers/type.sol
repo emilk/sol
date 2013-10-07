@@ -1,4 +1,4 @@
--- Compiled from sol/type.sol on 2013 Oct 07  08:05:10
+-- Compiled from sol/type.sol on 2013 Oct 07  13:10:51
 
 return {
 	-- Types:
@@ -165,8 +165,9 @@ return {
 	clone_variant:         function(v) -> Variant;
 	combine:               function(a: Type, b: Type) -> { tag: "number"; } or { tag: "int"; };
 	combine_type_lists:    function(a, b, forgiving: bool?) -> Typelist?;
-	could_be:              function(a: Type, b: Type, problem_rope: [string]?) -> true or false or true or false or true or false or true;
-	could_be_false:        function(a: Type) -> true or false or true or false or true or false or true;
+	could_be:              function(d: Type, b: Type, problem_rope: [string]?) -> bool;
+	could_be_false:        function(a: Type) -> true or false;
+	could_be_raw:          function(a: Type, b: Type, problem_rope: [string]?) -> true or false or true or false or true or false or true;
 	could_be_tl:           function(al: Typelist, bl: Typelist, problem_rope: [string]?) -> bool;
 	could_be_true:         function(a: Type) -> true or false or true or false or true;
 	create_empty_table:    function() -> Type;

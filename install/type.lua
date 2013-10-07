@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 07  08:05:11 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 07  13:10:53 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -681,13 +681,60 @@ function T.has_tag(t, target)
 	return false --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
+-- Memoization:
+-- true   -> yes, it is
+-- false  -> no, and no error string generated yet
+-- string -> no, and here's the error string
+local could_be_memo = {} --[[SOL OUTPUT--]] 
+
+function T.could_be(d, b, problem_rope)
+	D.assert(d) --[[SOL OUTPUT--]] 
+	D.assert(b) --[[SOL OUTPUT--]] 
+	local res = could_be_memo[d] and could_be_memo[d][b] --[[SOL OUTPUT--]] 
+	D.assert(res ~= RECURSION) --[[SOL OUTPUT--]] 
+
+	if res == true then
+		return true --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	if problem_rope then
+		if res == false or res == nil then
+			-- We need to generate a problem description:
+			could_be_memo[d] = could_be_memo[d] or {} --[[SOL OUTPUT--]] 
+			could_be_memo[d][b] = RECURSION --[[SOL OUTPUT--]] 
+
+			local could_be_rope = {} --[[SOL OUTPUT--]] 
+			T.could_be_raw(d, b, could_be_rope) --[[SOL OUTPUT--]] 
+			res = table.concat(could_be_rope, '\n') --[[SOL OUTPUT--]] 
+
+			could_be_memo[d][b] = res --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+		assert(type(res) == 'string') --[[SOL OUTPUT--]] 
+		problem_rope[#problem_rope + 1] = res --[[SOL OUTPUT--]] 
+		return false --[[SOL OUTPUT--]] 
+	else
+		-- No problem description needed
+		if res==nil then
+			could_be_memo[d] = could_be_memo[d] or {} --[[SOL OUTPUT--]] 
+			could_be_memo[d][b] = RECURSION --[[SOL OUTPUT--]] 
+
+			res = T.could_be_raw(d, b) --[[SOL OUTPUT--]] 
+
+			could_be_memo[d][b] = res --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		return res --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
 
 -- is a variant of 'a' a 'b' ?
 -- T.could_be(T.Bool, T.False)  == true
 -- T.could_be(some_nilable, T.Nil)  == true
 -- T.could_be(int or bool, string or bool)  == true
 -- T.could_be(int or nil, string or nil)  == false
-function T.could_be(a, b, problem_rope)
+function T.could_be_raw(a, b, problem_rope)
 	if a==b then
 		-- Early out:
 		return true --[[SOL OUTPUT--]] 

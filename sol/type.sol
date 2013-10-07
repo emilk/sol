@@ -681,13 +681,60 @@ function T.has_tag(t: T.Type, target: string)
 	return false
 end
 
+-- Memoization:
+-- true   -> yes, it is
+-- false  -> no, and no error string generated yet
+-- string -> no, and here's the error string
+var could_be_memo = {} : {T.Type => {T.Type => true or false or string or [string]}}
+
+function T.could_be(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
+	D.assert(d)
+	D.assert(b)
+	local res = could_be_memo[d] and could_be_memo[d][b]
+	D.assert(res ~= RECURSION)
+
+	if res == true then
+		return true
+	end
+
+	if problem_rope then
+		if res == false or res == nil then
+			-- We need to generate a problem description:
+			could_be_memo[d] = could_be_memo[d] or {}
+			could_be_memo[d][b] = RECURSION
+
+			local could_be_rope = {}
+			T.could_be_raw(d, b, could_be_rope)
+			res = table.concat(could_be_rope, '\n')
+
+			could_be_memo[d][b] = res
+		end
+		assert(type(res) == 'string')
+		problem_rope[#problem_rope + 1] = res
+		return false
+	else
+		-- No problem description needed
+		if res==nil then
+			could_be_memo[d] = could_be_memo[d] or {}
+			could_be_memo[d][b] = RECURSION
+
+			res = T.could_be_raw(d, b)
+
+			could_be_memo[d][b] = res
+		end
+
+		return res
+	end
+end
+
+
 
 -- is a variant of 'a' a 'b' ?
 -- T.could_be(T.Bool, T.False)  == true
 -- T.could_be(some_nilable, T.Nil)  == true
 -- T.could_be(int or bool, string or bool)  == true
 -- T.could_be(int or nil, string or nil)  == false
-function T.could_be(a: T.Type, b: T.Type, problem_rope: [string]?)
+function T.could_be_raw(a: T.Type, b: T.Type, problem_rope: [string]?)
 	if a==b then
 		-- Early out:
 		return true
