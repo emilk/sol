@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 07  15:32:15 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 07  15:54:28 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -546,7 +546,7 @@ else
 			local path_in = arg[ix] --[[SOL OUTPUT--]] 
 			ix = ix + 1 --[[SOL OUTPUT--]] 
 			
-			_G.g_local_parse = true --[[SOL OUTPUT--]]  -- FIXME: else too slow for live-parsing
+			--_G.g_local_parse = true -- FIXME: else too slow for live-parsing
 
 			-- Read entire stdin
 			print("Reading from stdin...") --[[SOL OUTPUT--]] 

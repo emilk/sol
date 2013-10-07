@@ -546,7 +546,7 @@ else
 			local path_in = arg[ix]
 			ix = ix + 1
 			
-			_G.g_local_parse = true -- FIXME: else too slow for live-parsing
+			--_G.g_local_parse = true
 
 			-- Read entire stdin
 			print("Reading from stdin...")
