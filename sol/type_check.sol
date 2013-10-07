@@ -189,7 +189,16 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local function inform_at(issue_name: string, where: string, fmt: string, ...)
 		local level = settings.issues[issue_name]
 		assert(level)
-		if level ~= 'SPAM' or _G.g_spam then
+
+		if level == 'ERROR' and not settings.is_sol then
+				-- Forgive lua code
+			level = 'WARNING'
+		end
+
+		if level == 'ERROR' then
+			U.printf_err( "%s", report('ERROR', where, fmt, ...) )
+			error_count = error_count + 1
+		elseif level ~= 'SPAM' or _G.g_spam then
 			print( report(level, where, fmt, ...))
 		end
 	end
@@ -1611,14 +1620,20 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				var obj_members = {} : {string => T.Type}
 
 				local count = { ['key'] = 0, ['ident_key'] = 0, ['value'] = 0 }
-				for _,e in ipairs(expr.entry_list) do
+				for exntry_ix,e in ipairs(expr.entry_list) do
 					count[e.type] = count[e.type] + 1
 
 					local this_val_type = analyze_expr_single(e.value, scope)
 					
-					--if this_val_type == T.Nil then -- TODO!
-					if e.value.ast_type == 'NilExpr' then
-						inform('nil-in-list', expr, "Nil in list.")
+					if e.type == 'value' then -- a list
+						--if this_val_type == T.Nil then -- TODO!
+						if e.value.ast_type == 'NilExpr' then
+							if exntry_ix == #expr.entry_list then
+								inform('nil-ends-list', expr, "Lists ends in 'nil' - will be ignored by Lua.")
+							else
+								inform('nil-in-list', expr, "Nil in list - could be dangerous.")
+							end
+						end
 					end
 
 					if this_val_type.tag == 'varargs' then

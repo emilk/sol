@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 07  22:08:42 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 07  22:18:58 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -189,7 +189,16 @@ local function analyze(ast, filename, on_require, settings)
 	local function inform_at(issue_name, where, fmt, ...)
 		local level = settings.issues[issue_name] --[[SOL OUTPUT--]] 
 		assert(level) --[[SOL OUTPUT--]] 
-		if level ~= 'SPAM' or _G.g_spam then
+
+		if level == 'ERROR' and not settings.is_sol then
+				-- Forgive lua code
+			level = 'WARNING' --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		if level == 'ERROR' then
+			U.printf_err( "%s", report('ERROR', where, fmt, ...) ) --[[SOL OUTPUT--]] 
+			error_count = error_count + 1 --[[SOL OUTPUT--]] 
+		elseif level ~= 'SPAM' or _G.g_spam then
 			print( report(level, where, fmt, ...)) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -1611,14 +1620,20 @@ local function analyze(ast, filename, on_require, settings)
 				local obj_members = {} --[[SOL OUTPUT--]] 
 
 				local count = { ['key'] = 0, ['ident_key'] = 0, ['value'] = 0 } --[[SOL OUTPUT--]] 
-				for _,e in ipairs(expr.entry_list) do
+				for exntry_ix,e in ipairs(expr.entry_list) do
 					count[e.type] = count[e.type] + 1 --[[SOL OUTPUT--]] 
 
 					local this_val_type = analyze_expr_single(e.value, scope) --[[SOL OUTPUT--]] 
 					
-					--if this_val_type == T.Nil then -- TODO!
-					if e.value.ast_type == 'NilExpr' then
-						inform('nil-in-list', expr, "Nil in list.") --[[SOL OUTPUT--]] 
+					if e.type == 'value' then -- a list
+						--if this_val_type == T.Nil then -- TODO!
+						if e.value.ast_type == 'NilExpr' then
+							if exntry_ix == #expr.entry_list then
+								inform('nil-ends-list', expr, "Lists ends in 'nil' - will be ignored by Lua.") --[[SOL OUTPUT--]] 
+							else
+								inform('nil-in-list', expr, "Nil in list - could be dangerous.") --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
 					if this_val_type.tag == 'varargs' then

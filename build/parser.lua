@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 07  22:08:42 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 07  22:18:58 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -42,7 +42,8 @@ P.LUA_SETTINGS = {
 
 		['nil-init']             = 'SPAM';
 
-		['nil-in-list'] = 'WARNING';  -- { nil }
+		['nil-ends-list'] = 'WARNING';  -- { 42, nil }
+		['nil-in-list']   = 'WARNING';  -- { nil, 42 }
 	}
 } --[[SOL OUTPUT--]] 
 
@@ -74,7 +75,8 @@ P.SOL_SETTINGS = {
 
 		['nil-init']             = 'WARNING';
 
-		['nil-in-list'] = 'ERROR';  -- { nil }
+		['nil-ends-list'] = 'ERROR';  -- { 42, nil }
+		['nil-in-list']   = 'ERROR';  -- { nil, 42 }
 	}
 } --[[SOL OUTPUT--]] 
 

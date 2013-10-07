@@ -42,7 +42,8 @@ P.LUA_SETTINGS = {
 
 		['nil-init']             = 'SPAM';
 
-		['nil-in-list'] = 'WARNING';  -- { nil }
+		['nil-ends-list'] = 'WARNING';  -- { 42, nil }
+		['nil-in-list']   = 'WARNING';  -- { nil, 42 }
 	}
 }
 
@@ -74,7 +75,8 @@ P.SOL_SETTINGS = {
 
 		['nil-init']             = 'WARNING';
 
-		['nil-in-list'] = 'ERROR';  -- { nil }
+		['nil-ends-list'] = 'ERROR';  -- { 42, nil }
+		['nil-in-list']   = 'ERROR';  -- { nil, 42 }
 	}
 }
 
