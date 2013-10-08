@@ -1304,7 +1304,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif expr.ast_type == 'StringExpr' then
-			return T.from_string_literal( expr.value.data )
+			--return T.from_string_literal( expr.value.data )
+			local st, ret = pcall( T.from_string_literal, expr.value.data )
+			if not st then
+				report_error(expr, "Failed to parse string: %s", expr.value.data)
+				return T.String
+			else
+				return ret
+			end
 
 
 		elseif expr.ast_type == 'BooleanExpr' then

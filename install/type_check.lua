@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 08  09:05:41 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 08  14:11:31 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1304,7 +1304,14 @@ local function analyze(ast, filename, on_require, settings)
 
 
 		elseif expr.ast_type == 'StringExpr' then
-			return T.from_string_literal( expr.value.data ) --[[SOL OUTPUT--]] 
+			--return T.from_string_literal( expr.value.data )
+			local st, ret = pcall( T.from_string_literal, expr.value.data ) --[[SOL OUTPUT--]] 
+			if not st then
+				report_error(expr, "Failed to parse string: %s", expr.value.data) --[[SOL OUTPUT--]] 
+				return T.String --[[SOL OUTPUT--]] 
+			else
+				return ret --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 
 
 		elseif expr.ast_type == 'BooleanExpr' then
