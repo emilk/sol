@@ -1346,7 +1346,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				var r_mm_ret = try_metamethod(expr, rt, NumOps[op], {expr.lhs, expr.rhs}, {lt,rt}, rt)
 				if r_mm_ret then return r_mm_ret end
 
-				if T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
+				if T.is_any(lt) or T.is_any(rt) then
+					-- Combining unknown types - could be float, Vector3, ...
+					return T.Any
+				elseif T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
 					report_spam(expr, "Combining types %s and %s", lt, rt)
 					return T.combine( lt, rt )  -- int,int -> int,   int,num -> num,  etc
 				else
@@ -1454,7 +1457,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				var mm_ret = try_metamethod(expr, arg_t, '__unm', {expr.rhs}, {arg_t}, arg_t)
 				if mm_ret then return mm_ret end
 
-				if T.could_be(arg_t, T.Num) then
+				if T.is_any(arg_t) then
+					-- number? Vector3? Who knows!
+					return T.Any
+				elseif T.could_be(arg_t, T.Num) then
 					return T.Num
 				elseif T.could_be(arg_t, T.Int) then
 					return T.Int

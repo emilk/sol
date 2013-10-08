@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 08  14:11:31 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 08  18:10:30 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -1362,11 +1362,11 @@ end --[[SOL OUTPUT--]]
 -- works for tables, or numerics, i.e.   num+int == num
 function T.combine(a, b)
 	if T.is_any(a)                  then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if T.has_tag(a, 'number')      then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if T.has_tag(a, 'num_literal') then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.has_tag(a, 'number')       then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.has_tag(a, 'num_literal')  then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	if T.is_any(a)                  then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if T.has_tag(b, 'number')      then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if T.has_tag(b, 'num_literal') then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.has_tag(b, 'number')       then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+	if T.has_tag(b, 'num_literal')  then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	return T.Int --[[SOL OUTPUT--]] 
 --[[
 	if T.isa(a, b) then return b end

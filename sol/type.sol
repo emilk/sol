@@ -1362,11 +1362,11 @@ end
 -- works for tables, or numerics, i.e.   num+int == num
 function T.combine(a: T.Type, b: T.Type)
 	if T.is_any(a)                  then return T.Num end
-	if T.has_tag(a, 'number')      then return T.Num end
-	if T.has_tag(a, 'num_literal') then return T.Num end
+	if T.has_tag(a, 'number')       then return T.Num end
+	if T.has_tag(a, 'num_literal')  then return T.Num end
 	if T.is_any(a)                  then return T.Num end
-	if T.has_tag(b, 'number')      then return T.Num end
-	if T.has_tag(b, 'num_literal') then return T.Num end
+	if T.has_tag(b, 'number')       then return T.Num end
+	if T.has_tag(b, 'num_literal')  then return T.Num end
 	return T.Int
 --[[
 	if T.isa(a, b) then return b end

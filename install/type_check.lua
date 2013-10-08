@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 08  14:11:31 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 08  18:10:30 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -1346,7 +1346,10 @@ local function analyze(ast, filename, on_require, settings)
 				local r_mm_ret = try_metamethod(expr, rt, NumOps[op], {expr.lhs, expr.rhs}, {lt,rt}, rt) --[[SOL OUTPUT--]] 
 				if r_mm_ret then return r_mm_ret --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-				if T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
+				if T.is_any(lt) or T.is_any(rt) then
+					-- Combining unknown types - could be float, Vector3, ...
+					return T.Any --[[SOL OUTPUT--]] 
+				elseif T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
 					report_spam(expr, "Combining types %s and %s", lt, rt) --[[SOL OUTPUT--]] 
 					return T.combine( lt, rt ) --[[SOL OUTPUT--]]   -- int,int -> int,   int,num -> num,  etc
 				else
@@ -1454,7 +1457,10 @@ local function analyze(ast, filename, on_require, settings)
 				local mm_ret = try_metamethod(expr, arg_t, '__unm', {expr.rhs}, {arg_t}, arg_t) --[[SOL OUTPUT--]] 
 				if mm_ret then return mm_ret --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-				if T.could_be(arg_t, T.Num) then
+				if T.is_any(arg_t) then
+					-- number? Vector3? Who knows!
+					return T.Any --[[SOL OUTPUT--]] 
+				elseif T.could_be(arg_t, T.Num) then
 					return T.Num --[[SOL OUTPUT--]] 
 				elseif T.could_be(arg_t, T.Int) then
 					return T.Int --[[SOL OUTPUT--]] 
