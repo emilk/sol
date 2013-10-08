@@ -1,4 +1,4 @@
--- Compiled from sol/parser.sol on 2013 Oct 07  22:18:57
+-- Compiled from sol/parser.sol on 2013 Oct 08  09:05:40
 
 return {
 	-- Types:

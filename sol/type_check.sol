@@ -2267,27 +2267,35 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				Common lua idiom
 				--]]
 				var name = stat.lhs[1].name
-				var is_local = false
-				var class_type = declare_class(stat, scope, name, is_local, stat.rhs[1])
-				-- Allow Foo(...):
-				class_type.metatable = {
-					tag='object',
-					members = {
-						__call = {
-							tag    = 'function';
-							args   = {};
-							vararg = { tag='varargs', type=T.Any };
-							rets   = T.AnyTypeList;
-							name   = '__call';
+				if true then
+					var v = scope:get_var(name)
+					D.assert(v and v.forward_declared and v.is_global)
+					v.forward_declared = false
+				else
+					report_info(stat, "Declaring Lua class %q", name)
+					var is_local = false
+					var class_type = declare_class(stat, scope, name, is_local, stat.rhs[1])
+					-- Allow Foo(...):
+					class_type.metatable = {
+						tag='object',
+						members = {
+							__call = {
+								tag    = 'function';
+								args   = {};
+								vararg = { tag='varargs', type=T.Any };
+								rets   = T.AnyTypeList;
+								name   = '__call';
+							}
 						}
 					}
-				}
-				var v = declare_var(stat, scope, name, is_local, class_type)
-				v.type = class_type -- FIXME
+					var v = declare_var(stat, scope, name, is_local, class_type)
+					v.type = class_type -- FIXME
+				end
 
 			elseif nrhs == 1 then
 			--]-]
 			--if nrhs == 1 then
+				-- a = b
 				var rt, _ = analyze_expr(stat.rhs[1], scope)
 				if rt == T.AnyTypeList then
 					var N = nlhs
@@ -2681,6 +2689,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						Common lua idiom
 						--]]
 						var name = stat.lhs[1].name
+						report_spam(stat, "Pre-declaring Lua class %q", name)
 						var is_local = false
 						var class_type = declare_class(stat, scope, name, is_local, stat.rhs[1])
 						-- Allow Foo(...):
@@ -2698,6 +2707,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						}
 						var v = declare_var(stat, scope, name, is_local, class_type)
 						v.type = class_type
+						v.forward_declared = true -- Until second pass
 
 					else
 						var var_name = stat.lhs[1].name
@@ -2709,6 +2719,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							-- Leave error reporting out of pre-analyzer
 							report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name)
 							v = top_scope:create_global( var_name, where_is(stat) )
+							v.forward_declared = true -- Until second pass
 						end
 
 						if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then

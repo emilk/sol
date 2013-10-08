@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 07  22:18:58 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 08  09:05:41 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -2267,27 +2267,35 @@ local function analyze(ast, filename, on_require, settings)
 				Common lua idiom
 				--]]
 				local name = stat.lhs[1].name --[[SOL OUTPUT--]] 
-				local is_local = false --[[SOL OUTPUT--]] 
-				local class_type = declare_class(stat, scope, name, is_local, stat.rhs[1]) --[[SOL OUTPUT--]] 
-				-- Allow Foo(...):
-				class_type.metatable = {
-					tag='object',
-					members = {
-						__call = {
-							tag    = 'function';
-							args   = {};
-							vararg = { tag='varargs', type=T.Any };
-							rets   = T.AnyTypeList;
-							name   = '__call';
+				if true then
+					local v = scope:get_var(name) --[[SOL OUTPUT--]] 
+					D.assert(v and v.forward_declared and v.is_global) --[[SOL OUTPUT--]] 
+					v.forward_declared = false --[[SOL OUTPUT--]] 
+				else
+					report_info(stat, "Declaring Lua class %q", name) --[[SOL OUTPUT--]] 
+					local is_local = false --[[SOL OUTPUT--]] 
+					local class_type = declare_class(stat, scope, name, is_local, stat.rhs[1]) --[[SOL OUTPUT--]] 
+					-- Allow Foo(...):
+					class_type.metatable = {
+						tag='object',
+						members = {
+							__call = {
+								tag    = 'function';
+								args   = {};
+								vararg = { tag='varargs', type=T.Any };
+								rets   = T.AnyTypeList;
+								name   = '__call';
+							}
 						}
-					}
-				} --[[SOL OUTPUT--]] 
-				local v = declare_var(stat, scope, name, is_local, class_type) --[[SOL OUTPUT--]] 
-				v.type = class_type --[[SOL OUTPUT--]]  -- FIXME
+					} --[[SOL OUTPUT--]] 
+					local v = declare_var(stat, scope, name, is_local, class_type) --[[SOL OUTPUT--]] 
+					v.type = class_type --[[SOL OUTPUT--]]  -- FIXME
+				end --[[SOL OUTPUT--]] 
 
 			elseif nrhs == 1 then
 			--]-]
 			--if nrhs == 1 then
+				-- a = b
 				local rt, _ = analyze_expr(stat.rhs[1], scope) --[[SOL OUTPUT--]] 
 				if rt == T.AnyTypeList then
 					local N = nlhs --[[SOL OUTPUT--]] 
@@ -2681,6 +2689,7 @@ local function analyze(ast, filename, on_require, settings)
 						Common lua idiom
 						--]]
 						local name = stat.lhs[1].name --[[SOL OUTPUT--]] 
+						report_spam(stat, "Pre-declaring Lua class %q", name) --[[SOL OUTPUT--]] 
 						local is_local = false --[[SOL OUTPUT--]] 
 						local class_type = declare_class(stat, scope, name, is_local, stat.rhs[1]) --[[SOL OUTPUT--]] 
 						-- Allow Foo(...):
@@ -2698,6 +2707,7 @@ local function analyze(ast, filename, on_require, settings)
 						} --[[SOL OUTPUT--]] 
 						local v = declare_var(stat, scope, name, is_local, class_type) --[[SOL OUTPUT--]] 
 						v.type = class_type --[[SOL OUTPUT--]] 
+						v.forward_declared = true --[[SOL OUTPUT--]]  -- Until second pass
 
 					else
 						local var_name = stat.lhs[1].name --[[SOL OUTPUT--]] 
@@ -2709,6 +2719,7 @@ local function analyze(ast, filename, on_require, settings)
 							-- Leave error reporting out of pre-analyzer
 							report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name) --[[SOL OUTPUT--]] 
 							v = top_scope:create_global( var_name, where_is(stat) ) --[[SOL OUTPUT--]] 
+							v.forward_declared = true --[[SOL OUTPUT--]]  -- Until second pass
 						end --[[SOL OUTPUT--]] 
 
 						if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
