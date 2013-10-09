@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 09  22:17:32 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 09  22:26:41 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -873,6 +873,11 @@ local function analyze(ast, filename, on_require, settings)
 
 		if args[1].ast_type ~= 'IdExpr' then
 			sol_warning(expr, "setmetatable: first argument must be an identifier, got %s", args[1].ast_type) --[[SOL OUTPUT--]] 
+			return --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		if arg_ts[2] == T.Nil then
+			-- OK
 			return --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 

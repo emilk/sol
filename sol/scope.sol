@@ -360,7 +360,7 @@ function Scope.create_global_scope() -> Scope
 	local setmetatable = s:create_global( 'setmetatable', where )
 	setmetatable.type = {
 		tag            = 'function',
-		args           = { {  type = T.Table }, { type = T.Table } },
+		args           = { {  type = T.Table }, { type = T.variant(T.Table, T.Nil) } },
 		rets           = { T.Table },
 		intrinsic_name = "setmetatable",
 		name           = "setmetatable",

@@ -876,6 +876,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return
 		end
 
+		if arg_ts[2] == T.Nil then
+			-- OK
+			return
+		end
+
 		if arg_ts[2].tag ~= 'object' then
 			report_warning(expr, "setmetatable: second argument must be an object")
 			return

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 09  22:17:32 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 09  22:26:41 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -1482,6 +1482,12 @@ function T.broaden(t)
 	if t == nil then
 		return nil --[[SOL OUTPUT--]] 
 	elseif t == T.Nil then
+		--[[
+		obj.member = nil
+		if obj.member then  -- should not warn!
+		end
+		obj.member = 42
+		--]]
 		return T.Nilable --[[SOL OUTPUT--]] 
 	else
 		return T.broaden_non_nil(t) --[[SOL OUTPUT--]] 

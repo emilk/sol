@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Oct 09  22:17:32 --]] local T = require 'type' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Oct 09  22:26:40 --]] local T = require 'type' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
 
@@ -360,7 +360,7 @@ function Scope.create_global_scope()
 	local setmetatable = s:create_global( 'setmetatable', where ) --[[SOL OUTPUT--]] 
 	setmetatable.type = {
 		tag            = 'function',
-		args           = { {  type = T.Table }, { type = T.Table } },
+		args           = { {  type = T.Table }, { type = T.variant(T.Table, T.Nil) } },
 		rets           = { T.Table },
 		intrinsic_name = "setmetatable",
 		name           = "setmetatable",
