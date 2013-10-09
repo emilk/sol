@@ -872,7 +872,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		if args[1].ast_type ~= 'IdExpr' then
-			report_warning(expr, "setmetatable: first argument must be an identifier, got %s", args[1].ast_type)
+			sol_warning(expr, "setmetatable: first argument must be an identifier, got %s", args[1].ast_type)
 			return
 		end
 
@@ -894,7 +894,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		if target_type.tag ~= 'object' then
-			report_warning(expr, "setmetatable: first argument should name an object; got: %s", target_type)
+			sol_warning(expr, "setmetatable: first argument should name an object; got: %s", target_type)
 			return
 		end
 
