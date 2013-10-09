@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 08  18:10:30 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 09  22:17:32 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -872,7 +872,7 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 
 		if args[1].ast_type ~= 'IdExpr' then
-			report_warning(expr, "setmetatable: first argument must be an identifier, got %s", args[1].ast_type) --[[SOL OUTPUT--]] 
+			sol_warning(expr, "setmetatable: first argument must be an identifier, got %s", args[1].ast_type) --[[SOL OUTPUT--]] 
 			return --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -894,7 +894,7 @@ local function analyze(ast, filename, on_require, settings)
 		end --[[SOL OUTPUT--]] 
 
 		if target_type.tag ~= 'object' then
-			report_warning(expr, "setmetatable: first argument should name an object; got: %s", target_type) --[[SOL OUTPUT--]] 
+			sol_warning(expr, "setmetatable: first argument should name an object; got: %s", target_type) --[[SOL OUTPUT--]] 
 			return --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 

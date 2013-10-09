@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 08  18:10:30 --]] require 'parser' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 09  22:17:32 --]] require 'parser' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
 local printf_err = U.printf_err --[[SOL OUTPUT--]] 

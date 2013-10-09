@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/edit_distance.sol on 2013 Oct 08  18:10:30 --]] -- From  http://nayruden.com/?p=115  -  https://gist.github.com/Nayruden/427389
+--[[ DO NOT MODIFY - COMPILED FROM sol/edit_distance.sol on 2013 Oct 09  22:17:32 --]] -- From  http://nayruden.com/?p=115  -  https://gist.github.com/Nayruden/427389
 -- Translated to Sol by Emil Ernerfeldt in 2013
 --[[
 	Function: EditDistance

@@ -1444,11 +1444,7 @@ function T.combine_type_lists(a, b, forgiving: bool?) -> T.Typelist?
 	end
 end
 
-
--- For assigning type to a variable
-function T.broaden(t: T.Type?) -> T.Type?
-	if not t then return t end
-
+function T.broaden_non_nil(t: T.Type) -> T.Type
 	if t.tag == 'int_literal' then
 		return T.Int
 	elseif t.tag == 'num_literal' then
@@ -1458,12 +1454,12 @@ function T.broaden(t: T.Type?) -> T.Type?
 	elseif t == T.True or t == T.False then
 		return T.Bool
 	elseif t.tag == 'list' then
-		return { tag = 'list', type = T.broaden(t.type) }
+		return { tag = 'list', type = T.broaden_non_nil(t.type) }
 	elseif t.tag == 'map' then
 		return {
 			tag        = 'map',
-			key_type   = T.broaden(t.key_type),
-			value_type = T.broaden(t.value_type),
+			key_type   = T.broaden_non_nil(t.key_type),
+			value_type = T.broaden_non_nil(t.value_type),
 		}
 	elseif t.tag == 'variant' then
 		-- false?   ->  bool?
@@ -1472,11 +1468,29 @@ function T.broaden(t: T.Type?) -> T.Type?
 			variants = {} : [T.Variant]
 		}
 		for ix,v in ipairs(t.variants) do
-			ret.variants[ix] = T.broaden(v)
+			ret.variants[ix] = T.broaden_non_nil(v)
 		end
 		return ret
 	else
 		return t
+	end
+end
+
+
+-- For assigning type to a variable
+function T.broaden(t: T.Type?) -> T.Type?
+	if t == nil then
+		return nil
+	elseif t == T.Nil then
+		--[[
+		obj.member = nil
+		if obj.member then  -- should not warn!
+		end
+		obj.member = 42
+		--]]
+		return T.Nilable
+	else
+		return T.broaden_non_nil(t)
 	end
 end
 

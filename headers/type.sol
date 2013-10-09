@@ -1,4 +1,4 @@
--- Compiled from sol/type.sol on 2013 Oct 08  18:10:29
+-- Compiled from sol/type.sol on 2013 Oct 09  22:17:31
 
 return {
 	-- Types:
@@ -162,6 +162,7 @@ return {
 	                       					where:        string?;
 	                       				} or [Type]];
 	broaden:               function(t: Type?) -> Type?;
+	broaden_non_nil:       function(t: Type) -> Type;
 	clone_variant:         function(v) -> Variant;
 	combine:               function(a: Type, b: Type) -> { tag: "number"; } or { tag: "int"; };
 	combine_type_lists:    function(a, b, forgiving: bool?) -> Typelist?;

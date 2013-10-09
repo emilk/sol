@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 08  18:10:30 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 09  22:17:32 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -1444,11 +1444,7 @@ function T.combine_type_lists(a, b, forgiving)
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
-
--- For assigning type to a variable
-function T.broaden(t)
-	if not t then return t --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-
+function T.broaden_non_nil(t)
 	if t.tag == 'int_literal' then
 		return T.Int --[[SOL OUTPUT--]] 
 	elseif t.tag == 'num_literal' then
@@ -1458,12 +1454,12 @@ function T.broaden(t)
 	elseif t == T.True or t == T.False then
 		return T.Bool --[[SOL OUTPUT--]] 
 	elseif t.tag == 'list' then
-		return { tag = 'list', type = T.broaden(t.type) } --[[SOL OUTPUT--]] 
+		return { tag = 'list', type = T.broaden_non_nil(t.type) } --[[SOL OUTPUT--]] 
 	elseif t.tag == 'map' then
 		return {
 			tag        = 'map',
-			key_type   = T.broaden(t.key_type),
-			value_type = T.broaden(t.value_type),
+			key_type   = T.broaden_non_nil(t.key_type),
+			value_type = T.broaden_non_nil(t.value_type),
 		} --[[SOL OUTPUT--]] 
 	elseif t.tag == 'variant' then
 		-- false?   ->  bool?
@@ -1472,11 +1468,23 @@ function T.broaden(t)
 			variants = {}
 		} --[[SOL OUTPUT--]] 
 		for ix,v in ipairs(t.variants) do
-			ret.variants[ix] = T.broaden(v) --[[SOL OUTPUT--]] 
+			ret.variants[ix] = T.broaden_non_nil(v) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return ret --[[SOL OUTPUT--]] 
 	else
 		return t --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
+-- For assigning type to a variable
+function T.broaden(t)
+	if t == nil then
+		return nil --[[SOL OUTPUT--]] 
+	elseif t == T.Nil then
+		return T.Nilable --[[SOL OUTPUT--]] 
+	else
+		return T.broaden_non_nil(t) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
