@@ -73,13 +73,13 @@ local function loose_lookup(table: {string => any}, id: string) -> string?
 end
 
 
-local function expr2str(e: P.ExprNode) 
+local function expr2str(e: P.ExprNode) -> string
 	var ignore_set = U.set{'var_', 'scope', 'tokens'}
 	return U.serialize(e, ignore_set)
 end
 
 
-local function format_expr(e: P.ExprNode)
+local function format_expr(e: P.ExprNode) -> string
 	local output = require 'output'
 	local strip_white_space = true
 	local str = output(e, '', strip_white_space)
@@ -110,7 +110,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 	end
 
-	local function fancy_format(fmt: string, ...)
+	local function fancy_format(fmt: string, ...) -> string
 		var buf = {} : [any]
 		for i = 1, select( '#', ... ) do
 			local a = select( i, ... )
@@ -152,7 +152,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		print( report('Info', where_is(node), fmt, ...) )
 	end
 
-	local function report_error(node: P.Node, fmt, ...)
+	local function report_error(node: P.Node, fmt: string, ...)
 		if settings.is_sol then
 			U.printf_err( "%s", report('ERROR', where_is(node), fmt, ...) )
 			error_count = error_count + 1
@@ -171,7 +171,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	local function report_solc_todo(node: P.Node, fmt: string, ...)
-		--print( report('SOLC_TODO', where_is(node), fmt, ...) )
+		if settings.is_sol then
+			print( report('SOLC_TODO', where_is(node), fmt, ...) )
+		end
 	end
 
 	local function sol_warning(node: P.Node, fmt: string, ...)
@@ -204,7 +206,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	local function inform(issue_name: string, node: P.Node, fmt: string, ...)
-		return inform_at(issue_name, where_is(node), fmt, ...)
+		inform_at(issue_name, where_is(node), fmt, ...)
 	end
 
 	--local member_missing_reporter = report_warning -- TODO
@@ -302,7 +304,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		return v
 	end
 
-	local function declare_global(node, scope: Scope, name: string, typ: T.Type?) -> Variable
+	local function declare_global(node: P.ExprNode, scope: Scope, name: string, typ: T.Type?) -> Variable
 		D.assert(type(name) == 'string')
 		--report_spam('Declaring variable %q in scope %s', name, tostring(scope))
 
@@ -342,7 +344,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function check_type_is_a(msg: string, expr: P.Node, expr_type: T.Type, expected_type: T.Type, severity: 'warning' or 'error')
+	local function check_type_is_a(msg: string, expr: P.Node, expr_type: T.Type, expected_type: T.Type, severity: 'warning' or 'error') -> bool
 		if T.could_be(expr_type, expected_type) then
 			return true
 		else
@@ -390,7 +392,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function check_return_types(node, does_return: T.Typelist, should_return: T.Typelist?)
+	local function check_return_types(node: P.Node, does_return: T.Typelist, should_return: T.Typelist?)
 		if should_return then
 			assert(T.is_type_list(does_return))
 			assert(T.is_type_list(should_return))
@@ -405,7 +407,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function analyze_expr_single_custom(expr, scope: Scope, is_pre_analyze: bool) -> T.Type, Variable?
+	local function analyze_expr_single_custom(expr: P.Node, scope: Scope, is_pre_analyze: bool) -> T.Type, Variable?
 		if is_pre_analyze then
 			if expr.ast_type == 'IdExpr' then
 				local base_var = scope:get_var( expr.name )
@@ -428,7 +430,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	 
 	-- analyze a function declaration head - either a named one or a lambda function
 	local analyze_function_head = function(node: P.Node, scope: Scope, is_pre_analyze: bool) -> T.Function
-		assert(node.return_types == nil or T.is_type_list(node.return_types))
+		assert(node.arguments)
 
 		var fun_t = {
 			tag = 'function',
@@ -467,13 +469,16 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	--[[ Will analyze body and check its return-statements against fun_t.
 	     If fun_t.rets is nil (no type deduced) then this function will fill it in via deduction.
 	--]]
-	local function analyze_function_body(node: P.Node, _: Scope, fun_t: T.Function)
+	local function analyze_function_body(node: P.Node, _: Scope, fun_t: T.Function) -> void
 		if not node.body then
 			-- body-less function - used by lua_intrinsics.sol
+			report_warning(node, "Body-less function - use 'extern' instead!")
 			return
 		end
 
-		local func_scope = node.scope
+		var is_lambda = (node.ast_type == 'LambdaFunctionExpr')
+
+		var func_scope = node.scope
 
 		-- Declare arguments as variables:
 		if node.is_mem_fun then
@@ -485,11 +490,16 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			v.var_type = 'Argument'
 		end
 
+		local arg_lacks_type = false
+
 		for _,arg in ipairs(node.arguments) do
 			var v = declare_local(node, func_scope, arg.name)
 			v.type = arg.type
 			v.num_writes = 1
 			v.var_type = 'Argument'
+			if arg.type == nil then
+				arg_lacks_type = true
+			end
 		end
 
 		if node.vararg then
@@ -498,6 +508,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			v.num_writes = 1
 			v.var_type = 'Argument'
 			assert(T.is_type(v.type))
+		end
+
+		if arg_lacks_type and not is_lambda then
+			sol_warning(node, "%s: an argument lacks type", fun_t.name)
 		end
 
 		---
@@ -529,6 +543,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 
 				fun_t.rets = ret_t
+
+				if not is_lambda then
+					sol_warning(node, "%s: function head lacks explicit return type (%s)", fun_t.name, ret_t)
+				end
 			else
 				fun_t.rets = T.Void  -- No returns  == void
 			end
@@ -537,7 +555,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function check_arguments(expr, fun_t: T.Function, arg_ts: [T.Type]) -> bool
+	local function check_arguments(expr: P.Node, fun_t: T.Function, arg_ts: [T.Type]) -> bool
 		assert(fun_t.args)
 		assert(fun_t.name)
 		var fun_name = fun_t.name
@@ -755,14 +773,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function generator_types(expr, fun_t, arg_ts: [T.Type]) -> [T.Type]
+	local function generator_types(expr: P.Node, fun_t: T.Function, arg_ts: [T.Type]) -> [T.Type]
 		--------------------------------------------------------
 		-- SPECIAL: 'pairs':
 		if fun_t.intrinsic_name == 'pairs' then
 			if #arg_ts ~= 1 then
 				report_error(expr, "Too many arguments to 'pairs'")
 			else
-				local function pairs_type(typ, error_rope: [string]?) -> T.Typelist?
+				local function pairs_type(typ: T.Type, error_rope: [string]?) -> T.Typelist?
 					typ = T.follow_identifiers(typ)
 
 					if typ == T.Any or typ.tag == 'table' then
@@ -818,7 +836,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if #arg_ts ~= 1 then
 				report_error(expr, "Too many arguments to 'ipairs'")
 			else
-				local function ipairs_type(typ, error_rope: [string]) -> T.Typelist?
+				local function ipairs_type(typ: T.Type, error_rope: [string]) -> T.Typelist?
 					typ = T.follow_identifiers(typ)
 
 					if typ == T.Any then
@@ -861,7 +879,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function analyze_require( module_name: string, req_where: string )
+	local function analyze_require( module_name: string, req_where: string ) -> T.Typelist
 		return T.as_type_list( on_require( module_name, req_where ) )  -- TODO: remove as_type_list
 	end
 
@@ -1131,7 +1149,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	If found, will match arguments and return the type that it returns, or default_ret if no returns.
 	Returns nil on no mm found
 	--]]
-	local function try_metamethod(expr: P.Node, t: T.Type, name: string, args: [P.ExprNode], arg_ts: [T.Type], default_ret: T.Type)
+	local function try_metamethod(expr: P.Node, t: T.Type, name: string, args: [P.ExprNode], arg_ts: [T.Type], default_ret: T.Type) -> T.Type?
 		var mm = T.find_meta_method(t, name)
 		if mm then
 			var rets = try_calling(expr, mm, args, arg_ts, false, false)
@@ -1919,7 +1937,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function do_assignment(stat: P.Node, scope: Scope, left_expr: P.Node, right_type: T.Type, is_pre_analyze: bool)
+	local function do_assignment(stat: P.Node, scope: Scope, left_expr: P.Node, right_type: T.Type, is_pre_analyze: bool) -> bool
 		assert(not T.is_type_list(right_type))
 
 		if right_type.tag == 'function' and right_type.name == '<lambda>' then
@@ -1979,7 +1997,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					base_var.type = assign_to_obj_member(stat, scope,
 						                                 is_pre_analyze, is_declare, extend_object,
 						                                 var_t, name, right_type)	
-					return
+					return true
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
@@ -2105,7 +2123,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
-	local function analyze_typedef(stat: P.Node, scope: Scope)
+	local function analyze_typedef(stat: P.Node, scope: Scope) -> void
 		local name = stat.type_name
 
 		-- Assign names:
@@ -2452,11 +2470,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif stat.ast_type == 'IfStatement' then
-			local ret = nil
-			local all_paths_return = true
+			var ret = nil : T.Typelist?
+			var all_paths_return = true
 
 			for i = 1, #stat.clauses do
-				local st = stat.clauses[i]
+				var st = stat.clauses[i]
 				if i == 1 then
 					check_condition( 'if',     st.condition, scope )
 				elseif st.condition then
@@ -2473,8 +2491,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif stat.ast_type == 'WhileStatement' then
-			local cond_t = check_condition( 'while', stat.condition, scope )
-			local ret, always_return = analyze_closed_off_statlist(stat.body, scope_fun)
+			var cond_t = check_condition( 'while', stat.condition, scope )
+			var ret, always_return = analyze_closed_off_statlist(stat.body, scope_fun)
 
 			if cond_t == T.True then
 				-- while true:  Infinite loop
@@ -2590,7 +2608,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			var loop_scope = stat.scope
 			assert(loop_scope.parent == scope)
 
-			local function check_num_arg(what, t: T.Type)
+			local function check_num_arg(what: string, t: T.Type)
 				if not T.isa(t, T.Num) then
 					report_error(stat, "Numeric for loop expected numeric %s, got %s", what, t)
 				end
@@ -2801,7 +2819,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	analyze_statlist = function(stat_list: P.Statlist, scope: Scope, scope_fun: T.Function) -> T.Typelist?, bool
 		assert(stat_list.scope == scope)
 
-		local return_types = nil
+		var return_types = nil : T.Typelist?
 
 		-- Look for function declarations:
 		-- This is so that we don't need to forward-declare functions

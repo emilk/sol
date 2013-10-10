@@ -641,7 +641,7 @@ function T.make_nilable(a: T.Type) -> T.Type
 end
 
 
-function T.is_any(a: T.Type)
+function T.is_any(a: T.Type) -> bool
 	local forgiving = true
 	a = T.follow_identifiers(a, forgiving)
 
@@ -661,7 +661,7 @@ end
 
 
 -- Can it be used in boolean expression?
-function T.is_bool(a: T.Type)
+function T.is_bool(a: T.Type) -> bool
 	a = T.follow_identifiers(a)
 	return T.is_any(a) or T.isa(a, T.Bool) or T.is_nilable(a)
 end
@@ -737,7 +737,7 @@ end
 -- T.could_be(some_nilable, T.Nil)  == true
 -- T.could_be(int or bool, string or bool)  == true
 -- T.could_be(int or nil, string or nil)  == false
-function T.could_be_raw(a: T.Type, b: T.Type, problem_rope: [string]?)
+function T.could_be_raw(a: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	if a==b then
 		-- Early out:
 		return true
@@ -881,7 +881,7 @@ end
 -- is 'a' a boolean expresson that could be evaluates as either true and false?
 -- If not, we are doing somethinglike    if always_true then ...
 -- Which is almost certainly wrong
-function T.is_useful_boolean(a: T.Type)
+function T.is_useful_boolean(a: T.Type) -> bool
 	a = T.follow_identifiers(a)
 
 	--[[
@@ -899,7 +899,7 @@ end
 
 
 
-function T.as_type_list(t: T.Type or [T.Type])
+function T.as_type_list(t: T.Type or [T.Type]) -> T.Typelist
 	if T.is_type_list( t ) then
 		return t
 	else
@@ -1271,7 +1271,7 @@ end
 
 
 -- Remove a type from a variant
-function T.variant_remove(t: T.Type, remove_this_type: T.Type)
+function T.variant_remove(t: T.Type, remove_this_type: T.Type) -> T.Type
 	t = T.follow_identifiers(t)
 
 	assert(not T.is_any(remove_this_type))
@@ -1393,8 +1393,7 @@ function T.combine(a: T.Type, b: T.Type)
 end
 
 
--- TODO: make arguments : T.Typelist?
-function T.combine_type_lists(a, b, forgiving: bool?) -> T.Typelist?
+function T.combine_type_lists(a: T.Typelist?, b: T.Typelist?, forgiving: bool?) -> T.Typelist?
 	--forgiving = forgiving or true
 	if forgiving == nil then
 		forgiving = true

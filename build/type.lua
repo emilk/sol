@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 09  22:26:41 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 10  22:45:56 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -1393,7 +1393,6 @@ function T.combine(a, b)
 end --[[SOL OUTPUT--]] 
 
 
--- TODO: make arguments : T.Typelist?
 function T.combine_type_lists(a, b, forgiving)
 	--forgiving = forgiving or true
 	if forgiving == nil then

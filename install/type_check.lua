@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 09  22:26:41 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 10  22:45:56 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -73,7 +73,7 @@ local function loose_lookup(table, id)
 end --[[SOL OUTPUT--]] 
 
 
-local function expr2str(e) 
+local function expr2str(e)
 	local ignore_set = U.set{'var_', 'scope', 'tokens'} --[[SOL OUTPUT--]] 
 	return U.serialize(e, ignore_set) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
@@ -171,7 +171,9 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 	local function report_solc_todo(node, fmt, ...)
-		--print( report('SOLC_TODO', where_is(node), fmt, ...) )
+		if settings.is_sol then
+			print( report('SOLC_TODO', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local function sol_warning(node, fmt, ...)
@@ -204,7 +206,7 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 	local function inform(issue_name, node, fmt, ...)
-		return inform_at(issue_name, where_is(node), fmt, ...) --[[SOL OUTPUT--]] 
+		inform_at(issue_name, where_is(node), fmt, ...) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	--local member_missing_reporter = report_warning -- TODO
@@ -428,7 +430,7 @@ local function analyze(ast, filename, on_require, settings)
 	 
 	-- analyze a function declaration head - either a named one or a lambda function
 	local analyze_function_head = function(node, scope, is_pre_analyze)
-		assert(node.return_types == nil or T.is_type_list(node.return_types)) --[[SOL OUTPUT--]] 
+		assert(node.arguments) --[[SOL OUTPUT--]] 
 
 		local fun_t = {
 			tag = 'function',
@@ -470,8 +472,11 @@ local function analyze(ast, filename, on_require, settings)
 	local function analyze_function_body(node, _, fun_t)
 		if not node.body then
 			-- body-less function - used by lua_intrinsics.sol
+			report_warning(node, "Body-less function - use 'extern' instead!") --[[SOL OUTPUT--]] 
 			return --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
+
+		local is_lambda = (node.ast_type == 'LambdaFunctionExpr') --[[SOL OUTPUT--]] 
 
 		local func_scope = node.scope --[[SOL OUTPUT--]] 
 
@@ -485,11 +490,16 @@ local function analyze(ast, filename, on_require, settings)
 			v.var_type = 'Argument' --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
+		local arg_lacks_type = false --[[SOL OUTPUT--]] 
+
 		for _,arg in ipairs(node.arguments) do
 			local v = declare_local(node, func_scope, arg.name) --[[SOL OUTPUT--]] 
 			v.type = arg.type --[[SOL OUTPUT--]] 
 			v.num_writes = 1 --[[SOL OUTPUT--]] 
 			v.var_type = 'Argument' --[[SOL OUTPUT--]] 
+			if arg.type == nil then
+				arg_lacks_type = true --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if node.vararg then
@@ -498,6 +508,10 @@ local function analyze(ast, filename, on_require, settings)
 			v.num_writes = 1 --[[SOL OUTPUT--]] 
 			v.var_type = 'Argument' --[[SOL OUTPUT--]] 
 			assert(T.is_type(v.type)) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		if arg_lacks_type and not is_lambda then
+			sol_warning(node, "%s: an argument lacks type", fun_t.name) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		---
@@ -529,6 +543,10 @@ local function analyze(ast, filename, on_require, settings)
 				end --[[SOL OUTPUT--]] 
 
 				fun_t.rets = ret_t --[[SOL OUTPUT--]] 
+
+				if not is_lambda then
+					sol_warning(node, "%s: function head lacks explicit return type (%s)", fun_t.name, ret_t) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 			else
 				fun_t.rets = T.Void --[[SOL OUTPUT--]]   -- No returns  == void
 			end --[[SOL OUTPUT--]] 
@@ -1979,7 +1997,7 @@ local function analyze(ast, filename, on_require, settings)
 					base_var.type = assign_to_obj_member(stat, scope,
 						                                 is_pre_analyze, is_declare, extend_object,
 						                                 var_t, name, right_type) --[[SOL OUTPUT--]] 	
-					return --[[SOL OUTPUT--]] 
+					return true --[[SOL OUTPUT--]] 
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
