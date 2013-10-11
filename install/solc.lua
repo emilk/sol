@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 10  22:45:56 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 11  22:57:12 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -156,7 +156,7 @@ local function require_module(path_in, mod_name, module_scope, req_where, req_ch
 	if not mod_path then
 		if not g_did_warn_about[mod_name:lower()] then
 			g_did_warn_about[mod_name:lower()] = true --[[SOL OUTPUT--]] 
-			U.printf('Failed to find module %q', mod_name) --[[SOL OUTPUT--]] 
+			U.printf("WARNING: %s: Failed to find module %q",req_where, mod_name) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return T.Any --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

@@ -1209,7 +1209,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			return T.Void
 		end
 
-		local list = nil
+		var list = nil : T.Typelist?
 		while true do
 			if tok:consume_symbol('...') then
 				if false then  -- TODO: varargs as last thing returned by function

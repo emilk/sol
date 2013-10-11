@@ -147,7 +147,7 @@ local parse_module
 
 
 -- Returns its type
-local function require_module(path_in: string, mod_name: string, module_scope: Scope, req_where: string, req_chain: [string])
+local function require_module(path_in: string, mod_name: string, module_scope: Scope, req_where: string, req_chain: [string]) -> T.Type
 	--U.printf('require %q', v)
 	req_chain = { unpack(req_chain) }  -- clone
 	table.insert(req_chain, mod_name)
@@ -156,7 +156,7 @@ local function require_module(path_in: string, mod_name: string, module_scope: S
 	if not mod_path then
 		if not g_did_warn_about[mod_name:lower()] then
 			g_did_warn_about[mod_name:lower()] = true
-			U.printf('Failed to find module %q', mod_name)
+			U.printf("WARNING: %s: Failed to find module %q",req_where, mod_name)
 		end
 		return T.Any
 	end
@@ -392,7 +392,7 @@ local function compile_file(path_in: string, lua_path_out: string?, header_path_
 end
 
 
-local function parse_global_require(mod_name: string)
+local function parse_global_require(mod_name: string) -> bool
 	var mod_path = mod_name .. '.sol' -- FIXME
 
 	var req_chain = { "[global require]" }
