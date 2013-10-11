@@ -122,7 +122,7 @@ function U.serialize_to_rope(rope: [string], val: any, ignore_set: {any}?, inden
 end
 
 
-function U.serialize(val, ignore_set) -> string
+function U.serialize(val: any, ignore_set: {any}?) -> string
 	local rope = {}
 	U.serialize_to_rope(rope, val, ignore_set, nil, nil)
 	local str = table.concat(rope)
@@ -130,7 +130,7 @@ function U.serialize(val, ignore_set) -> string
 end
 
 
-function U.pretty(arg)
+function U.pretty(arg: any) -> string
 	return U.serialize(arg)
 end
 
@@ -147,7 +147,7 @@ function U.indent(str: string) -> string
 	return U.INDENTATION .. str:gsub("\n", "\n" .. U.INDENTATION)
 end
 
-function U.quote_or_indent(str: string)
+function U.quote_or_indent(str: string) -> string
 	str = U.trim(str)
 	if str:find('\n') then
 		return '\n\n' .. U.indent( str ) .. '\n\n'
@@ -266,7 +266,7 @@ end
 -- Tables and arrays etc:
 
 
-function U.is_array(val) -> bool
+function U.is_array(val: any) -> bool
 	if type(val) ~= "table" then
 		return false
 	end

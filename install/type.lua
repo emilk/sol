@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 11  22:57:12 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 11  23:10:06 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -608,7 +608,7 @@ function T.is_nilable(a)
 
 	local function recurse(t)
 		if t.tag == 'variant' then
-			for _,v in pairs(t.variants) do
+			for _,v in ipairs(t.variants) do
 				recurse(v) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		elseif t == T.Any then

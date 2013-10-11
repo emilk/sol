@@ -375,7 +375,7 @@ typedef TokenList = L.TokenList
 
 --------------------------------------------------------
 
-function P.parse_sol(src: string, tok, filename: string?, settings, module_scope)
+function P.parse_sol(src: string, tok, filename: string?, settings, module_scope: Scope) -> bool, P.Statlist or string
 	filename = filename or ''
 	settings = settings or P.SOL_SETTINGS
 	local num_err = 0
@@ -420,14 +420,14 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		return err
 	end
 
-	local function report_error(msg_fmt, ...)
+	local function report_error(msg_fmt: string, ...) -> string
 		num_err = num_err + 1
 		local msg = generate_msg(msg_fmt, ...)
 		printf_err("%s", msg)
 		return msg
 	end
 
-	local function report_warning(msg_fmt, ...)
+	local function report_warning(msg_fmt: string, ...) -> string
 		if _G.g_warnings_as_errors then
 			return report_error(msg_fmt, ...)
 		else
@@ -437,14 +437,14 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		end
 	end
 
-	local function report_spam(msg_fmt, ...)
+	local function report_spam(msg_fmt: string, ...) -> void
 		if _G.g_spam then
 			local msg = generate_msg(msg_fmt, ...)
 			print( msg )
 		end
 	end
 
-	local function report_sol_error(msg_fmt, ...)
+	local function report_sol_error(msg_fmt: string, ...) -> void
 		if settings.is_sol then
 			report_error(msg_fmt, ...)
 		else
@@ -453,7 +453,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
-	local function create_scope(parent)
+	local function create_scope(parent: Scope) -> Scope
 		local scope = Scope.new(where_am_i(), parent)
 		--report_spam("New scope %s, parent: %s", tostring(scope), tostring(parent))
 		return scope
@@ -1317,12 +1317,12 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		-- Are we a forward-declare?
 		if not tok:consume_symbol(';') then
-			local function parse_bases()
+			local function parse_bases() -> T.Typelist?
 				-- Check for inheritance
-				local base_types = {}
+				var base_types = {} : T.Typelist
 				if tok:consume_symbol(':') then
 					repeat
-						local t = parse_type(scope)
+						var t = parse_type(scope)
 						if not t then
 							report_error("base type expected")
 							return nil
@@ -1334,13 +1334,13 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				return base_types
 			end
 
-			local function parse_type_assignment()
+			local function parse_type_assignment() -> T.Type?
 				if not tok:consume_symbol('=') then
 					report_error("Expected '='")
 					return nil
 				end
 
-				local type = parse_type(scope)
+				var type = parse_type(scope)
 
 				if not type then
 					report_error("Expected type") 

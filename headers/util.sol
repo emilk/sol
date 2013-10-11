@@ -1,4 +1,4 @@
--- Compiled from sol/util.sol on 2013 Oct 11  22:57:11
+-- Compiled from sol/util.sol on 2013 Oct 11  23:10:04
 
 return {
 	INDENTATION:       "\9";
@@ -17,7 +17,7 @@ return {
 	quote_or_indent:   function(str: string) -> string;
 	read_entire_file:  function(path: string) -> string?;
 	read_entire_stdin: function() -> string?;
-	serialize:         function(val, ignore_set) -> string;
+	serialize:         function(val, ignore_set: {any}?) -> string;
 	serialize_to_rope: function(rope: [string], val, ignore_set: {any}?, indent: string?, discovered: {table}?) -> void;
 	set:               function(tb: [string]) -> {string};
 	shallow_clone:     function(t: table?) -> table?;

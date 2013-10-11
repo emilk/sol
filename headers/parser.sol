@@ -1,4 +1,4 @@
--- Compiled from sol/parser.sol on 2013 Oct 11  22:57:10
+-- Compiled from sol/parser.sol on 2013 Oct 11  23:10:04
 
 return {
 	-- Types:
@@ -304,5 +304,5 @@ return {
 	              	keywords:       {string};
 	              	symbols:        {string};
 	              };
-	parse_sol:    function(src: string, tok, filename: string?, settings, module_scope) -> true or false, Statlist or string;
+	parse_sol:    function(src: string, tok, filename: string?, settings, module_scope: Scope) -> bool, Statlist or string;
 }

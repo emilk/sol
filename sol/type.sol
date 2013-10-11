@@ -317,7 +317,7 @@ function T.from_string_literal(str: string) -> T.StringLiteral
 end
 
 
-function T.is_type_list(list)
+function T.is_type_list(list: any) -> bool
 	--return U.is_array(list)
 	if not U.is_array(list) then return false end
 	for _,v in pairs(list) do
@@ -445,7 +445,7 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	end
 
 	if d.tag == 'variant' then
-		local function all_are_b()
+		local function all_are_b() -> bool
 			for _,v in ipairs(d.variants) do
 				if not T.isa(v, b, problem_rope) then
 					return false
@@ -606,9 +606,9 @@ function T.is_nilable(a: T.Type) -> bool
 	var has_nil     = false
 	var has_non_nil = false
 
-	local function recurse(t)
+	local function recurse(t: T.Type)
 		if t.tag == 'variant' then
-			for _,v in pairs(t.variants) do
+			for _,v in ipairs(t.variants) do
 				recurse(v)
 			end
 		elseif t == T.Any then
@@ -667,7 +667,7 @@ function T.is_bool(a: T.Type) -> bool
 end
 
 
-function T.has_tag(t: T.Type, target: string)
+function T.has_tag(t: T.Type, target: string) -> bool
 	t = T.follow_identifiers(t)
 
 	if t.tag == target then
@@ -847,13 +847,13 @@ function T.could_be_tl(al: T.Typelist, bl: T.Typelist, problem_rope: [string]?) 
 end
 
 
-function T.could_be_false(a: T.Type)
+function T.could_be_false(a: T.Type) -> bool
 	a = T.follow_identifiers(a)
 	return T.is_any(a) or T.could_be(a, T.Nil) or T.could_be(a, T.False)
 end
 
 
-function T.could_be_true(a: T.Type)
+function T.could_be_true(a: T.Type) -> bool
 	a = T.follow_identifiers(a)
 	if T.is_any(a) then
 		return true
@@ -939,7 +939,7 @@ function T.table_id(t: table) -> string
 	return tostring(t):gsub("table: ", "")
 end
 
-function T.format_type(root: T.Type, verbose: bool?)
+function T.format_type(root: T.Type, verbose: bool?) -> string
 	if verbose == nil then verbose = false end
 
 	var written_objs = {} : {T.Object}
@@ -952,7 +952,7 @@ function T.format_type(root: T.Type, verbose: bool?)
 			return 'any'
 
 		elseif typ.tag == 'variant' then
-			local function output_packaged(typ: T.Type, indent: string)
+			local function output_packaged(typ: T.Type, indent: string) -> string
 				if typ.tag == 'function' and typ.rets then
 					return '('..output(typ, indent)..')'
 				else
@@ -1225,12 +1225,12 @@ function T.name(typ: T.Type or [T.Type] or nil, verbose: bool?) -> string
 end
 
 
-function T.name_verbose(typ: T.Type or [T.Type] or nil)
+function T.name_verbose(typ: T.Type or [T.Type] or nil) -> string
 	return T.name(typ, true)
 end
 
 
-function T.is_variant(v) -> bool
+function T.is_variant(v: T.Type) -> bool
 	v = T.follow_identifiers(v)
 	return v and type(v) == 'table' and v.tag == 'variant'
 end
@@ -1259,7 +1259,7 @@ function T.extend_variant_one(v: T.Variant, e: T.Type) -> T.Variant
 end
 
 
-function T.extend_variant(v, ...)
+function T.extend_variant(v: T.Variant, ...) -> T.Variant
 	assert( T.is_variant(v) )
 
 	for _,e in ipairs{...} do

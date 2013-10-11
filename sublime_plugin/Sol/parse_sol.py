@@ -182,7 +182,7 @@ class ParseSolCommand(sublime_plugin.EventListener):
 						region = view.full_line(view.text_point(int(line) - 1, 0))
 						regions.append( region )
 
-				view.add_regions('sol_serrors', regions, 'invalid', 'circle', sublime.DRAW_OUTLINED)
+				view.add_regions('sol_serrors', regions, 'invalid', 'circle', sublime.HIDDEN)
 
 
 		except Exception as e:

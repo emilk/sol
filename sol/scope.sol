@@ -121,7 +121,7 @@ function Scope:create_local(name: string, where: string) -> Variable
 end
 
 
-function Scope:add_global(v)
+function Scope:add_global(v: 	Variable)
 	assert(not self.fixed)
 	table.insert(self.globals, v)
 end

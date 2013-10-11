@@ -1,4 +1,4 @@
--- Compiled from sol/type.sol on 2013 Oct 11  22:57:10
+-- Compiled from sol/type.sol on 2013 Oct 11  23:10:04
 
 return {
 	-- Types:
@@ -163,19 +163,19 @@ return {
 	combine:               function(a: Type, b: Type) -> { tag: "number"; } or { tag: "int"; };
 	combine_type_lists:    function(a: Typelist?, b: Typelist?, forgiving: bool?) -> Typelist?;
 	could_be:              function(d: Type, b: Type, problem_rope: [string]?) -> bool;
-	could_be_false:        function(a: Type) -> true or false;
+	could_be_false:        function(a: Type) -> bool;
 	could_be_raw:          function(a: Type, b: Type, problem_rope: [string]?) -> bool;
 	could_be_tl:           function(al: Typelist, bl: Typelist, problem_rope: [string]?) -> bool;
-	could_be_true:         function(a: Type) -> true or false or true or false or true;
+	could_be_true:         function(a: Type) -> bool;
 	create_empty_table:    function() -> Type;
-	extend_variant:        function(v, ... : any) -> any;
+	extend_variant:        function(v: Variant, ... : any) -> Variant;
 	extend_variant_one:    function(v: Variant, e: Type) -> Variant;
 	find_meta_method:      function(t: Type, name: string) -> Type?;
 	follow_identifiers:    function(t: Type, forgiving: bool?) -> Type;
 	format_type:           function(root: Type, verbose: bool?) -> string;
 	from_num_literal:      function(str: string) -> IntLiteral or NumLiteral?;
 	from_string_literal:   function(str: string) -> StringLiteral;
-	has_tag:               function(t: Type, target: string) -> true or false;
+	has_tag:               function(t: Type, target: string) -> bool;
 	is_any:                function(a: Type) -> bool;
 	is_atomic:             function(t: Type) -> bool;
 	is_bool:               function(a: Type) -> bool;
@@ -186,9 +186,9 @@ return {
 	is_nilable:            function(a: Type) -> bool;
 	is_obj_obj:            function(d: Object, b: Object, problem_rope: [string]?) -> bool;
 	is_type:               function(x) -> bool;
-	is_type_list:          function(list) -> false or true;
+	is_type_list:          function(list) -> bool;
 	is_useful_boolean:     function(a: Type) -> bool;
-	is_variant:            function(v) -> bool;
+	is_variant:            function(v: Type) -> bool;
 	is_void:               function(ts: Typelist) -> bool;
 	isa:                   function(d: Type, b: Type, problem_rope: [string]?) -> bool;
 	isa_raw:               function(d: Type, b: Type, problem_rope: [string]?) -> bool;

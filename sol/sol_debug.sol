@@ -15,7 +15,7 @@ function D.activate()
 	D.active = true
 end
 
-function D.assert(bool_expr, fmt: string?, ...)
+function D.assert(bool_expr: any, fmt: string?, ...) -> any
 	--D.active = true
 
 	if bool_expr then
