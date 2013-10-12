@@ -1,4 +1,4 @@
--- Compiled from sol/type.sol on 2013 Oct 12  03:34:33
+-- Compiled from sol/type.sol on 2013 Oct 12  03:46:47
 
 return {
 	-- Types:
@@ -162,10 +162,9 @@ return {
 	combine_num_int:       function(a: Type, b: Type) -> Num or Int;
 	combine_type_lists:    function(a: Typelist?, b: Typelist?, forgiving: bool?) -> Typelist?;
 	could_be:              function(d: Type, b: Type, problem_rope: [string]?) -> bool;
-	could_be_false:        function(a: Type) -> bool;
 	could_be_raw:          function(a: Type, b: Type, problem_rope: [string]?) -> bool;
 	could_be_tl:           function(al: Typelist, bl: Typelist, problem_rope: [string]?) -> bool;
-	could_be_true:         function(a: Type) -> bool;
+	could_be_true_false:   function(a: Type) -> bool, bool;
 	create_empty_table:    function() -> Type;
 	extend_variant:        function(v: Variant, ... : any) -> Variant;
 	extend_variant_one:    function(v: Variant, e: Type) -> Variant;

@@ -836,54 +836,36 @@ function T.could_be_tl(al: T.Typelist, bl: T.Typelist, problem_rope: [string]?) 
 end
 
 
-function T.could_be_false(a: T.Type) -> bool
+-- Tests if a type has the potential to be true and/or false
+function T.could_be_true_false(a: T.Type) -> bool, bool
 	a = T.follow_identifiers(a)
-	return T.is_any(a) or T.could_be(a, T.Nil) or T.could_be(a, T.False)
-end
-
-
-function T.could_be_true(a: T.Type) -> bool
-	a = T.follow_identifiers(a)
-	if T.is_any(a) then
-		return true
+	if a == T.Any then
+		return true, true
 	elseif a == T.Nil or a == T.False then
-		return false
+		return false, true
 	elseif T.is_variant(a) then
-		--[[
-		and #a.variants == 2
-		and T.could_be(a, T.Nil) 
-		and T.could_be(a, T.False) then
-		return false   --  false or nil
-		--]]
+		var t,f = false,false
 		for _,v in ipairs(a.variants) do
-			if T.could_be_true(v) then
-				return true
+			var vt,vf = T.could_be_true_false(v)
+			t = t or vt
+			f = f or vf
+			if t and f then
+				return true,true
 			end
 		end
-		return false   --  e.g. false or nil
+		return t,f
 	else
-		return true
+		return true, false
 	end
 end
 
 
 -- is 'a' a boolean expresson that could be evaluates as either true and false?
--- If not, we are doing somethinglike    if always_true then ...
+-- If not, we are doing something like    if always_true then ...
 -- Which is almost certainly wrong
 function T.is_useful_boolean(a: T.Type) -> bool
-	a = T.follow_identifiers(a)
-
-	--[[
-	if a.tag == 'variant' then
-		for _,v in pairs(a.variants) do
-			if T.follow_identifiers(v) == T.Any then
-				return true
-			end
-		end
-	end
-	--]]
-
-	return T.could_be_false(a) and T.could_be_true(a)
+	var t,f = T.could_be_true_false(a)
+	return t and f
 end
 
 

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 12  03:34:35 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 12  03:46:48 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -836,54 +836,36 @@ function T.could_be_tl(al, bl, problem_rope)
 end --[[SOL OUTPUT--]] 
 
 
-function T.could_be_false(a)
+-- Tests if a type has the potential to be true and/or false
+function T.could_be_true_false(a)
 	a = T.follow_identifiers(a) --[[SOL OUTPUT--]] 
-	return T.is_any(a) or T.could_be(a, T.Nil) or T.could_be(a, T.False) --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
-
-
-function T.could_be_true(a)
-	a = T.follow_identifiers(a) --[[SOL OUTPUT--]] 
-	if T.is_any(a) then
-		return true --[[SOL OUTPUT--]] 
+	if a == T.Any then
+		return true, true --[[SOL OUTPUT--]] 
 	elseif a == T.Nil or a == T.False then
-		return false --[[SOL OUTPUT--]] 
+		return false, true --[[SOL OUTPUT--]] 
 	elseif T.is_variant(a) then
-		--[[
-		and #a.variants == 2
-		and T.could_be(a, T.Nil) 
-		and T.could_be(a, T.False) then
-		return false   --  false or nil
-		--]]
+		local t,f = false,false --[[SOL OUTPUT--]] 
 		for _,v in ipairs(a.variants) do
-			if T.could_be_true(v) then
-				return true --[[SOL OUTPUT--]] 
+			local vt,vf = T.could_be_true_false(v) --[[SOL OUTPUT--]] 
+			t = t or vt --[[SOL OUTPUT--]] 
+			f = f or vf --[[SOL OUTPUT--]] 
+			if t and f then
+				return true,true --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-		return false --[[SOL OUTPUT--]]    --  e.g. false or nil
+		return t,f --[[SOL OUTPUT--]] 
 	else
-		return true --[[SOL OUTPUT--]] 
+		return true, false --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
 -- is 'a' a boolean expresson that could be evaluates as either true and false?
--- If not, we are doing somethinglike    if always_true then ...
+-- If not, we are doing something like    if always_true then ...
 -- Which is almost certainly wrong
 function T.is_useful_boolean(a)
-	a = T.follow_identifiers(a) --[[SOL OUTPUT--]] 
-
-	--[[
-	if a.tag == 'variant' then
-		for _,v in pairs(a.variants) do
-			if T.follow_identifiers(v) == T.Any then
-				return true
-			end
-		end
-	end
-	--]]
-
-	return T.could_be_false(a) and T.could_be_true(a) --[[SOL OUTPUT--]] 
+	local t,f = T.could_be_true_false(a) --[[SOL OUTPUT--]] 
+	return t and f --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
