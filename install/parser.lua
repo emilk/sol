@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 12  03:46:48 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 12  04:26:47 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -19,7 +19,10 @@ local P = {} --[[SOL OUTPUT--]]
 
 P.LUA_SETTINGS = {
 	-- Lexer:
-	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#'};
+	symbols = set{
+		'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',
+		':', '::', '>', '<', '=', '==', '~=', '>=', '<=',
+	};
 
 	keywords = set{
 		'and',    'break', 'do',   'else',     'elseif',
@@ -49,7 +52,11 @@ P.LUA_SETTINGS = {
 
 P.SOL_SETTINGS = {
 	-- Lexer:
-	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',  '?', ':', '!'};
+	symbols = set{
+		'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',
+		':', '::', '>', '<', '=', '==', '~=', '>=', '<=',
+		'->', '=>', '?', '+=', '-=', '*=', '/='
+	};
 
 	keywords = set{
 		'and',    'break', 'do',   'else',     'elseif',
@@ -889,6 +896,13 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		['>=']  = {3,3};
 		['and'] = {2,2};
 		['or']  = {1,1};
+	} --[[SOL OUTPUT--]] 
+
+	local assign_op = {
+		['+='] = '+',
+		['-='] = '-',
+		['*='] = '*',
+		['/='] = '/-',
 	} --[[SOL OUTPUT--]] 
 
 	parse_expr = function(scope, prio_level)
@@ -1860,9 +1874,34 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				--done
 				stat = {
 					ast_type = 'AssignmentStatement';
-					lhs     = lhs;
-					rhs     = rhs;
-					tokens  = token_list;
+					lhs      = lhs;
+					rhs      = rhs;
+					tokens   = token_list;
+				} --[[SOL OUTPUT--]] 
+
+			elseif assign_op[tok:peek()] then
+				-- += etc
+				if suffixed.ast_type ~= 'IdExpr' then
+					report_error("You can only do %s on simple variables", tok:peek()) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+				local op = assign_op[tok:get(token_list)] --[[SOL OUTPUT--]] 
+
+				local st, rhs = parse_expr(scope) --[[SOL OUTPUT--]] 
+				if not st then return false, rhs --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+
+				local binop_expr = {
+					ast_type = 'BinopExpr';
+					lhs      = suffixed;
+					op       = op;
+					rhs      = rhs;
+				} --[[SOL OUTPUT--]] 
+
+				stat = {
+					ast_type = 'AssignmentStatement';
+					lhs      = { suffixed };
+					rhs      = binop_expr;
+					tokens   = token_list;
 				} --[[SOL OUTPUT--]] 
 
 			elseif suffixed.ast_type == 'CallExpr' or

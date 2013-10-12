@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Oct 12  03:46:48 --]] local U = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Oct 12  04:26:47 --]] local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
@@ -321,29 +321,6 @@ function L.lex_sol(src, filename, settings)
 					to_emit = {type = 'Symbol', data = '['} --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-			elseif consume('=') then
-				if consume('=') then
-					to_emit = {type = 'Symbol', data = '=='} --[[SOL OUTPUT--]] 
-				elseif settings.is_sol and consume('>') then
-					to_emit = {type = 'Symbol', data = '=>'} --[[SOL OUTPUT--]] 
-				else
-					to_emit = {type = 'Symbol', data = '='} --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-			elseif consume('><') then
-				if consume('=') then
-					to_emit = {type = 'Symbol', data = c..'='} --[[SOL OUTPUT--]]   -- '>=' or '<='
-				else
-					to_emit = {type = 'Symbol', data = c} --[[SOL OUTPUT--]]        -- '>' or '<'
-				end --[[SOL OUTPUT--]] 
-
-			elseif consume('~') then
-				if consume('=') then
-					to_emit = {type = 'Symbol', data = '~='} --[[SOL OUTPUT--]] 
-				else
-					return report_lexer_error("Unexpected symbol `~` in source.", 2) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
 			elseif consume('.') then
 				if consume('.') then
 					if consume('.') then
@@ -355,21 +332,11 @@ function L.lex_sol(src, filename, settings)
 					to_emit = {type = 'Symbol', data = '.'} --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-			elseif consume(':') then
-				if consume(':') then
-					to_emit = {type = 'Symbol', data = '::'} --[[SOL OUTPUT--]] 
-				elseif consume(':<') then
-					to_emit = {type = 'Symbol', data = ':<'} --[[SOL OUTPUT--]]  -- start of template function call, i.e. max:<int>()
-				else
-					to_emit = {type = 'Symbol', data = ':'} --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-			elseif settings.function_types and consume('-') then
-				if consume('>') then
-					to_emit = {type = 'Symbol', data = '->'} --[[SOL OUTPUT--]] 
-				else
-					to_emit = {type = 'Symbol', data = '-'} --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
+			elseif symbols[c .. peek(1)] then
+				-- two-character symbol
+				local symbol = get() --[[SOL OUTPUT--]] 
+				symbol = symbol .. get() --[[SOL OUTPUT--]] 
+				to_emit = {type = 'Symbol', data = symbol} --[[SOL OUTPUT--]] 
 
 			elseif symbols[c] then
 				get() --[[SOL OUTPUT--]] 
@@ -380,7 +347,7 @@ function L.lex_sol(src, filename, settings)
 				if contents then
 					to_emit = {type = 'String', data = all, Constant = contents} --[[SOL OUTPUT--]] 
 				else
-					return report_lexer_error("Unexpected Symbol `"..c.."` when paring in source.", 2) --[[SOL OUTPUT--]] 
+					return report_lexer_error("Unexpected Symbol `"..c.."`.", 2) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 

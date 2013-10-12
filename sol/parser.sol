@@ -19,7 +19,10 @@ local P = {}
 
 P.LUA_SETTINGS = {
 	-- Lexer:
-	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#'};
+	symbols = set{
+		'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',
+		':', '::', '>', '<', '=', '==', '~=', '>=', '<=',
+	};
 
 	keywords = set{
 		'and',    'break', 'do',   'else',     'elseif',
@@ -49,7 +52,11 @@ P.LUA_SETTINGS = {
 
 P.SOL_SETTINGS = {
 	-- Lexer:
-	symbols = set{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',  '?', ':', '!'};
+	symbols = set{
+		'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',
+		':', '::', '>', '<', '=', '==', '~=', '>=', '<=',
+		'->', '=>', '?', '+=', '-=', '*=', '/='
+	};
 
 	keywords = set{
 		'and',    'break', 'do',   'else',     'elseif',
@@ -889,6 +896,13 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		['>=']  = {3,3};
 		['and'] = {2,2};
 		['or']  = {1,1};
+	}
+
+	var assign_op = {
+		['+='] = '+',
+		['-='] = '-',
+		['*='] = '*',
+		['/='] = '/-',
 	}
 
 	parse_expr = function(scope: Scope, prio_level: int?) -> bool, ExprNode_or_error
@@ -1860,9 +1874,34 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				--done
 				stat = {
 					ast_type = 'AssignmentStatement';
-					lhs     = lhs;
-					rhs     = rhs;
-					tokens  = token_list;
+					lhs      = lhs;
+					rhs      = rhs;
+					tokens   = token_list;
+				}
+
+			elseif assign_op[tok:peek()] then
+				-- += etc
+				if suffixed.ast_type ~= 'IdExpr' then
+					report_error("You can only do %s on simple variables", tok:peek())
+				end
+
+				var op = assign_op[tok:get(token_list)]
+
+				local st, rhs = parse_expr(scope)
+				if not st then return false, rhs end
+
+				var binop_expr = {
+					ast_type = 'BinopExpr';
+					lhs      = suffixed;
+					op       = op;
+					rhs      = rhs;
+				}
+
+				stat = {
+					ast_type = 'AssignmentStatement';
+					lhs      = { suffixed };
+					rhs      = binop_expr;
+					tokens   = token_list;
 				}
 
 			elseif suffixed.ast_type == 'CallExpr' or

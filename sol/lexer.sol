@@ -321,29 +321,6 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 					to_emit = {type = 'Symbol', data = '['}
 				end
 
-			elseif consume('=') then
-				if consume('=') then
-					to_emit = {type = 'Symbol', data = '=='}
-				elseif settings.is_sol and consume('>') then
-					to_emit = {type = 'Symbol', data = '=>'}
-				else
-					to_emit = {type = 'Symbol', data = '='}
-				end
-
-			elseif consume('><') then
-				if consume('=') then
-					to_emit = {type = 'Symbol', data = c..'='}  -- '>=' or '<='
-				else
-					to_emit = {type = 'Symbol', data = c}       -- '>' or '<'
-				end
-
-			elseif consume('~') then
-				if consume('=') then
-					to_emit = {type = 'Symbol', data = '~='}
-				else
-					return report_lexer_error("Unexpected symbol `~` in source.", 2)
-				end
-
 			elseif consume('.') then
 				if consume('.') then
 					if consume('.') then
@@ -355,21 +332,11 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 					to_emit = {type = 'Symbol', data = '.'}
 				end
 
-			elseif consume(':') then
-				if consume(':') then
-					to_emit = {type = 'Symbol', data = '::'}
-				elseif consume(':<') then
-					to_emit = {type = 'Symbol', data = ':<'} -- start of template function call, i.e. max:<int>()
-				else
-					to_emit = {type = 'Symbol', data = ':'}
-				end
-
-			elseif settings.function_types and consume('-') then
-				if consume('>') then
-					to_emit = {type = 'Symbol', data = '->'}
-				else
-					to_emit = {type = 'Symbol', data = '-'}
-				end
+			elseif symbols[c .. peek(1)] then
+				-- two-character symbol
+				var symbol = get()
+				symbol = symbol .. get()
+				to_emit = {type = 'Symbol', data = symbol}
 
 			elseif symbols[c] then
 				get()
@@ -380,7 +347,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 				if contents then
 					to_emit = {type = 'String', data = all, Constant = contents}
 				else
-					return report_lexer_error("Unexpected Symbol `"..c.."` when paring in source.", 2)
+					return report_lexer_error("Unexpected Symbol `"..c.."`.", 2)
 				end
 			end
 
