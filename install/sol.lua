@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/sol.sol on 2013 Oct 11  23:10:06 --]] -- For running a .sol without outputting a .lua to disk
+--[[ DO NOT MODIFY - COMPILED FROM sol/sol.sol on 2013 Oct 12  03:34:35 --]] -- For running a .sol without outputting a .lua to disk
 -- TODO: compiler.sol continaing thing common to sol.sol and solc.sol
 
 local lfs  = require 'lfs' --[[SOL OUTPUT--]] 
@@ -53,7 +53,7 @@ local function compile_sol(source_text)
 	end --[[SOL OUTPUT--]] 
 
 	local on_require = function(_,_)
-		return T.Any --[[SOL OUTPUT--]] 
+		return T.AnyTypeList --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local st, _ = TypeCheck(ast, filename, on_require, settings) --[[SOL OUTPUT--]] 

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 11  23:10:06 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 12  03:34:35 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -460,10 +460,9 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 	end --[[SOL OUTPUT--]] 
 
 
-	local parse_expr --[[SOL OUTPUT--]]  
 	local parse_statement_list --[[SOL OUTPUT--]] 
 	local parse_simple_expr, 
-	      parse_sub_expr,
+	      parse_expr,
 	      parse_primary_expr,
 	      parse_suffixed_expr,
 	      parse_simple_type,
@@ -892,7 +891,9 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		['or']  = {1,1};
 	} --[[SOL OUTPUT--]] 
 
-	parse_sub_expr = function(scope, prio_level)
+	parse_expr = function(scope, prio_level)
+		prio_level = prio_level or 0 --[[SOL OUTPUT--]] 
+
 		local st    = false --[[SOL OUTPUT--]] 
 		local exp   = nil --[[SOL OUTPUT--]] 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
@@ -901,7 +902,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		if unops[tok:peek().data] then
 			local token_list = {} --[[SOL OUTPUT--]] 
 			local op = tok:get(token_list).data --[[SOL OUTPUT--]] 
-			st, exp = parse_sub_expr(scope, unopprio) --[[SOL OUTPUT--]] 
+			st, exp = parse_expr(scope, unopprio) --[[SOL OUTPUT--]] 
 			if not st then return false, exp --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			local node_ex = {
 				ast_type = 'UnopExpr';
@@ -921,7 +922,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			if prio and prio[1] > prio_level then
 				local token_list = {} --[[SOL OUTPUT--]] 
 				local op = tok:get(token_list).data --[[SOL OUTPUT--]] 
-				local st, rhs = parse_sub_expr(scope, prio[2]) --[[SOL OUTPUT--]] 
+				local st, rhs = parse_expr(scope, prio[2]) --[[SOL OUTPUT--]] 
 				if not st then return false, rhs --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				local node_ex = {
 					ast_type = 'BinopExpr';
@@ -939,7 +940,26 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 		exp.where = exp.where or where --[[SOL OUTPUT--]] 
 
-		return true, exp --[[SOL OUTPUT--]] 
+		if #tok:peek().leading_white>0 and tok:consume_symbol(':') then
+			-- A cast
+
+			local where = where_am_i() --[[SOL OUTPUT--]] 
+
+			local type = parse_type(scope) --[[SOL OUTPUT--]] 
+			if not type then
+				return false, report_error("Bad cast, expected  'expr : type'") --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			return true, {
+				ast_type = 'CastExpr',
+				where    = where,
+				tokens   = {},
+				expr     = exp,
+				type     = type,
+			} --[[SOL OUTPUT--]] 
+		else
+			return true, exp --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -1360,33 +1380,6 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		end --[[SOL OUTPUT--]] 
 
 		return true, node --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-
-	parse_expr = function(scope)
-		local st,expr = parse_sub_expr(scope, 0) --[[SOL OUTPUT--]] 
-		if not st then return false, expr --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-
-		if #tok:peek().leading_white>0 and tok:consume_symbol(':') then
-			-- A cast
-
-			local where = where_am_i() --[[SOL OUTPUT--]] 
-
-			local type = parse_type(scope) --[[SOL OUTPUT--]] 
-			if not type then
-				return false, report_error("Bad cast, expected  'expr : type'") --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-
-			return true, {
-				ast_type = 'CastExpr',
-				where    = where,
-				tokens   = {},
-				expr     = expr,
-				type     = type,
-			} --[[SOL OUTPUT--]] 
-		else
-			return true, expr --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 

@@ -73,14 +73,14 @@ _G.g_warnings_as_errors = false
 typedef parse_info = {
 	name:            string;
 	ast:             any; -- For output
-	type:            any; -- What the module returns
+	type:            T.Typelist?; -- What the module returns
 	global_vars:     [Variable];
 	global_typedefs: { string => T.Type };
 }
 
 typedef CURRENTLY_PARSING = false
 var     CURRENTLY_PARSING = false
-local   FAIL_INFO = { ast = nil, type = T.Any }
+local   FAIL_INFO = { ast = nil, type = T.AnyTypeList }
 
 -- type is CURRENTLY_PARSING during parsing.
 var g_modules = {} : {string => parse_info or CURRENTLY_PARSING}
@@ -147,7 +147,7 @@ local parse_module
 
 
 -- Returns its type
-local function require_module(path_in: string, mod_name: string, module_scope: Scope, req_where: string, req_chain: [string]) -> T.Type
+local function require_module(path_in: string, mod_name: string, module_scope: Scope, req_where: string, req_chain: [string]) -> T.Typelist
 	--U.printf('require %q', v)
 	req_chain = { unpack(req_chain) }  -- clone
 	table.insert(req_chain, mod_name)
@@ -158,7 +158,7 @@ local function require_module(path_in: string, mod_name: string, module_scope: S
 			g_did_warn_about[mod_name:lower()] = true
 			U.printf("WARNING: %s: Failed to find module %q",req_where, mod_name)
 		end
-		return T.Any
+		return T.AnyTypeList
 	end
 
 
@@ -166,7 +166,7 @@ local function require_module(path_in: string, mod_name: string, module_scope: S
 
 	if mod_info == FAIL_INFO then
 		-- Something went wrong - continue as if everything went right
-		return T.Any
+		return T.AnyTypeList
 	end
 
 	if not Scope.GLOBALS_IN_TOP_SCOPE then
@@ -282,19 +282,21 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 		return {}
 	end
 
-	local on_require = function(mod_name, req_where)
+	var on_require = function(mod_name: string, req_where: string) -> T.Typelist
 		if _G.g_local_parse then
-			return T.Any
+			return T.AnyTypeList
 		end
 
-		return require_module(path_in, mod_name, module_scope, req_where, chain)
+		var ts = require_module(path_in, mod_name, module_scope, req_where, chain)
+		D.assert( T.is_type_list(ts) )
+		return ts
 	end
 
 	local success, type = TypeCheck(ast, filename, on_require, settings)
 
 	if not success then
 		--printf_err("TypeCheck failed: " .. type)
-		local info = { ast = ast, type = T.Any }
+		local info = { ast = ast, type = T.AnyTypeList }
 		g_modules[module_id] = info
 		os.exit(3)
 		return info
@@ -619,7 +621,8 @@ if g_profiler then
 	g_profiler:stop()
 	--local REPORT_PATH = 'profiler_report.txt'
 	--local REPORT_PATH = os.date("profiler_report_%Y_%m_%d_%X.txt")
-	local REPORT_PATH = os.date("profile_reports/profiler_report_%Y_%m_%d__%H_%M_%S.txt")
+	path.mkdir("solc_profile_reports")
+	local REPORT_PATH = os.date("solc_profile_reports/profiler_report_%Y_%m_%d__%H_%M_%S.txt")
 	g_profiler:writeReport( REPORT_PATH )
 	--print( 'Profile report written to ' .. REPORT_PATH)
 end

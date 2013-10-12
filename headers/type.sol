@@ -1,4 +1,4 @@
--- Compiled from sol/type.sol on 2013 Oct 11  23:10:04
+-- Compiled from sol/type.sol on 2013 Oct 12  03:34:33
 
 return {
 	-- Types:
@@ -156,11 +156,10 @@ return {
 	Void:                  table;
 	_empty_table:          { tag: "table"; };
 	all_variants:          function(typ: Type) -> function() -> Type?;
-	as_type_list:          function(t: Type or [Type]) -> Typelist;
 	broaden:               function(t: Type?) -> Type?;
 	broaden_non_nil:       function(t: Type) -> Type;
-	clone_variant:         function(v) -> Variant;
-	combine:               function(a: Type, b: Type) -> { tag: "number"; } or { tag: "int"; };
+	clone_variant:         function(v: Variant) -> Variant;
+	combine_num_int:       function(a: Type, b: Type) -> Num or Int;
 	combine_type_lists:    function(a: Typelist?, b: Typelist?, forgiving: bool?) -> Typelist?;
 	could_be:              function(d: Type, b: Type, problem_rope: [string]?) -> bool;
 	could_be_false:        function(a: Type) -> bool;
@@ -188,7 +187,7 @@ return {
 	is_type:               function(x) -> bool;
 	is_type_list:          function(list) -> bool;
 	is_useful_boolean:     function(a: Type) -> bool;
-	is_variant:            function(v: Type) -> bool;
+	is_variant:            function(t: Type) -> Variant?;
 	is_void:               function(ts: Typelist) -> bool;
 	isa:                   function(d: Type, b: Type, problem_rope: [string]?) -> bool;
 	isa_raw:               function(d: Type, b: Type, problem_rope: [string]?) -> bool;

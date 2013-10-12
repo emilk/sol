@@ -1,4 +1,5 @@
 require 'parser'
+local L = require 'lexer' -- L.Token
 local D = require 'sol_debug'
 local U = require 'util'
 local printf_err = U.printf_err
@@ -102,7 +103,7 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 			out:append_token( tok )
 			it = it + 1	
 		end
-		function t:append_token(token)
+		function t:append_token(token: L.Token)
 			out:append_token( token )
 			it = it + 1
 		end
@@ -116,19 +117,19 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 		function t:skip_next_token()
 			self:append_white()
 		end
-		function t:append_str(str)
+		function t:append_str(str: string)
 			self:append_white()
 			out:append_str(str)
 		end
-		function t:inject_str(str)
+		function t:inject_str(str: string)
 			out:append_str(str)
 		end
-		function t:peek()
+		function t:peek() -> string
 			if it <= #expr.tokens then
 				return expr.tokens[it].data
 			end
 		end
-		function t:append_comma(mandatory, seperators)
+		function t:append_comma(mandatory: bool, seperators: {string}?) -> void
 			if true then
 				seperators = seperators or COMMA
 				local peeked = self:peek()

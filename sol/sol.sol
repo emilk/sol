@@ -52,8 +52,8 @@ local function compile_sol(source_text: string) -> string or nil
 		return nil
 	end
 
-	local on_require = function(_,_)
-		return T.Any
+	local on_require = function(_,_) -> T.Typelist
+		return T.AnyTypeList
 	end
 
 	local st, _ = TypeCheck(ast, filename, on_require, settings)

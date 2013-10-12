@@ -69,7 +69,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 	--token dump
 	var tokens = {} : [L.Token]
 
-	local function local_lexer()
+	local function local_lexer() -> void
 		--line / char / pointer tracking
 		local line, char, p = 1,1,1
 

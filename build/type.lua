@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 11  23:10:06 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 12  03:34:35 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -14,14 +14,6 @@ local T = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]
 
 
 T
-
-
-
-
-
-
-
-
 
 
 
@@ -229,10 +221,11 @@ function T.follow_identifiers(t, forgiving)
 		--]]
 		
 		assert( t.scope ) --[[SOL OUTPUT--]] 
+		local scope = t.scope --[[SOL OUTPUT--]] 
 
 		if t.var_name then
-			-- TODO: var
-			local var_ = t.scope:get_var( t.var_name ) --[[SOL OUTPUT--]]   -- A namespace is always a variable
+			-- TODO: var (when we can break cyclic depndency)
+			local var_ = scope:get_var( t.var_name ) --[[SOL OUTPUT--]]   -- A namespace is always a variable
 			if not var_ then
 				T.on_error("%s: Failed to find namespace variable %q", t.first_usage, t.var_name) --[[SOL OUTPUT--]] 
 				t.type = T.Any --[[SOL OUTPUT--]] 
@@ -825,10 +818,6 @@ function T.could_be_tl(al, bl, problem_rope)
 		return true --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	assert(al) --[[SOL OUTPUT--]]  assert(bl) --[[SOL OUTPUT--]] 
-	assert(T.is_type_list(al)) --[[SOL OUTPUT--]] 
-	assert(T.is_type_list(bl)) --[[SOL OUTPUT--]] 
-
 	if #al ~= #bl then
 		if problem_rope then
 			table.insert(problem_rope, "typelists of unequal length") --[[SOL OUTPUT--]] 
@@ -895,16 +884,6 @@ function T.is_useful_boolean(a)
 	--]]
 
 	return T.could_be_false(a) and T.could_be_true(a) --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
-
-
-
-function T.as_type_list(t)
-	if T.is_type_list( t ) then
-		return t --[[SOL OUTPUT--]] 
-	else
-		return { t } --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -1229,10 +1208,13 @@ function T.name_verbose(typ)
 	return T.name(typ, true) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
-
-function T.is_variant(v)
-	v = T.follow_identifiers(v) --[[SOL OUTPUT--]] 
-	return v and type(v) == 'table' and v.tag == 'variant' --[[SOL OUTPUT--]] 
+function T.is_variant(t)
+	t = T.follow_identifiers(t) --[[SOL OUTPUT--]] 
+	if t.tag == 'variant' then
+		return t --[[SOL OUTPUT--]] 
+	else
+		return nil --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -1245,9 +1227,9 @@ function T.extend_variant_one(v, e)
 		v.variants = { T.Any } --[[SOL OUTPUT--]] 	
 	else
 		if not T.isa(e, v) then
-			if T.is_variant(e) then
-				e = T.follow_identifiers(e) --[[SOL OUTPUT--]] 
-				for _,et in ipairs(e.variants) do
+			local ev = T.is_variant(e) --[[SOL OUTPUT--]] 
+			if ev then
+				for _,et in ipairs(ev.variants) do
 					v = T.extend_variant_one(v, et) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else
@@ -1264,6 +1246,11 @@ function T.extend_variant(v, ...)
 
 	for _,e in ipairs{...} do
 		v = T.extend_variant_one(v, e) --[[SOL OUTPUT--]] 
+
+		if e == T.Any then
+			-- Early out
+			break --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	return v --[[SOL OUTPUT--]] 
@@ -1360,7 +1347,7 @@ end --[[SOL OUTPUT--]]
 
 -- used for expressions like "a + b"
 -- works for tables, or numerics, i.e.   num+int == num
-function T.combine(a, b)
+function T.combine_num_int(a, b)
 	if T.is_any(a)                  then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	if T.has_tag(a, 'number')       then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	if T.has_tag(a, 'num_literal')  then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
@@ -1368,28 +1355,6 @@ function T.combine(a, b)
 	if T.has_tag(b, 'number')       then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	if T.has_tag(b, 'num_literal')  then return T.Num --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	return T.Int --[[SOL OUTPUT--]] 
---[[
-	if T.isa(a, b) then return b end
-	if T.isa(b, a) then return a end
-
-	a = un_literal(a)
-	b = un_literal(b)
-
-	if a == T.Int and b == T.Int then
-		return T.Int
-	end
-
-	if a.tag == 'int' then a = T.Num end
-	if b.tag == 'int' then b = T.Num end
-
-	if a == T.Num and b == T.Num then
-		return T.Num
-	end
-
-	-- A true super-type
-	U.printf_err('TODO: T.combine(%s, %s)', T.name(a), T.name(b))
-	return T.Any
---]]
 end --[[SOL OUTPUT--]] 
 
 
@@ -1407,10 +1372,7 @@ function T.combine_type_lists(a, b, forgiving)
 	if b == nil then return a --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
 	if a == T.AnyTypeList then return T.AnyTypeList --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if b == T.AnyTypeList then return T.AnyTypeList --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-
-	D.assert(T.is_type_list(a)) --[[SOL OUTPUT--]] 
-	D.assert(T.is_type_list(b)) --[[SOL OUTPUT--]] 
+	if b == T.AnyTypeList then return T.AnyTypeList --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 	
 
 	if forgiving then
 		if #a < #b  then

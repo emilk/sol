@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Oct 11  23:10:06 --]] local T = require 'type' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Oct 12  03:34:35 --]] local T = require 'type' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
 
@@ -62,7 +62,7 @@ function Scope:init(where, parent)
 	self.parent          = parent --[[SOL OUTPUT--]]  
 	self.children        = {} --[[SOL OUTPUT--]] 
 	self.locals          = {} --[[SOL OUTPUT--]] 
-	self.globals         = {} --[[SOL OUTPUT--]] 
+	self.globals         = {} --[[SOL OUTPUT--]]   -- TODO: string->var map
 	self.typedefs        = {} --[[SOL OUTPUT--]] 
 	self.global_typedefs = {} --[[SOL OUTPUT--]] 
 	self.vararg          = nil --[[SOL OUTPUT--]] 
@@ -115,7 +115,8 @@ function Scope:create_local(name, where)
 		num_writes = 0,
 	} --[[SOL OUTPUT--]] 
 
-	table.insert(self.locals, v) --[[SOL OUTPUT--]] 
+	D.assert(not self.locals[name]) --[[SOL OUTPUT--]] 
+	self.locals[name] = v --[[SOL OUTPUT--]] 
 
 	return v --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
@@ -179,20 +180,18 @@ end --[[SOL OUTPUT--]]
 
 
 function Scope:locals_iterator()
-	return ipairs(self.locals) --[[SOL OUTPUT--]] 
+	return pairs(self.locals) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
 -- Will only check local scope
 function Scope:get_scoped(name, options)
-	for _,v in ipairs(self.locals) do
-		if v.name == name then
-			if not v.forward_declared or options ~= 'ignore_fwd_decl' then
-				return v --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+	local v = self.locals[name] --[[SOL OUTPUT--]] 
+	if v then
+		if not v.forward_declared or options ~= 'ignore_fwd_decl' then
+			return v --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
-
 	return nil --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 

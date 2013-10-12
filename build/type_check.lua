@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 11  23:10:06 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 12  03:34:35 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -361,7 +361,7 @@ local function analyze(ast, filename, on_require, settings)
 	analyze_expr = function(expr, scope)
 		local types, var_ = analyze_expr_unchecked(expr, scope) --[[SOL OUTPUT--]] 
 
-		D.assert(T.is_type_list(types)) --[[SOL OUTPUT--]] 
+		--D.assert(T.is_type_list(types))
 
 		return types, var_ --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -394,8 +394,8 @@ local function analyze(ast, filename, on_require, settings)
 
 	local function check_return_types(node, does_return, should_return)
 		if should_return then
-			assert(T.is_type_list(does_return)) --[[SOL OUTPUT--]] 
-			assert(T.is_type_list(should_return)) --[[SOL OUTPUT--]] 
+			D.assert(T.is_type_list(does_return)) --[[SOL OUTPUT--]] 
+			D.assert(T.is_type_list(should_return)) --[[SOL OUTPUT--]] 
 
 			if not T.could_be_tl(does_return, should_return) then
 				local problem_rope = {} --[[SOL OUTPUT--]] 
@@ -880,7 +880,9 @@ local function analyze(ast, filename, on_require, settings)
 
 
 	local function analyze_require( module_name, req_where )
-		return T.as_type_list( on_require( module_name, req_where ) ) --[[SOL OUTPUT--]]   -- TODO: remove as_type_list
+		local rets = on_require( module_name, req_where ) --[[SOL OUTPUT--]] 
+		D.assert( T.is_type_list(rets) ) --[[SOL OUTPUT--]] 
+		return rets --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -1374,7 +1376,7 @@ local function analyze(ast, filename, on_require, settings)
 					return T.Any --[[SOL OUTPUT--]] 
 				elseif T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
 					report_spam(expr, "Combining types %s and %s", lt, rt) --[[SOL OUTPUT--]] 
-					return T.combine( lt, rt ) --[[SOL OUTPUT--]]   -- int,int -> int,   int,num -> num,  etc
+					return T.combine_num_int( lt, rt ) --[[SOL OUTPUT--]]   -- int,int -> int,   int,num -> num,  etc
 				else
 					report_error(expr,
 						"Invalid types for operator %q: %s and %s", op, T.name(lt), T.name(rt)) --[[SOL OUTPUT--]] 
@@ -2303,30 +2305,9 @@ local function analyze(ast, filename, on_require, settings)
 				Common lua idiom
 				--]]
 				local name = stat.lhs[1].name --[[SOL OUTPUT--]] 
-				if true then
-					local v = scope:get_var(name) --[[SOL OUTPUT--]] 
-					D.assert(v and v.forward_declared and v.is_global) --[[SOL OUTPUT--]] 
-					v.forward_declared = false --[[SOL OUTPUT--]] 
-				else
-					report_info(stat, "Declaring Lua class %q", name) --[[SOL OUTPUT--]] 
-					local is_local = false --[[SOL OUTPUT--]] 
-					local class_type = declare_class(stat, scope, name, is_local, stat.rhs[1]) --[[SOL OUTPUT--]] 
-					-- Allow Foo(...):
-					class_type.metatable = {
-						tag='object',
-						members = {
-							__call = {
-								tag    = 'function';
-								args   = {};
-								vararg = { tag='varargs', type=T.Any };
-								rets   = T.AnyTypeList;
-								name   = '__call';
-							}
-						}
-					} --[[SOL OUTPUT--]] 
-					local v = declare_var(stat, scope, name, is_local, class_type) --[[SOL OUTPUT--]] 
-					v.type = class_type --[[SOL OUTPUT--]]  -- FIXME
-				end --[[SOL OUTPUT--]] 
+				local v = scope:get_var(name) --[[SOL OUTPUT--]] 
+				D.assert(v and v.forward_declared and v.is_global and v.where==stat.where) --[[SOL OUTPUT--]] 
+				v.forward_declared = false --[[SOL OUTPUT--]] 
 
 			elseif nrhs == 1 then
 			--]-]
@@ -2620,12 +2601,12 @@ local function analyze(ast, filename, on_require, settings)
 			check_num_arg('start', start_t) --[[SOL OUTPUT--]] 
 			check_num_arg('end',   end_t) --[[SOL OUTPUT--]] 
 
-			local iter_t = T.combine(start_t, end_t) --[[SOL OUTPUT--]] 
+			local iter_t = T.combine_num_int(start_t, end_t) --[[SOL OUTPUT--]] 
 
 			if stat.step then
 				local step_t   = analyze_expr_single(stat.step, loop_scope) --[[SOL OUTPUT--]] 
 				check_num_arg('step', step_t) --[[SOL OUTPUT--]] 
-				iter_t = T.combine(iter_t, step_t) --[[SOL OUTPUT--]] 
+				iter_t = T.combine_num_int(iter_t, step_t) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			local iter_var = declare_local(stat, loop_scope, stat.var_name) --[[SOL OUTPUT--]] 
@@ -2744,6 +2725,7 @@ local function analyze(ast, filename, on_require, settings)
 						local v = declare_var(stat, scope, name, is_local, class_type) --[[SOL OUTPUT--]] 
 						v.type = class_type --[[SOL OUTPUT--]] 
 						v.forward_declared = true --[[SOL OUTPUT--]]  -- Until second pass
+						v.where = stat.where --[[SOL OUTPUT--]] 
 
 					else
 						local var_name = stat.lhs[1].name --[[SOL OUTPUT--]] 
@@ -2857,6 +2839,7 @@ local function analyze(ast, filename, on_require, settings)
 	end --[[SOL OUTPUT--]] 
 
 	if _G.g_ignore_errors or error_count == 0 then
+		D.assert(ret==nil or T.is_type_list(ret)) --[[SOL OUTPUT--]] 
 		return true, ret --[[SOL OUTPUT--]] 
 	else
 		return false, string.format("%i errors", error_count) --[[SOL OUTPUT--]] 

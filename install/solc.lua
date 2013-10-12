@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 11  23:10:06 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 12  03:34:35 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -80,7 +80,7 @@ local     CURRENTLY_PARSING
 
 
 = false --[[SOL OUTPUT--]] 
-local   FAIL_INFO = { ast = nil, type = T.Any } --[[SOL OUTPUT--]] 
+local   FAIL_INFO = { ast = nil, type = T.AnyTypeList } --[[SOL OUTPUT--]] 
 
 -- type is CURRENTLY_PARSING during parsing.
 local g_modules = {} --[[SOL OUTPUT--]] 
@@ -158,7 +158,7 @@ local function require_module(path_in, mod_name, module_scope, req_where, req_ch
 			g_did_warn_about[mod_name:lower()] = true --[[SOL OUTPUT--]] 
 			U.printf("WARNING: %s: Failed to find module %q",req_where, mod_name) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-		return T.Any --[[SOL OUTPUT--]] 
+		return T.AnyTypeList --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -166,7 +166,7 @@ local function require_module(path_in, mod_name, module_scope, req_where, req_ch
 
 	if mod_info == FAIL_INFO then
 		-- Something went wrong - continue as if everything went right
-		return T.Any --[[SOL OUTPUT--]] 
+		return T.AnyTypeList --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	if not Scope.GLOBALS_IN_TOP_SCOPE then
@@ -284,17 +284,19 @@ local function parse_module_str(chain, path_in, source_text)
 
 	local on_require = function(mod_name, req_where)
 		if _G.g_local_parse then
-			return T.Any --[[SOL OUTPUT--]] 
+			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		return require_module(path_in, mod_name, module_scope, req_where, chain) --[[SOL OUTPUT--]] 
+		local ts = require_module(path_in, mod_name, module_scope, req_where, chain) --[[SOL OUTPUT--]] 
+		D.assert( T.is_type_list(ts) ) --[[SOL OUTPUT--]] 
+		return ts --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	local success, type = TypeCheck(ast, filename, on_require, settings) --[[SOL OUTPUT--]] 
 
 	if not success then
 		--printf_err("TypeCheck failed: " .. type)
-		local info = { ast = ast, type = T.Any } --[[SOL OUTPUT--]] 
+		local info = { ast = ast, type = T.AnyTypeList } --[[SOL OUTPUT--]] 
 		g_modules[module_id] = info --[[SOL OUTPUT--]] 
 		os.exit(3) --[[SOL OUTPUT--]] 
 		return info --[[SOL OUTPUT--]] 
@@ -619,7 +621,8 @@ if g_profiler then
 	g_profiler:stop() --[[SOL OUTPUT--]] 
 	--local REPORT_PATH = 'profiler_report.txt'
 	--local REPORT_PATH = os.date("profiler_report_%Y_%m_%d_%X.txt")
-	local REPORT_PATH = os.date("profile_reports/profiler_report_%Y_%m_%d__%H_%M_%S.txt") --[[SOL OUTPUT--]] 
+	path.mkdir("solc_profile_reports") --[[SOL OUTPUT--]] 
+	local REPORT_PATH = os.date("solc_profile_reports/profiler_report_%Y_%m_%d__%H_%M_%S.txt") --[[SOL OUTPUT--]] 
 	g_profiler:writeReport( REPORT_PATH ) --[[SOL OUTPUT--]] 
 	--print( 'Profile report written to ' .. REPORT_PATH)
 end --[[SOL OUTPUT--]] 

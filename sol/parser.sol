@@ -386,7 +386,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		return filename .. ":" .. token.line
 	end
 
-	local function generate_msg(msg_fmt, ...) -> string
+	local function generate_msg(msg_fmt: string, ...) -> string
 		local msg = string.format(msg_fmt, ...)
 		--local err = ">> :"..tok:peek().line..":"..tok:peek().char..": "..msg.."\n"
 		local err = "solc: "..where_am_i(-1)..": "..msg.."\n"
@@ -460,10 +460,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
-	local parse_expr 
 	local parse_statement_list
 	local parse_simple_expr, 
-	      parse_sub_expr,
+	      parse_expr,
 	      parse_primary_expr,
 	      parse_suffixed_expr,
 	      parse_simple_type,
@@ -538,7 +537,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			end
 		end
 
-		local return_types = nil
+		var return_types = nil : T.Typelist?
 
 		if settings.function_types and tok:consume_symbol('->') then
 			return_types = parse_type_list(func_scope)
@@ -892,7 +891,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		['or']  = {1,1};
 	}
 
-	parse_sub_expr = function(scope: Scope, prio_level: int) -> bool, ExprNode_or_error
+	parse_expr = function(scope: Scope, prio_level: int?) -> bool, ExprNode_or_error
+		prio_level = prio_level or 0
+
 		var st    = false
 		var exp   = nil : object?
 		var where = where_am_i()
@@ -901,7 +902,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		if unops[tok:peek().data] then
 			local token_list = {}
 			local op = tok:get(token_list).data
-			st, exp = parse_sub_expr(scope, unopprio)
+			st, exp = parse_expr(scope, unopprio)
 			if not st then return false, exp end
 			local node_ex = {
 				ast_type = 'UnopExpr';
@@ -921,7 +922,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			if prio and prio[1] > prio_level then
 				local token_list = {}
 				local op = tok:get(token_list).data
-				local st, rhs = parse_sub_expr(scope, prio[2])
+				local st, rhs = parse_expr(scope, prio[2])
 				if not st then return false, rhs end
 				local node_ex = {
 					ast_type = 'BinopExpr';
@@ -939,7 +940,26 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		exp.where = exp.where or where
 
-		return true, exp
+		if #tok:peek().leading_white>0 and tok:consume_symbol(':') then
+			-- A cast
+
+			var where = where_am_i()
+
+			var type = parse_type(scope)
+			if not type then
+				return false, report_error("Bad cast, expected  'expr : type'")
+			end
+
+			return true, {
+				ast_type = 'CastExpr',
+				where    = where,
+				tokens   = {},
+				expr     = exp,
+				type     = type,
+			}
+		else
+			return true, exp
+		end
 	end
 
 
@@ -1360,33 +1380,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		end
 
 		return true, node
-	end
-
-
-	parse_expr = function(scope: Scope) -> bool, ExprNode_or_error
-		var st,expr = parse_sub_expr(scope, 0)
-		if not st then return false, expr end
-
-		if #tok:peek().leading_white>0 and tok:consume_symbol(':') then
-			-- A cast
-
-			var where = where_am_i()
-
-			var type = parse_type(scope)
-			if not type then
-				return false, report_error("Bad cast, expected  'expr : type'")
-			end
-
-			return true, {
-				ast_type = 'CastExpr',
-				where    = where,
-				tokens   = {},
-				expr     = expr,
-				type     = type,
-			}
-		else
-			return true, expr
-		end
 	end
 
 

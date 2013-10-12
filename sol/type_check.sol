@@ -88,10 +88,10 @@ local function format_expr(e: P.ExprNode) -> string
 end
 
 
-typedef OnRequireT = function(string, string) -> T.Type or T.Typelist
+typedef OnRequireT = function(string, string) -> T.Typelist
 
 
-local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
+local function analyze(ast, filename: string, on_require: OnRequireT?, settings) -> bool, T.Typelist
 	local analyze_statlist, analyze_expr, analyze_expr_single_var, analyze_expr_single
 	local analyze_expr_unchecked
 
@@ -361,7 +361,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	analyze_expr = function(expr: P.Node, scope: Scope) -> T.Typelist, Variable?
 		local types, var_ = analyze_expr_unchecked(expr, scope)
 
-		D.assert(T.is_type_list(types))
+		--D.assert(T.is_type_list(types))
 
 		return types, var_
 	end
@@ -394,8 +394,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	local function check_return_types(node: P.Node, does_return: T.Typelist, should_return: T.Typelist?)
 		if should_return then
-			assert(T.is_type_list(does_return))
-			assert(T.is_type_list(should_return))
+			D.assert(T.is_type_list(does_return))
+			D.assert(T.is_type_list(should_return))
 
 			if not T.could_be_tl(does_return, should_return) then
 				var problem_rope = {} : [string]
@@ -880,7 +880,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 	local function analyze_require( module_name: string, req_where: string ) -> T.Typelist
-		return T.as_type_list( on_require( module_name, req_where ) )  -- TODO: remove as_type_list
+		var rets = on_require( module_name, req_where )
+		D.assert( T.is_type_list(rets) )
+		return rets
 	end
 
 
@@ -1374,7 +1376,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					return T.Any
 				elseif T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
 					report_spam(expr, "Combining types %s and %s", lt, rt)
-					return T.combine( lt, rt )  -- int,int -> int,   int,num -> num,  etc
+					return T.combine_num_int( lt, rt )  -- int,int -> int,   int,num -> num,  etc
 				else
 					report_error(expr,
 						"Invalid types for operator %q: %s and %s", op, T.name(lt), T.name(rt))
@@ -2303,30 +2305,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				Common lua idiom
 				--]]
 				var name = stat.lhs[1].name
-				if true then
-					var v = scope:get_var(name)
-					D.assert(v and v.forward_declared and v.is_global)
-					v.forward_declared = false
-				else
-					report_info(stat, "Declaring Lua class %q", name)
-					var is_local = false
-					var class_type = declare_class(stat, scope, name, is_local, stat.rhs[1])
-					-- Allow Foo(...):
-					class_type.metatable = {
-						tag='object',
-						members = {
-							__call = {
-								tag    = 'function';
-								args   = {};
-								vararg = { tag='varargs', type=T.Any };
-								rets   = T.AnyTypeList;
-								name   = '__call';
-							}
-						}
-					}
-					var v = declare_var(stat, scope, name, is_local, class_type)
-					v.type = class_type -- FIXME
-				end
+				var v = scope:get_var(name)
+				D.assert(v and v.forward_declared and v.is_global and v.where==stat.where)
+				v.forward_declared = false
 
 			elseif nrhs == 1 then
 			--]-]
@@ -2620,12 +2601,12 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			check_num_arg('start', start_t)
 			check_num_arg('end',   end_t)
 
-			local iter_t = T.combine(start_t, end_t)
+			local iter_t = T.combine_num_int(start_t, end_t)
 
 			if stat.step then
 				local step_t   = analyze_expr_single(stat.step, loop_scope)
 				check_num_arg('step', step_t)
-				iter_t = T.combine(iter_t, step_t)
+				iter_t = T.combine_num_int(iter_t, step_t)
 			end
 
 			local iter_var = declare_local(stat, loop_scope, stat.var_name)
@@ -2744,6 +2725,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						var v = declare_var(stat, scope, name, is_local, class_type)
 						v.type = class_type
 						v.forward_declared = true -- Until second pass
+						v.where = stat.where
 
 					else
 						var var_name = stat.lhs[1].name
@@ -2857,6 +2839,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	if _G.g_ignore_errors or error_count == 0 then
+		D.assert(ret==nil or T.is_type_list(ret))
 		return true, ret
 	else
 		return false, string.format("%i errors", error_count)

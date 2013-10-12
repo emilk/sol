@@ -26,15 +26,7 @@ typedef Variable = {
 	num_writes       : int,
 }
 
-typedef Scope = {
-	parent   : Scope?,
-	locals   : [Variable],
-	globals  : [Variable],
-	typedefs : { string => T.Type },
-	vararg   : Variable?,  -- if non-nil, points to a variable named '...' with the type of T.VarArgs
-
-	--get_scoped_type : function(self, name: string) -> T.Type?
-}
+typedef Scope = object
 
 
 
@@ -178,7 +170,7 @@ T.Map = { tag = 'map', key_type = T.Any, value_type = T.Any }
 
 ------------------------------------------------------------------
 
-function T.is_type(x) -> bool
+function T.is_type(x: any) -> bool
 	return type(x) == 'table' and type(x.tag) == 'string'
 end
 
@@ -229,10 +221,11 @@ function T.follow_identifiers(t: T.Type, forgiving: bool?) -> T.Type
 		--]]
 		
 		assert( t.scope )
+		var scope = t.scope
 
 		if t.var_name then
-			-- TODO: var
-			local var_ = t.scope:get_var( t.var_name )  -- A namespace is always a variable
+			-- TODO: var (when we can break cyclic depndency)
+			var var_ = scope:get_var( t.var_name ) : Variable?  -- A namespace is always a variable
 			if not var_ then
 				T.on_error("%s: Failed to find namespace variable %q", t.first_usage, t.var_name)
 				t.type = T.Any
@@ -825,10 +818,6 @@ function T.could_be_tl(al: T.Typelist, bl: T.Typelist, problem_rope: [string]?) 
 		return true
 	end
 
-	assert(al) assert(bl)
-	assert(T.is_type_list(al))
-	assert(T.is_type_list(bl))
-
 	if #al ~= #bl then
 		if problem_rope then
 			table.insert(problem_rope, "typelists of unequal length")
@@ -895,16 +884,6 @@ function T.is_useful_boolean(a: T.Type) -> bool
 	--]]
 
 	return T.could_be_false(a) and T.could_be_true(a)
-end
-
-
-
-function T.as_type_list(t: T.Type or [T.Type]) -> T.Typelist
-	if T.is_type_list( t ) then
-		return t
-	else
-		return { t }
-	end
 end
 
 
@@ -1229,10 +1208,13 @@ function T.name_verbose(typ: T.Type or [T.Type] or nil) -> string
 	return T.name(typ, true)
 end
 
-
-function T.is_variant(v: T.Type) -> bool
-	v = T.follow_identifiers(v)
-	return v and type(v) == 'table' and v.tag == 'variant'
+function T.is_variant(t: T.Type) -> T.Variant?
+	t = T.follow_identifiers(t)
+	if t.tag == 'variant' then
+		return t
+	else
+		return nil
+	end
 end
 
 
@@ -1245,9 +1227,9 @@ function T.extend_variant_one(v: T.Variant, e: T.Type) -> T.Variant
 		v.variants = { T.Any }	
 	else
 		if not T.isa(e, v) then
-			if T.is_variant(e) then
-				e = T.follow_identifiers(e)
-				for _,et in ipairs(e.variants) do
+			var ev = T.is_variant(e)
+			if ev then
+				for _,et in ipairs(ev.variants) do
 					v = T.extend_variant_one(v, et)
 				end
 			else
@@ -1264,6 +1246,11 @@ function T.extend_variant(v: T.Variant, ...) -> T.Variant
 
 	for _,e in ipairs{...} do
 		v = T.extend_variant_one(v, e)
+
+		if e == T.Any then
+			-- Early out
+			break
+		end
 	end
 
 	return v
@@ -1309,7 +1296,7 @@ function T.make_variant(...) -> T.Variant
 end
 
 
-function T.clone_variant(v) -> T.Variant
+function T.clone_variant(v: T.Variant) -> T.Variant
 	v = T.follow_identifiers(v)
 	assert( T.is_variant(v) )
 	return T.make_variant( unpack(v.variants) )
@@ -1360,7 +1347,7 @@ end
 
 -- used for expressions like "a + b"
 -- works for tables, or numerics, i.e.   num+int == num
-function T.combine(a: T.Type, b: T.Type)
+function T.combine_num_int(a: T.Type, b: T.Type) -> T.Num or T.Int
 	if T.is_any(a)                  then return T.Num end
 	if T.has_tag(a, 'number')       then return T.Num end
 	if T.has_tag(a, 'num_literal')  then return T.Num end
@@ -1368,28 +1355,6 @@ function T.combine(a: T.Type, b: T.Type)
 	if T.has_tag(b, 'number')       then return T.Num end
 	if T.has_tag(b, 'num_literal')  then return T.Num end
 	return T.Int
---[[
-	if T.isa(a, b) then return b end
-	if T.isa(b, a) then return a end
-
-	a = un_literal(a)
-	b = un_literal(b)
-
-	if a == T.Int and b == T.Int then
-		return T.Int
-	end
-
-	if a.tag == 'int' then a = T.Num end
-	if b.tag == 'int' then b = T.Num end
-
-	if a == T.Num and b == T.Num then
-		return T.Num
-	end
-
-	-- A true super-type
-	U.printf_err('TODO: T.combine(%s, %s)', T.name(a), T.name(b))
-	return T.Any
---]]
 end
 
 
@@ -1407,10 +1372,7 @@ function T.combine_type_lists(a: T.Typelist?, b: T.Typelist?, forgiving: bool?) 
 	if b == nil then return a end
 
 	if a == T.AnyTypeList then return T.AnyTypeList end
-	if b == T.AnyTypeList then return T.AnyTypeList end
-
-	D.assert(T.is_type_list(a))
-	D.assert(T.is_type_list(b))
+	if b == T.AnyTypeList then return T.AnyTypeList end	
 
 	if forgiving then
 		if #a < #b  then
