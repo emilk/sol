@@ -150,7 +150,7 @@ local parse_module
 local function require_module(path_in: string, mod_name: string, module_scope: Scope, req_where: string, req_chain: [string]) -> T.Typelist
 	--U.printf('require %q', v)
 	req_chain = { unpack(req_chain) }  -- clone
-	table.insert(req_chain, mod_name)
+	req_chain #= mod_name
 
 	local mod_path = find_moudle(path_in, mod_name)
 	if not mod_path then
@@ -576,7 +576,7 @@ else
 		elseif a == '-m' then
 			var dir = arg[ix]
 			ix +=  1
-			g_mod_paths[#g_mod_paths + 1] = dir
+			g_mod_paths #= dir
 
 		elseif a == '-Werror' then
 			_G.g_warnings_as_errors = true

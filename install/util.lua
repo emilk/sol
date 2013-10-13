@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/util.sol on 2013 Oct 13  22:16:09 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/util.sol on 2013 Oct 13  23:02:42 --]] --[[
 Util.lua
 
 Provides some common utilities shared throughout the project.
@@ -66,7 +66,7 @@ end --[[SOL OUTPUT--]]
 -- discovered  - set of tables already processed (used to discover loops)
 function U.serialize_to_rope(rope, val, ignore_set, indent, discovered)
 	if val == nil then
-		rope[#rope+1] = "nil" --[[SOL OUTPUT--]] 
+		rope [ # rope + 1 ] = "nil" --[[SOL OUTPUT--]] 
 		return --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -77,18 +77,18 @@ function U.serialize_to_rope(rope, val, ignore_set, indent, discovered)
 	if type(val) == "table" then
 		if discovered[val] then
 			--error("serialize: loop discovered")
-			rope[#rope+1] = 'LOOP' --[[SOL OUTPUT--]] 
+			rope [ # rope + 1 ] = 'LOOP' --[[SOL OUTPUT--]] 
 			return --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		discovered[val] = true --[[SOL OUTPUT--]] 
 
 		local scope_indent = indent .. "   " --[[SOL OUTPUT--]] 
-		rope[#rope+1] = "{\n" --[[SOL OUTPUT--]] 
+		rope [ # rope + 1 ] = "{\n" --[[SOL OUTPUT--]] 
 		if U.is_array(val) then
 			for _,v in ipairs(val) do
-				rope[#rope+1] = scope_indent --[[SOL OUTPUT--]] 
+				rope [ # rope + 1 ] = scope_indent --[[SOL OUTPUT--]] 
 				U.serialize_to_rope(rope, v, ignore_set, scope_indent, discovered) --[[SOL OUTPUT--]] 
-				rope[#rope+1] = ",\n" --[[SOL OUTPUT--]] 
+				rope [ # rope + 1 ] = ",\n" --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		else
 			for k,v in pairs(val) do
@@ -96,28 +96,28 @@ function U.serialize_to_rope(rope, val, ignore_set, indent, discovered)
 				if true then
 					local key = is_safe_key(k) and k or string.format("[%q]", k) --[[SOL OUTPUT--]] 
 
-					rope[#rope+1] = scope_indent --[[SOL OUTPUT--]] 
-					rope[#rope+1] = key --[[SOL OUTPUT--]] 
-					rope[#rope+1] = " = " --[[SOL OUTPUT--]] 
+					rope [ # rope + 1 ] = scope_indent --[[SOL OUTPUT--]] 
+					rope [ # rope + 1 ] = key --[[SOL OUTPUT--]] 
+					rope [ # rope + 1 ] = " = " --[[SOL OUTPUT--]] 
 
 					if ignore_set[k] then
-						rope[#rope+1] = 'ignored' --[[SOL OUTPUT--]] 
+						rope [ # rope + 1 ] = 'ignored' --[[SOL OUTPUT--]] 
 					else
 						U.serialize_to_rope(rope, v, ignore_set, scope_indent, discovered) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
-					rope[#rope+1] = ",\n" --[[SOL OUTPUT--]] 
+					rope [ # rope + 1 ] = ",\n" --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-		rope[#rope+1] = indent .. "}" --[[SOL OUTPUT--]] 
+		rope [ # rope + 1 ] = indent .. "}" --[[SOL OUTPUT--]] 
 	elseif type(val) == "string" then
-		rope[#rope+1] = string.format("%q", val) --[[SOL OUTPUT--]] 
+		rope [ # rope + 1 ] = string.format("%q", val) --[[SOL OUTPUT--]] 
 	elseif type(val) == "number" or type(val) == "boolean" then
-		rope[#rope+1] = tostring(val) --[[SOL OUTPUT--]] 
+		rope [ # rope + 1 ] = tostring(val) --[[SOL OUTPUT--]] 
 	else
 		--error("serialize: Can't serialize something of type " .. type(val))
-		rope[#rope+1] = tostring(val) --[[SOL OUTPUT--]] 
+		rope [ # rope + 1 ] = tostring(val) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -301,7 +301,7 @@ end --[[SOL OUTPUT--]]
 
 function U.list_join(out, in_table)
 	for _,val in ipairs(in_table) do
-		out[#out + 1] = val --[[SOL OUTPUT--]] 
+		out [ # out + 1 ] = val --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -309,10 +309,10 @@ end --[[SOL OUTPUT--]]
 function U.list_concat(a, b)
 	local ret = {} --[[SOL OUTPUT--]] 
 	for _,v in ipairs(a) do
-		ret[#ret + 1] = v --[[SOL OUTPUT--]] 
+		ret [ # ret + 1 ] = v --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 	for _,v in ipairs(b) do
-		ret[#ret + 1] = v --[[SOL OUTPUT--]] 
+		ret [ # ret + 1 ] = v --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 	return ret --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 

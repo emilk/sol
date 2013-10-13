@@ -66,7 +66,7 @@ end
 -- discovered  - set of tables already processed (used to discover loops)
 function U.serialize_to_rope(rope: [string], val: any, ignore_set: {any}?, indent: string?, discovered: {table}?) -> void
 	if val == nil then
-		rope[#rope+1] = "nil"
+		rope #= "nil"
 		return
 	end
 
@@ -77,18 +77,18 @@ function U.serialize_to_rope(rope: [string], val: any, ignore_set: {any}?, inden
 	if type(val) == "table" then
 		if discovered[val] then
 			--error("serialize: loop discovered")
-			rope[#rope+1] = 'LOOP'
+			rope #= 'LOOP'
 			return
 		end
 		discovered[val] = true
 
 		local scope_indent = indent .. "   "
-		rope[#rope+1] = "{\n"
+		rope #= "{\n"
 		if U.is_array(val) then
 			for _,v in ipairs(val) do
-				rope[#rope+1] = scope_indent
+				rope #= scope_indent
 				U.serialize_to_rope(rope, v, ignore_set, scope_indent, discovered)
-				rope[#rope+1] = ",\n"
+				rope #= ",\n"
 			end
 		else
 			for k,v in pairs(val) do
@@ -96,28 +96,28 @@ function U.serialize_to_rope(rope: [string], val: any, ignore_set: {any}?, inden
 				if true then
 					local key = is_safe_key(k) and k or string.format("[%q]", k)
 
-					rope[#rope+1] = scope_indent
-					rope[#rope+1] = key
-					rope[#rope+1] = " = "
+					rope #= scope_indent
+					rope #= key
+					rope #= " = "
 
 					if ignore_set[k] then
-						rope[#rope+1] = 'ignored'
+						rope #= 'ignored'
 					else
 						U.serialize_to_rope(rope, v, ignore_set, scope_indent, discovered)
 					end
 
-					rope[#rope+1] = ",\n"
+					rope #= ",\n"
 				end
 			end
 		end
-		rope[#rope+1] = indent .. "}"
+		rope #= indent .. "}"
 	elseif type(val) == "string" then
-		rope[#rope+1] = string.format("%q", val)
+		rope #= string.format("%q", val)
 	elseif type(val) == "number" or type(val) == "boolean" then
-		rope[#rope+1] = tostring(val)
+		rope #= tostring(val)
 	else
 		--error("serialize: Can't serialize something of type " .. type(val))
-		rope[#rope+1] = tostring(val)
+		rope #= tostring(val)
 	end
 end
 
@@ -301,7 +301,7 @@ end
 
 function U.list_join(out: [any], in_table: [any])
 	for _,val in ipairs(in_table) do
-		out[#out + 1] = val
+		out #= val
 	end
 end
 
@@ -309,10 +309,10 @@ end
 function U.list_concat(a: [any], b: [any]) -> [any]
 	var ret = {} : [any]
 	for _,v in ipairs(a) do
-		ret[#ret + 1] = v
+		ret #= v
 	end
 	for _,v in ipairs(b) do
-		ret[#ret + 1] = v
+		ret #= v
 	end
 	return ret
 end

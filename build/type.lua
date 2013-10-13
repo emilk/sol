@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 13  22:16:09 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 13  23:02:42 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -36,7 +36,7 @@ T
 	--error(msg, 2)
 end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  -- TODO: implement fully
 
-local ATOMIC_TAGS 
+local ATOMIC_TAGS = U
 
 
 
@@ -46,7 +46,7 @@ local ATOMIC_TAGS
 
 
 
-= U.set{'any', 'int_literal', 'num_literal', 'string_literal',
+.set{'any', 'int_literal', 'num_literal', 'string_literal',
                         'nil', 'true', 'false', 'int', 'number', 'string'} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 ------------------------------------------------------------------
@@ -389,7 +389,7 @@ function T.isa(d, b, problem_rope)
 			isa_memo[d][b] = res --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		assert(type(res) == 'string') --[[SOL OUTPUT--]] 
-		problem_rope[#problem_rope + 1] = res --[[SOL OUTPUT--]] 
+		problem_rope [ # problem_rope + 1 ] = res --[[SOL OUTPUT--]] 
 		return false --[[SOL OUTPUT--]] 
 	else
 		-- No problem description needed
@@ -530,32 +530,32 @@ function T.isa_raw(d, b, problem_rope)
 
 		-- TODO: allow different arg count WRT vararg
 		if #d.args ~= #b.args then
-			if problem_rope then problem_rope[#problem_rope+1] = "Differing number of arguments" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			if problem_rope then problem_rope [ # problem_rope + 1 ] = "Differing number of arguments" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		for i = 1, #d.args do
 			if not T.isa(d.args[i].type, b.args[i].type, problem_rope) then
-				if problem_rope then problem_rope[#problem_rope+1] = "Argument "..i.." differs" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+				if problem_rope then problem_rope [ # problem_rope + 1 ] = "Argument "..i.." differs" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				return false --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if b.rets then
 			if not T.isa_typelists(d.rets, b.rets, problem_rope) then
-				if problem_rope then problem_rope[#problem_rope+1] = "Return types differs" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+				if problem_rope then problem_rope [ # problem_rope + 1 ] = "Return types differs" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				return false --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if (d.vararg==nil) ~= (b.vararg==nil) then
-			if problem_rope then problem_rope[#problem_rope+1] = "One fuction has var-args" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			if problem_rope then problem_rope [ # problem_rope + 1 ] = "One fuction has var-args" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if d.vararg and b.vararg then
 			if not T.isa(d.vararg, b.vararg, problem_rope) then
-				if problem_rope then problem_rope[#problem_rope+1] = "Var-arg types differ" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+				if problem_rope then problem_rope [ # problem_rope + 1 ] = "Var-arg types differ" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				return false --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -706,7 +706,7 @@ function T.could_be(d, b, problem_rope)
 			could_be_memo[d][b] = res --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		assert(type(res) == 'string') --[[SOL OUTPUT--]] 
-		problem_rope[#problem_rope + 1] = res --[[SOL OUTPUT--]] 
+		problem_rope [ # problem_rope + 1 ] = res --[[SOL OUTPUT--]] 
 		return false --[[SOL OUTPUT--]] 
 	else
 		-- No problem description needed
@@ -820,7 +820,7 @@ function T.could_be_tl(al, bl, problem_rope)
 
 	if #al ~= #bl then
 		if problem_rope then
-			table.insert(problem_rope, "typelists of unequal length") --[[SOL OUTPUT--]] 
+			problem_rope [ # problem_rope + 1 ] = "typelists of unequal length" --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		return false --[[SOL OUTPUT--]] 
@@ -1360,14 +1360,14 @@ function T.combine_type_lists(a, b, forgiving)
 		if #a < #b  then
 			a = U.shallow_clone(a) --[[SOL OUTPUT--]] 
 			while #a < #b do
-				table.insert(a, T.Nil) --[[SOL OUTPUT--]] 
+				a [ # a + 1 ] = T.Nil --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if #b < #a  then
 			b = U.shallow_clone(b) --[[SOL OUTPUT--]] 
 			while #b < #a do
-				table.insert(b, T.Nil) --[[SOL OUTPUT--]] 
+				b [ # b + 1 ] = T.Nil --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Oct 13  22:16:09 --]] local U = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Oct 13  23:02:42 --]] local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
@@ -17,41 +17,41 @@ local HexDigits    = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 local L = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 local function extract_chars(str)
 	local chars = {} --[[SOL OUTPUT--]] 
 	if true then
 		-- Fastest
 		for i = 1, #str do
-			chars[#chars + 1] = str:sub(i,i) --[[SOL OUTPUT--]] 
+			chars [ # chars + 1 ] = str
+
+
+
+
+
+
+
+
+
+
+
+
+:sub(i,i) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	elseif true then
 		str:gsub(".", function(c)
-			chars[#chars + 1] = c --[[SOL OUTPUT--]] 
+			chars [ # chars + 1 ] = c --[[SOL OUTPUT--]] 
 		end) --[[SOL OUTPUT--]] 
 	else
 		for chr in str:gmatch(".") do
-			chars[#chars + 1] = chr --[[SOL OUTPUT--]] 
+			chars [ # chars + 1 ] = chr --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 	assert(#chars == #str) --[[SOL OUTPUT--]] 
 
 	-- Signal eof:
-	chars[#chars + 1] = '' --[[SOL OUTPUT--]] 
-	chars[#chars + 1] = '' --[[SOL OUTPUT--]] 
-	chars[#chars + 1] = '' --[[SOL OUTPUT--]] 
+	chars [ # chars + 1 ] = '' --[[SOL OUTPUT--]] 
+	chars [ # chars + 1 ] = '' --[[SOL OUTPUT--]] 
+	chars [ # chars + 1 ] = '' --[[SOL OUTPUT--]] 
 
 	return chars --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]]  
@@ -357,12 +357,12 @@ function L.lex_sol(src, filename, settings)
 			--to_emit.lading_white_token_list = leading_tokens -- table of leading whitespace/comments
 			to_emit.leading_white = leading_white --[[SOL OUTPUT--]] 
 			--for k, tok in pairs(leading_tokens) do
-			--  tokens[#tokens + 1] = tok
+			--  tokens #= tok
 			--end
 
 			to_emit.line = this_line --[[SOL OUTPUT--]] 
 			to_emit.char = this_char --[[SOL OUTPUT--]] 
-			tokens[#tokens+1] = to_emit --[[SOL OUTPUT--]] 
+			tokens [ # tokens + 1 ] = to_emit --[[SOL OUTPUT--]] 
 
 			--halt after eof has been emitted
 			if to_emit.type == 'Eof' then break --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
@@ -407,7 +407,7 @@ function L.lex_sol(src, filename, settings)
 		local t = tokens[p] --[[SOL OUTPUT--]] 
 		p = math.min(p + 1, #tokens) --[[SOL OUTPUT--]] 
 		if token_list then
-			table.insert(token_list, t) --[[SOL OUTPUT--]] 
+			token_list [ # token_list + 1 ] = t --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return t --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

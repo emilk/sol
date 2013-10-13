@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 13  22:16:09 --]] require 'parser' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 13  23:02:42 --]] require 'parser' --[[SOL OUTPUT--]] 
 local L = require 'lexer' --[[SOL OUTPUT--]]  -- L.Token
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
@@ -56,7 +56,7 @@ local function output(ast, filename, strip_white_space)
 		append_str = function(self, str)
 			local nl = count_line_breaks(str) --[[SOL OUTPUT--]] 
 			self.line = self.line + nl --[[SOL OUTPUT--]] 
-			table.insert(self.rope, str) --[[SOL OUTPUT--]] 
+			self.rope [ # self . rope + 1 ] = str --[[SOL OUTPUT--]] 
 		end,
 
 		append_token = function(self, token)
@@ -121,13 +121,25 @@ local function output(ast, filename, strip_white_space)
 		} --[[SOL OUTPUT--]] 
 
 		function t:append_next_token(str)
-			local tok = expr.tokens[it] --[[SOL OUTPUT--]] 
-			if not tok then report_error("Missing token") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			--[[
+			if not tok then report_error("Missing token") end
 			if str and tok.data ~= str then
-				report_error("Expected token '" .. str .. "'. tokens: " .. U.pretty(expr.tokens)) --[[SOL OUTPUT--]] 
+				report_error("Expected token '" .. str .. "'. tokens: " .. U.pretty(expr.tokens))
+			end
+			out:append_token( tok )
+			it +=  1
+			--]]
+			if str then
+				self:append_str(str) --[[SOL OUTPUT--]] 
+			else
+				local tok = expr.tokens[it] --[[SOL OUTPUT--]] 
+				if not tok then report_error("Missing token") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+				if str and tok.data ~= str then
+					report_error("Expected token '" .. str .. "'. tokens: " .. U.pretty(expr.tokens)) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+				out:append_token( tok ) --[[SOL OUTPUT--]] 
+				it = it +  1 --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			out:append_token( tok ) --[[SOL OUTPUT--]] 
-			it = it +  1 --[[SOL OUTPUT--]] 	
 		end --[[SOL OUTPUT--]] 
 		function t:append_token(token)
 			out:append_token( token ) --[[SOL OUTPUT--]] 
@@ -135,10 +147,13 @@ local function output(ast, filename, strip_white_space)
 		end --[[SOL OUTPUT--]] 
 		function t:append_white()
 			local tok = expr.tokens[it] --[[SOL OUTPUT--]] 
-			--if not tok then report_error("Missing token: %s", U.pretty(expr)) end
-			if not tok then report_error("Missing token") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-			out:append_white( tok ) --[[SOL OUTPUT--]] 
-			it = it +  1 --[[SOL OUTPUT--]] 
+			if tok then
+				out:append_white( tok ) --[[SOL OUTPUT--]] 
+				it = it +  1 --[[SOL OUTPUT--]] 
+			else
+				--report_error("Missing token")
+				out:append_str(" ") --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		function t:skip_next_token()
 			self:append_white() --[[SOL OUTPUT--]] 
@@ -194,10 +209,10 @@ local function output(ast, filename, strip_white_space)
 			t:append_str( expr.name ) --[[SOL OUTPUT--]] 
 
 		elseif expr.ast_type == 'NumberExpr' then
-			t:append_token( expr.value ) --[[SOL OUTPUT--]] 
+			t:append_str( expr.value ) --[[SOL OUTPUT--]] 
 
 		elseif expr.ast_type == 'StringExpr' then
-			t:append_token( expr.value ) --[[SOL OUTPUT--]] 
+			t:append_str( expr.value ) --[[SOL OUTPUT--]] 
 
 		elseif expr.ast_type == 'BooleanExpr' then
 			t:append_next_token( expr.value and "true" or "false" ) --[[SOL OUTPUT--]] 

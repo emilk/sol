@@ -751,7 +751,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					local close_name = loose_lookup(obj.members, name)
 
 					if close_name then
-						suggestions[#suggestions + 1] = close_name
+						suggestions #= close_name
 					end
 				end
 
@@ -856,7 +856,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						assert(types == nil  or  #types == 2)
 						return types
 					else
-						table.insert(error_rope, T.name(typ))
+						error_rope #= T.name(typ)
 						return nil
 					end
 				end
@@ -1126,7 +1126,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					report_error(expr, "Last argument evaluates to no values")
 				else
 					for _,t in ipairs(types) do
-						table.insert(arg_ts, t)
+						arg_ts #= t
 					end
 				end
 			end
@@ -1221,9 +1221,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 	analyze_expr_unchecked = function(expr: P.Node, scope: Scope) -> T.Typelist, Variable?
-		assert(expr)
-		assert(type(expr) == 'table')
-		assert(expr.ast_type)
+		D.assert(expr)
+		D.assert(type(expr) == 'table')
+		D.assert(expr.ast_type)
 
 		report_spam(expr, "Analyzing %s...", expr.ast_type)
 
@@ -1318,8 +1318,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	-- Return type
 	analyze_simple_expr_unchecked = function(expr: P.ExprNode, scope: Scope) -> T.Type
 		if expr.ast_type == 'NumberExpr' then
-			local str = expr.value.data
-			local t = T.from_num_literal( str )
+			var str = expr.value
+			var t = T.from_num_literal( str )
 			if t then
 				return t
 			else
@@ -1330,7 +1330,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		elseif expr.ast_type == 'StringExpr' then
 			--return T.from_string_literal( expr.value.data )
-			local st, ret = pcall( T.from_string_literal, expr.value.data )
+			local st, ret = pcall( T.from_string_literal, expr.value )
 			if not st then
 				report_error(expr, "Failed to parse string: %s", expr.value.data)
 				return T.String
@@ -2358,7 +2358,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				init_types, _ = analyze_expr( stat.init_list[1], scope )
 			else
 				for _,exp in ipairs(stat.init_list) do
-					init_types[#init_types + 1] = analyze_expr_single( exp, scope )
+					init_types #= analyze_expr_single( exp, scope )
 				end
 			end
 
@@ -2374,7 +2374,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 				v.var_type = (is_local and 'Local variable' or 'Global variable')
 
-				vars[#vars + 1] = v
+				vars #= v
 			end
 
 			if explicit_types then
@@ -2388,7 +2388,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					explicit_types = U.shallow_clone( explicit_types )
 
 					while #explicit_types < #vars do
-						table.insert(explicit_types, explicit_types[1])
+						explicit_types #= explicit_types[1]
 					end
 				end
 			end

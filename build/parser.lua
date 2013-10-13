@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 13  22:16:09 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 13  23:02:42 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -55,7 +55,7 @@ P.SOL_SETTINGS = {
 	symbols = set{
 		'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',
 		':', '::', '>', '<', '=', '==', '~=', '>=', '<=',
-		'->', '=>', '?', '+=', '-=', '*=', '/=', '..='
+		'->', '=>', '?', '+=', '-=', '*=', '/=', '..=', '#='
 	};
 
 	keywords = set{
@@ -93,6 +93,7 @@ local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'} --[[SOL O
 
 --------------------------------------------------------
 
+function P
 
 
 
@@ -381,8 +382,7 @@ local stat_list_close_keywords = set{'end', 'else', 'elseif', 'until'} --[[SOL O
 
 
 
-
-function P.parse_sol(src, tok, filename, settings, module_scope)
+.parse_sol(src, tok, filename, settings, module_scope)
 	filename = filename or '' --[[SOL OUTPUT--]] 
 	settings = settings or P.SOL_SETTINGS --[[SOL OUTPUT--]] 
 	local num_err = 0 --[[SOL OUTPUT--]] 
@@ -481,23 +481,23 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 	-- is_mem_fun: we where declared like  foo:fun(args)  and thus have an implicit 'self'
 	local function parse_function_args_and_body(scope, token_list, type)
 
-		
-local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]] 
+		local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]] 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
 
 		local func_scope = create_scope(scope) --[[SOL OUTPUT--]] 
-		if not tok:consume_symbol('(', token_list) then
+		if not tok
+:consume_symbol('(', token_list) then
 			return false, report_error("`(` expected.") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
-		local arg_list 
-
-
-
-
-= {} --[[SOL OUTPUT--]] 
+		local arg_list = {} --[[SOL OUTPUT--]] 
 		local vararg   = nil --[[SOL OUTPUT--]] 
 
-		while not tok:consume_symbol(')', token_list) do
+		while not tok
+
+
+
+
+:consume_symbol(')', token_list) do
 			if tok:is('ident') then
 				local arg = {
 					name = tok:get(token_list).data
@@ -510,7 +510,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-				arg_list[#arg_list+1] = arg --[[SOL OUTPUT--]] 
+				arg_list [ # arg_list + 1 ] = arg --[[SOL OUTPUT--]] 
 
 				if not tok:consume_symbol(',', token_list) then
 					if tok:consume_symbol(')', token_list) then
@@ -672,7 +672,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				while not tok:consume_symbol(')', token_list) do
 					local st, ex = parse_expr(scope) --[[SOL OUTPUT--]] 
 					if not st then return false, ex --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-					args[#args+1] = ex --[[SOL OUTPUT--]] 
+					args [ # args + 1 ] = ex --[[SOL OUTPUT--]] 
 					if not tok:consume_symbol(',', token_list) then
 						if tok:consume_symbol(')', token_list) then
 							break --[[SOL OUTPUT--]] 
@@ -735,14 +735,14 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		if tok:is('Number') then
 			node = {
 				ast_type = 'NumberExpr';
-				value    = tok:get(token_list);
+				value    = tok:get(token_list).data;
 				tokens   = token_list;
 			} --[[SOL OUTPUT--]] 
 
 		elseif tok:is('String') then
 			node = {
 				ast_type = 'StringExpr';
-				value    = tok:get(token_list);
+				value    = tok:get(token_list).data;
 				tokens   = token_list;
 			} --[[SOL OUTPUT--]] 
 
@@ -793,7 +793,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 					if not st then
 						return false, report_error("value expression Expected") --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
-					entry_list[#entry_list+1] = {
+					entry_list [ # entry_list + 1 ] = {
 						type  = 'key';
 						key   = key;
 						value = value;
@@ -812,7 +812,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 						if not st then
 							return false, report_error("value expression Expected") --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
-						entry_list[#entry_list+1] = {
+						entry_list [ # entry_list + 1 ] = {
 							type  = 'ident_key';
 							key   = key.data;
 							value = value;
@@ -824,7 +824,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 						if not st then
 							return false, report_error("value Exected") --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
-						entry_list[#entry_list+1] = {
+						entry_list [ # entry_list + 1 ] = {
 							type = 'value';
 							value = value;
 						} --[[SOL OUTPUT--]] 
@@ -836,7 +836,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				else
 					--value
 					local st, value = parse_expr(scope) --[[SOL OUTPUT--]] 
-					entry_list[#entry_list+1] = {
+					entry_list [ # entry_list + 1 ] = {
 						type = 'value';
 						value = value;
 					} --[[SOL OUTPUT--]] 
@@ -1256,7 +1256,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 					local type = { tag = 'varargs', type = var_arg_t } --[[SOL OUTPUT--]] 
 					list = list or {} --[[SOL OUTPUT--]] 
-					table.insert(list, type) --[[SOL OUTPUT--]] 
+					list [ # list + 1 ] = type --[[SOL OUTPUT--]] 
 					return list --[[SOL OUTPUT--]]   -- var-args must be last
 				else
 					return T.AnyTypeList --[[SOL OUTPUT--]]  -- FIXME HACK
@@ -1269,7 +1269,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			end --[[SOL OUTPUT--]] 
 
 			list = list or {} --[[SOL OUTPUT--]] 
-			table.insert(list, type) --[[SOL OUTPUT--]] 
+			list [ # list + 1 ] = type --[[SOL OUTPUT--]] 
 			if not tok:consume_symbol(',') then
 				return list --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1362,7 +1362,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 							report_error("base type expected") --[[SOL OUTPUT--]] 
 							return nil --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
-						table.insert(base_types, t) --[[SOL OUTPUT--]] 
+						base_types [ # base_types + 1 ] = t --[[SOL OUTPUT--]] 
 					until not tok:consume_symbol(',') --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
@@ -1448,7 +1448,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			if not tok:is('ident') then
 				return false, report_error("local variable name expected") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			name_list[#name_list+1] = tok:get(token_list).data --[[SOL OUTPUT--]] 
+			name_list [ # name_list + 1 ] = tok:get(token_list).data --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		local init_list = {} --[[SOL OUTPUT--]] 
@@ -1456,7 +1456,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			repeat
 				local st, ex = parse_expr(scope) --[[SOL OUTPUT--]] 
 				if not st then return false, ex --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-				init_list[#init_list+1] = ex --[[SOL OUTPUT--]] 
+				init_list [ # init_list + 1 ] = ex --[[SOL OUTPUT--]] 
 			until not tok:consume_symbol(',', token_list) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -1541,22 +1541,22 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 			local node_if_stat = {
 				ast_type = 'IfStatement'
 			} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
-			local clauses 
-
-
-
-= {} --[[SOL OUTPUT--]] 
+			local clauses = {} --[[SOL OUTPUT--]] 
 
 			--clauses
 			repeat
-				local st, node_cond = parse_expr(scope) --[[SOL OUTPUT--]] 
+				local st
+
+
+
+, node_cond = parse_expr(scope) --[[SOL OUTPUT--]] 
 				if not st then return false, node_cond --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				if not tok:consume_keyword('then', token_list) then
 					return false, report_error("`then` expected.") --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				local st, node_body = parse_statement_list(create_scope(scope)) --[[SOL OUTPUT--]] 
 				if not st then return false, node_body --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-				clauses[#clauses+1] = {
+				clauses [ # clauses + 1 ] = {
 					condition = node_cond;
 					body      = node_body;
 				} --[[SOL OUTPUT--]] 
@@ -1571,7 +1571,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 				local st, node_body = parse_statement_list(create_scope(scope)) --[[SOL OUTPUT--]] 
 				if not st then return false, node_body --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-				clauses[#clauses+1] = {
+				clauses [ # clauses + 1 ] = {
 					body = node_body;
 				} --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1682,7 +1682,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 					if not tok:is('ident') then
 						return false, report_error("for variable expected.") --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
-					var_names[#var_names+1] = tok:get(token_list).data --[[SOL OUTPUT--]] 
+					var_names [ # var_names + 1 ] = tok:get(token_list).data --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				if not tok:consume_keyword('in', token_list) then
 					return false, report_error("`in` expected.") --[[SOL OUTPUT--]] 
@@ -1690,11 +1690,11 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				local generators = {} --[[SOL OUTPUT--]] 
 				local st, first_generator = parse_expr(scope) --[[SOL OUTPUT--]] 
 				if not st then return false, first_generator --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-				generators[#generators+1] = first_generator --[[SOL OUTPUT--]] 
+				generators [ # generators + 1 ] = first_generator --[[SOL OUTPUT--]] 
 				while tok:consume_symbol(',', token_list) do
 					local st, gen = parse_expr(scope) --[[SOL OUTPUT--]] 
 					if not st then return false, gen --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-					generators[#generators+1] = gen --[[SOL OUTPUT--]] 
+					generators [ # generators + 1 ] = gen --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				if not tok:consume_keyword('do', token_list) then
 					return false, report_error("`do` expected.") --[[SOL OUTPUT--]] 
@@ -1805,7 +1805,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 					while tok:consume_symbol(',', token_list) do
 						local st, ex = parse_expr(scope) --[[SOL OUTPUT--]] 
 						if not st then return false, ex --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-						ex_list[#ex_list+1] = ex --[[SOL OUTPUT--]] 
+						ex_list [ # ex_list + 1 ] = ex --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1853,7 +1853,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				while tok:consume_symbol(',', token_list) do
 					local st, lhs_part = parse_suffixed_expr(scope) --[[SOL OUTPUT--]] 
 					if not st then return false, lhs_part --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-					lhs[#lhs+1] = lhs_part --[[SOL OUTPUT--]] 
+					lhs [ # lhs + 1 ] = lhs_part --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
 				--equals
@@ -1869,7 +1869,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				while tok:consume_symbol(',', token_list) do
 					local st, rhs_part = parse_expr(scope) --[[SOL OUTPUT--]] 
 					if not st then return false, rhs_part --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-					rhs[#rhs+1] = rhs_part --[[SOL OUTPUT--]] 
+					rhs [ # rhs + 1 ] = rhs_part --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
 				--done
@@ -1895,7 +1895,8 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 					lhs      = suffixed;
 					op       = op;
 					rhs      = rhs;
-					tokens   = token_list
+					tokens   = token_list;
+					where    = where;
 				} --[[SOL OUTPUT--]] 
 
 				stat = {
@@ -1903,6 +1904,63 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 					lhs      = { suffixed   };
 					rhs      = { binop_expr };
 					tokens   = token_list;
+					where    = where;
+				} --[[SOL OUTPUT--]] 
+
+			elseif tok:consume_symbol('#=', token_list) then
+				--[[
+				Table append operator:
+				IN:    foo #= 42
+				OUT:   foo #= 42
+				SLOW:  table.insert(foo, 42)
+				--]]
+
+				local array = suffixed --[[SOL OUTPUT--]] 
+
+				local st, rhs = parse_expr(scope) --[[SOL OUTPUT--]] 
+				if not st then return false, rhs --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+
+				stat =
+				{
+					ast_type = 'AssignmentStatement';
+					where    = where;
+					tokens   = token_list;
+					lhs      =
+					{
+						--foo[#foo + 1]
+						{
+							ast_type = 'IndexExpr';
+							where    = where;
+							tokens   = {};
+							base     = array;
+							index    =
+							{
+								-- #foo + 1
+								ast_type = 'BinopExpr';
+								where    = where;
+								tokens   = {};
+								op       = '+';
+								lhs      =
+								{
+									-- #foo
+									ast_type = 'UnopExpr';
+									where    = where;
+									tokens   = {};
+									op       = '#';
+									rhs      = array;
+								};
+								rhs =
+								{
+									-- 1
+									ast_type = 'NumberExpr';
+									where    = where;
+									tokens   = {};
+									value    = "1";
+								};
+							}
+						}
+					};
+					rhs      = { rhs };
 				} --[[SOL OUTPUT--]] 
 
 			elseif suffixed.ast_type == 'CallExpr' or
@@ -1950,7 +2008,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 		while not stat_list_close_keywords[tok:peek().data] and not tok:is_eof() do
 			local st, node_statement = parse_statement(node.scope) --[[SOL OUTPUT--]] 
 			if not st then return false, node_statement --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-			stats[#stats + 1] = node_statement --[[SOL OUTPUT--]] 
+			stats [ # stats + 1 ] = node_statement --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if tok:is_eof() then
@@ -1959,7 +2017,7 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 				tokens   = { tok:get() };
 				where    = where_am_i();
 			} --[[SOL OUTPUT--]] 
-			stats[#stats + 1] = node_eof --[[SOL OUTPUT--]] 
+			stats [ # stats + 1 ] = node_eof --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		node.body = stats --[[SOL OUTPUT--]] 

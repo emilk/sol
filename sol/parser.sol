@@ -55,7 +55,7 @@ P.SOL_SETTINGS = {
 	symbols = set{
 		'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',
 		':', '::', '>', '<', '=', '==', '~=', '>=', '<=',
-		'->', '=>', '?', '+=', '-=', '*=', '/=', '..='
+		'->', '=>', '?', '+=', '-=', '*=', '/=', '..=', '#='
 	};
 
 	keywords = set{
@@ -510,7 +510,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					end
 				end
 
-				arg_list[#arg_list+1] = arg
+				arg_list #= arg
 
 				if not tok:consume_symbol(',', token_list) then
 					if tok:consume_symbol(')', token_list) then
@@ -672,7 +672,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				while not tok:consume_symbol(')', token_list) do
 					local st, ex = parse_expr(scope)
 					if not st then return false, ex end
-					args[#args+1] = ex
+					args #= ex
 					if not tok:consume_symbol(',', token_list) then
 						if tok:consume_symbol(')', token_list) then
 							break
@@ -735,14 +735,14 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		if tok:is('Number') then
 			node = {
 				ast_type = 'NumberExpr';
-				value    = tok:get(token_list);
+				value    = tok:get(token_list).data;
 				tokens   = token_list;
 			}
 
 		elseif tok:is('String') then
 			node = {
 				ast_type = 'StringExpr';
-				value    = tok:get(token_list);
+				value    = tok:get(token_list).data;
 				tokens   = token_list;
 			}
 
@@ -793,7 +793,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					if not st then
 						return false, report_error("value expression Expected")
 					end
-					entry_list[#entry_list+1] = {
+					entry_list #= {
 						type  = 'key';
 						key   = key;
 						value = value;
@@ -812,7 +812,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 						if not st then
 							return false, report_error("value expression Expected")
 						end
-						entry_list[#entry_list+1] = {
+						entry_list #= {
 							type  = 'ident_key';
 							key   = key.data;
 							value = value;
@@ -824,7 +824,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 						if not st then
 							return false, report_error("value Exected")
 						end
-						entry_list[#entry_list+1] = {
+						entry_list #= {
 							type = 'value';
 							value = value;
 						}
@@ -836,7 +836,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				else
 					--value
 					local st, value = parse_expr(scope)
-					entry_list[#entry_list+1] = {
+					entry_list #= {
 						type = 'value';
 						value = value;
 					}
@@ -1256,7 +1256,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 					local type = { tag = 'varargs', type = var_arg_t }
 					list = list or {}
-					table.insert(list, type)
+					list #= type
 					return list  -- var-args must be last
 				else
 					return T.AnyTypeList -- FIXME HACK
@@ -1269,7 +1269,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			end
 
 			list = list or {}
-			table.insert(list, type)
+			list #= type
 			if not tok:consume_symbol(',') then
 				return list
 			end
@@ -1362,7 +1362,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 							report_error("base type expected")
 							return nil
 						end
-						table.insert(base_types, t)
+						base_types #= t
 					until not tok:consume_symbol(',')
 				end
 
@@ -1448,7 +1448,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			if not tok:is('ident') then
 				return false, report_error("local variable name expected")
 			end
-			name_list[#name_list+1] = tok:get(token_list).data
+			name_list #= tok:get(token_list).data
 		end
 
 		var init_list = {} : [P.ExprNode]
@@ -1456,7 +1456,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			repeat
 				local st, ex = parse_expr(scope)
 				if not st then return false, ex end
-				init_list[#init_list+1] = ex
+				init_list #= ex
 			until not tok:consume_symbol(',', token_list)
 		end
 
@@ -1556,7 +1556,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				end
 				local st, node_body = parse_statement_list(create_scope(scope))
 				if not st then return false, node_body end
-				clauses[#clauses+1] = {
+				clauses #= {
 					condition = node_cond;
 					body      = node_body;
 				}
@@ -1571,7 +1571,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 				local st, node_body = parse_statement_list(create_scope(scope))
 				if not st then return false, node_body end
-				clauses[#clauses+1] = {
+				clauses #= {
 					body = node_body;
 				}
 			end
@@ -1682,7 +1682,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					if not tok:is('ident') then
 						return false, report_error("for variable expected.")
 					end
-					var_names[#var_names+1] = tok:get(token_list).data
+					var_names #= tok:get(token_list).data
 				end
 				if not tok:consume_keyword('in', token_list) then
 					return false, report_error("`in` expected.")
@@ -1690,11 +1690,11 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				var generators = {} : [P.ExprNode]
 				local st, first_generator = parse_expr(scope)
 				if not st then return false, first_generator end
-				generators[#generators+1] = first_generator
+				generators #= first_generator
 				while tok:consume_symbol(',', token_list) do
 					local st, gen = parse_expr(scope)
 					if not st then return false, gen end
-					generators[#generators+1] = gen
+					generators #= gen
 				end
 				if not tok:consume_keyword('do', token_list) then
 					return false, report_error("`do` expected.")
@@ -1805,7 +1805,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					while tok:consume_symbol(',', token_list) do
 						local st, ex = parse_expr(scope)
 						if not st then return false, ex end
-						ex_list[#ex_list+1] = ex
+						ex_list #= ex
 					end
 				end
 			end
@@ -1853,7 +1853,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				while tok:consume_symbol(',', token_list) do
 					local st, lhs_part = parse_suffixed_expr(scope)
 					if not st then return false, lhs_part end
-					lhs[#lhs+1] = lhs_part
+					lhs #= lhs_part
 				end
 
 				--equals
@@ -1869,7 +1869,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				while tok:consume_symbol(',', token_list) do
 					local st, rhs_part = parse_expr(scope)
 					if not st then return false, rhs_part end
-					rhs[#rhs+1] = rhs_part
+					rhs #= rhs_part
 				end
 
 				--done
@@ -1895,7 +1895,8 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					lhs      = suffixed;
 					op       = op;
 					rhs      = rhs;
-					tokens   = token_list
+					tokens   = token_list;
+					where    = where;
 				}
 
 				stat = {
@@ -1903,6 +1904,63 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					lhs      = { suffixed   };
 					rhs      = { binop_expr };
 					tokens   = token_list;
+					where    = where;
+				}
+
+			elseif tok:consume_symbol('#=', token_list) then
+				--[[
+				Table append operator:
+				IN:    foo #= 42
+				OUT:   foo #= 42
+				SLOW:  table.insert(foo, 42)
+				--]]
+
+				local array = suffixed
+
+				local st, rhs = parse_expr(scope)
+				if not st then return false, rhs end
+
+				stat =
+				{
+					ast_type = 'AssignmentStatement';
+					where    = where;
+					tokens   = token_list;
+					lhs      =
+					{
+						--foo[#foo + 1]
+						{
+							ast_type = 'IndexExpr';
+							where    = where;
+							tokens   = {};
+							base     = array;
+							index    =
+							{
+								-- #foo + 1
+								ast_type = 'BinopExpr';
+								where    = where;
+								tokens   = {};
+								op       = '+';
+								lhs      =
+								{
+									-- #foo
+									ast_type = 'UnopExpr';
+									where    = where;
+									tokens   = {};
+									op       = '#';
+									rhs      = array;
+								};
+								rhs =
+								{
+									-- 1
+									ast_type = 'NumberExpr';
+									where    = where;
+									tokens   = {};
+									value    = "1";
+								};
+							}
+						}
+					};
+					rhs      = { rhs };
 				}
 
 			elseif suffixed.ast_type == 'CallExpr' or
@@ -1950,7 +2008,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		while not stat_list_close_keywords[tok:peek().data] and not tok:is_eof() do
 			local st, node_statement = parse_statement(node.scope)
 			if not st then return false, node_statement end
-			stats[#stats + 1] = node_statement
+			stats #= node_statement
 		end
 
 		if tok:is_eof() then
@@ -1959,7 +2017,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				tokens   = { tok:get() };
 				where    = where_am_i();
 			}
-			stats[#stats + 1] = node_eof
+			stats #= node_eof
 		end
 
 		node.body = stats

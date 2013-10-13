@@ -389,7 +389,7 @@ function T.isa(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 			isa_memo[d][b] = res
 		end
 		assert(type(res) == 'string')
-		problem_rope[#problem_rope + 1] = res
+		problem_rope #= res
 		return false
 	else
 		-- No problem description needed
@@ -530,32 +530,32 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 
 		-- TODO: allow different arg count WRT vararg
 		if #d.args ~= #b.args then
-			if problem_rope then problem_rope[#problem_rope+1] = "Differing number of arguments" end
+			if problem_rope then problem_rope #= "Differing number of arguments" end
 			return false
 		end
 
 		for i = 1, #d.args do
 			if not T.isa(d.args[i].type, b.args[i].type, problem_rope) then
-				if problem_rope then problem_rope[#problem_rope+1] = "Argument "..i.." differs" end
+				if problem_rope then problem_rope #= "Argument "..i.." differs" end
 				return false
 			end
 		end
 
 		if b.rets then
 			if not T.isa_typelists(d.rets, b.rets, problem_rope) then
-				if problem_rope then problem_rope[#problem_rope+1] = "Return types differs" end
+				if problem_rope then problem_rope #= "Return types differs" end
 				return false
 			end
 		end
 
 		if (d.vararg==nil) ~= (b.vararg==nil) then
-			if problem_rope then problem_rope[#problem_rope+1] = "One fuction has var-args" end
+			if problem_rope then problem_rope #= "One fuction has var-args" end
 			return false
 		end
 
 		if d.vararg and b.vararg then
 			if not T.isa(d.vararg, b.vararg, problem_rope) then
-				if problem_rope then problem_rope[#problem_rope+1] = "Var-arg types differ" end
+				if problem_rope then problem_rope #= "Var-arg types differ" end
 				return false
 			end
 		end
@@ -706,7 +706,7 @@ function T.could_be(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 			could_be_memo[d][b] = res
 		end
 		assert(type(res) == 'string')
-		problem_rope[#problem_rope + 1] = res
+		problem_rope #= res
 		return false
 	else
 		-- No problem description needed
@@ -820,7 +820,7 @@ function T.could_be_tl(al: T.Typelist, bl: T.Typelist, problem_rope: [string]?) 
 
 	if #al ~= #bl then
 		if problem_rope then
-			table.insert(problem_rope, "typelists of unequal length")
+			problem_rope #= "typelists of unequal length"
 		end
 
 		return false
@@ -1360,14 +1360,14 @@ function T.combine_type_lists(a: T.Typelist?, b: T.Typelist?, forgiving: bool?) 
 		if #a < #b  then
 			a = U.shallow_clone(a)
 			while #a < #b do
-				table.insert(a, T.Nil)
+				a #= T.Nil
 			end
 		end
 
 		if #b < #a  then
 			b = U.shallow_clone(b)
 			while #b < #a do
-				table.insert(b, T.Nil)
+				b #= T.Nil
 			end
 		end
 	end

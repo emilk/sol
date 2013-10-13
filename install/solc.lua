@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 13  22:16:09 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 13  23:02:42 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -68,7 +68,8 @@ _G.g_spam               = false --[[SOL OUTPUT--]]
 _G.g_ignore_errors      = false --[[SOL OUTPUT--]] 
 _G.g_break_on_error     = false --[[SOL OUTPUT--]] 
 _G.g_warnings_as_errors = false --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
-local     CURRENTLY_PARSING 
+local     CURRENTLY_PARSING = false --[[SOL OUTPUT--]] 
+local   FAIL_INFO = { ast = nil
 
 
 
@@ -79,8 +80,7 @@ local     CURRENTLY_PARSING
 
 
 
-= false --[[SOL OUTPUT--]] 
-local   FAIL_INFO = { ast = nil, type = T.AnyTypeList } --[[SOL OUTPUT--]] 
+, type = T.AnyTypeList } --[[SOL OUTPUT--]] 
 
 -- type is CURRENTLY_PARSING during parsing.
 local g_modules = {} --[[SOL OUTPUT--]] 
@@ -150,7 +150,7 @@ local parse_module --[[SOL OUTPUT--]]
 local function require_module(path_in, mod_name, module_scope, req_where, req_chain)
 	--U.printf('require %q', v)
 	req_chain = { unpack(req_chain) } --[[SOL OUTPUT--]]   -- clone
-	table.insert(req_chain, mod_name) --[[SOL OUTPUT--]] 
+	req_chain [ # req_chain + 1 ] = mod_name --[[SOL OUTPUT--]] 
 
 	local mod_path = find_moudle(path_in, mod_name) --[[SOL OUTPUT--]] 
 	if not mod_path then
@@ -576,7 +576,7 @@ else
 		elseif a == '-m' then
 			local dir = arg[ix] --[[SOL OUTPUT--]] 
 			ix = ix +  1 --[[SOL OUTPUT--]] 
-			g_mod_paths[#g_mod_paths + 1] = dir --[[SOL OUTPUT--]] 
+			g_mod_paths [ # g_mod_paths + 1 ] = dir --[[SOL OUTPUT--]] 
 
 		elseif a == '-Werror' then
 			_G.g_warnings_as_errors = true --[[SOL OUTPUT--]] 

@@ -56,7 +56,7 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 		append_str = function(self, str: string)
 			local nl = count_line_breaks(str)
 			self.line = self.line + nl
-			table.insert(self.rope, str)
+			self.rope #= str
 		end,
 
 		append_token = function(self, token)
@@ -120,14 +120,26 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 		local t = {
 		}
 
-		function t:append_next_token(str)
-			local tok = expr.tokens[it]
+		function t:append_next_token(str: string?)
+			--[[
 			if not tok then report_error("Missing token") end
 			if str and tok.data ~= str then
 				report_error("Expected token '" .. str .. "'. tokens: " .. U.pretty(expr.tokens))
 			end
 			out:append_token( tok )
-			it +=  1	
+			it +=  1
+			--]]
+			if str then
+				self:append_str(str)
+			else
+				local tok = expr.tokens[it]
+				if not tok then report_error("Missing token") end
+				if str and tok.data ~= str then
+					report_error("Expected token '" .. str .. "'. tokens: " .. U.pretty(expr.tokens))
+				end
+				out:append_token( tok )
+				it +=  1
+			end
 		end
 		function t:append_token(token: L.Token)
 			out:append_token( token )
@@ -135,10 +147,13 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 		end
 		function t:append_white()
 			local tok = expr.tokens[it]
-			--if not tok then report_error("Missing token: %s", U.pretty(expr)) end
-			if not tok then report_error("Missing token") end
-			out:append_white( tok )
-			it +=  1
+			if tok then
+				out:append_white( tok )
+				it +=  1
+			else
+				--report_error("Missing token")
+				out:append_str(" ")
+			end
 		end
 		function t:skip_next_token()
 			self:append_white()
@@ -194,10 +209,10 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 			t:append_str( expr.name )
 
 		elseif expr.ast_type == 'NumberExpr' then
-			t:append_token( expr.value )
+			t:append_str( expr.value )
 
 		elseif expr.ast_type == 'StringExpr' then
-			t:append_token( expr.value )
+			t:append_str( expr.value )
 
 		elseif expr.ast_type == 'BooleanExpr' then
 			t:append_next_token( expr.value and "true" or "false" )

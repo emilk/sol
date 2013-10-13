@@ -35,23 +35,23 @@ local function extract_chars(str: string) -> [string]
 	if true then
 		-- Fastest
 		for i = 1, #str do
-			chars[#chars + 1] = str:sub(i,i)
+			chars #= str:sub(i,i)
 		end
 	elseif true then
 		str:gsub(".", function(c)
-			chars[#chars + 1] = c
+			chars #= c
 		end)
 	else
 		for chr in str:gmatch(".") do
-			chars[#chars + 1] = chr
+			chars #= chr
 		end
 	end
 	assert(#chars == #str)
 
 	-- Signal eof:
-	chars[#chars + 1] = ''
-	chars[#chars + 1] = ''
-	chars[#chars + 1] = ''
+	chars #= ''
+	chars #= ''
+	chars #= ''
 
 	return chars
 end 
@@ -357,12 +357,12 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			--to_emit.lading_white_token_list = leading_tokens -- table of leading whitespace/comments
 			to_emit.leading_white = leading_white
 			--for k, tok in pairs(leading_tokens) do
-			--  tokens[#tokens + 1] = tok
+			--  tokens #= tok
 			--end
 
 			to_emit.line = this_line
 			to_emit.char = this_char
-			tokens[#tokens+1] = to_emit
+			tokens #= to_emit
 
 			--halt after eof has been emitted
 			if to_emit.type == 'Eof' then break end
@@ -407,7 +407,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 		local t = tokens[p]
 		p = math.min(p + 1, #tokens)
 		if token_list then
-			table.insert(token_list, t)
+			token_list #= t
 		end
 		return t
 	end

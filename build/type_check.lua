@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 13  22:16:09 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 13  23:02:42 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -88,10 +88,10 @@ local function format_expr(e)
 end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
+local function analyze(ast
 
 
-
-local function analyze(ast, filename, on_require, settings)
+, filename, on_require, settings)
 	local analyze_statlist, analyze_expr, analyze_expr_single_var, analyze_expr_single --[[SOL OUTPUT--]] 
 	local analyze_expr_unchecked --[[SOL OUTPUT--]] 
 
@@ -751,7 +751,7 @@ local function analyze(ast, filename, on_require, settings)
 					local close_name = loose_lookup(obj.members, name) --[[SOL OUTPUT--]] 
 
 					if close_name then
-						suggestions[#suggestions + 1] = close_name --[[SOL OUTPUT--]] 
+						suggestions [ # suggestions + 1 ] = close_name --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
@@ -856,7 +856,7 @@ local function analyze(ast, filename, on_require, settings)
 						assert(types == nil  or  #types == 2) --[[SOL OUTPUT--]] 
 						return types --[[SOL OUTPUT--]] 
 					else
-						table.insert(error_rope, T.name(typ)) --[[SOL OUTPUT--]] 
+						error_rope [ # error_rope + 1 ] = T.name(typ) --[[SOL OUTPUT--]] 
 						return nil --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -1126,7 +1126,7 @@ local function analyze(ast, filename, on_require, settings)
 					report_error(expr, "Last argument evaluates to no values") --[[SOL OUTPUT--]] 
 				else
 					for _,t in ipairs(types) do
-						table.insert(arg_ts, t) --[[SOL OUTPUT--]] 
+						arg_ts [ # arg_ts + 1 ] = t --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1221,9 +1221,9 @@ local function analyze(ast, filename, on_require, settings)
 
 
 	analyze_expr_unchecked = function(expr, scope)
-		assert(expr) --[[SOL OUTPUT--]] 
-		assert(type(expr) == 'table') --[[SOL OUTPUT--]] 
-		assert(expr.ast_type) --[[SOL OUTPUT--]] 
+		D.assert(expr) --[[SOL OUTPUT--]] 
+		D.assert(type(expr) == 'table') --[[SOL OUTPUT--]] 
+		D.assert(expr.ast_type) --[[SOL OUTPUT--]] 
 
 		report_spam(expr, "Analyzing %s...", expr.ast_type) --[[SOL OUTPUT--]] 
 
@@ -1318,7 +1318,7 @@ local function analyze(ast, filename, on_require, settings)
 	-- Return type
 	analyze_simple_expr_unchecked = function(expr, scope)
 		if expr.ast_type == 'NumberExpr' then
-			local str = expr.value.data --[[SOL OUTPUT--]] 
+			local str = expr.value --[[SOL OUTPUT--]] 
 			local t = T.from_num_literal( str ) --[[SOL OUTPUT--]] 
 			if t then
 				return t --[[SOL OUTPUT--]] 
@@ -1330,7 +1330,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		elseif expr.ast_type == 'StringExpr' then
 			--return T.from_string_literal( expr.value.data )
-			local st, ret = pcall( T.from_string_literal, expr.value.data ) --[[SOL OUTPUT--]] 
+			local st, ret = pcall( T.from_string_literal, expr.value ) --[[SOL OUTPUT--]] 
 			if not st then
 				report_error(expr, "Failed to parse string: %s", expr.value.data) --[[SOL OUTPUT--]] 
 				return T.String --[[SOL OUTPUT--]] 
@@ -2358,7 +2358,7 @@ local function analyze(ast, filename, on_require, settings)
 				init_types, _ = analyze_expr( stat.init_list[1], scope ) --[[SOL OUTPUT--]] 
 			else
 				for _,exp in ipairs(stat.init_list) do
-					init_types[#init_types + 1] = analyze_expr_single( exp, scope ) --[[SOL OUTPUT--]] 
+					init_types [ # init_types + 1 ] = analyze_expr_single( exp, scope ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -2374,7 +2374,7 @@ local function analyze(ast, filename, on_require, settings)
 
 				v.var_type = (is_local and 'Local variable' or 'Global variable') --[[SOL OUTPUT--]] 
 
-				vars[#vars + 1] = v --[[SOL OUTPUT--]] 
+				vars [ # vars + 1 ] = v --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			if explicit_types then
@@ -2388,7 +2388,7 @@ local function analyze(ast, filename, on_require, settings)
 					explicit_types = U.shallow_clone( explicit_types ) --[[SOL OUTPUT--]] 
 
 					while #explicit_types < #vars do
-						table.insert(explicit_types, explicit_types[1]) --[[SOL OUTPUT--]] 
+						explicit_types [ # explicit_types + 1 ] = explicit_types[1] --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
