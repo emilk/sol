@@ -31,6 +31,24 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 		strip_white_space = false
 	end
 
+	--[[
+	Set of tokens for which we have already written the leadign whitespace.
+	We need to keep track of this since otherwise we would stuff like:
+
+
+	-- Comment
+	a += 1
+
+	   ->
+
+	-- Comment
+	a =
+	-- Comment
+	a + 1
+
+	--]]
+	var has_written_white = {} : {L.Token}
+
 	local out = {
 		rope = {},  -- List of strings
 		line = 1,
@@ -66,10 +84,18 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 		end,
 
 		append_white = function(self, token)
-			if token.leading_white then
-				if not strip_white_space or #self.rope>0 then
-					self:append_str( token.leading_white )
-				end
+			if not token.leading_white then
+				return
+			end
+			if strip_white_space and #self.rope==0 then
+				return
+			end
+
+			if has_written_white[token] then
+				self:append_str( " " )
+			else
+				self:append_str( token.leading_white )
+				has_written_white[token] = true
 			end
 		end
 	}
@@ -101,18 +127,18 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 				report_error("Expected token '" .. str .. "'. tokens: " .. U.pretty(expr.tokens))
 			end
 			out:append_token( tok )
-			it = it + 1	
+			it +=  1	
 		end
 		function t:append_token(token: L.Token)
 			out:append_token( token )
-			it = it + 1
+			it +=  1
 		end
 		function t:append_white()
 			local tok = expr.tokens[it]
 			--if not tok then report_error("Missing token: %s", U.pretty(expr)) end
 			if not tok then report_error("Missing token") end
 			out:append_white( tok )
-			it = it + 1
+			it +=  1
 		end
 		function t:skip_next_token()
 			self:append_white()
@@ -291,7 +317,7 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 				t:append_comma( i ~= #stat.lhs )
 			end
 			if #stat.rhs > 0 then
-				t:append_next_token( "=" )
+				t:append_str( "=" )
 				for i,v in ipairs(stat.rhs) do
 					format_expr(v)
 					t:append_comma( i ~= #stat.rhs )

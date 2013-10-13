@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/sol.sol on 2013 Oct 12  04:26:47 --]] -- For running a .sol without outputting a .lua to disk
+--[[ DO NOT MODIFY - COMPILED FROM sol/sol.sol on 2013 Oct 13  22:09:46 --]] -- For running a .sol without outputting a .lua to disk
 -- TODO: compiler.sol continaing thing common to sol.sol and solc.sol
 
 local lfs  = require 'lfs' --[[SOL OUTPUT--]] 
@@ -123,7 +123,7 @@ else
 
 	while ix <= #arg do
 		local a = arg[ix] --[[SOL OUTPUT--]] 
-		ix = ix + 1 --[[SOL OUTPUT--]] 
+		ix = ix +  1 --[[SOL OUTPUT--]] 
 
 		if a == '-h' or a == '--help' then
 			print_help() --[[SOL OUTPUT--]] 
@@ -147,7 +147,7 @@ else
 
 			run_sol( sol ) --[[SOL OUTPUT--]] 
 
-			num_files = num_files + 1 --[[SOL OUTPUT--]] 
+			num_files = num_files +  1 --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 

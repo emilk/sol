@@ -428,7 +428,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 	local function report_error(msg_fmt: string, ...) -> string
-		num_err = num_err + 1
+		num_err +=  1
 		local msg = generate_msg(msg_fmt, ...)
 		printf_err("%s", msg)
 		return msg
@@ -586,11 +586,11 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		local token_list = {}
 		var where = where_am_i()
-		local id = tok:get(token_list)
+		local name = tok:get(token_list).data
 
 		return {
 			ast_type = 'IdExpr';
-			name     = id.data;
+			name     = name;
 			tokens   = token_list;
 			where    = where;
 		}
@@ -1879,28 +1879,28 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					tokens   = token_list;
 				}
 
-			elseif assign_op[tok:peek()] then
+			elseif assign_op[tok:peek().data] then
 				-- += etc
-				if suffixed.ast_type ~= 'IdExpr' then
-					report_error("You can only do %s on simple variables", tok:peek())
-				end
-
-				var op = assign_op[tok:get(token_list)]
+				var op = assign_op[ tok:get(token_list).data ]
+				assert(op)
 
 				local st, rhs = parse_expr(scope)
 				if not st then return false, rhs end
+
+				var target = suffixed
 
 				var binop_expr = {
 					ast_type = 'BinopExpr';
 					lhs      = suffixed;
 					op       = op;
 					rhs      = rhs;
+					tokens   = token_list
 				}
 
 				stat = {
 					ast_type = 'AssignmentStatement';
-					lhs      = { suffixed };
-					rhs      = binop_expr;
+					lhs      = { suffixed   };
+					rhs      = { binop_expr };
 					tokens   = token_list;
 				}
 
@@ -1914,8 +1914,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					expression = suffixed;
 					tokens     = token_list;
 				}
+				
 			else
-				return false, report_error("Assignment Statement Expected")
+				return false, report_error("Assignment statement expected, got (" .. tok:peek().data .. ")")
 			end
 		end
 		

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Oct 12  04:26:47 --]] local U = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Oct 13  22:09:46 --]] local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
@@ -79,11 +79,11 @@ function L.lex_sol(src, filename, settings)
 			local c = chars[p] --[[SOL OUTPUT--]] 
 			if c == '\n' then
 				char = 1 --[[SOL OUTPUT--]] 
-				line = line + 1 --[[SOL OUTPUT--]] 
+				line = line +  1 --[[SOL OUTPUT--]] 
 			else
-				char = char + 1 --[[SOL OUTPUT--]] 
+				char = char +  1 --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			p = p + 1 --[[SOL OUTPUT--]] 
+			p = p +  1 --[[SOL OUTPUT--]] 
 			return c --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -116,7 +116,7 @@ function L.lex_sol(src, filename, settings)
 				local equals_count = 0 --[[SOL OUTPUT--]] 
 				local depth = 1 --[[SOL OUTPUT--]] 
 				while peek(equals_count+1) == '=' do
-					equals_count = equals_count + 1 --[[SOL OUTPUT--]] 
+					equals_count = equals_count +  1 --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				if peek(equals_count+1) == '[' then
 					--start parsing the string. Strip the starting bit
@@ -151,7 +151,7 @@ function L.lex_sol(src, filename, settings)
 								end --[[SOL OUTPUT--]] 
 								if peek(equals_count + 1) == '[' and embedded then
 									-- oh look, there was
-									depth = depth + 1 --[[SOL OUTPUT--]] 
+									depth = depth +  1 --[[SOL OUTPUT--]] 
 									for i = 1, (equals_count + 2) do
 										get() --[[SOL OUTPUT--]] 
 									end --[[SOL OUTPUT--]] 

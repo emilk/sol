@@ -155,7 +155,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local function report_error(node: P.Node, fmt: string, ...)
 		if settings.is_sol then
 			U.printf_err( "%s", report('ERROR', where_is(node), fmt, ...) )
-			error_count = error_count + 1
+			error_count +=  1
 		else
 			-- Forgive lua code
 			print( report('WARNING', where_is(node), fmt, ...) )
@@ -199,7 +199,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		if level == 'ERROR' then
 			U.printf_err( "%s", report('ERROR', where, fmt, ...) )
-			error_count = error_count + 1
+			error_count +=  1
 		elseif level ~= 'SPAM' or _G.g_spam then
 			print( report(level, where, fmt, ...))
 		end
@@ -592,7 +592,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							all_passed = false
 							break
 						end
-						i = i + 1
+						i +=  1
 					end
 					break
 
@@ -661,7 +661,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				break
 			end
 
-			i = i + 1
+			i +=  1
 		end
 
 		return all_passed

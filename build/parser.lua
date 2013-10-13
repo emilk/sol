@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 12  04:26:47 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 13  22:09:46 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -428,7 +428,7 @@ function P.parse_sol(src, tok, filename, settings, module_scope)
 	end --[[SOL OUTPUT--]] 
 
 	local function report_error(msg_fmt, ...)
-		num_err = num_err + 1 --[[SOL OUTPUT--]] 
+		num_err = num_err +  1 --[[SOL OUTPUT--]] 
 		local msg = generate_msg(msg_fmt, ...) --[[SOL OUTPUT--]] 
 		printf_err("%s", msg) --[[SOL OUTPUT--]] 
 		return msg --[[SOL OUTPUT--]] 
@@ -586,11 +586,11 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 
 		local token_list = {} --[[SOL OUTPUT--]] 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
-		local id = tok:get(token_list) --[[SOL OUTPUT--]] 
+		local name = tok:get(token_list).data --[[SOL OUTPUT--]] 
 
 		return {
 			ast_type = 'IdExpr';
-			name     = id.data;
+			name     = name;
 			tokens   = token_list;
 			where    = where;
 		} --[[SOL OUTPUT--]] 
@@ -1879,28 +1879,28 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 					tokens   = token_list;
 				} --[[SOL OUTPUT--]] 
 
-			elseif assign_op[tok:peek()] then
+			elseif assign_op[tok:peek().data] then
 				-- += etc
-				if suffixed.ast_type ~= 'IdExpr' then
-					report_error("You can only do %s on simple variables", tok:peek()) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
-				local op = assign_op[tok:get(token_list)] --[[SOL OUTPUT--]] 
+				local op = assign_op[ tok:get(token_list).data ] --[[SOL OUTPUT--]] 
+				assert(op) --[[SOL OUTPUT--]] 
 
 				local st, rhs = parse_expr(scope) --[[SOL OUTPUT--]] 
 				if not st then return false, rhs --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+
+				local target = suffixed --[[SOL OUTPUT--]] 
 
 				local binop_expr = {
 					ast_type = 'BinopExpr';
 					lhs      = suffixed;
 					op       = op;
 					rhs      = rhs;
+					tokens   = token_list
 				} --[[SOL OUTPUT--]] 
 
 				stat = {
 					ast_type = 'AssignmentStatement';
-					lhs      = { suffixed };
-					rhs      = binop_expr;
+					lhs      = { suffixed   };
+					rhs      = { binop_expr };
 					tokens   = token_list;
 				} --[[SOL OUTPUT--]] 
 
@@ -1914,8 +1914,9 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 					expression = suffixed;
 					tokens     = token_list;
 				} --[[SOL OUTPUT--]] 
+				
 			else
-				return false, report_error("Assignment Statement Expected") --[[SOL OUTPUT--]] 
+				return false, report_error("Assignment statement expected, got (" .. tok:peek().data .. ")") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		

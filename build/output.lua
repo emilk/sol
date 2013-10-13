@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 12  04:26:47 --]] require 'parser' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 13  22:09:46 --]] require 'parser' --[[SOL OUTPUT--]] 
 local L = require 'lexer' --[[SOL OUTPUT--]]  -- L.Token
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
@@ -30,6 +30,24 @@ local function output(ast, filename, strip_white_space)
 	if strip_white_space == nil then
 		strip_white_space = false --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
+
+	--[[
+	Set of tokens for which we have already written the leadign whitespace.
+	We need to keep track of this since otherwise we would stuff like:
+
+
+	-- Comment
+	a += 1
+
+	   ->
+
+	-- Comment
+	a =
+	-- Comment
+	a + 1
+
+	--]]
+	local has_written_white = {} --[[SOL OUTPUT--]] 
 
 	local out = {
 		rope = {},  -- List of strings
@@ -66,10 +84,18 @@ local function output(ast, filename, strip_white_space)
 		end,
 
 		append_white = function(self, token)
-			if token.leading_white then
-				if not strip_white_space or #self.rope>0 then
-					self:append_str( token.leading_white ) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
+			if not token.leading_white then
+				return --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			if strip_white_space and #self.rope==0 then
+				return --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
+			if has_written_white[token] then
+				self:append_str( " " ) --[[SOL OUTPUT--]] 
+			else
+				self:append_str( token.leading_white ) --[[SOL OUTPUT--]] 
+				has_written_white[token] = true --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end
 	} --[[SOL OUTPUT--]] 
@@ -101,18 +127,18 @@ local function output(ast, filename, strip_white_space)
 				report_error("Expected token '" .. str .. "'. tokens: " .. U.pretty(expr.tokens)) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			out:append_token( tok ) --[[SOL OUTPUT--]] 
-			it = it + 1 --[[SOL OUTPUT--]] 	
+			it = it +  1 --[[SOL OUTPUT--]] 	
 		end --[[SOL OUTPUT--]] 
 		function t:append_token(token)
 			out:append_token( token ) --[[SOL OUTPUT--]] 
-			it = it + 1 --[[SOL OUTPUT--]] 
+			it = it +  1 --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		function t:append_white()
 			local tok = expr.tokens[it] --[[SOL OUTPUT--]] 
 			--if not tok then report_error("Missing token: %s", U.pretty(expr)) end
 			if not tok then report_error("Missing token") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			out:append_white( tok ) --[[SOL OUTPUT--]] 
-			it = it + 1 --[[SOL OUTPUT--]] 
+			it = it +  1 --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		function t:skip_next_token()
 			self:append_white() --[[SOL OUTPUT--]] 
@@ -291,7 +317,7 @@ local function output(ast, filename, strip_white_space)
 				t:append_comma( i ~= #stat.lhs ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			if #stat.rhs > 0 then
-				t:append_next_token( "=" ) --[[SOL OUTPUT--]] 
+				t:append_str( "=" ) --[[SOL OUTPUT--]] 
 				for i,v in ipairs(stat.rhs) do
 					format_expr(v) --[[SOL OUTPUT--]] 
 					t:append_comma( i ~= #stat.rhs ) --[[SOL OUTPUT--]] 

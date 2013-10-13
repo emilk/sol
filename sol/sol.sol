@@ -123,7 +123,7 @@ else
 
 	while ix <= #arg do
 		local a = arg[ix]
-		ix = ix + 1
+		ix +=  1
 
 		if a == '-h' or a == '--help' then
 			print_help()
@@ -147,7 +147,7 @@ else
 
 			run_sol( sol )
 
-			num_files = num_files + 1
+			num_files +=  1
 		end
 	end
 

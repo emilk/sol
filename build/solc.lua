@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 12  04:26:47 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 13  22:09:46 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -510,12 +510,12 @@ else
 
 		elseif a == '-o' then
 			g_out_dir = arg[ix] .. '/' --[[SOL OUTPUT--]] 
-			ix = ix + 1 --[[SOL OUTPUT--]] 
+			ix = ix +  1 --[[SOL OUTPUT--]] 
 			print('Files will be written to ' .. g_out_dir) --[[SOL OUTPUT--]] 
 
 		elseif a == '-ho' then
 			g_header_out_dir = arg[ix] .. '/' --[[SOL OUTPUT--]] 
-			ix = ix + 1 --[[SOL OUTPUT--]] 
+			ix = ix +  1 --[[SOL OUTPUT--]] 
 			print('Header files will be written to ' .. g_header_out_dir) --[[SOL OUTPUT--]] 
 			path.mkdir( g_header_out_dir ) --[[SOL OUTPUT--]]  -- Ensure we can write there
 
@@ -550,7 +550,7 @@ else
 
 		elseif a == '--check' then
 			local path_in = arg[ix] --[[SOL OUTPUT--]] 
-			ix = ix + 1 --[[SOL OUTPUT--]] 
+			ix = ix +  1 --[[SOL OUTPUT--]] 
 			
 			--_G.g_local_parse = true
 
@@ -563,11 +563,11 @@ else
 			-- TODO: write output?
 			--output_module(info, path_in, path_out)
 
-			num_files = num_files + 1 --[[SOL OUTPUT--]] 
+			num_files = num_files +  1 --[[SOL OUTPUT--]] 
 
 		elseif a == '-l' then
 			local mod_name = arg[ix] --[[SOL OUTPUT--]] 
-			ix = ix + 1 --[[SOL OUTPUT--]] 
+			ix = ix +  1 --[[SOL OUTPUT--]] 
 			if not parse_global_require(mod_name) then
 				U.printf_err("Aborting") --[[SOL OUTPUT--]] 
 				os.exit(123) --[[SOL OUTPUT--]] 
@@ -575,7 +575,7 @@ else
 
 		elseif a == '-m' then
 			local dir = arg[ix] --[[SOL OUTPUT--]] 
-			ix = ix + 1 --[[SOL OUTPUT--]] 
+			ix = ix +  1 --[[SOL OUTPUT--]] 
 			g_mod_paths[#g_mod_paths + 1] = dir --[[SOL OUTPUT--]] 
 
 		elseif a == '-Werror' then
@@ -606,7 +606,7 @@ else
 				compile_file(path_in) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			num_files = num_files + 1 --[[SOL OUTPUT--]] 
+			num_files = num_files +  1 --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 

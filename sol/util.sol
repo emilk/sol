@@ -198,7 +198,7 @@ function U.count_line_breaks(str: string) -> int
 	local n = 0
 	for i = 1,#str do
 		if str:sub(i,i) == '\n' then
-			n = n + 1
+			n +=  1
 		end
 	end
 	return n
@@ -283,7 +283,7 @@ function U.is_array(val: any) -> bool
 		end
 
 		max = math.max(max, ix)
-		n = n + 1
+		n +=  1
 	end
 
 	return n == max

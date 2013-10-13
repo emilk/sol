@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 12  04:26:47 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 13  22:09:46 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -1256,11 +1256,11 @@ function T.variant_remove(t, remove_this_type)
 	while i <= #v.variants do
 		if T.is_variant(v.variants[i]) then
 			v.variants[i] = T.variant_remove(v.variants[i], remove_this_type) --[[SOL OUTPUT--]] 
-			i = i + 1 --[[SOL OUTPUT--]] 
+			i = i +  1 --[[SOL OUTPUT--]] 
 		elseif T.isa(v.variants[i], remove_this_type) then
 			table.remove( v.variants, i ) --[[SOL OUTPUT--]] 
 		else
-			i = i + 1 --[[SOL OUTPUT--]] 
+			i = i +  1 --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 

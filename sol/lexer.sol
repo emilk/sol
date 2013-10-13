@@ -79,11 +79,11 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			local c = chars[p]
 			if c == '\n' then
 				char = 1
-				line = line + 1
+				line +=  1
 			else
-				char = char + 1
+				char +=  1
 			end
-			p = p + 1
+			p +=  1
 			return c
 		end
 
@@ -116,7 +116,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 				local equals_count = 0
 				local depth = 1
 				while peek(equals_count+1) == '=' do
-					equals_count = equals_count + 1
+					equals_count +=  1
 				end
 				if peek(equals_count+1) == '[' then
 					--start parsing the string. Strip the starting bit
@@ -151,7 +151,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 								end
 								if peek(equals_count + 1) == '[' and embedded then
 									-- oh look, there was
-									depth = depth + 1
+									depth +=  1
 									for i = 1, (equals_count + 2) do
 										get()
 									end

@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 12  04:26:47 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 13  22:09:46 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -155,7 +155,7 @@ local function analyze(ast, filename, on_require, settings)
 	local function report_error(node, fmt, ...)
 		if settings.is_sol then
 			U.printf_err( "%s", report('ERROR', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
-			error_count = error_count + 1 --[[SOL OUTPUT--]] 
+			error_count = error_count +  1 --[[SOL OUTPUT--]] 
 		else
 			-- Forgive lua code
 			print( report('WARNING', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
@@ -199,7 +199,7 @@ local function analyze(ast, filename, on_require, settings)
 
 		if level == 'ERROR' then
 			U.printf_err( "%s", report('ERROR', where, fmt, ...) ) --[[SOL OUTPUT--]] 
-			error_count = error_count + 1 --[[SOL OUTPUT--]] 
+			error_count = error_count +  1 --[[SOL OUTPUT--]] 
 		elseif level ~= 'SPAM' or _G.g_spam then
 			print( report(level, where, fmt, ...)) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -592,7 +592,7 @@ local function analyze(ast, filename, on_require, settings)
 							all_passed = false --[[SOL OUTPUT--]] 
 							break --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
-						i = i + 1 --[[SOL OUTPUT--]] 
+						i = i +  1 --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 					break --[[SOL OUTPUT--]] 
 
@@ -661,7 +661,7 @@ local function analyze(ast, filename, on_require, settings)
 				break --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			i = i + 1 --[[SOL OUTPUT--]] 
+			i = i +  1 --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		return all_passed --[[SOL OUTPUT--]] 

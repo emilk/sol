@@ -1256,11 +1256,11 @@ function T.variant_remove(t: T.Type, remove_this_type: T.Type) -> T.Type
 	while i <= #v.variants do
 		if T.is_variant(v.variants[i]) then
 			v.variants[i] = T.variant_remove(v.variants[i], remove_this_type)
-			i = i + 1
+			i +=  1
 		elseif T.isa(v.variants[i], remove_this_type) then
 			table.remove( v.variants, i )
 		else
-			i = i + 1
+			i +=  1
 		end
 	end
 

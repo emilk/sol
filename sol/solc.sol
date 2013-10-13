@@ -502,20 +502,20 @@ else
 	intrinsics.add_intrinsics_to_global_scope()
 
 	while ix <= #arg do
-		local a = arg[ix]
-		ix = ix + 1
+		var a = arg[ix]
+		ix += 1
 
 		if a == '-h' or a == '--help' then
 			print_help()
 
 		elseif a == '-o' then
 			g_out_dir = arg[ix] .. '/'
-			ix = ix + 1
+			ix +=  1
 			print('Files will be written to ' .. g_out_dir)
 
 		elseif a == '-ho' then
 			g_header_out_dir = arg[ix] .. '/'
-			ix = ix + 1
+			ix +=  1
 			print('Header files will be written to ' .. g_header_out_dir)
 			path.mkdir( g_header_out_dir ) -- Ensure we can write there
 
@@ -550,7 +550,7 @@ else
 
 		elseif a == '--check' then
 			local path_in = arg[ix]
-			ix = ix + 1
+			ix +=  1
 			
 			--_G.g_local_parse = true
 
@@ -563,11 +563,11 @@ else
 			-- TODO: write output?
 			--output_module(info, path_in, path_out)
 
-			num_files = num_files + 1
+			num_files +=  1
 
 		elseif a == '-l' then
 			var mod_name = arg[ix]
-			ix = ix + 1
+			ix +=  1
 			if not parse_global_require(mod_name) then
 				U.printf_err("Aborting")
 				os.exit(123)
@@ -575,7 +575,7 @@ else
 
 		elseif a == '-m' then
 			var dir = arg[ix]
-			ix = ix + 1
+			ix +=  1
 			g_mod_paths[#g_mod_paths + 1] = dir
 
 		elseif a == '-Werror' then
@@ -606,7 +606,7 @@ else
 				compile_file(path_in)
 			end
 
-			num_files = num_files + 1
+			num_files +=  1
 		end
 	end
 

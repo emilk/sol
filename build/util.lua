@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/util.sol on 2013 Oct 12  04:26:47 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/util.sol on 2013 Oct 13  22:09:46 --]] --[[
 Util.lua
 
 Provides some common utilities shared throughout the project.
@@ -198,7 +198,7 @@ function U.count_line_breaks(str)
 	local n = 0 --[[SOL OUTPUT--]] 
 	for i = 1,#str do
 		if str:sub(i,i) == '\n' then
-			n = n + 1 --[[SOL OUTPUT--]] 
+			n = n +  1 --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 	return n --[[SOL OUTPUT--]] 
@@ -283,7 +283,7 @@ function U.is_array(val)
 		end --[[SOL OUTPUT--]] 
 
 		max = math.max(max, ix) --[[SOL OUTPUT--]] 
-		n = n + 1 --[[SOL OUTPUT--]] 
+		n = n +  1 --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	return n == max --[[SOL OUTPUT--]] 
