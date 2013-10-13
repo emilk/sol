@@ -161,7 +161,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 						end
 						--
 						if found_end then
-							depth = depth - 1
+							depth -= 1
 							if depth == 0 then
 								break
 							else
@@ -325,6 +325,8 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 				if consume('.') then
 					if consume('.') then
 						to_emit = {type = 'Symbol', data = '...'}
+					elseif consume('=') then
+						to_emit = {type = 'Symbol', data = '..='}
 					else
 						to_emit = {type = 'Symbol', data = '..'}
 					end
@@ -335,7 +337,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			elseif symbols[c .. peek(1)] then
 				-- two-character symbol
 				var symbol = get()
-				symbol = symbol .. get()
+				symbol ..= get()
 				to_emit = {type = 'Symbol', data = symbol}
 
 			elseif symbols[c] then

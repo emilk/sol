@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 13  22:09:46 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 13  22:16:09 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -997,7 +997,7 @@ function T.format_type(root, verbose)
 			if typ.rets then
 				str = str .. ' -> ' .. output_types(typ.rets, next_indent) --[[SOL OUTPUT--]] 
 			else
-				--str = str .. ' -> ...'
+				--str ..= ' -> ...'
 			end --[[SOL OUTPUT--]] 
 			return str --[[SOL OUTPUT--]] 
 
@@ -1077,7 +1077,7 @@ function T.format_type(root, verbose)
 
 		if obj.metatable then
 			if str ~= '' then
-				--str = str .. '\n' .. next_indent .. '-- metatable:\n'
+				--str ..= '\n' .. next_indent .. '-- metatable:\n'
 				str = str .. '\n' --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 

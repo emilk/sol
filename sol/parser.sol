@@ -55,7 +55,7 @@ P.SOL_SETTINGS = {
 	symbols = set{
 		'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',
 		':', '::', '>', '<', '=', '==', '~=', '>=', '<=',
-		'->', '=>', '?', '+=', '-=', '*=', '/='
+		'->', '=>', '?', '+=', '-=', '*=', '/=', '..='
 	};
 
 	keywords = set{
@@ -899,10 +899,11 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	}
 
 	var assign_op = {
-		['+='] = '+',
-		['-='] = '-',
-		['*='] = '*',
-		['/='] = '/-',
+		['+=']  = '+',
+		['-=']  = '-',
+		['*=']  = '*',
+		['/=']  = '/',
+		['..='] = '..',
 	}
 
 	parse_expr = function(scope: Scope, prio_level: int?) -> bool, ExprNode_or_error

@@ -13,7 +13,7 @@ local sol_dir  = path.dirname(arg[0])
 if sol_dir == "" then
 	-- OK
 elseif path.isabs(sol_dir) then
-	sol_dir = sol_dir .. '/'
+	sol_dir ..= '/'
 else
 	sol_dir = lfs.currentdir() .. '/' .. sol_dir .. '/'
 end

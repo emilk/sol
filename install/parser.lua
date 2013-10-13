@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 13  22:09:46 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 13  22:16:09 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -55,7 +55,7 @@ P.SOL_SETTINGS = {
 	symbols = set{
 		'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#',
 		':', '::', '>', '<', '=', '==', '~=', '>=', '<=',
-		'->', '=>', '?', '+=', '-=', '*=', '/='
+		'->', '=>', '?', '+=', '-=', '*=', '/=', '..='
 	};
 
 	keywords = set{
@@ -899,10 +899,11 @@ local is_mem_fun = (type == 'mem_fun') --[[SOL OUTPUT--]]
 	} --[[SOL OUTPUT--]] 
 
 	local assign_op = {
-		['+='] = '+',
-		['-='] = '-',
-		['*='] = '*',
-		['/='] = '/-',
+		['+=']  = '+',
+		['-=']  = '-',
+		['*=']  = '*',
+		['/=']  = '/',
+		['..='] = '..',
 	} --[[SOL OUTPUT--]] 
 
 	parse_expr = function(scope, prio_level)

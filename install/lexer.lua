@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Oct 13  22:09:46 --]] local U = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol on 2013 Oct 13  22:16:09 --]] local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
@@ -325,6 +325,8 @@ function L.lex_sol(src, filename, settings)
 				if consume('.') then
 					if consume('.') then
 						to_emit = {type = 'Symbol', data = '...'} --[[SOL OUTPUT--]] 
+					elseif consume('=') then
+						to_emit = {type = 'Symbol', data = '..='} --[[SOL OUTPUT--]] 
 					else
 						to_emit = {type = 'Symbol', data = '..'} --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 

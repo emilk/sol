@@ -937,9 +937,9 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 
 				local str = ''
 				for i,t in ipairs(typ.variants) do
-					str = str .. output_packaged(t, next_indent)
+					str ..= output_packaged(t, next_indent)
 					if i ~= #typ.variants then
-						str = str .. ' or '
+						str ..= ' or '
 					end
 				end
 				return str
@@ -976,28 +976,28 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 			local str = 'function('
 			for i,arg in ipairs(typ.args) do
 				if arg.name then
-					str = str .. arg.name
+					str ..= arg.name
 				end
 				if arg.type and not T.is_any(arg.type) then
 					if arg.name ~= 'self' then -- Potential recursion (object has function taking object as arg...)
-						str = str .. ": " .. output(arg.type, next_indent)
+						str ..= ": " .. output(arg.type, next_indent)
 					end
 				end
 				if i ~= #typ.args or typ.vararg then
-					str = str .. ", "
+					str ..= ", "
 				end
 			end
 			if typ.vararg then
-				str = str .. "..."
+				str ..= "..."
 				if not T.is_any(typ.vararg) then
-					str = str .. " : " .. output(typ.vararg.type, next_indent)
+					str ..= " : " .. output(typ.vararg.type, next_indent)
 				end
 			end
-			str = str .. ')'
+			str ..= ')'
 			if typ.rets then
-				str = str .. ' -> ' .. output_types(typ.rets, next_indent)
+				str ..= ' -> ' .. output_types(typ.rets, next_indent)
 			else
-				--str = str .. ' -> ...'
+				--str ..= ' -> ...'
 			end
 			return str
 
@@ -1032,7 +1032,7 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 
 		local str = ''
 		if obj.namespace then
-			str = str .. next_indent .. '-- Types:\n'
+			str ..= next_indent .. '-- Types:\n'
 
 			var type_list = {} : T.Typelist
 			for k,v in pairs(obj.namespace) do
@@ -1041,13 +1041,13 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 			table.sort(type_list, function(a,b) return a.name < b.name end)
 			--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
 			for _,m in ipairs(type_list) do
-				str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n"
+				str ..= next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n"
 			end
 		end
 
 		if not U.table_empty(obj.members) then
 			if str ~= '' then
-				str = str .. '\n' .. next_indent .. '-- Members:\n'
+				str ..= '\n' .. next_indent .. '-- Members:\n'
 			end
 
 			var mem_list = {} : [{name:string, type:T.Type}]
@@ -1064,34 +1064,34 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 			end
 
 			for _,m in ipairs(mem_list) do
-				str = str .. next_indent .. m.name .. ": "
+				str ..= next_indent .. m.name .. ": "
 
 				-- Align:
 				for i = #m.name, widest_name - 1 do
-					str = str .. ' '
+					str ..= ' '
 				end
 
-				str = str .. output(m.type, type_indent) .. ";\n"
+				str ..= output(m.type, type_indent) .. ";\n"
 			end
 		end
 
 		if obj.metatable then
 			if str ~= '' then
-				--str = str .. '\n' .. next_indent .. '-- metatable:\n'
-				str = str .. '\n'
+				--str ..= '\n' .. next_indent .. '-- metatable:\n'
+				str ..= '\n'
 			end
 
-			str = str .. next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n'
+			str ..= next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n'
 		end
 
 		if obj.class_type then
-			if str ~= '' then str = str .. '\n' end
-			str = str .. next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n'
+			if str ~= '' then str ..= '\n' end
+			str ..= next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n'
 		end
 
 		if obj.instance_type then
-			if str ~= '' then str = str .. '\n' end
-			str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n'
+			if str ~= '' then str ..= '\n' end
+			str ..= next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n'
 		end
 
 		var str_timmed = U.trim(str)
@@ -1135,9 +1135,9 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 		else
 			local str=''
 			for i,t in ipairs(typelist) do
-				str = str .. output(t, indent)
+				str ..= output(t, indent)
 				if i ~= #typelist then
-					str = str .. ', '
+					str ..= ', '
 				end
 			end
 			return str
@@ -1154,9 +1154,9 @@ function T.names(typ: [T.Type], verbose: bool?) -> string
 	else
 		local str=''
 		for i,t in ipairs(typ) do
-			str = str .. T.name(t, verbose)
+			str ..= T.name(t, verbose)
 			if i ~= #typ then
-				str = str .. ', '
+				str ..= ', '
 			end
 		end
 		return str

@@ -35,7 +35,7 @@ local sol_dir  = path.dirname(arg[0])
 if sol_dir == "" then
 	-- OK
 elseif path.isabs(sol_dir) then
-	sol_dir = sol_dir .. '/'
+	sol_dir ..= '/'
 else
 	sol_dir = lfs.currentdir() .. '/' .. sol_dir .. '/'
 end
@@ -358,7 +358,7 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 		U.write_unprotect(path_out) -- Ensure we can write over it
 
 		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. " on " .. os.date("%Y %b %d  %X") .. ' --]] '
-		out_text = out_text .. output(info.ast, path_in)
+		out_text ..= output(info.ast, path_in)
 		if not U.write_file(path_out, out_text) then
 			printf_err("Failed to open %q for writing", path_out)
 			os.exit(4)
@@ -375,14 +375,14 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 		var out_text = "-- Compiled from "..path_in.." on "..os.date("%Y %b %d  %X")..'\n\n'
 
 		for name,type in pairs(info.global_typedefs) do
-			out_text = out_text .. "global typedef "..name.." = "..T.name(type).."\n\n"
+			out_text ..= "global typedef "..name.." = "..T.name(type).."\n\n"
 		end
 
 		for _,v in ipairs(info.global_vars) do
-			out_text = out_text .. "global "..v.name.." : "..T.name(v.type).."\n\n"
+			out_text ..= "global "..v.name.." : "..T.name(v.type).."\n\n"
 		end
 
-		out_text = out_text .. "return " .. T.name(info.type)
+		out_text ..= "return " .. T.name(info.type)
 		U.write_file(header_path_out, out_text)
 	end
 end
