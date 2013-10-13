@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Oct 13  23:02:42 --]] local T = require 'type' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/scope.sol on 2013 Oct 13  23:13:51 --]] local T = require 'type' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
 
@@ -69,7 +69,7 @@ function Scope:init(where, parent)
 	self.fixed           = false --[[SOL OUTPUT--]]   
 	
 	if parent then
-		table.insert(parent.children, self) --[[SOL OUTPUT--]] 
+		parent.children [ # parent . children + 1 ] = self --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -124,7 +124,7 @@ end --[[SOL OUTPUT--]]
 
 function Scope:add_global(v)
 	assert(not self.fixed) --[[SOL OUTPUT--]] 
-	table.insert(self.globals, v) --[[SOL OUTPUT--]] 
+	self.globals [ # self . globals + 1 ] = v --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 

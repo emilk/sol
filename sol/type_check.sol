@@ -446,7 +446,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_spam(node, "Class method detected - setting 'self' type as the instance type")
 				self_type = self_type.instance_type
 			end
-			table.insert(fun_t.args, {name = 'self', type = self_type})
+			fun_t.args #= {name = 'self', type = self_type}
 
 			node.self_var_type = self_type  -- Assign a type to the local 'self' variable
 
@@ -454,7 +454,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		for _,arg in ipairs(node.arguments) do
-			table.insert(fun_t.args, {name = arg.name, type = arg.type or T.Any})
+			fun_t.args #= {name = arg.name, type = arg.type or T.Any}
 		end
 
 		if node.vararg then
@@ -810,7 +810,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						return types
 					else
 						if error_rope then
-							table.insert(error_rope, string.format("Incompatible type: '%s'", T.name(typ)))
+							error_rope #= string.format("Incompatible type: '%s'", T.name(typ))
 						end
 						return nil
 					end
@@ -2201,7 +2201,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					end
 
 					base_type.derived = base_type.derived or {}
-					table.insert(base_type.derived, stat.type)
+					base_type.derived #= stat.type
 				end
 			end
 		end

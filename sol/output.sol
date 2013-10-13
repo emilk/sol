@@ -69,7 +69,7 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 
 				while self.line + nl < token.line do
 					--print("Inserting extra line")
-					table.insert(self.rope, '\n')
+					self.rope #= '\n'
 					self.line = self.line + 1
 				end
 			end

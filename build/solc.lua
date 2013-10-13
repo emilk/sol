@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 13  23:02:42 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 13  23:13:52 --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -408,7 +408,7 @@ local function parse_global_require(mod_name)
 		if _G.g_spam then
 			U.printf("Adding global '%s'", v.name) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-		table.insert(g_globals.global_vars, v) --[[SOL OUTPUT--]] 
+		g_globals.global_vars [ # g_globals . global_vars + 1 ] = v --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	for name,type in pairs(mod_info.global_typedefs) do

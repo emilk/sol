@@ -69,7 +69,7 @@ function Scope:init(where: string, parent: Scope?)
 	self.fixed           = false  
 	
 	if parent then
-		table.insert(parent.children, self)
+		parent.children #= self
 	end
 end
 
@@ -124,7 +124,7 @@ end
 
 function Scope:add_global(v: 	Variable)
 	assert(not self.fixed)
-	table.insert(self.globals, v)
+	self.globals #= v
 end
 
 

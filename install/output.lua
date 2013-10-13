@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 13  23:02:42 --]] require 'parser' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/output.sol on 2013 Oct 13  23:13:05 --]] require 'parser' --[[SOL OUTPUT--]] 
 local L = require 'lexer' --[[SOL OUTPUT--]]  -- L.Token
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
@@ -69,7 +69,7 @@ local function output(ast, filename, strip_white_space)
 
 				while self.line + nl < token.line do
 					--print("Inserting extra line")
-					table.insert(self.rope, '\n') --[[SOL OUTPUT--]] 
+					self.rope [ # self . rope + 1 ] = '\n' --[[SOL OUTPUT--]] 
 					self.line = self.line + 1 --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 

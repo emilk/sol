@@ -408,7 +408,7 @@ local function parse_global_require(mod_name: string) -> bool
 		if _G.g_spam then
 			U.printf("Adding global '%s'", v.name)
 		end
-		table.insert(g_globals.global_vars, v)
+		g_globals.global_vars #= v
 	end
 
 	for name,type in pairs(mod_info.global_typedefs) do

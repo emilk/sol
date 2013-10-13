@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 13  23:02:42 --]] --
+--[[ DO NOT MODIFY - COMPILED FROM sol/parser.sol on 2013 Oct 13  23:13:50 --]] --
 -- parse_sol.lua
 -- parse_sol taken in a token stream (from the lexer)
 -- and outputs an AST.
@@ -1131,7 +1131,7 @@ function P
 
 					local type = parse_type(scope) --[[SOL OUTPUT--]] 
 
-					table.insert(fun_t.args, { name = arg_name, type = type }) --[[SOL OUTPUT--]] 
+					fun_t.args [ # fun_t . args + 1 ] = { name = arg_name, type = type } --[[SOL OUTPUT--]] 
 
 					if not tok:consume_symbol(',') then
 						if not tok:consume_symbol(')') then
@@ -1910,9 +1910,12 @@ function P
 			elseif tok:consume_symbol('#=', token_list) then
 				--[[
 				Table append operator:
-				IN:    foo #= 42
-				OUT:   foo #= 42
-				SLOW:  table.insert(foo, 42)
+				IN:    foo #= bar
+				OUT:   foo[#foo + 1] = bar
+				SLOW:  table.insert(foo, bar)
+
+				TODO:  foo #= a, b, c
+				OUT:   foo[#foo + 1] = a; foo[#foo + 1] = b; foo[#foo + 1] = c;
 				--]]
 
 				local array = suffixed --[[SOL OUTPUT--]] 

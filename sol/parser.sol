@@ -1131,7 +1131,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 					local type = parse_type(scope)
 
-					table.insert(fun_t.args, { name = arg_name, type = type })
+					fun_t.args #= { name = arg_name, type = type }
 
 					if not tok:consume_symbol(',') then
 						if not tok:consume_symbol(')') then
@@ -1910,9 +1910,12 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			elseif tok:consume_symbol('#=', token_list) then
 				--[[
 				Table append operator:
-				IN:    foo #= 42
-				OUT:   foo #= 42
-				SLOW:  table.insert(foo, 42)
+				IN:    foo #= bar
+				OUT:   foo[#foo + 1] = bar
+				SLOW:  table.insert(foo, bar)
+
+				TODO:  foo #= a, b, c
+				OUT:   foo[#foo + 1] = a; foo[#foo + 1] = b; foo[#foo + 1] = c;
 				--]]
 
 				local array = suffixed

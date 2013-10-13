@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 13  23:02:42 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol on 2013 Oct 13  23:13:05 --]] local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -446,7 +446,7 @@ local function analyze(ast
 				report_spam(node, "Class method detected - setting 'self' type as the instance type") --[[SOL OUTPUT--]] 
 				self_type = self_type.instance_type --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			table.insert(fun_t.args, {name = 'self', type = self_type}) --[[SOL OUTPUT--]] 
+			fun_t.args [ # fun_t . args + 1 ] = {name = 'self', type = self_type} --[[SOL OUTPUT--]] 
 
 			node.self_var_type = self_type --[[SOL OUTPUT--]]   -- Assign a type to the local 'self' variable
 
@@ -454,7 +454,7 @@ local function analyze(ast
 		end --[[SOL OUTPUT--]] 
 
 		for _,arg in ipairs(node.arguments) do
-			table.insert(fun_t.args, {name = arg.name, type = arg.type or T.Any}) --[[SOL OUTPUT--]] 
+			fun_t.args [ # fun_t . args + 1 ] = {name = arg.name, type = arg.type or T.Any} --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if node.vararg then
@@ -810,7 +810,7 @@ local function analyze(ast
 						return types --[[SOL OUTPUT--]] 
 					else
 						if error_rope then
-							table.insert(error_rope, string.format("Incompatible type: '%s'", T.name(typ))) --[[SOL OUTPUT--]] 
+							error_rope [ # error_rope + 1 ] = string.format("Incompatible type: '%s'", T.name(typ)) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 						return nil --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
@@ -2201,7 +2201,7 @@ local function analyze(ast
 					end --[[SOL OUTPUT--]] 
 
 					base_type.derived = base_type.derived or {} --[[SOL OUTPUT--]] 
-					table.insert(base_type.derived, stat.type) --[[SOL OUTPUT--]] 
+					base_type.derived [ # base_type . derived + 1 ] = stat.type --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

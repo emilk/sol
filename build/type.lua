@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 13  23:02:42 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/type.sol on 2013 Oct 13  23:13:52 --]] --[[
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
@@ -331,16 +331,16 @@ function T.is_obj_obj(d, b, problem_rope)
 		if not d_type then
 			if not T.is_nilable(b_type) then
 				if problem_rope then
-					table.insert(problem_rope, string.format("member '%s' missing", id)) --[[SOL OUTPUT--]] 
+					problem_rope [ # problem_rope + 1 ] = string.format("member '%s' missing", id) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
 				return false --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		elseif not T.isa(d_type, b_type, problem_rope) then
 			if problem_rope then
-				table.insert(problem_rope,
+				problem_rope [ # problem_rope + 1 ] =
 					string.format("member '%s' of wrong type (got: %s, expected: %s)",
-					              id, U.quote_or_indent(T.name(d_type)), U.quote_or_indent(T.name(b_type)))) --[[SOL OUTPUT--]] 
+					              id, U.quote_or_indent(T.name(d_type)), U.quote_or_indent(T.name(b_type))) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -790,9 +790,9 @@ function T.could_be_raw(a, b, problem_rope)
 			local a_type = a.members[id] --[[SOL OUTPUT--]] 
 			if a_type and not T.could_be(a_type, b_type, problem_rope) then
 				if problem_rope then
-					table.insert(problem_rope,
+					problem_rope [ # problem_rope + 1 ] =
 						string.format("member '%s' of wrong type (got: %s, expected: %s)",
-						              id, U.quote_or_indent(T.name(a_type)), U.quote_or_indent(T.name(b_type)))) --[[SOL OUTPUT--]] 
+						              id, U.quote_or_indent(T.name(a_type)), U.quote_or_indent(T.name(b_type))) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				return false --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1036,7 +1036,7 @@ function T.format_type(root, verbose)
 
 			local type_list = {} --[[SOL OUTPUT--]] 
 			for k,v in pairs(obj.namespace) do
-				table.insert(type_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
+				type_list [ # type_list + 1 ] = {name = k, type = v} --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			table.sort(type_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
 			--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
@@ -1053,7 +1053,7 @@ function T.format_type(root, verbose)
 			local mem_list = {} --[[SOL OUTPUT--]] 
 			local widest_name = 0 --[[SOL OUTPUT--]] 
 			for k,v in pairs(obj.members) do
-				table.insert(mem_list, {name = k, type = v}) --[[SOL OUTPUT--]] 
+				mem_list [ # mem_list + 1 ] = {name = k, type = v} --[[SOL OUTPUT--]] 
 				widest_name = math.max(widest_name, #k) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			table.sort(mem_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
@@ -1215,7 +1215,7 @@ function T.extend_variant_one(v, e)
 					v = T.extend_variant_one(v, et) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else
-				table.insert(v.variants, e) --[[SOL OUTPUT--]] 
+				v.variants [ # v . variants + 1 ] = e --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

@@ -331,16 +331,16 @@ function T.is_obj_obj(d: T.Object, b: T.Object, problem_rope: [string]?) -> bool
 		if not d_type then
 			if not T.is_nilable(b_type) then
 				if problem_rope then
-					table.insert(problem_rope, string.format("member '%s' missing", id))
+					problem_rope #= string.format("member '%s' missing", id)
 				end
 
 				return false
 			end
 		elseif not T.isa(d_type, b_type, problem_rope) then
 			if problem_rope then
-				table.insert(problem_rope,
+				problem_rope #=
 					string.format("member '%s' of wrong type (got: %s, expected: %s)",
-					              id, U.quote_or_indent(T.name(d_type)), U.quote_or_indent(T.name(b_type))))
+					              id, U.quote_or_indent(T.name(d_type)), U.quote_or_indent(T.name(b_type)))
 			end
 			return false
 		end
@@ -790,9 +790,9 @@ function T.could_be_raw(a: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 			local a_type = a.members[id]
 			if a_type and not T.could_be(a_type, b_type, problem_rope) then
 				if problem_rope then
-					table.insert(problem_rope,
+					problem_rope #=
 						string.format("member '%s' of wrong type (got: %s, expected: %s)",
-						              id, U.quote_or_indent(T.name(a_type)), U.quote_or_indent(T.name(b_type))))
+						              id, U.quote_or_indent(T.name(a_type)), U.quote_or_indent(T.name(b_type)))
 				end
 				return false
 			end
@@ -1036,7 +1036,7 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 
 			var type_list = {} : T.Typelist
 			for k,v in pairs(obj.namespace) do
-				table.insert(type_list, {name = k, type = v})
+				type_list #= {name = k, type = v}
 			end
 			table.sort(type_list, function(a,b) return a.name < b.name end)
 			--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
@@ -1053,7 +1053,7 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 			var mem_list = {} : [{name:string, type:T.Type}]
 			var widest_name = 0
 			for k,v in pairs(obj.members) do
-				table.insert(mem_list, {name = k, type = v})
+				mem_list #= {name = k, type = v}
 				widest_name = math.max(widest_name, #k)
 			end
 			table.sort(mem_list, function(a,b) return a.name < b.name end)
@@ -1215,7 +1215,7 @@ function T.extend_variant_one(v: T.Variant, e: T.Type) -> T.Variant
 					v = T.extend_variant_one(v, et)
 				end
 			else
-				table.insert(v.variants, e)
+				v.variants #= e
 			end
 		end
 	end
