@@ -295,7 +295,7 @@ function U.is_array(val)
 		return false --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	local max, n = 0, 0 --[[SOL OUTPUT--]] 
+	local max,n = 0,0 --[[SOL OUTPUT--]] 
 
 	for ix, _ in pairs(val) do
 		if type(ix) ~= "number" or ix <= 0 or math.floor(ix) ~= ix then

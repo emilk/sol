@@ -548,7 +548,7 @@ function T.isa_raw(d, b, problem_rope)
 		end --[[SOL OUTPUT--]] 
 
 		if (d.vararg==nil) ~= (b.vararg==nil) then
-			if problem_rope then problem_rope [ # problem_rope + 1 ] = "One fuction has var-args" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			if problem_rope then problem_rope [ # problem_rope + 1 ] = "One function has var-args" --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			return false --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -934,6 +934,20 @@ function T.format_type(root, verbose)
 					return output_packaged(typ.variants[1], next_indent) .. '?' --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
+				if #typ.variants == 2
+					and typ.variants[1] == T.True
+					and typ.variants[2] == T.False
+				then
+					return 'bool' --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
+				if #typ.variants == 2
+					and typ.variants[1] == T.False
+					and typ.variants[2] == T.True
+				then
+					return 'bool' --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+
 				local str = '' --[[SOL OUTPUT--]] 
 				for i,t in ipairs(typ.variants) do
 					str = str .. ( output_packaged(t, next_indent) ) --[[SOL OUTPUT--]] 
@@ -1205,15 +1219,19 @@ function T.extend_variant_one(v, e)
 	--end
 
 	if e == T.Any then
+		v = T.clone_variant(v) --[[SOL OUTPUT--]]  -- else we confuse memoized isa
 		v.variants = { T.Any } --[[SOL OUTPUT--]] 	
 	else
 		if not T.isa(e, v) then
+			D.assert(e ~= v.variants[1]) --[[SOL OUTPUT--]] 
+
 			local ev = T.is_variant(e) --[[SOL OUTPUT--]] 
 			if ev then
 				for _,et in ipairs(ev.variants) do
 					v = T.extend_variant_one(v, et) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else
+				v = T.clone_variant(v) --[[SOL OUTPUT--]]  -- else we confuse memoized isa
 				v.variants [ # v . variants + 1 ] = e --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1278,9 +1296,11 @@ end --[[SOL OUTPUT--]]
 
 
 function T.clone_variant(v)
-	v = T.follow_identifiers(v) --[[SOL OUTPUT--]] 
 	assert( T.is_variant(v) ) --[[SOL OUTPUT--]] 
-	return T.make_variant( unpack(v.variants) ) --[[SOL OUTPUT--]] 
+	return {
+		tag      = 'variant',
+		variants = U.shallow_clone(v.variants),
+	} --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
@@ -1301,19 +1321,14 @@ function T.variant(a, b)
 	local b_is_variant = T.is_variant(b) --[[SOL OUTPUT--]] 
 
 	if a_is_variant and b_is_variant then
-		local v = T.clone_variant( a ) --[[SOL OUTPUT--]] 
 		for _,e in ipairs(b.variants) do
-			v = T.extend_variant_one( v, e ) --[[SOL OUTPUT--]] 
+			a = T.extend_variant_one( a, e ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-		return v --[[SOL OUTPUT--]] 
+		return a --[[SOL OUTPUT--]] 
 	elseif a_is_variant then
-		local v = T.clone_variant( a ) --[[SOL OUTPUT--]] 
-		v = T.extend_variant_one(v, b) --[[SOL OUTPUT--]] 
-		return v --[[SOL OUTPUT--]] 
+		return T.extend_variant_one(a, b) --[[SOL OUTPUT--]] 
 	elseif b_is_variant then
-		local v = T.clone_variant( b ) --[[SOL OUTPUT--]] 
-		v = T.extend_variant_one(v, a) --[[SOL OUTPUT--]] 
-		return v --[[SOL OUTPUT--]] 
+		return T.extend_variant_one(b, a) --[[SOL OUTPUT--]] 
 	else
 		return T.make_variant(a, b) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -1455,6 +1470,10 @@ function T.simplify(t)
 				variant = T.simplify(variant) --[[SOL OUTPUT--]] 
 				--v = T.variant(v, variant)
 				v = T.extend_variant_one(v, variant) --[[SOL OUTPUT--]] 
+
+				if #v.variants == 2 and v.variants[1] == v.variants[2] then
+					D.break_() --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			--U.printf("Simplified '%s' to '%s'", T.name(t), T.name(v))
@@ -1462,6 +1481,7 @@ function T.simplify(t)
 			if #v.variants == 1 then
 				return v.variants[1] --[[SOL OUTPUT--]] 
 			else
+				--D.assert(v.variants[1] ~= v.variants[2], "Simplified variant has duplicates")
 				return v --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

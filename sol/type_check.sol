@@ -1134,7 +1134,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			D.assert( T.is_type_list(rets) )
 			return rets
 		else
-			report_error(expr, "Expected %s to be a fucntion, got %s", expr.base, fun_type)
+			report_error(expr, "Expected %s to be a function, got %s", expr.base, fun_type)
 			try_calling(expr, fun_type, args, arg_ts, called_as_mem_fun, true) -- Report errors
 			return T.AnyTypeList
 		end

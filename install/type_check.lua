@@ -1134,7 +1134,7 @@ local function analyze(ast
 			D.assert( T.is_type_list(rets) ) --[[SOL OUTPUT--]] 
 			return rets --[[SOL OUTPUT--]] 
 		else
-			report_error(expr, "Expected %s to be a fucntion, got %s", expr.base, fun_type) --[[SOL OUTPUT--]] 
+			report_error(expr, "Expected %s to be a function, got %s", expr.base, fun_type) --[[SOL OUTPUT--]] 
 			try_calling(expr, fun_type, args, arg_ts, called_as_mem_fun, true) --[[SOL OUTPUT--]]  -- Report errors
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

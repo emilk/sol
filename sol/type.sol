@@ -548,7 +548,7 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 		end
 
 		if (d.vararg==nil) ~= (b.vararg==nil) then
-			if problem_rope then problem_rope #= "One fuction has var-args" end
+			if problem_rope then problem_rope #= "One function has var-args" end
 			return false
 		end
 
@@ -934,6 +934,20 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 					return output_packaged(typ.variants[1], next_indent) .. '?'
 				end
 
+				if #typ.variants == 2
+					and typ.variants[1] == T.True
+					and typ.variants[2] == T.False
+				then
+					return 'bool'
+				end
+
+				if #typ.variants == 2
+					and typ.variants[1] == T.False
+					and typ.variants[2] == T.True
+				then
+					return 'bool'
+				end
+
 				local str = ''
 				for i,t in ipairs(typ.variants) do
 					str ..= output_packaged(t, next_indent)
@@ -1205,15 +1219,19 @@ function T.extend_variant_one(v: T.Variant, e: T.Type) -> T.Variant
 	--end
 
 	if e == T.Any then
+		v = T.clone_variant(v) -- else we confuse memoized isa
 		v.variants = { T.Any }	
 	else
 		if not T.isa(e, v) then
+			D.assert(e ~= v.variants[1])
+
 			var ev = T.is_variant(e)
 			if ev then
 				for _,et in ipairs(ev.variants) do
 					v = T.extend_variant_one(v, et)
 				end
 			else
+				v = T.clone_variant(v) -- else we confuse memoized isa
 				v.variants #= e
 			end
 		end
@@ -1278,9 +1296,11 @@ end
 
 
 function T.clone_variant(v: T.Variant) -> T.Variant
-	v = T.follow_identifiers(v)
 	assert( T.is_variant(v) )
-	return T.make_variant( unpack(v.variants) )
+	return {
+		tag      = 'variant',
+		variants = U.shallow_clone(v.variants),
+	}
 end
 
 
@@ -1301,19 +1321,14 @@ function T.variant(a: T.Type?, b: T.Type?) -> T.Type?
 	local b_is_variant = T.is_variant(b)
 
 	if a_is_variant and b_is_variant then
-		local v = T.clone_variant( a )
 		for _,e in ipairs(b.variants) do
-			v = T.extend_variant_one( v, e )
+			a = T.extend_variant_one( a, e )
 		end
-		return v
+		return a
 	elseif a_is_variant then
-		local v = T.clone_variant( a )
-		v = T.extend_variant_one(v, b)
-		return v
+		return T.extend_variant_one(a, b)
 	elseif b_is_variant then
-		local v = T.clone_variant( b )
-		v = T.extend_variant_one(v, a)
-		return v
+		return T.extend_variant_one(b, a)
 	else
 		return T.make_variant(a, b)
 	end
@@ -1455,6 +1470,10 @@ function T.simplify(t: T.Type) -> T.Type
 				variant = T.simplify(variant)
 				--v = T.variant(v, variant)
 				v = T.extend_variant_one(v, variant)
+
+				if #v.variants == 2 and v.variants[1] == v.variants[2] then
+					D.break_()
+				end
 			end
 
 			--U.printf("Simplified '%s' to '%s'", T.name(t), T.name(v))
@@ -1462,6 +1481,7 @@ function T.simplify(t: T.Type) -> T.Type
 			if #v.variants == 1 then
 				return v.variants[1]
 			else
+				--D.assert(v.variants[1] ~= v.variants[2], "Simplified variant has duplicates")
 				return v
 			end
 		end
