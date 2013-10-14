@@ -134,6 +134,26 @@ function U.pretty(arg: any) -> string
 	return U.serialize(arg)
 end
 
+var EscapeLookup = { ['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'" }
+
+function U.escape(str: string) -> string
+	if true then
+		return string.format('%q', str)
+	else
+		var ret = ''
+		for i=1,#str do
+			local c = str:sub(i,i)  -- TODO: var
+			ret ..= EscapeLookup[c] or c
+		end
+		return ret
+	end
+end
+
+function U.unescape(str: string) -> string
+	-- FIXME: unescape is unsafe
+	return loadstring("return "..str)()
+end
+
 ------------------------------------------------------
 
 function U.trim(str: string) -> string

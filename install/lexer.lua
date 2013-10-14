@@ -3,7 +3,6 @@ local D = require 'sol_debug' --[[SOL OUTPUT--]]
 local set = U.set --[[SOL OUTPUT--]] 
 
 local WhiteChars   = set{' ', '\n', '\t', '\r'} --[[SOL OUTPUT--]] 
-local EscapeLookup = {['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'"} --[[SOL OUTPUT--]] 
 local LowerChars   = set{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
                        'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
                        's', 't', 'u', 'v', 'w', 'x', 'y', 'z'} --[[SOL OUTPUT--]] 
@@ -47,7 +46,7 @@ local function extract_chars(str)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 	assert(#chars == #str) --[[SOL OUTPUT--]] 
-
+	
 	-- Signal eof:
 	chars [ # chars + 1 ] = '' --[[SOL OUTPUT--]] 
 	chars [ # chars + 1 ] = '' --[[SOL OUTPUT--]] 
@@ -79,11 +78,11 @@ function L.lex_sol(src, filename, settings)
 			local c = chars[p] --[[SOL OUTPUT--]] 
 			if c == '\n' then
 				char = 1 --[[SOL OUTPUT--]] 
-				line = line +  1 --[[SOL OUTPUT--]] 
+				line = line + (  1 ) --[[SOL OUTPUT--]] 
 			else
-				char = char +  1 --[[SOL OUTPUT--]] 
+				char = char + (  1 ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			p = p +  1 --[[SOL OUTPUT--]] 
+			p = p + (  1 ) --[[SOL OUTPUT--]] 
 			return c --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -116,7 +115,7 @@ function L.lex_sol(src, filename, settings)
 				local equals_count = 0 --[[SOL OUTPUT--]] 
 				local depth = 1 --[[SOL OUTPUT--]] 
 				while peek(equals_count+1) == '=' do
-					equals_count = equals_count +  1 --[[SOL OUTPUT--]] 
+					equals_count = equals_count + (  1 ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				if peek(equals_count+1) == '[' then
 					--start parsing the string. Strip the starting bit
@@ -151,7 +150,7 @@ function L.lex_sol(src, filename, settings)
 								end --[[SOL OUTPUT--]] 
 								if peek(equals_count + 1) == '[' and embedded then
 									-- oh look, there was
-									depth = depth +  1 --[[SOL OUTPUT--]] 
+									depth = depth + (  1 ) --[[SOL OUTPUT--]] 
 									for i = 1, (equals_count + 2) do
 										get() --[[SOL OUTPUT--]] 
 									end --[[SOL OUTPUT--]] 
@@ -161,7 +160,7 @@ function L.lex_sol(src, filename, settings)
 						end --[[SOL OUTPUT--]] 
 						--
 						if found_end then
-							depth = depth - 1 --[[SOL OUTPUT--]] 
+							depth = depth - ( 1 ) --[[SOL OUTPUT--]] 
 							if depth == 0 then
 								break --[[SOL OUTPUT--]] 
 							else
@@ -337,7 +336,7 @@ function L.lex_sol(src, filename, settings)
 			elseif symbols[c .. peek(1)] then
 				-- two-character symbol
 				local symbol = get() --[[SOL OUTPUT--]] 
-				symbol = symbol .. get() --[[SOL OUTPUT--]] 
+				symbol = symbol .. ( get() ) --[[SOL OUTPUT--]] 
 				to_emit = {type = 'Symbol', data = symbol} --[[SOL OUTPUT--]] 
 
 			elseif symbols[c] then

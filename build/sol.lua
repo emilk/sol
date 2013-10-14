@@ -13,7 +13,7 @@ local sol_dir  = path.dirname(arg[0]) --[[SOL OUTPUT--]]
 if sol_dir == "" then
 	-- OK
 elseif path.isabs(sol_dir) then
-	sol_dir = sol_dir .. '/' --[[SOL OUTPUT--]] 
+	sol_dir = sol_dir .. ( '/' ) --[[SOL OUTPUT--]] 
 else
 	sol_dir = lfs.currentdir() .. '/' .. sol_dir .. '/' --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
@@ -123,7 +123,7 @@ else
 
 	while ix <= #arg do
 		local a = arg[ix] --[[SOL OUTPUT--]] 
-		ix = ix +  1 --[[SOL OUTPUT--]] 
+		ix = ix + (  1 ) --[[SOL OUTPUT--]] 
 
 		if a == '-h' or a == '--help' then
 			print_help() --[[SOL OUTPUT--]] 
@@ -147,7 +147,7 @@ else
 
 			run_sol( sol ) --[[SOL OUTPUT--]] 
 
-			num_files = num_files +  1 --[[SOL OUTPUT--]] 
+			num_files = num_files + (  1 ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 

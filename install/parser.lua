@@ -428,7 +428,7 @@ function P
 	end --[[SOL OUTPUT--]] 
 
 	local function report_error(msg_fmt, ...)
-		num_err = num_err +  1 --[[SOL OUTPUT--]] 
+		num_err = num_err + (  1 ) --[[SOL OUTPUT--]] 
 		local msg = generate_msg(msg_fmt, ...) --[[SOL OUTPUT--]] 
 		printf_err("%s", msg) --[[SOL OUTPUT--]] 
 		return msg --[[SOL OUTPUT--]] 
@@ -1892,11 +1892,16 @@ function P
 
 				local binop_expr = {
 					ast_type = 'BinopExpr';
-					lhs      = suffixed;
-					op       = op;
-					rhs      = rhs;
 					tokens   = token_list;
 					where    = where;
+					lhs      = suffixed;
+					op       = op;
+					rhs      = {
+						ast_type = 'ParenthesesExpr';
+						tokens   = {};
+						where    = where;
+						inner    = rhs;
+					};
 				} --[[SOL OUTPUT--]] 
 
 				stat = {

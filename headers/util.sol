@@ -1,10 +1,11 @@
 -- Compiled from sol/util.sol
 
 return {
-	INDENTATION:       "\9";
+	INDENTATION:       \t;
 	const:             function(table: table) -> object;
 	count_line_breaks: function(str: string) -> int;
 	ellipsis:          function(msg: string, max_len: int?) -> string;
+	escape:            function(str: string) -> string;
 	file_exists:       function(path: string) -> bool;
 	indent:            function(str: string) -> string;
 	is_array:          function(val) -> bool;
@@ -24,6 +25,7 @@ return {
 	table_clear:       function(t: table) -> void;
 	table_empty:       function(t: table) -> bool;
 	trim:              function(str: string) -> string;
+	unescape:          function(str: string) -> string;
 	write_file:        function(path: string, contents: string) -> bool;
 	write_protect:     function(path: string) -> bool;
 	write_unprotect:   function(path: string) -> bool;

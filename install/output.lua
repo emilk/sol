@@ -102,7 +102,7 @@ local function output(ast, filename, strip_white_space)
 
 	local function report_error(fmt, ...)
 		local msg = string.format(fmt, ...) --[[SOL OUTPUT--]] 
-		local error_msg = string.format('%s:%d: %s', filename, out.line, msg) --[[SOL OUTPUT--]] 
+		local error_msg = string.format('value = U.unescape( str)s:%d: %s', filename, out.line, msg) --[[SOL OUTPUT--]] 
 		printf_err( "%s\n%s", table.concat(out.rope), error_msg ) --[[SOL OUTPUT--]] 
 		D.error(error_msg) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -138,18 +138,18 @@ local function output(ast, filename, strip_white_space)
 					report_error("Expected token '" .. str .. "'. tokens: " .. U.pretty(expr.tokens)) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				out:append_token( tok ) --[[SOL OUTPUT--]] 
-				it = it +  1 --[[SOL OUTPUT--]] 
+				it = it + (  1 ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		function t:append_token(token)
 			out:append_token( token ) --[[SOL OUTPUT--]] 
-			it = it +  1 --[[SOL OUTPUT--]] 
+			it = it + (  1 ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		function t:append_white()
 			local tok = expr.tokens[it] --[[SOL OUTPUT--]] 
 			if tok then
 				out:append_white( tok ) --[[SOL OUTPUT--]] 
-				it = it +  1 --[[SOL OUTPUT--]] 
+				it = it + (  1 ) --[[SOL OUTPUT--]] 
 			else
 				--report_error("Missing token")
 				out:append_str(" ") --[[SOL OUTPUT--]] 
@@ -213,6 +213,7 @@ local function output(ast, filename, strip_white_space)
 
 		elseif expr.ast_type == 'StringExpr' then
 			t:append_str( expr.value ) --[[SOL OUTPUT--]] 
+			--t:append_str( U.escape(expr.value) )
 
 		elseif expr.ast_type == 'BooleanExpr' then
 			t:append_next_token( expr.value and "true" or "false" ) --[[SOL OUTPUT--]] 

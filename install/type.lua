@@ -296,16 +296,11 @@ function T.from_num_literal(str)
 end --[[SOL OUTPUT--]] 
 
 
-local function unquote(str)
-	-- FIXME: unquote is unsafe
-	return loadstring("return "..str)() --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
-
-
 function T.from_string_literal(str)
 	return {
 		tag   = 'string_literal',
-		value = unquote( str)   -- No quotes
+		value = U.unescape( str)
+		--value = str
 	} --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -937,9 +932,9 @@ function T.format_type(root, verbose)
 
 				local str = '' --[[SOL OUTPUT--]] 
 				for i,t in ipairs(typ.variants) do
-					str = str .. output_packaged(t, next_indent) --[[SOL OUTPUT--]] 
+					str = str .. ( output_packaged(t, next_indent) ) --[[SOL OUTPUT--]] 
 					if i ~= #typ.variants then
-						str = str .. ' or ' --[[SOL OUTPUT--]] 
+						str = str .. ( ' or ' ) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				return str --[[SOL OUTPUT--]] 
@@ -976,26 +971,26 @@ function T.format_type(root, verbose)
 			local str = 'function(' --[[SOL OUTPUT--]] 
 			for i,arg in ipairs(typ.args) do
 				if arg.name then
-					str = str .. arg.name --[[SOL OUTPUT--]] 
+					str = str .. ( arg.name ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				if arg.type and not T.is_any(arg.type) then
 					if arg.name ~= 'self' then -- Potential recursion (object has function taking object as arg...)
-						str = str .. ": " .. output(arg.type, next_indent) --[[SOL OUTPUT--]] 
+						str = str .. ( ": " .. output(arg.type, next_indent) ) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				if i ~= #typ.args or typ.vararg then
-					str = str .. ", " --[[SOL OUTPUT--]] 
+					str = str .. ( ", " ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			if typ.vararg then
-				str = str .. "..." --[[SOL OUTPUT--]] 
+				str = str .. ( "..." ) --[[SOL OUTPUT--]] 
 				if not T.is_any(typ.vararg) then
-					str = str .. " : " .. output(typ.vararg.type, next_indent) --[[SOL OUTPUT--]] 
+					str = str .. ( " : " .. output(typ.vararg.type, next_indent) ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			str = str .. ')' --[[SOL OUTPUT--]] 
+			str = str .. ( ')' ) --[[SOL OUTPUT--]] 
 			if typ.rets then
-				str = str .. ' -> ' .. output_types(typ.rets, next_indent) --[[SOL OUTPUT--]] 
+				str = str .. ( ' -> ' .. output_types(typ.rets, next_indent) ) --[[SOL OUTPUT--]] 
 			else
 				--str ..= ' -> ...'
 			end --[[SOL OUTPUT--]] 
@@ -1005,7 +1000,7 @@ function T.format_type(root, verbose)
 			return '' .. typ.value --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'string_literal' then
-			return string.format('%q', typ.value) --[[SOL OUTPUT--]] 
+			return U.escape( typ.value ) --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'identifier' then
 			if (verbose or _G.g_spam) and typ.type then
@@ -1032,7 +1027,7 @@ function T.format_type(root, verbose)
 
 		local str = '' --[[SOL OUTPUT--]] 
 		if obj.namespace then
-			str = str .. next_indent .. '-- Types:\n' --[[SOL OUTPUT--]] 
+			str = str .. ( next_indent .. '-- Types:\n' ) --[[SOL OUTPUT--]] 
 
 			local type_list = {} --[[SOL OUTPUT--]] 
 			for k,v in pairs(obj.namespace) do
@@ -1041,13 +1036,13 @@ function T.format_type(root, verbose)
 			table.sort(type_list, function(a,b) return a.name < b.name --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
 			--table.sort(type_list, function(a,b) return a.type.where < b.type.where end)
 			for _,m in ipairs(type_list) do
-				str = str .. next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n" --[[SOL OUTPUT--]] 
+				str = str .. ( next_indent .. 'typedef ' .. m.name .. " = " .. output(m.type, next_indent) .. ";\n" ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if not U.table_empty(obj.members) then
 			if str ~= '' then
-				str = str .. '\n' .. next_indent .. '-- Members:\n' --[[SOL OUTPUT--]] 
+				str = str .. ( '\n' .. next_indent .. '-- Members:\n' ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			local mem_list = {} --[[SOL OUTPUT--]] 
@@ -1064,34 +1059,34 @@ function T.format_type(root, verbose)
 			end --[[SOL OUTPUT--]] 
 
 			for _,m in ipairs(mem_list) do
-				str = str .. next_indent .. m.name .. ": " --[[SOL OUTPUT--]] 
+				str = str .. ( next_indent .. m.name .. ": " ) --[[SOL OUTPUT--]] 
 
 				-- Align:
 				for i = #m.name, widest_name - 1 do
-					str = str .. ' ' --[[SOL OUTPUT--]] 
+					str = str .. ( ' ' ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-				str = str .. output(m.type, type_indent) .. ";\n" --[[SOL OUTPUT--]] 
+				str = str .. ( output(m.type, type_indent) .. ";\n" ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if obj.metatable then
 			if str ~= '' then
 				--str ..= '\n' .. next_indent .. '-- metatable:\n'
-				str = str .. '\n' --[[SOL OUTPUT--]] 
+				str = str .. ( '\n' ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			str = str .. next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n' --[[SOL OUTPUT--]] 
+			str = str .. ( next_indent .. "!! metatable:     " .. output(obj.metatable, next_indent) .. '\n' ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if obj.class_type then
-			if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-			str = str .. next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n' --[[SOL OUTPUT--]] 
+			if str ~= '' then str = str .. ( '\n' ) --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			str = str .. ( next_indent .. "!! class_type:    " .. output(obj.class_type, next_indent) .. '\n' ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if obj.instance_type then
-			if str ~= '' then str = str .. '\n' --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-			str = str .. next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n' --[[SOL OUTPUT--]] 
+			if str ~= '' then str = str .. ( '\n' ) --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			str = str .. ( next_indent .. "!! instance_type: " .. output(obj.instance_type, next_indent) .. '\n' ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		local str_timmed = U.trim(str) --[[SOL OUTPUT--]] 
@@ -1135,9 +1130,9 @@ function T.format_type(root, verbose)
 		else
 			local str='' --[[SOL OUTPUT--]] 
 			for i,t in ipairs(typelist) do
-				str = str .. output(t, indent) --[[SOL OUTPUT--]] 
+				str = str .. ( output(t, indent) ) --[[SOL OUTPUT--]] 
 				if i ~= #typelist then
-					str = str .. ', ' --[[SOL OUTPUT--]] 
+					str = str .. ( ', ' ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			return str --[[SOL OUTPUT--]] 
@@ -1154,9 +1149,9 @@ function T.names(typ, verbose)
 	else
 		local str='' --[[SOL OUTPUT--]] 
 		for i,t in ipairs(typ) do
-			str = str .. T.name(t, verbose) --[[SOL OUTPUT--]] 
+			str = str .. ( T.name(t, verbose) ) --[[SOL OUTPUT--]] 
 			if i ~= #typ then
-				str = str .. ', ' --[[SOL OUTPUT--]] 
+				str = str .. ( ', ' ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return str --[[SOL OUTPUT--]] 
@@ -1256,11 +1251,11 @@ function T.variant_remove(t, remove_this_type)
 	while i <= #v.variants do
 		if T.is_variant(v.variants[i]) then
 			v.variants[i] = T.variant_remove(v.variants[i], remove_this_type) --[[SOL OUTPUT--]] 
-			i = i +  1 --[[SOL OUTPUT--]] 
+			i = i + (  1 ) --[[SOL OUTPUT--]] 
 		elseif T.isa(v.variants[i], remove_this_type) then
 			table.remove( v.variants, i ) --[[SOL OUTPUT--]] 
 		else
-			i = i +  1 --[[SOL OUTPUT--]] 
+			i = i + (  1 ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 

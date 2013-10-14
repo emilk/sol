@@ -1892,11 +1892,16 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 				var binop_expr = {
 					ast_type = 'BinopExpr';
-					lhs      = suffixed;
-					op       = op;
-					rhs      = rhs;
 					tokens   = token_list;
 					where    = where;
+					lhs      = suffixed;
+					op       = op;
+					rhs      = {
+						ast_type = 'ParenthesesExpr';
+						tokens   = {};
+						where    = where;
+						inner    = rhs;
+					};
 				}
 
 				stat = {

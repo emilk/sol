@@ -2,20 +2,16 @@
 
 return {
 	-- Types:
-	typedef Any = {
-		pre_analyzed: bool?;
-		tag:          "any";
-		where:        string?;
-	};
+	typedef Any = { pre_analyzed: bool?;  tag: any;  where: string?; };
 	typedef Extern = {
 		name:         string?;
 		pre_analyzed: bool?;
-		tag:          "extern";
+		tag:          extern;
 		where:        string;
 	};
 	typedef False = {
 		pre_analyzed: bool?;
-		tag:          "false";
+		tag:          false;
 		where:        string?;
 	};
 	typedef Function = {
@@ -24,7 +20,7 @@ return {
 		name:           string;
 		pre_analyzed:   bool?;
 		rets:           [Type]?;
-		tag:            "function";
+		tag:            function;
 		vararg:         VarArgs?;
 		where:          string?;
 	};
@@ -33,48 +29,40 @@ return {
 		name:         string;
 		pre_analyzed: bool?;
 		scope:        Scope;
-		tag:          "identifier";
+		tag:          identifier;
 		type:         Type?;
 		var_name:     string?;
 		where:        string;
 	};
-	typedef Int = {
-		pre_analyzed: bool?;
-		tag:          "int";
-		where:        string?;
-	};
+	typedef Int = { pre_analyzed: bool?;  tag: int;  where: string?; };
 	typedef IntLiteral = {
 		pre_analyzed: bool?;
-		tag:          "int_literal";
+		tag:          int_literal;
 		value:        int;
 		where:        string?;
 	};
 	typedef List = {
 		pre_analyzed: bool?;
-		tag:          "list";
+		tag:          list;
 		type:         Type;
 		where:        string?;
 	};
 	typedef Map = {
 		key_type:     Type;
 		pre_analyzed: bool?;
-		tag:          "map";
+		tag:          map;
 		value_type:   Type;
 		where:        string?;
 	};
-	typedef Nil = {
-		pre_analyzed: bool?;
-		tag:          "nil";
-		where:        string?;
-	};
+	typedef Nil = { pre_analyzed: bool?;  tag: nil;  where: string?; };
 	typedef Num = {
 		pre_analyzed: bool?;
-		tag:          "number";
+		tag:          number;
 		where:        string?;
 	};
 	typedef NumLiteral = {
 		pre_analyzed: bool?;
-		tag:          "num_literal";
+		tag:          num_literal;
 		value:        number;
 		where:        string?;
 	};
@@ -86,75 +74,71 @@ return {
 		metatable:     Object?;
 		namespace:     {string => Identifier}?;
 		pre_analyzed:  bool?;
-		tag:           "object";
+		tag:           object;
 		where:         string?;
 	};
 	typedef String = {
 		pre_analyzed: bool?;
-		tag:          "string";
+		tag:          string;
 		where:        string?;
 	};
 	typedef StringLiteral = {
 		pre_analyzed: bool?;
-		tag:          "string_literal";
+		tag:          string_literal;
 		value:        string;
 		where:        string?;
 	};
 	typedef Table = {
 		pre_analyzed: bool?;
-		tag:          "table";
+		tag:          table;
 		where:        string?;
 	};
-	typedef True = {
-		pre_analyzed: bool?;
-		tag:          "true";
-		where:        string?;
-	};
+	typedef True = { pre_analyzed: bool?;  tag: true;  where: string?; };
 	typedef Type = {
 		pre_analyzed: bool?;
 		tag:          TypeID;
 		where:        string?;
 	};
-	typedef TypeID = "any" or "int_literal" or "num_literal" or "string_literal" or "nil" or "true" or "false" or "int" or "number" or "string" or "table" or "list" or "map" or "object" or "function" or "variant" or "identifier" or "varargs" or "extern";
+	typedef TypeID = any or int_literal or num_literal or string_literal or nil or true or false or int or number or string or table or list or map or object or function or variant or identifier or varargs or extern;
 	typedef Typelist = [Type];
 	typedef VarArgs = {
 		pre_analyzed: bool?;
-		tag:          "varargs";
+		tag:          varargs;
 		type:         Type;
 		where:        string?;
 	};
 	typedef Variant = {
 		pre_analyzed: bool?;
-		tag:          "variant";
+		tag:          variant;
 		variants:     [Type];
 		where:        string?;
 	};
 
 	-- Members:
-	Any:                   { tag: "any"; };
+	Any:                   { tag: any; };
 	AnyTypeList:           table;
 	Bool:                  {
-	                       	tag:      "variant";
-	                       	variants: [{ tag: "true"; } or { tag: "false"; }];
+	                       	tag:      variant;
+	                       	variants: [{ tag: true; } or { tag: false; }];
 	                       };
-	False:                 { tag: "false"; };
-	Int:                   { tag: "int"; };
-	List:                  { tag: "list";  type: { tag: "any"; }; };
+	False:                 { tag: false; };
+	Int:                   { tag: int; };
+	List:                  { tag: list;  type: { tag: any; }; };
 	Map:                   {
-	                       	key_type:   { tag: "any"; };
-	                       	tag:        "map";
-	                       	value_type: { tag: "any"; };
+	                       	key_type:   { tag: any; };
+	                       	tag:        map;
+	                       	value_type: { tag: any; };
 	                       };
-	Nil:                   { tag: "nil"; };
-	Nilable:               { tag: "any"; };
-	Num:                   { tag: "number"; };
-	Object:                { members: table;  tag: "object"; };
-	String:                { tag: "string"; };
-	Table:                 { tag: "table"; };
-	True:                  { tag: "true"; };
-	Uint:                  { tag: "int"; };
+	Nil:                   { tag: nil; };
+	Nilable:               { tag: any; };
+	Num:                   { tag: number; };
+	Object:                { members: table;  tag: object; };
+	String:                { tag: string; };
+	Table:                 { tag: table; };
+	True:                  { tag: true; };
+	Uint:                  { tag: int; };
 	Void:                  table;
-	_empty_table:          { tag: "table"; };
+	_empty_table:          { tag: table; };
 	all_variants:          function(typ: Type) -> function() -> Type?;
 	broaden:               function(t: Type?) -> Type?;
 	broaden_non_nil:       function(t: Type) -> Type;

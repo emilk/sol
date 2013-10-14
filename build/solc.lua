@@ -35,7 +35,7 @@ local sol_dir  = path.dirname(arg[0]) --[[SOL OUTPUT--]]
 if sol_dir == "" then
 	-- OK
 elseif path.isabs(sol_dir) then
-	sol_dir = sol_dir .. '/' --[[SOL OUTPUT--]] 
+	sol_dir = sol_dir .. ( '/' ) --[[SOL OUTPUT--]] 
 else
 	sol_dir = lfs.currentdir() .. '/' .. sol_dir .. '/' --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
@@ -359,7 +359,7 @@ local function output_module(info, path_in, path_out, header_path_out)
 
 		--local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. " on " .. os.date("%Y %b %d  %X") .. ' --]] '
 		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] ' --[[SOL OUTPUT--]] 
-		out_text = out_text .. output(info.ast, path_in) --[[SOL OUTPUT--]] 
+		out_text = out_text .. ( output(info.ast, path_in) ) --[[SOL OUTPUT--]] 
 		if not U.write_file(path_out, out_text) then
 			printf_err("Failed to open %q for writing", path_out) --[[SOL OUTPUT--]] 
 			os.exit(4) --[[SOL OUTPUT--]] 
@@ -377,14 +377,14 @@ local function output_module(info, path_in, path_out, header_path_out)
 		local out_text = "-- Compiled from "..path_in..'\n\n' --[[SOL OUTPUT--]] 
 
 		for name,type in pairs(info.global_typedefs) do
-			out_text = out_text .. "global typedef "..name.." = "..T.name(type).."\n\n" --[[SOL OUTPUT--]] 
+			out_text = out_text .. ( "global typedef "..name.." = "..T.name(type).."\n\n" ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		for _,v in ipairs(info.global_vars) do
-			out_text = out_text .. "global "..v.name.." : "..T.name(v.type).."\n\n" --[[SOL OUTPUT--]] 
+			out_text = out_text .. ( "global "..v.name.." : "..T.name(v.type).."\n\n" ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		out_text = out_text .. "return " .. T.name(info.type) --[[SOL OUTPUT--]] 
+		out_text = out_text .. ( "return " .. T.name(info.type) ) --[[SOL OUTPUT--]] 
 		U.write_file(header_path_out, out_text) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
@@ -505,19 +505,19 @@ else
 
 	while ix <= #arg do
 		local a = arg[ix] --[[SOL OUTPUT--]] 
-		ix = ix + 1 --[[SOL OUTPUT--]] 
+		ix = ix + ( 1 ) --[[SOL OUTPUT--]] 
 
 		if a == '-h' or a == '--help' then
 			print_help() --[[SOL OUTPUT--]] 
 
 		elseif a == '-o' then
 			g_out_dir = arg[ix] .. '/' --[[SOL OUTPUT--]] 
-			ix = ix +  1 --[[SOL OUTPUT--]] 
+			ix = ix + (  1 ) --[[SOL OUTPUT--]] 
 			print('Files will be written to ' .. g_out_dir) --[[SOL OUTPUT--]] 
 
 		elseif a == '-ho' then
 			g_header_out_dir = arg[ix] .. '/' --[[SOL OUTPUT--]] 
-			ix = ix +  1 --[[SOL OUTPUT--]] 
+			ix = ix + (  1 ) --[[SOL OUTPUT--]] 
 			print('Header files will be written to ' .. g_header_out_dir) --[[SOL OUTPUT--]] 
 			path.mkdir( g_header_out_dir ) --[[SOL OUTPUT--]]  -- Ensure we can write there
 
@@ -552,7 +552,7 @@ else
 
 		elseif a == '--check' then
 			local path_in = arg[ix] --[[SOL OUTPUT--]] 
-			ix = ix +  1 --[[SOL OUTPUT--]] 
+			ix = ix + (  1 ) --[[SOL OUTPUT--]] 
 			
 			--_G.g_local_parse = true
 
@@ -565,11 +565,11 @@ else
 			-- TODO: write output?
 			--output_module(info, path_in, path_out)
 
-			num_files = num_files +  1 --[[SOL OUTPUT--]] 
+			num_files = num_files + (  1 ) --[[SOL OUTPUT--]] 
 
 		elseif a == '-l' then
 			local mod_name = arg[ix] --[[SOL OUTPUT--]] 
-			ix = ix +  1 --[[SOL OUTPUT--]] 
+			ix = ix + (  1 ) --[[SOL OUTPUT--]] 
 			if not parse_global_require(mod_name) then
 				U.printf_err("Aborting") --[[SOL OUTPUT--]] 
 				os.exit(123) --[[SOL OUTPUT--]] 
@@ -577,7 +577,7 @@ else
 
 		elseif a == '-m' then
 			local dir = arg[ix] --[[SOL OUTPUT--]] 
-			ix = ix +  1 --[[SOL OUTPUT--]] 
+			ix = ix + (  1 ) --[[SOL OUTPUT--]] 
 			g_mod_paths [ # g_mod_paths + 1 ] = dir --[[SOL OUTPUT--]] 
 
 		elseif a == '-Werror' then
@@ -608,7 +608,7 @@ else
 				compile_file(path_in) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			num_files = num_files +  1 --[[SOL OUTPUT--]] 
+			num_files = num_files + (  1 ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 

@@ -134,6 +134,26 @@ function U.pretty(arg)
 	return U.serialize(arg) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
+local EscapeLookup = { ['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'" } --[[SOL OUTPUT--]] 
+
+function U.escape(str)
+	if true then
+		return string.format('%q', str) --[[SOL OUTPUT--]] 
+	else
+		local ret = '' --[[SOL OUTPUT--]] 
+		for i=1,#str do
+			local c = str:sub(i,i) --[[SOL OUTPUT--]]   -- TODO: var
+			ret = ret .. ( EscapeLookup[c] or c ) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+		return ret --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+function U.unescape(str)
+	-- FIXME: unescape is unsafe
+	return loadstring("return "..str)() --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
 ------------------------------------------------------
 
 function U.trim(str)
@@ -198,7 +218,7 @@ function U.count_line_breaks(str)
 	local n = 0 --[[SOL OUTPUT--]] 
 	for i = 1,#str do
 		if str:sub(i,i) == '\n' then
-			n = n +  1 --[[SOL OUTPUT--]] 
+			n = n + (  1 ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 	return n --[[SOL OUTPUT--]] 
@@ -283,7 +303,7 @@ function U.is_array(val)
 		end --[[SOL OUTPUT--]] 
 
 		max = math.max(max, ix) --[[SOL OUTPUT--]] 
-		n = n +  1 --[[SOL OUTPUT--]] 
+		n = n + (  1 ) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	return n == max --[[SOL OUTPUT--]] 

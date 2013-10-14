@@ -49,8 +49,9 @@ var INTRINSICS = [[
 		format = extern : function(...) -> ...;
 		rep    = extern : function(...) -> ...;
 
+		sub    = extern : function(int,int) -> string?;
+
 		-- Patterns:
-		sub    = extern : function(...) -> ...;
 		gsub   = extern : function(...) -> ...;
 		find   = extern : function(...) -> ...;
 		match  = extern : function(...) -> ...;
