@@ -382,6 +382,7 @@ function P
 
 
 
+
 .parse_sol(src, tok, filename, settings, module_scope)
 	filename = filename or '' --[[SOL OUTPUT--]] 
 	settings = settings or P.SOL_SETTINGS --[[SOL OUTPUT--]] 
@@ -740,10 +741,12 @@ function P
 			} --[[SOL OUTPUT--]] 
 
 		elseif tok:is('String') then
+			local str_input = tok:get(token_list).data --[[SOL OUTPUT--]]   -- TODO: var
 			node = {
-				ast_type = 'StringExpr';
-				value    = tok:get(token_list).data;
-				tokens   = token_list;
+				ast_type     = 'StringExpr';
+				tokens       = token_list;
+				str_quoted   = str_input;
+				str_contents = U.unescape( str_input );  -- TODO: bad idea.
 			} --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_keyword('nil', token_list) then

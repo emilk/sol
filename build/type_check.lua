@@ -605,11 +605,6 @@ local function analyze(ast
 
 					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
 
-					if T.is_variant(given) then
-						-- ensure  string?  ->  int?   does NOT pass
-						given = T.variant_remove(given, T.Nil) --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-
 					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), expected)
 					
 					if not T.could_be(given, expected) then
@@ -727,7 +722,7 @@ local function analyze(ast
 					local index = obj.metatable.members['__index'] --[[SOL OUTPUT--]] 
 
 					if index then
-						local given_t = {tag='string_literal', value=name} --[[SOL OUTPUT--]] 
+						local given_t = { tag='string_literal', str_quoted=name, str_contents=name } --[[SOL OUTPUT--]] 
 						local t = try_match_index(node, index, given_t) --[[SOL OUTPUT--]] 
 
 						if t then
@@ -981,7 +976,7 @@ local function analyze(ast
 			if #arg_ts == 1 and arg_ts[1].tag == 'string_literal' then
 				--U.printf('"require" called with argument: %q', arg_ts[1])
 				if on_require then
-					return analyze_require( arg_ts[1].value, where_is(expr) ) --[[SOL OUTPUT--]] 
+					return analyze_require( arg_ts[1].str_contents, where_is(expr) ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else
 				report_warning(expr, '"require" called with indeducible argument') --[[SOL OUTPUT--]] 
@@ -1329,14 +1324,11 @@ local function analyze(ast
 
 
 		elseif expr.ast_type == 'StringExpr' then
-			--return T.from_string_literal( expr.value.data )
-			local st, ret = pcall( T.from_string_literal, expr.value ) --[[SOL OUTPUT--]] 
-			if not st then
-				report_error(expr, "Failed to parse string: %s", expr.value.data) --[[SOL OUTPUT--]] 
-				return T.String --[[SOL OUTPUT--]] 
-			else
-				return ret --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
+			return {
+				tag          = 'string_literal';
+				str_quoted   = expr.str_quoted;
+				str_contents = expr.str_contents;
+			} --[[SOL OUTPUT--]] 
 
 
 		elseif expr.ast_type == 'BooleanExpr' then
@@ -1409,12 +1401,6 @@ local function analyze(ast
 				lt = T.simplify(lt) --[[SOL OUTPUT--]] 
 				rt = T.simplify(rt) --[[SOL OUTPUT--]] 
 
-				if T.is_variant(lt) and T.is_variant(rt) then
-					-- ensure  string? == int?   does NOT pass:
-					lt = T.variant_remove(lt, T.Nil) --[[SOL OUTPUT--]] 
-					rt = T.variant_remove(rt, T.Nil) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
 				-- Make sure we aren't comparing string to int:s:
 				if (not T.could_be(lt, rt)) and (not T.could_be(rt, lt)) then
 					-- Apples and oranges
@@ -1461,14 +1447,15 @@ local function analyze(ast
 				-- or we could return the left type, but only cases where the left type is NOT nil or false
 
 				--return T.variant( lt, rt )
-				local types = T.make_variant( lt ) --[[SOL OUTPUT--]]   -- Anything on the left...
-				if not T.is_any(types) then
-					report_spam(expr, "Binop: removing Nil and False from 'or'") --[[SOL OUTPUT--]] 
-					types = T.variant_remove(types, T.Nil) --[[SOL OUTPUT--]]       -- ...except nil...
-					types = T.variant_remove(types, T.False) --[[SOL OUTPUT--]]     -- ...except false...
+				if T.is_any(lt) then
+					return lt --[[SOL OUTPUT--]] 
+				else
+					local types = T.make_variant( lt ) --[[SOL OUTPUT--]]          -- Anything on the left...
+					types = T.variant_remove(types, T.Nil) --[[SOL OUTPUT--]]      -- ...except nil...
+					types = T.variant_remove(types, T.False) --[[SOL OUTPUT--]]    -- ...except false...
+					types = T.variant(types, rt) --[[SOL OUTPUT--]]                -- ...or anything on the right
+					return types --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				types = T.variant(types, rt) --[[SOL OUTPUT--]]          -- ...or anything on the right
-				return types --[[SOL OUTPUT--]] 
 			else
 				report_error(expr, "Unknown binary operator %q", expr.op) --[[SOL OUTPUT--]] 
 				return T.Any --[[SOL OUTPUT--]] 
@@ -1685,13 +1672,19 @@ local function analyze(ast
 						key_type = T.extend_variant( key_type, this_key_type ) --[[SOL OUTPUT--]] 
 
 						if this_key_type.tag == 'int_literal' or
-						   this_key_type.tag == 'num_literal' or
-						   this_key_type.tag == 'string_literal'
+						   this_key_type.tag == 'num_literal'
 						then
 							if map_keys[ this_key_type.value ] then
-								report_error(e.value, "Map key %q declared twice", this_key_type.value) --[[SOL OUTPUT--]] 
+								report_error(expr, "Map key %f declared twice", this_key_type.value) --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
 							map_keys[ this_key_type.value ] = true --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+
+						if this_key_type.tag == 'string_literal' then
+							if map_keys[ this_key_type.str_contents ] then
+								report_error(expr, "Map key %q declared twice", this_key_type.str_contents) --[[SOL OUTPUT--]] 
+							end --[[SOL OUTPUT--]] 
+							map_keys[ this_key_type.str_contents ] = true --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 

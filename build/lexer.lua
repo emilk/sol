@@ -2,7 +2,7 @@
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
-local WhiteChars   = set{' ', '\n', '\t', '\r'} --[[SOL OUTPUT--]] 
+local WhiteChars   = set{' ', '\n', '\t', '\r'} --[[SOL OUTPUT--]]  -- FIXME: why isn't the non-use of this warned about?
 local LowerChars   = set{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
                        'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
                        's', 't', 'u', 'v', 'w', 'x', 'y', 'z'} --[[SOL OUTPUT--]] 

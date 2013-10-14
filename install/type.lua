@@ -136,6 +136,10 @@ T
 
 
 
+
+
+
+
 .Any  = { tag = 'any'  } --[[SOL OUTPUT--]]   -- Single unknown value
 T.AnyTypeList = {} --[[SOL OUTPUT--]]    -- Unkown number of unknown values
 --T.AnyTypeList = { { tag = 'varargs', type = T.Any } }  -- TODO
@@ -298,9 +302,9 @@ end --[[SOL OUTPUT--]]
 
 function T.from_string_literal(str)
 	return {
-		tag   = 'string_literal',
-		value = U.unescape( str)
-		--value = str
+		tag          = 'string_literal';
+		str_quoted   = str;
+		str_contents = U.unescape(str);
 	} --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -464,7 +468,7 @@ function T.isa_raw(d, b, problem_rope)
 	end --[[SOL OUTPUT--]] 
 
 	if d.tag == 'string_literal' then
-		if b.tag == 'string_literal' and b.value == d.value then
+		if b.tag == 'string_literal' and b.str_contents == d.str_contents then
 			-- Same value
 			return true --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -1000,7 +1004,7 @@ function T.format_type(root, verbose)
 			return '' .. typ.value --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'string_literal' then
-			return U.escape( typ.value ) --[[SOL OUTPUT--]] 
+			return typ.str_quoted --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'identifier' then
 			if (verbose or _G.g_spam) and typ.type then

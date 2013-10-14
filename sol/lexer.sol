@@ -2,7 +2,7 @@ local U = require 'util'
 local D = require 'sol_debug'
 local set = U.set
 
-var WhiteChars   = set{' ', '\n', '\t', '\r'}
+var WhiteChars   = set{' ', '\n', '\t', '\r'} -- FIXME: why isn't the non-use of this warned about?
 var LowerChars   = set{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
                        'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
                        's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}

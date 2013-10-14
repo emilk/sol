@@ -1,7 +1,7 @@
 -- Compiled from sol/util.sol
 
 return {
-	INDENTATION:       \t;
+	INDENTATION:       '\t';
 	const:             function(table: table) -> object;
 	count_line_breaks: function(str: string) -> int;
 	ellipsis:          function(msg: string, max_len: int?) -> string;

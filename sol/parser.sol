@@ -140,8 +140,9 @@ typedef P.NumberExpr : P.ExprNode = {
 }
 
 typedef P.StringExpr : P.ExprNode = {
-	ast_type: 'StringExpr';
-	value:    string;
+	ast_type     : 'StringExpr';
+	str_quoted   : string,  -- As given in input, e.g:   "\"Hello\"\t'you!'"
+	str_contents : string,  -- As Lua would treat it:    "Hello"	'you' 
 }
 
 typedef P.BooleanExpr : P.ExprNode = {
@@ -740,10 +741,12 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			}
 
 		elseif tok:is('String') then
+			local str_input = tok:get(token_list).data  -- TODO: var
 			node = {
-				ast_type = 'StringExpr';
-				value    = tok:get(token_list).data;
-				tokens   = token_list;
+				ast_type     = 'StringExpr';
+				tokens       = token_list;
+				str_quoted   = str_input;
+				str_contents = U.unescape( str_input );  -- TODO: bad idea.
 			}
 
 		elseif tok:consume_keyword('nil', token_list) then

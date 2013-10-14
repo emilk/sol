@@ -102,7 +102,7 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 
 	local function report_error(fmt: string, ...)
 		local msg = string.format(fmt, ...)
-		local error_msg = string.format('value = U.unescape( str)s:%d: %s', filename, out.line, msg)
+		local error_msg = string.format('%s:%d: %s', filename, out.line, msg)
 		printf_err( "%s\n%s", table.concat(out.rope), error_msg )
 		D.error(error_msg)
 	end
@@ -212,8 +212,7 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 			t:append_str( expr.value )
 
 		elseif expr.ast_type == 'StringExpr' then
-			t:append_str( expr.value )
-			--t:append_str( U.escape(expr.value) )
+			t:append_str( expr.str_quoted )
 
 		elseif expr.ast_type == 'BooleanExpr' then
 			t:append_next_token( expr.value and "true" or "false" )

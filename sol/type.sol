@@ -60,7 +60,11 @@ typedef T.Typelist = [T.Type]
 typedef T.Any           : T.Type = { tag : 'any' }
 typedef T.IntLiteral    : T.Type = { tag : 'int_literal',    value : int    }
 typedef T.NumLiteral    : T.Type = { tag : 'num_literal',    value : number }
-typedef T.StringLiteral : T.Type = { tag : 'string_literal', value : string }  -- unescaped value!
+typedef T.StringLiteral : T.Type = {
+	tag          : 'string_literal',
+	str_quoted   : string,  -- As given in input, e.g:   "\"Hello\"\t'you!'"
+	str_contents : string,  -- As Lua would treat it:    "Hello"	'you' 
+}
 typedef T.Nil           : T.Type = { tag : 'nil'     }
 typedef T.True          : T.Type = { tag : 'true'    }
 typedef T.False         : T.Type = { tag : 'false'   }
@@ -298,9 +302,9 @@ end
 
 function T.from_string_literal(str: string) -> T.StringLiteral
 	return {
-		tag   = 'string_literal',
-		value = U.unescape( str)
-		--value = str
+		tag          = 'string_literal';
+		str_quoted   = str;
+		str_contents = U.unescape(str);
 	}
 end
 
@@ -464,7 +468,7 @@ function T.isa_raw(d: T.Type, b: T.Type, problem_rope: [string]?) -> bool
 	end
 
 	if d.tag == 'string_literal' then
-		if b.tag == 'string_literal' and b.value == d.value then
+		if b.tag == 'string_literal' and b.str_contents == d.str_contents then
 			-- Same value
 			return true
 		end
@@ -1000,7 +1004,7 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 			return '' .. typ.value
 
 		elseif typ.tag == 'string_literal' then
-			return U.escape( typ.value )
+			return typ.str_quoted
 
 		elseif typ.tag == 'identifier' then
 			if (verbose or _G.g_spam) and typ.type then

@@ -605,11 +605,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
 
-					if T.is_variant(given) then
-						-- ensure  string?  ->  int?   does NOT pass
-						given = T.variant_remove(given, T.Nil)
-					end
-
 					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), expected)
 					
 					if not T.could_be(given, expected) then
@@ -727,7 +722,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					local index = obj.metatable.members['__index']
 
 					if index then
-						var given_t = {tag='string_literal', value=name}
+						var given_t = { tag='string_literal', str_quoted=name, str_contents=name }
 						var t = try_match_index(node, index, given_t)
 
 						if t then
@@ -981,7 +976,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			if #arg_ts == 1 and arg_ts[1].tag == 'string_literal' then
 				--U.printf('"require" called with argument: %q', arg_ts[1])
 				if on_require then
-					return analyze_require( arg_ts[1].value, where_is(expr) )
+					return analyze_require( arg_ts[1].str_contents, where_is(expr) )
 				end
 			else
 				report_warning(expr, '"require" called with indeducible argument')
@@ -1329,14 +1324,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif expr.ast_type == 'StringExpr' then
-			--return T.from_string_literal( expr.value.data )
-			local st, ret = pcall( T.from_string_literal, expr.value )
-			if not st then
-				report_error(expr, "Failed to parse string: %s", expr.value.data)
-				return T.String
-			else
-				return ret
-			end
+			return {
+				tag          = 'string_literal';
+				str_quoted   = expr.str_quoted;
+				str_contents = expr.str_contents;
+			}
 
 
 		elseif expr.ast_type == 'BooleanExpr' then
@@ -1409,12 +1401,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				lt = T.simplify(lt)
 				rt = T.simplify(rt)
 
-				if T.is_variant(lt) and T.is_variant(rt) then
-					-- ensure  string? == int?   does NOT pass:
-					lt = T.variant_remove(lt, T.Nil)
-					rt = T.variant_remove(rt, T.Nil)
-				end
-
 				-- Make sure we aren't comparing string to int:s:
 				if (not T.could_be(lt, rt)) and (not T.could_be(rt, lt)) then
 					-- Apples and oranges
@@ -1461,14 +1447,15 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				-- or we could return the left type, but only cases where the left type is NOT nil or false
 
 				--return T.variant( lt, rt )
-				local types = T.make_variant( lt )  -- Anything on the left...
-				if not T.is_any(types) then
-					report_spam(expr, "Binop: removing Nil and False from 'or'")
-					types = T.variant_remove(types, T.Nil)      -- ...except nil...
-					types = T.variant_remove(types, T.False)    -- ...except false...
+				if T.is_any(lt) then
+					return lt
+				else
+					local types = T.make_variant( lt )         -- Anything on the left...
+					types = T.variant_remove(types, T.Nil)     -- ...except nil...
+					types = T.variant_remove(types, T.False)   -- ...except false...
+					types = T.variant(types, rt)               -- ...or anything on the right
+					return types
 				end
-				types = T.variant(types, rt)         -- ...or anything on the right
-				return types
 			else
 				report_error(expr, "Unknown binary operator %q", expr.op)
 				return T.Any
@@ -1685,13 +1672,19 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						key_type = T.extend_variant( key_type, this_key_type )
 
 						if this_key_type.tag == 'int_literal' or
-						   this_key_type.tag == 'num_literal' or
-						   this_key_type.tag == 'string_literal'
+						   this_key_type.tag == 'num_literal'
 						then
 							if map_keys[ this_key_type.value ] then
-								report_error(e.value, "Map key %q declared twice", this_key_type.value)
+								report_error(expr, "Map key %f declared twice", this_key_type.value)
 							end
 							map_keys[ this_key_type.value ] = true
+						end
+
+						if this_key_type.tag == 'string_literal' then
+							if map_keys[ this_key_type.str_contents ] then
+								report_error(expr, "Map key %q declared twice", this_key_type.str_contents)
+							end
+							map_keys[ this_key_type.str_contents ] = true
 						end
 					end
 
