@@ -1,4 +1,4 @@
--- Compiled from sol/util.sol on 2013 Oct 13  23:13:04
+-- Compiled from sol/util.sol
 
 return {
 	INDENTATION:       "\9";
