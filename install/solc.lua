@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol on 2013 Oct 13  23:13:05 --]] --[[
+--[[ DO NOT MODIFY - COMPILED FROM sol/solc.sol --]] --[[
 Command line compiler.
 
 Compiles .sol to .lua, or prints out an error
@@ -42,7 +42,7 @@ end --[[SOL OUTPUT--]]
 
 
 print("solc: sol_dir: " .. sol_dir) --[[SOL OUTPUT--]] 
-print("path.abspath(''): " .. path.dirname(path.abspath('') .. arg[0])) --[[SOL OUTPUT--]] 
+--print("path.abspath(''): " .. path.dirname(path.abspath('') .. arg[0]))
 
 -- Ensure the local includes work:
 package.path = sol_dir..'?.lua;' .. package.path --[[SOL OUTPUT--]] 
@@ -357,7 +357,8 @@ local function output_module(info, path_in, path_out, header_path_out)
 	if info.ast and path_out then
 		U.write_unprotect(path_out) --[[SOL OUTPUT--]]  -- Ensure we can write over it
 
-		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. " on " .. os.date("%Y %b %d  %X") .. ' --]] ' --[[SOL OUTPUT--]] 
+		--local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. " on " .. os.date("%Y %b %d  %X") .. ' --]] '
+		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] ' --[[SOL OUTPUT--]] 
 		out_text = out_text .. output(info.ast, path_in) --[[SOL OUTPUT--]] 
 		if not U.write_file(path_out, out_text) then
 			printf_err("Failed to open %q for writing", path_out) --[[SOL OUTPUT--]] 
@@ -372,7 +373,8 @@ local function output_module(info, path_in, path_out, header_path_out)
 
 
 	if info.type and header_path_out then
-		local out_text = "-- Compiled from "..path_in.." on "..os.date("%Y %b %d  %X")..'\n\n' --[[SOL OUTPUT--]] 
+		--var out_text = "-- Compiled from "..path_in.." on "..os.date("%Y %b %d  %X")..'\n\n'
+		local out_text = "-- Compiled from "..path_in..'\n\n' --[[SOL OUTPUT--]] 
 
 		for name,type in pairs(info.global_typedefs) do
 			out_text = out_text .. "global typedef "..name.." = "..T.name(type).."\n\n" --[[SOL OUTPUT--]] 

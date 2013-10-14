@@ -1,7 +1,7 @@
--- Compiled from sol/util.sol on 2013 Oct 13  23:13:04
+-- Compiled from sol/util.sol on 2013 Oct 14  14:43:51
 
 return {
-	INDENTATION:       "\9";
+	INDENTATION:       "	";
 	const:             function(table: table) -> object;
 	count_line_breaks: function(str: string) -> int;
 	ellipsis:          function(msg: string, max_len: int?) -> string;
