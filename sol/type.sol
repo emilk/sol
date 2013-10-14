@@ -1213,30 +1213,38 @@ function T.is_variant(t: T.Type) -> T.Variant?
 end
 
 
+function T.variant_has(v: T.Variant, e: T.Type) -> bool
+	for _,t in ipairs(v.variants) do
+		if T.isa(e, t) then
+			return true
+		end
+	end
+	return false
+end
+
+
 function T.extend_variant_one(v: T.Variant, e: T.Type) -> T.Variant
 	--if #v.variants > 15 then
 	--	U.printf("WARNING: extremely long variant: %s", T.name(v))
 	--end
 
 	if e == T.Any then
-		v = T.clone_variant(v) -- else we confuse memoized isa
-		v.variants = { T.Any }	
+		return {
+			tag      = 'variant',
+			variants = { T.Any },
+		}
 	else
-		if not T.isa(e, v) then
-			D.assert(e ~= v.variants[1])
-
-			var ev = T.is_variant(e)
-			if ev then
-				for _,et in ipairs(ev.variants) do
-					v = T.extend_variant_one(v, et)
-				end
-			else
-				v = T.clone_variant(v) -- else we confuse memoized isa
-				v.variants #= e
+		var ev = T.is_variant(e)
+		if ev then
+			for _,et in ipairs(ev.variants) do
+				v = T.extend_variant_one(v, et)
 			end
+		elseif not T.variant_has(v, e) then
+			v = T.clone_variant(v) -- else we confuse memoized isa
+			v.variants #= e
 		end
+		return v
 	end
-	return v
 end
 
 

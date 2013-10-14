@@ -202,6 +202,7 @@ return {
 	simplify:              function(t: Type) -> Type;
 	table_id:              function(t: table) -> string;
 	variant:               function(a: Type?, b: Type?) -> Type?;
+	variant_has:           function(v: Variant, e: Type) -> bool;
 	variant_remove:        function(t: Type, remove_this_type: Type) -> Type;
 	visit:                 function(t: Type, lambda: function(: Type) -> void) -> void;
 	visit_and_combine:     function(t: Type, lambda: function(: Type) -> Type?) -> Type?;

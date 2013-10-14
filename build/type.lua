@@ -1213,30 +1213,38 @@ function T.is_variant(t)
 end --[[SOL OUTPUT--]] 
 
 
+function T.variant_has(v, e)
+	for _,t in ipairs(v.variants) do
+		if T.isa(e, t) then
+			return true --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+	return false --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
 function T.extend_variant_one(v, e)
 	--if #v.variants > 15 then
 	--	U.printf("WARNING: extremely long variant: %s", T.name(v))
 	--end
 
 	if e == T.Any then
-		v = T.clone_variant(v) --[[SOL OUTPUT--]]  -- else we confuse memoized isa
-		v.variants = { T.Any } --[[SOL OUTPUT--]] 	
+		return {
+			tag      = 'variant',
+			variants = { T.Any },
+		} --[[SOL OUTPUT--]] 
 	else
-		if not T.isa(e, v) then
-			D.assert(e ~= v.variants[1]) --[[SOL OUTPUT--]] 
-
-			local ev = T.is_variant(e) --[[SOL OUTPUT--]] 
-			if ev then
-				for _,et in ipairs(ev.variants) do
-					v = T.extend_variant_one(v, et) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			else
-				v = T.clone_variant(v) --[[SOL OUTPUT--]]  -- else we confuse memoized isa
-				v.variants [ # v . variants + 1 ] = e --[[SOL OUTPUT--]] 
+		local ev = T.is_variant(e) --[[SOL OUTPUT--]] 
+		if ev then
+			for _,et in ipairs(ev.variants) do
+				v = T.extend_variant_one(v, et) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
+		elseif not T.variant_has(v, e) then
+			v = T.clone_variant(v) --[[SOL OUTPUT--]]  -- else we confuse memoized isa
+			v.variants [ # v . variants + 1 ] = e --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
+		return v --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
-	return v --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 
