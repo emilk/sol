@@ -179,7 +179,7 @@ function Scope:get_global_type(name: string) -> T.Type ?
 end
 
 
-function Scope:locals_iterator()
+function Scope:locals_iterator() -> (function(...) -> string,Variable)
 	return pairs(self.locals)
 end
 

@@ -246,7 +246,7 @@ local function analyze(ast
 
 	local function discard_scope(scope)
 		for _,v in scope:locals_iterator() do
-			if v.name ~= '_' then
+			if v.name ~= '_' and v.name ~= '...' then -- TODO: how do we silence ... non-use?
 				local var_type = v.var_type or 'Variable' --[[SOL OUTPUT--]] 
 				if v.num_reads == 0 then
 					if v.type and v.type.tag == 'function' then
@@ -2283,7 +2283,6 @@ local function analyze(ast
 				  HACK: Foo = Foo or EXPR
 				  This is a very common Lua idiom
 				--]]
-				local name = stat.lhs[1].name --[[SOL OUTPUT--]] 
 				local type_expr = stat.rhs[1].rhs --[[SOL OUTPUT--]] 
 				local rt = analyze_expr_single(type_expr, scope) --[[SOL OUTPUT--]] 
 				do_assignment(stat, scope, stat.lhs[1], rt, is_pre_analyze) --[[SOL OUTPUT--]] 

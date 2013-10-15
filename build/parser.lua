@@ -6,7 +6,6 @@
 
 
 local L = require 'lexer' --[[SOL OUTPUT--]] 
-local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local _ = require 'scope' --[[SOL OUTPUT--]] 
 local T = require 'type' --[[SOL OUTPUT--]]  -- For intrinsic functions
 local U = require 'util' --[[SOL OUTPUT--]] 
@@ -1216,6 +1215,14 @@ function P
 
 
 	parse_type = function(scope)
+		if tok:consume_symbol('(') then
+			local type = parse_simple_type(scope) --[[SOL OUTPUT--]] 
+			if not tok:consume_symbol(')') then
+				report_error("Unmatch parentheses") --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			return type --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
 		local type = parse_simple_type(scope) --[[SOL OUTPUT--]] 
 
 		if not type then return nil --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
@@ -1890,8 +1897,6 @@ function P
 
 				local st, rhs = parse_expr(scope) --[[SOL OUTPUT--]] 
 				if not st then return false, rhs --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-
-				local target = suffixed --[[SOL OUTPUT--]] 
 
 				local binop_expr = {
 					ast_type = 'BinopExpr';

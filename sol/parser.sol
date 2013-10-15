@@ -6,7 +6,6 @@
 
 
 local L = require 'lexer'
-local D = require 'sol_debug'
 local _ = require 'scope'
 local T = require 'type' -- For intrinsic functions
 local U = require 'util'
@@ -1216,6 +1215,14 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 
 	parse_type = function(scope) -> T.Type?
+		if tok:consume_symbol('(') then
+			local type = parse_simple_type(scope)
+			if not tok:consume_symbol(')') then
+				report_error("Unmatch parentheses")
+			end
+			return type
+		end
+
 		local type = parse_simple_type(scope)
 
 		if not type then return nil end
@@ -1890,8 +1897,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 				local st, rhs = parse_expr(scope)
 				if not st then return false, rhs end
-
-				var target = suffixed
 
 				var binop_expr = {
 					ast_type = 'BinopExpr';
