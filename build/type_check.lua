@@ -2050,7 +2050,7 @@ local function analyze(ast
 							end --[[SOL OUTPUT--]] 
 
 							report_spam(stat, "Adding member") --[[SOL OUTPUT--]] 
-							report_warning(stat, "Adding member %q to %q", name, t) --[[SOL OUTPUT--]] 
+							sol_warning(stat, "Adding member %q to %q", name, t) --[[SOL OUTPUT--]] 
 
 							--[[
 							We do not broaden the type here, to make sure the following code works:
@@ -2728,7 +2728,7 @@ local function analyze(ast
 							-- Assigning to something declared in an outer scope
 						else
 							-- Leave error reporting out of pre-analyzer
-							report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name) --[[SOL OUTPUT--]] 
+							sol_error(stat, "Pre-analyze: Declaring implicit global %q", var_name) --[[SOL OUTPUT--]] 
 							v = top_scope:create_global( var_name, where_is(stat) ) --[[SOL OUTPUT--]] 
 							v.forward_declared = true --[[SOL OUTPUT--]]  -- Until second pass
 						end --[[SOL OUTPUT--]] 

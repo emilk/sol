@@ -2050,7 +2050,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							end
 
 							report_spam(stat, "Adding member")
-							report_warning(stat, "Adding member %q to %q", name, t)
+							sol_warning(stat, "Adding member %q to %q", name, t)
 
 							--[[
 							We do not broaden the type here, to make sure the following code works:
@@ -2728,7 +2728,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							-- Assigning to something declared in an outer scope
 						else
 							-- Leave error reporting out of pre-analyzer
-							report_error(stat, "Pre-analyze: Declaring implicit global %q", var_name)
+							sol_error(stat, "Pre-analyze: Declaring implicit global %q", var_name)
 							v = top_scope:create_global( var_name, where_is(stat) )
 							v.forward_declared = true -- Until second pass
 						end
