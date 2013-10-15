@@ -7,7 +7,7 @@
 
 local L = require 'lexer'
 local D = require 'sol_debug'
-local S = require 'scope'
+local _ = require 'scope'
 local T = require 'type' -- For intrinsic functions
 local U = require 'util'
 

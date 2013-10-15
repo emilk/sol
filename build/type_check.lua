@@ -2,7 +2,7 @@
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
-local S   = require 'scope' --[[SOL OUTPUT--]] 
+local _   = require 'scope' --[[SOL OUTPUT--]] 
 local D   = require 'sol_debug' --[[SOL OUTPUT--]] 
 
 
@@ -271,7 +271,9 @@ local function analyze(ast
 
 	-- second bool: returns true if all paths returns
 	local function analyze_closed_off_statlist(stat_list, scope_fun)
-		return analyze_statlist(stat_list, stat_list.scope, scope_fun) --[[SOL OUTPUT--]] 
+		local tl, all_rets = analyze_statlist(stat_list, stat_list.scope, scope_fun) --[[SOL OUTPUT--]] 
+		discard_scope(stat_list.scope) --[[SOL OUTPUT--]] 
+		return tl, all_rets --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -1968,6 +1970,7 @@ local function analyze(ast
 				end --[[SOL OUTPUT--]] 
 
 				report_spam(stat, "Assigning to %s.%s", base_var.name, name) --[[SOL OUTPUT--]] 
+				base_var.num_writes = base_var . num_writes + ( 1 ) --[[SOL OUTPUT--]] 
 
 				local var_t = T.follow_identifiers(base_var.type) --[[SOL OUTPUT--]] 
 
@@ -2361,7 +2364,7 @@ local function analyze(ast
 			local is_local = (stat.scoping ~= 'global') --[[SOL OUTPUT--]] 
 			local vars = {} --[[SOL OUTPUT--]] 
 			for _,name in ipairs(stat.name_list) do
-				report_spam(stat, "Declaration: %s %s", stat.type, name) --[[SOL OUTPUT--]] 
+				report_spam(stat, "Declaration: %q, type %s", name, stat.type) --[[SOL OUTPUT--]] 
 				local v = declare_var(stat, scope, name, is_local) --[[SOL OUTPUT--]] 
 				--v.type = nil -- Ignore any forward-deduced type
 
@@ -2826,6 +2829,7 @@ local function analyze(ast
 		-- rets = ???
 	} --[[SOL OUTPUT--]] 
 	local ret, all_paths_return = analyze_statlist(ast, top_scope, module_function) --[[SOL OUTPUT--]] 
+	discard_scope(top_scope) --[[SOL OUTPUT--]] 
 
 	if ret and not all_paths_return then
 		report_error(ast, "Not all paths return a value, but some do") --[[SOL OUTPUT--]] 

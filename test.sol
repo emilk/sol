@@ -1,8 +1,3 @@
-  if true then
-  end
-
-  if true then
-  end
-
-  if krov then
-  end
+if true then
+	local unused = 42
+end

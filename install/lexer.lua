@@ -206,7 +206,6 @@ function L.lex_sol(src, filename, settings)
 					--comment
 					get() --[[SOL OUTPUT--]] 
 					get() --[[SOL OUTPUT--]] 
-					local comment = '--' --[[SOL OUTPUT--]] 
 					local _, whole_text = try_get_long_string() --[[SOL OUTPUT--]] 
 
 					if not whole_text then
@@ -239,7 +238,6 @@ function L.lex_sol(src, filename, settings)
 			--separately.
 			--local leading_white, leading_tokens = get_leading_white_old()
 			local leading_white = get_leading_white() --[[SOL OUTPUT--]] 
-			local leading_tokens = nil --[[SOL OUTPUT--]] 
 
 			--get the initial char
 			local this_line = line --[[SOL OUTPUT--]] 

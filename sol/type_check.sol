@@ -2,7 +2,7 @@ local U   = require 'util'
 local set = U.set
 local T   = require 'type'
 local P   = require 'parser'
-local S   = require 'scope'
+local _   = require 'scope'
 local D   = require 'sol_debug'
 
 
@@ -91,7 +91,7 @@ end
 typedef OnRequireT = function(string, string) -> T.Typelist
 
 
-local function analyze(ast, filename: string, on_require: OnRequireT?, settings) -> bool, T.Typelist
+local function analyze(ast, filename: string, on_require: OnRequireT?, settings) -> bool, T.Typelist or string
 	local analyze_statlist, analyze_expr, analyze_expr_single_var, analyze_expr_single
 	local analyze_expr_unchecked
 
@@ -271,7 +271,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	-- second bool: returns true if all paths returns
 	local function analyze_closed_off_statlist(stat_list: P.Statlist, scope_fun: T.Function) -> T.Typelist?, bool
-		return analyze_statlist(stat_list, stat_list.scope, scope_fun)
+		var tl, all_rets = analyze_statlist(stat_list, stat_list.scope, scope_fun)
+		discard_scope(stat_list.scope)
+		return tl, all_rets
 	end
 
 
@@ -1968,6 +1970,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 
 				report_spam(stat, "Assigning to %s.%s", base_var.name, name)
+				base_var.num_writes += 1
 
 				local var_t = T.follow_identifiers(base_var.type)
 
@@ -2361,7 +2364,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			var is_local = (stat.scoping ~= 'global')
 			var vars = {} : [Variable]
 			for _,name in ipairs(stat.name_list) do
-				report_spam(stat, "Declaration: %s %s", stat.type, name)
+				report_spam(stat, "Declaration: %q, type %s", name, stat.type)
 				local v = declare_var(stat, scope, name, is_local)
 				--v.type = nil -- Ignore any forward-deduced type
 
@@ -2826,6 +2829,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		-- rets = ???
 	}
 	local ret, all_paths_return = analyze_statlist(ast, top_scope, module_function)
+	discard_scope(top_scope)
 
 	if ret and not all_paths_return then
 		report_error(ast, "Not all paths return a value, but some do")

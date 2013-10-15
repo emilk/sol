@@ -46,10 +46,10 @@
 	global string = {
 		byte   = extern : function(string, int, int?, int?) -> ...;
 		char   = extern : function(string, ... : int) -> string;
-		format = extern : function(...) -> ...;
+		format = extern : function(string, ...) -> string;
 		rep    = extern : function(...) -> ...;
 
-		sub    = extern : function(int,int) -> string?;
+		sub    = extern : function(string, int, int) -> string?;
 
 		-- Patterns:
 		gsub   = extern : function(...) -> ...;
