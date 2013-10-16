@@ -49,7 +49,7 @@
 		format = extern : function(string, ...) -> string;
 		rep    = extern : function(...) -> ...;
 
-		sub    = extern : function(string, int, int) -> string?;
+		sub    = extern : function(string, int, int?) -> string?;
 
 		-- Patterns:
 		gsub   = extern : function(...) -> ...;

@@ -12,9 +12,28 @@ When parsign a module, there is a 'module_scope' whose parent is the 'global_sco
 User declared globals goes into the 'module_scope' and are marked as 'global'.
 --]]
 
+--[-[
 global class Scope = {
 	-- TODO: static members here, i.e. global_scope
+	global_scope = nil : Scope?   -- not found in later lookup :T
 }
+
+function Scope.new(where: string, parent: Scope?) -> Scope
+	--var s = {} : Scope
+	local s = {}
+	setmetatable(s, { __index = Scope })
+	s:init(where, parent)
+	return s
+end
+--]]
+--[[
+require 'class'
+global class Scope = sol_class("Scope")
+
+function Scope.new(where: string, parent: Scope?) -> Scope
+	return Scope(where, parent)
+end
+--]]
 
 global typedef Variable = {
 	scope            : Scope,
@@ -36,23 +55,6 @@ typedef VarOptions = 'ignore_fwd_decl' or nil
 
 
 Scope.GLOBALS_IN_TOP_SCOPE = true
-
-function Scope.new(where: string, parent: Scope?) -> Scope
-	--var s = {} : Scope
-	local s = {}
-	setmetatable(s, { __index = Scope })
-	s:init(where, parent)
-	return s
-end
---[[
-require 'class'
-local Scope = sol_class("Scope")
---class Scope
-
-function Scope.new(where: string, parent: Scope?) -> Scope
-	return Scope(where, parent)
-end
---]]
 
 --------------------------------------------------
 
@@ -122,7 +124,7 @@ function Scope:create_local(name: string, where: string) -> Variable
 end
 
 
-function Scope:add_global(v: 	Variable)
+function Scope:add_global(v: Variable)
 	assert(not self.fixed)
 	self.globals #= v
 end

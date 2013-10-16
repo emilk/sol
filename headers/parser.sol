@@ -3,12 +3,13 @@
 return {
 	-- Types:
 	typedef AssignmentStatement = {
-		ast_type: 'AssignmentStatement';
-		lhs:      [ExprNode];
-		rhs:      [ExprNode];
-		scope:    Scope?;
-		tokens:   [Token];
-		where:    string;
+		ast_type:  'AssignmentStatement';
+		lhs:       [ExprNode];
+		rhs:       [ExprNode];
+		scope:     Scope?;
+		semicolon: bool?;
+		tokens:    [Token];
+		where:     string;
 	};
 	typedef BinopExpr = {
 		ast_type: 'BinopExpr';
@@ -25,10 +26,11 @@ return {
 		where:    string;
 	};
 	typedef BreakStatement = {
-		ast_type: 'BreakStatement';
-		scope:    Scope?;
-		tokens:   [Token];
-		where:    string;
+		ast_type:  'BreakStatement';
+		scope:     Scope?;
+		semicolon: bool?;
+		tokens:    [Token];
+		where:     string;
 	};
 	typedef CallExpr = {
 		arguments: [ExprNode];
@@ -41,6 +43,7 @@ return {
 		ast_type:   'CallStatement';
 		expression: ExprNode;
 		scope:      Scope?;
+		semicolon:  bool?;
 		tokens:     [Token];
 		where:      string;
 	};
@@ -51,13 +54,14 @@ return {
 		where:    string;
 	};
 	typedef ClassDeclStatement = {
-		ast_type: 'ClassDeclStatement';
-		is_local: bool;
-		name:     string;
-		rhs:      ExprNode;
-		scope:    Scope?;
-		tokens:   [Token];
-		where:    string;
+		ast_type:  'ClassDeclStatement';
+		is_local:  bool;
+		name:      string;
+		rhs:       ExprNode;
+		scope:     Scope?;
+		semicolon: bool?;
+		tokens:    [Token];
+		where:     string;
 	};
 	typedef ConstructorExpr = {
 		ast_type:   'ConstructorExpr';
@@ -66,11 +70,12 @@ return {
 		where:      string;
 	};
 	typedef DoStatement = {
-		ast_type: 'DoStatement';
-		body:     Statlist;
-		scope:    Scope?;
-		tokens:   [Token];
-		where:    string;
+		ast_type:  'DoStatement';
+		body:      Statlist;
+		scope:     Scope?;
+		semicolon: bool?;
+		tokens:    [Token];
+		where:     string;
 	};
 	typedef DotsExpr = {
 		ast_type: 'DotsExpr';
@@ -78,10 +83,11 @@ return {
 		where:    string;
 	};
 	typedef Eof = {
-		ast_type: 'Eof';
-		scope:    Scope?;
-		tokens:   [Token];
-		where:    string;
+		ast_type:  'Eof';
+		scope:     Scope?;
+		semicolon: bool?;
+		tokens:    [Token];
+		where:     string;
 	};
 	typedef ExprNode = {
 		ast_type: ExprType;
@@ -95,33 +101,37 @@ return {
 		where:    string;
 	};
 	typedef FunctionDeclStatement = {
-		arguments:    [{ name: string;  type: Type?; }];
-		ast_type:     'FunctionDeclStatement';
-		body:         Statlist;
-		is_aggregate: bool;
-		is_mem_fun:   bool;
-		name_expr:    ExprNode;
-		scope:        Scope?;
-		scoping:      'local' or 'global' or '';
-		tokens:       [Token];
-		vararg:       VarArgs?;
-		where:        string;
+		arguments:     [{ name: string;  type: Type?; }];
+		ast_type:      'FunctionDeclStatement';
+		body:          Statlist;
+		is_aggregate:  bool;
+		is_mem_fun:    bool;
+		name_expr:     ExprNode;
+		scope:         Scope?;
+		scoping:       'local' or 'global' or '';
+		self_var_type: Type?;
+		semicolon:     bool?;
+		tokens:        [Token];
+		vararg:        VarArgs?;
+		where:         string;
 	};
 	typedef GenericForStatement = {
 		ast_type:   'GenericForStatement';
 		body:       Statlist;
 		generators: [ExprNode];
 		scope:      Scope?;
+		semicolon:  bool?;
 		tokens:     [Token];
 		var_names:  [string];
 		where:      string;
 	};
 	typedef GotoStatement = {
-		ast_type: 'GotoStatement';
-		label:    string;
-		scope:    Scope?;
-		tokens:   [Token];
-		where:    string;
+		ast_type:  'GotoStatement';
+		label:     string;
+		scope:     Scope?;
+		semicolon: bool?;
+		tokens:    [Token];
+		where:     string;
 	};
 	typedef IdExpr = {
 		ast_type: 'IdExpr';
@@ -131,11 +141,12 @@ return {
 		where:    string;
 	};
 	typedef IfStatement = {
-		ast_type: 'IfStatement';
-		clauses:  [IfStatementClause];
-		scope:    Scope?;
-		tokens:   [Token];
-		where:    string;
+		ast_type:  'IfStatement';
+		clauses:   [IfStatementClause];
+		scope:     Scope?;
+		semicolon: bool?;
+		tokens:    [Token];
+		where:     string;
 	};
 	typedef IndexExpr = {
 		ast_type: 'IndexExpr';
@@ -145,11 +156,12 @@ return {
 		where:    string;
 	};
 	typedef LabelStatement = {
-		ast_type: 'LabelStatement';
-		label:    string;
-		scope:    Scope?;
-		tokens:   [Token];
-		where:    string;
+		ast_type:  'LabelStatement';
+		label:     string;
+		scope:     Scope?;
+		semicolon: bool?;
+		tokens:    [Token];
+		where:     string;
 	};
 	typedef LambdaFunctionExpr = {
 		arguments:    [{ name: string;  type: Type?; }];
@@ -187,15 +199,16 @@ return {
 		where:    string;
 	};
 	typedef NumericForStatement = {
-		ast_type: 'NumericForStatement';
-		body:     Statlist;
-		end_:     ExprNode;
-		scope:    Scope?;
-		start:    ExprNode;
-		step:     ExprNode?;
-		tokens:   [Token];
-		var_name: string;
-		where:    string;
+		ast_type:  'NumericForStatement';
+		body:      Statlist;
+		end_:      ExprNode;
+		scope:     Scope?;
+		semicolon: bool?;
+		start:     ExprNode;
+		step:      ExprNode?;
+		tokens:    [Token];
+		var_name:  string;
+		where:     string;
 	};
 	typedef ParenthesesExpr = {
 		ast_type: 'ParenthesesExpr';
@@ -208,6 +221,7 @@ return {
 		body:      Statlist;
 		condition: ExprNode;
 		scope:     Scope?;
+		semicolon: bool?;
 		tokens:    [Token];
 		where:     string;
 	};
@@ -215,19 +229,22 @@ return {
 		arguments: [ExprNode];
 		ast_type:  'ReturnStatement';
 		scope:     Scope?;
+		semicolon: bool?;
 		tokens:    [Token];
 		where:     string;
 	};
 	typedef StatNode = {
-		ast_type: StatType;
-		scope:    Scope?;
-		tokens:   [Token];
-		where:    string;
+		ast_type:  StatType;
+		scope:     Scope?;
+		semicolon: bool?;
+		tokens:    [Token];
+		where:     string;
 	};
 	typedef StatType = 'AssignmentStatement' or 'CallStatement' or 'VarDeclareStatement' or 'IfStatement' or 'WhileStatement' or 'DoStatement' or 'RepeatStatement' or 'GenericForStatement' or 'NumericForStatement' or 'ReturnStatement' or 'BreakStatement' or 'LabelStatement' or 'GotoStatement' or 'FunctionDeclStatement' or 'Typedef' or 'ClassDeclStatement' or 'Eof';
 	typedef Statlist = {
 		ast_type: 'Statlist';
 		body:     [StatNode];
+		scope:    Scope;
 		tokens:   [Token];
 		where:    string;
 	};
@@ -258,6 +275,7 @@ return {
 		is_local:       bool;
 		namespace_name: string?;
 		scope:          Scope?;
+		semicolon:      bool?;
 		tokens:         [Token];
 		type:           Type?;
 		type_name:      string;
@@ -277,6 +295,7 @@ return {
 		name_list: [string];
 		scope:     Scope?;
 		scoping:   'local' or 'global' or 'var';
+		semicolon: bool?;
 		tokens:    [Token];
 		type_list: [Type]?;
 		where:     string;
@@ -286,6 +305,7 @@ return {
 		body:      Statlist;
 		condition: ExprNode;
 		scope:     Scope?;
+		semicolon: bool?;
 		tokens:    [Token];
 		where:     string;
 	};

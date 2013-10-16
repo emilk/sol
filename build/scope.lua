@@ -12,9 +12,19 @@ When parsign a module, there is a 'module_scope' whose parent is the 'global_sco
 User declared globals goes into the 'module_scope' and are marked as 'global'.
 --]]
 
+--[-[
   Scope = {
 	-- TODO: static members here, i.e. global_scope
-} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+	global_scope = nil   -- not found in later lookup :T
+} --[[SOL OUTPUT--]] 
+
+function Scope.new(where, parent)
+	--var s = {} : Scope
+	local s = {} --[[SOL OUTPUT--]] 
+	setmetatable(s, { __index = Scope }) --[[SOL OUTPUT--]] 
+	s:init(where, parent) --[[SOL OUTPUT--]] 
+	return s --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
 
 Scope
@@ -35,24 +45,16 @@ Scope
 
 
 
+
+
+
+
+
+
+
+
+
 .GLOBALS_IN_TOP_SCOPE = true --[[SOL OUTPUT--]] 
-
-function Scope.new(where, parent)
-	--var s = {} : Scope
-	local s = {} --[[SOL OUTPUT--]] 
-	setmetatable(s, { __index = Scope }) --[[SOL OUTPUT--]] 
-	s:init(where, parent) --[[SOL OUTPUT--]] 
-	return s --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
---[[
-require 'class'
-local Scope = sol_class("Scope")
---class Scope
-
-function Scope.new(where: string, parent: Scope?) -> Scope
-	return Scope(where, parent)
-end
---]]
 
 --------------------------------------------------
 

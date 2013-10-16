@@ -209,8 +209,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		inform_at(issue_name, where_is(node), fmt, ...)
 	end
 
-	--local member_missing_reporter = report_warning -- TODO
-	local member_missing_reporter = report_spam
+	local member_missing_reporter = sol_warning -- TODO
+	--local member_missing_reporter = report_spam
 
 	--[[
 	-- Will lookup typedefs in scope variables
@@ -1238,7 +1238,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						expr.name, var_.where)
 				end
 
-				var_.num_reads = var_.num_reads + 1
+				var_.num_reads += 1
 			else
 				if expr.name ~= '_' then  -- Implicit '_' var is OK
 					report_error(expr, "Implicit global %q", expr.name)
@@ -1504,7 +1504,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		elseif expr.ast_type == 'DotsExpr' then
 			var v = scope:get_local('...')
 			if v then
-				v.num_reads = v.num_reads + 1
+				v.num_reads += 1
 				var t = v.type
 				assert(t)
 				if t then
@@ -1809,7 +1809,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 				if pre_analyzed_type.tag == 'object' then
 					-- Combine with deduced type(s):
-					local comb_obj = U.shallow_clone( pre_analyzed_type )
+					var comb_obj = U.shallow_clone( pre_analyzed_type ) : T.Object
 					comb_obj.members = U.shallow_clone( comb_obj.members )
 
 					T.visit(deduced_type, function(t: T.Type)
@@ -1844,7 +1844,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		v.namespace = deduced_type and deduced_type.namespace  -- If any
-		v.num_writes = v.num_writes + 1
+		v.num_writes += 1
 
 		--report_info(stat, "decl_var_type %q pre-analyzed: %s, explicit: %s, deduced: %s, RESULT: %s\n", v.name, pre_analyzed_type, explicit_type, deduced_type, v.type)
 	end
@@ -2100,14 +2100,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		local left_type, left_var = analyze_expr_single_var( left_expr, scope )
 
 		if left_var then
-			left_var.num_writes = left_var.num_writes + 1
+			left_var.num_writes += 1
 		end
 
 		if left_type.namespace then
 			report_error(stat, "Cannot assign to a namespace outside of declaration")
 		end
 
-		if left_type.is_pre_analyze or (left_var and left_var.is_pre_analyze) then
+		if left_type.pre_analyzed or (left_var and left_var.forward_declared) then
 			if left_var then
 				left_var.type = right_type
 			end
@@ -2548,7 +2548,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				report_spam(stat, "free function, name: %q", fun_t.name)
 
 				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t)
-				v.num_writes = v.num_writes + 1
+				v.num_writes += 1
 				v.var_type = 'Function'
 			end
 
@@ -2574,7 +2574,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			for i = 1,#stat.var_names do
 				local v = declare_local(stat, loop_scope, stat.var_names[i])
-				v.num_writes = v.num_writes + 1
+				v.num_writes += 1
 				v.var_type = 'Loop variable'
 				if types ~= T.AnyTypeList then
 					v.type = types[i]
@@ -2612,8 +2612,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			local iter_var = declare_local(stat, loop_scope, stat.var_name)
 			iter_var.type = iter_t
-			iter_var.num_writes = iter_var.num_writes + 1
-			iter_var.num_reads  = iter_var.num_reads  + 1  -- Actual looping counts
+			iter_var.num_writes += 1
+			iter_var.num_reads += 1  -- Actual looping counts
 			iter_var.var_type = 'Loop variable'
 			
 			local ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun)
@@ -2694,7 +2694,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						if not v then
 							sol_error(stat, "Pre-analyze: Declaring global %q", name)
 							v = top_scope:create_global( name, where_is(stat) )
-							v.pre_analyzed = true
+							v.forward_declared = true
 						end
 
 					elseif stat.rhs[1].ast_type      == 'CallExpr'

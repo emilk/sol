@@ -119,6 +119,7 @@ typedef P.Node = {
 typedef P.Statlist : P.Node = {
 	ast_type: 'Statlist';
 	body:     [P.StatNode];
+	scope:    Scope;
 }
 
 ---------------------------------------------
@@ -241,8 +242,9 @@ typedef P.CastExpr : P.ExprNode = {
 ---------------------------------------------
 
 typedef P.StatNode : P.Node = {
-	ast_type: P.StatType;
-	scope:    Scope?;  -- TODO: remove?
+	ast_type:  P.StatType;
+	scope:     Scope?; -- TODO: remove?
+	semicolon: bool?;  -- True if it ends with one
 }
 
 typedef P.AssignmentStatement : P.StatNode = {
@@ -357,6 +359,8 @@ typedef P.FunctionDeclStatement : P.StatNode = {
 	              } ];
 	vararg:       T.VarArgs?;
 	body:         P.Statlist;
+
+	self_var_type: T.Type?;  -- Type of the 'self' var, if any.
 }
 
 typedef P.Eof : P.StatNode = {
@@ -401,7 +405,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		local line_num = 0
 		for line in src:gmatch("[^\n]*\n?") do
 			if line:sub(-1,-1) == '\n' then line = line:sub(1,-2) end
-			line_num = line_num+1
+			line_num += 1
 			if line_num == tok:peek().line then
 				err = err..">> `"..line:gsub('\t','    ').."`\n"
 				for i = 1, tok:peek().char do
@@ -2003,7 +2007,8 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		if tok:is_symbol(';') then
 			report_warning("semicolon at the end of a statement is considered bad style")
-			stat.semicolon = tok:get( stat.tokens )
+			tok:get( stat.tokens )
+			stat.semicolon = true
 		end
 
 		return true, stat

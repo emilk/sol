@@ -242,7 +242,7 @@ function T.follow_identifiers(t: T.Type, forgiving: bool?) -> T.Type
 				end
 			else
 				t.type = var_.namespace[t.name]
-				var_.num_reads = var_.num_reads + 1
+				var_.num_reads += 1
 				if not t.type then
 					T.on_error("%s: type %s not found in namespace '%s'", t.first_usage, t.name, var_.name)
 					t.type = T.Any

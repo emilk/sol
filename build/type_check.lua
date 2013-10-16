@@ -209,8 +209,8 @@ local function analyze(ast
 		inform_at(issue_name, where_is(node), fmt, ...) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	--local member_missing_reporter = report_warning -- TODO
-	local member_missing_reporter = report_spam --[[SOL OUTPUT--]] 
+	local member_missing_reporter = sol_warning --[[SOL OUTPUT--]]  -- TODO
+	--local member_missing_reporter = report_spam
 
 	--[[
 	-- Will lookup typedefs in scope variables
@@ -1238,7 +1238,7 @@ local function analyze(ast
 						expr.name, var_.where) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-				var_.num_reads = var_.num_reads + 1 --[[SOL OUTPUT--]] 
+				var_.num_reads = var_ . num_reads + ( 1 ) --[[SOL OUTPUT--]] 
 			else
 				if expr.name ~= '_' then  -- Implicit '_' var is OK
 					report_error(expr, "Implicit global %q", expr.name) --[[SOL OUTPUT--]] 
@@ -1504,7 +1504,7 @@ local function analyze(ast
 		elseif expr.ast_type == 'DotsExpr' then
 			local v = scope:get_local('...') --[[SOL OUTPUT--]] 
 			if v then
-				v.num_reads = v.num_reads + 1 --[[SOL OUTPUT--]] 
+				v.num_reads = v . num_reads + ( 1 ) --[[SOL OUTPUT--]] 
 				local t = v.type --[[SOL OUTPUT--]] 
 				assert(t) --[[SOL OUTPUT--]] 
 				if t then
@@ -1844,7 +1844,7 @@ local function analyze(ast
 		end --[[SOL OUTPUT--]] 
 
 		v.namespace = deduced_type and deduced_type.namespace --[[SOL OUTPUT--]]   -- If any
-		v.num_writes = v.num_writes + 1 --[[SOL OUTPUT--]] 
+		v.num_writes = v . num_writes + ( 1 ) --[[SOL OUTPUT--]] 
 
 		--report_info(stat, "decl_var_type %q pre-analyzed: %s, explicit: %s, deduced: %s, RESULT: %s\n", v.name, pre_analyzed_type, explicit_type, deduced_type, v.type)
 	end --[[SOL OUTPUT--]] 
@@ -2100,14 +2100,14 @@ local function analyze(ast
 		local left_type, left_var = analyze_expr_single_var( left_expr, scope ) --[[SOL OUTPUT--]] 
 
 		if left_var then
-			left_var.num_writes = left_var.num_writes + 1 --[[SOL OUTPUT--]] 
+			left_var.num_writes = left_var . num_writes + ( 1 ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		if left_type.namespace then
 			report_error(stat, "Cannot assign to a namespace outside of declaration") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		if left_type.is_pre_analyze or (left_var and left_var.is_pre_analyze) then
+		if left_type.pre_analyzed or (left_var and left_var.forward_declared) then
 			if left_var then
 				left_var.type = right_type --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -2548,7 +2548,7 @@ local function analyze(ast
 				report_spam(stat, "free function, name: %q", fun_t.name) --[[SOL OUTPUT--]] 
 
 				local v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t) --[[SOL OUTPUT--]] 
-				v.num_writes = v.num_writes + 1 --[[SOL OUTPUT--]] 
+				v.num_writes = v . num_writes + ( 1 ) --[[SOL OUTPUT--]] 
 				v.var_type = 'Function' --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -2574,7 +2574,7 @@ local function analyze(ast
 
 			for i = 1,#stat.var_names do
 				local v = declare_local(stat, loop_scope, stat.var_names[i]) --[[SOL OUTPUT--]] 
-				v.num_writes = v.num_writes + 1 --[[SOL OUTPUT--]] 
+				v.num_writes = v . num_writes + ( 1 ) --[[SOL OUTPUT--]] 
 				v.var_type = 'Loop variable' --[[SOL OUTPUT--]] 
 				if types ~= T.AnyTypeList then
 					v.type = types[i] --[[SOL OUTPUT--]] 
@@ -2612,8 +2612,8 @@ local function analyze(ast
 
 			local iter_var = declare_local(stat, loop_scope, stat.var_name) --[[SOL OUTPUT--]] 
 			iter_var.type = iter_t --[[SOL OUTPUT--]] 
-			iter_var.num_writes = iter_var.num_writes + 1 --[[SOL OUTPUT--]] 
-			iter_var.num_reads  = iter_var.num_reads  + 1 --[[SOL OUTPUT--]]   -- Actual looping counts
+			iter_var.num_writes = iter_var . num_writes + ( 1 ) --[[SOL OUTPUT--]] 
+			iter_var.num_reads = iter_var . num_reads + ( 1 ) --[[SOL OUTPUT--]]   -- Actual looping counts
 			iter_var.var_type = 'Loop variable' --[[SOL OUTPUT--]] 
 			
 			local ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
@@ -2694,7 +2694,7 @@ local function analyze(ast
 						if not v then
 							sol_error(stat, "Pre-analyze: Declaring global %q", name) --[[SOL OUTPUT--]] 
 							v = top_scope:create_global( name, where_is(stat) ) --[[SOL OUTPUT--]] 
-							v.pre_analyzed = true --[[SOL OUTPUT--]] 
+							v.forward_declared = true --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 
 					elseif stat.rhs[1].ast_type      == 'CallExpr'

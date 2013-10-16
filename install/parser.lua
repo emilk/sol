@@ -382,6 +382,10 @@ function P
 
 
 
+
+
+
+
 .parse_sol(src, tok, filename, settings, module_scope)
 	filename = filename or '' --[[SOL OUTPUT--]] 
 	settings = settings or P.SOL_SETTINGS --[[SOL OUTPUT--]] 
@@ -401,7 +405,7 @@ function P
 		local line_num = 0 --[[SOL OUTPUT--]] 
 		for line in src:gmatch("[^\n]*\n?") do
 			if line:sub(-1,-1) == '\n' then line = line:sub(1,-2) --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-			line_num = line_num+1 --[[SOL OUTPUT--]] 
+			line_num = line_num + ( 1 ) --[[SOL OUTPUT--]] 
 			if line_num == tok:peek().line then
 				err = err..">> `"..line:gsub('\t','    ').."`\n" --[[SOL OUTPUT--]] 
 				for i = 1, tok:peek().char do
@@ -2003,7 +2007,8 @@ function P
 
 		if tok:is_symbol(';') then
 			report_warning("semicolon at the end of a statement is considered bad style") --[[SOL OUTPUT--]] 
-			stat.semicolon = tok:get( stat.tokens ) --[[SOL OUTPUT--]] 
+			tok:get( stat.tokens ) --[[SOL OUTPUT--]] 
+			stat.semicolon = true --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		return true, stat --[[SOL OUTPUT--]] 

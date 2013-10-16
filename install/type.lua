@@ -242,7 +242,7 @@ function T.follow_identifiers(t, forgiving)
 				end --[[SOL OUTPUT--]] 
 			else
 				t.type = var_.namespace[t.name] --[[SOL OUTPUT--]] 
-				var_.num_reads = var_.num_reads + 1 --[[SOL OUTPUT--]] 
+				var_.num_reads = var_ . num_reads + ( 1 ) --[[SOL OUTPUT--]] 
 				if not t.type then
 					T.on_error("%s: type %s not found in namespace '%s'", t.first_usage, t.name, var_.name) --[[SOL OUTPUT--]] 
 					t.type = T.Any --[[SOL OUTPUT--]] 

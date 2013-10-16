@@ -55,7 +55,7 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 
 		append_str = function(self, str: string)
 			local nl = count_line_breaks(str)
-			self.line = self.line + nl
+			self.line += nl
 			self.rope #= str
 		end,
 
@@ -70,7 +70,7 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 				while self.line + nl < token.line do
 					--print("Inserting extra line")
 					self.rope #= '\n'
-					self.line = self.line + 1
+					self.line += 1
 				end
 			end
 
