@@ -667,7 +667,6 @@ function T.has_tag(t: T.Type, target: string) -> bool
 
 	elseif T.is_variant(t) then
 		for _,v in ipairs(t.variants) do
-			--print("Find: searching variant " .. T.name(v))
 			if T.has_tag(v, target) then
 				return true
 			end
@@ -1342,20 +1341,12 @@ function T.variant(a: T.Type?, b: T.Type?) -> T.Type?
 	end
 end
 
-
-local function un_literal(t: T.Type) -> T.Type
-	if t.tag == 'int_literal' then return T.Int end
-	if t.tag == 'num_literal' then return T.Num end
-	return t
-end
-
 -- used for expressions like "a + b"
 -- works for tables, or numerics, i.e.   num+int == num
 function T.combine_num_int(a: T.Type, b: T.Type) -> T.Num or T.Int
-	if T.is_any(a)                  then return T.Num end
+	if T.is_any(a) or T.is_any(b)   then return T.Num end
 	if T.has_tag(a, 'number')       then return T.Num end
 	if T.has_tag(a, 'num_literal')  then return T.Num end
-	if T.is_any(a)                  then return T.Num end
 	if T.has_tag(b, 'number')       then return T.Num end
 	if T.has_tag(b, 'num_literal')  then return T.Num end
 	return T.Int

@@ -1695,6 +1695,12 @@ local function analyze(ast
 							report_error(e.value, "Object member %q declared twice", e.key) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 						obj_members[ e.key ] = this_val_type --[[SOL OUTPUT--]] 
+
+
+						if this_val_type and this_val_type.tag == 'function' and this_val_type.name == '<lambda>' then
+							-- Give the lmabda-function a more helpful name:
+							this_val_type.name = e.key --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
