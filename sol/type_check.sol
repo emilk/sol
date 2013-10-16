@@ -815,7 +815,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 				local types = pairs_type( arg_ts[1] )
 				if types then
-					assert(#types == 2)
 					return types
 				else
 					var error_rope = {} : [string]
@@ -1697,7 +1696,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						obj_members[ e.key ] = this_val_type
 
 
-						if this_val_type and this_val_type.tag == 'function' and this_val_type.name == '<lambda>' then
+						if this_val_type.tag == 'function' and this_val_type.name == '<lambda>' then
 							-- Give the lmabda-function a more helpful name:
 							this_val_type.name = e.key
 						end

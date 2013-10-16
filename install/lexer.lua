@@ -2,16 +2,18 @@
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
-local WhiteChars   = set{' ', '\n', '\t', '\r'} --[[SOL OUTPUT--]]  -- FIXME: why isn't the non-use of this warned about?
-local LowerChars   = set{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+local LOWER_CHARS  = set{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
                        'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
                        's', 't', 'u', 'v', 'w', 'x', 'y', 'z'} --[[SOL OUTPUT--]] 
-local UpperChars   = set{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+local UPPER_CHARS  = set{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
                        'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
                        'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'} --[[SOL OUTPUT--]] 
-local Digits       = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'} --[[SOL OUTPUT--]] 
-local HexDigits    = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+local DIGITS       = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'} --[[SOL OUTPUT--]] 
+local HEX_DIGITS   = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                        'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'} --[[SOL OUTPUT--]] 
+
+local IDENT_START_CHARS = U.set_join(LOWER_CHARS, UPPER_CHARS, set{'_'}) --[[SOL OUTPUT--]] 
+local IDENT_CHARS       = U.set_join(IDENT_START_CHARS, DIGITS) --[[SOL OUTPUT--]] 
 
 local L = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
@@ -253,13 +255,13 @@ function L.lex_sol(src, filename, settings)
 				--eof
 				to_emit = { type = 'Eof' } --[[SOL OUTPUT--]] 
 
-			elseif UpperChars[c] or LowerChars[c] or c == '_' then
+			elseif IDENT_START_CHARS[c] then
 				--ident or keyword
 				local start = p --[[SOL OUTPUT--]] 
 				repeat
 					get() --[[SOL OUTPUT--]] 
 					c = chars[p] --[[SOL OUTPUT--]] 
-				until not (UpperChars[c] or LowerChars[c] or Digits[c] or c == '_') --[[SOL OUTPUT--]] 
+				until not IDENT_CHARS[c] --[[SOL OUTPUT--]] 
 				local dat = src:sub(start, p-1) --[[SOL OUTPUT--]] 
 				if keywords[dat] then
 					to_emit = {type = 'Keyword', data = dat} --[[SOL OUTPUT--]] 
@@ -267,25 +269,25 @@ function L.lex_sol(src, filename, settings)
 					to_emit = {type = 'ident', data = dat} --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-			elseif Digits[c] or (chars[p] == '.' and Digits[peek(1)]) then
+			elseif DIGITS[c] or (chars[p] == '.' and DIGITS[peek(1)]) then
 				--number const
 				local start = p --[[SOL OUTPUT--]] 
 				if c == '0' and peek(1) == 'x' then
 					get() --[[SOL OUTPUT--]]   -- 0
 					get() --[[SOL OUTPUT--]]   -- x
-					while HexDigits[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+					while HEX_DIGITS[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					if consume('Pp') then
 						consume('+-') --[[SOL OUTPUT--]] 
-						while Digits[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+						while DIGITS[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				else
-					while Digits[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+					while DIGITS[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					if consume('.') then
-						while Digits[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+						while DIGITS[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 					if consume('Ee') then
 						consume('+-') --[[SOL OUTPUT--]] 
-						while Digits[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+						while DIGITS[chars[p]] do get() --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				to_emit = {type = 'Number', data = src:sub(start, p-1)} --[[SOL OUTPUT--]] 

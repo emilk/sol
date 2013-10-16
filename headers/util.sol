@@ -21,6 +21,7 @@ return {
 	serialize:         function(val, ignore_set: {any}?) -> string;
 	serialize_to_rope: function(rope: [string], val, ignore_set: {any}?, indent: string?, discovered: {table}?) -> void;
 	set:               function(tb: [string]) -> {string};
+	set_join:          function(... : {string}) -> {string};
 	shallow_clone:     function(t: table?) -> table?;
 	table_clear:       function(t: table) -> void;
 	table_empty:       function(t: table) -> bool;

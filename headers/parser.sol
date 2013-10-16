@@ -51,6 +51,7 @@ return {
 		ast_type: 'CastExpr';
 		expr:     ExprNode;
 		tokens:   [Token];
+		type:     Type;
 		where:    string;
 	};
 	typedef ClassDeclStatement = {

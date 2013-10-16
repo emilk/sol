@@ -815,7 +815,6 @@ local function analyze(ast
 
 				local types = pairs_type( arg_ts[1] ) --[[SOL OUTPUT--]] 
 				if types then
-					assert(#types == 2) --[[SOL OUTPUT--]] 
 					return types --[[SOL OUTPUT--]] 
 				else
 					local error_rope = {} --[[SOL OUTPUT--]] 
@@ -1697,7 +1696,7 @@ local function analyze(ast
 						obj_members[ e.key ] = this_val_type --[[SOL OUTPUT--]] 
 
 
-						if this_val_type and this_val_type.tag == 'function' and this_val_type.name == '<lambda>' then
+						if this_val_type.tag == 'function' and this_val_type.name == '<lambda>' then
 							-- Give the lmabda-function a more helpful name:
 							this_val_type.name = e.key --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 

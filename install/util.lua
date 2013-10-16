@@ -319,6 +319,17 @@ function U.set(tb)
 end --[[SOL OUTPUT--]] 
 
 
+function U.set_join(...)
+	local ret_set = {} --[[SOL OUTPUT--]] 
+	for _,set in ipairs{...} do
+		for elem in pairs(set) do
+			ret_set[elem] = true --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+	return ret_set --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
 function U.list_join(out, in_table)
 	for _,val in ipairs(in_table) do
 		out [ # out + 1 ] = val --[[SOL OUTPUT--]] 

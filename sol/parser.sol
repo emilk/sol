@@ -237,6 +237,7 @@ typedef P.ParenthesesExpr : P.ExprNode = {
 typedef P.CastExpr : P.ExprNode = {
 	ast_type: 'CastExpr';
 	expr:     P.ExprNode;
+	type:     T.Type;
 }
 
 ---------------------------------------------
@@ -646,13 +647,14 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					return false, report_error("<ident> expected.")
 				end
 				local id = tok:get(token_list)
-				local node_index = {}
-				node_index.ast_type  = 'MemberExpr'
-				node_index.base     = prim
-				node_index.indexer  = symb
-				node_index.ident    = id
-				node_index.tokens   = token_list
-				node_index.where    = where
+				local node_index = {
+					ast_type = 'MemberExpr';
+					tokens   = token_list;
+					where    = where;
+					base     = prim;
+					indexer  = symb;
+					ident    = id;
+				}
 				--
 				prim = node_index
 
@@ -662,12 +664,13 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				if not tok:consume_symbol(']', token_list) then
 					return false, report_error("`]` expected.")
 				end
-				local node_index = {}
-				node_index.ast_type  = 'IndexExpr'
-				node_index.base     = prim
-				node_index.index    = ex
-				node_index.tokens   = token_list
-				node_index.where    = where
+				local node_index = {
+					ast_type = 'IndexExpr';
+					tokens   = token_list;
+					where    = where;
+					base     = prim;
+					index    = ex;
+				}
 				--
 				prim = node_index
 
@@ -685,12 +688,13 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 						end
 					end
 				end
-				local node_call = {}
-				node_call.ast_type  = 'CallExpr'
-				node_call.base      = prim
-				node_call.arguments = args
-				node_call.tokens    = token_list
-				node_call.where     = where
+				local node_call = {
+					ast_type  = 'CallExpr';
+					tokens    = token_list;
+					where     = where;
+					base      = prim;
+					arguments = args;
+				}
 				--
 				prim = node_call
 
@@ -698,13 +702,14 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				--string call
 				local st, ex = parse_simple_expr(scope)
 				if not st then return false, ex end
-				local node_call = {}
-				node_call.ast_type  = 'StringCallExpr'
-				node_call.base      = prim
-				--node_call.arguments  = { tok:get(token_list) }
-				node_call.arguments = { ex }
-				node_call.tokens    = token_list
-				node_call.where     = where
+				local node_call = {
+					ast_type  = 'StringCallExpr';
+					tokens    = token_list;
+					where     = where;
+					base      = prim;
+					--arguments  = { tok:get(token_list) };
+					arguments = { ex };
+				}
 				--
 				prim = node_call
 
@@ -714,12 +719,13 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				-- FIX: parse_expr(scope) parses the table AND and any following binary expressions.
 				-- We just want the table
 				if not st then return false, ex end
-				local node_call = {}
-				node_call.ast_type  = 'TableCallExpr'
-				node_call.base      = prim
-				node_call.arguments = { ex }
-				node_call.tokens    = token_list
-				node_call.where     = where
+				local node_call = {
+					ast_type  = 'TableCallExpr';
+					tokens    = token_list;
+					where     = where;
+					base      = prim;
+					arguments = { ex };
+				}
 				--
 				prim = node_call
 
@@ -868,7 +874,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		elseif tok:consume_keyword('function', token_list) then
 			-- Parse lambda
-			local st, lambda_node = parse_function_args_and_body(scope, token_list)
+			var st, lambda_node = parse_function_args_and_body(scope, token_list)
 			if not st then return false, lambda_node end
 			--
 			node = lambda_node
@@ -927,14 +933,16 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			if not st then return false, exp end
 			local node_ex = {
 				ast_type = 'UnopExpr';
+				tokens   = token_list;
+				where    = where;
 				rhs      = exp;
 				op       = op;
-				tokens   = token_list;
 			}
 			exp = node_ex
 		else
 			st, exp = parse_simple_expr(scope)
 			if not st then return false, exp end
+			exp.where = exp.where or where
 		end
 
 		--next items in chain
@@ -942,15 +950,17 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			local prio = priority[tok:peek().data]
 			if prio and prio[1] > prio_level then
 				local token_list = {}
+				local where = where_am_i()
 				local op = tok:get(token_list).data
 				local st, rhs = parse_expr(scope, prio[2])
 				if not st then return false, rhs end
 				local node_ex = {
 					ast_type = 'BinopExpr';
+					tokens   = token_list;
+					where    = where;
 					lhs      = exp;
 					op       = op;
 					rhs      = rhs;
-					tokens   = token_list;
 				}
 				--
 				exp = node_ex
@@ -958,8 +968,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				break
 			end
 		end
-
-		exp.where = exp.where or where
 
 		if #tok:peek().leading_white>0 and tok:consume_symbol(':') then
 			-- A cast
@@ -1545,10 +1553,10 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 
 	local function parse_statement(scope) -> bool, StatNode_or_error
-		var            st         = true -- Success?
-		var   stat       = nil : object?
-		var token_list = {} : TokenList
-		var            where      = where_am_i()
+		var st         = true -- Success?
+		var stat       = nil  : object?
+		var token_list = {}   : TokenList
+		var where      = where_am_i()
 
 		if tok:consume_keyword('if', token_list) then
 			--setup
@@ -1636,10 +1644,11 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				return false, report_error("`end` expected.")
 			end
 
-			local node_do_stat = {}
-			node_do_stat.ast_type = 'DoStatement'
-			node_do_stat.body    = node_block
-			node_do_stat.tokens  = token_list
+			local node_do_stat = {
+				ast_type = 'DoStatement';
+				tokens  = token_list;
+				body    = node_block;
+			}
 			stat = node_do_stat
 
 		elseif tok:consume_keyword('for', token_list) then
@@ -1741,12 +1750,13 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			local st, cond = parse_expr(body.scope)
 			if not st then return false, cond end
 			--
-			local node_repeat = {}
-			node_repeat.ast_type  = 'RepeatStatement'
-			node_repeat.condition = cond
-			node_repeat.body      = body
-			node_repeat.tokens    = token_list
-			node_repeat.scope     = body.scope
+			local node_repeat = {
+				ast_type  = 'RepeatStatement';
+				tokens    = token_list;
+				condition = cond;
+				body      = body;
+				scope     = body.scope;
+			}
 			stat = node_repeat
 
 		elseif tok:consume_keyword('function', token_list) then
@@ -1804,10 +1814,11 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			if not tok:consume_symbol('::', token_list) then
 				return false, report_error("`::` expected")
 			end
-			local node_label = {}
-			node_label.ast_type = 'LabelStatement'
-			node_label.label   = label
-			node_label.tokens  = token_list
+			local node_label = {
+				ast_type = 'LabelStatement';
+				tokens   = token_list;
+				label    = label;
+			}
 			stat = node_label
 
 		elseif tok:consume_keyword('return', token_list) then
@@ -1831,9 +1842,10 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			}
 
 		elseif tok:consume_keyword('break', token_list) then
-			local node_break = {}
-			node_break.ast_type = 'BreakStatement'
-			node_break.tokens  = token_list
+			local node_break = {
+				ast_type = 'BreakStatement';
+				tokens  = token_list;
+			}
 			stat = node_break
 
 		elseif tok:consume_keyword('goto', token_list) then

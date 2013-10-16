@@ -2,16 +2,18 @@ local U = require 'util'
 local D = require 'sol_debug'
 local set = U.set
 
-var WhiteChars   = set{' ', '\n', '\t', '\r'} -- FIXME: why isn't the non-use of this warned about?
-var LowerChars   = set{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+var LOWER_CHARS  = set{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
                        'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
                        's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
-var UpperChars   = set{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+var UPPER_CHARS  = set{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
                        'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
                        'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}
-var Digits       = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
-var HexDigits    = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+var DIGITS       = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
+var HEX_DIGITS   = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                        'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'}
+
+var IDENT_START_CHARS = U.set_join(LOWER_CHARS, UPPER_CHARS, set{'_'})
+var IDENT_CHARS       = U.set_join(IDENT_START_CHARS, DIGITS)
 
 local L = {}
 
@@ -253,13 +255,13 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 				--eof
 				to_emit = { type = 'Eof' }
 
-			elseif UpperChars[c] or LowerChars[c] or c == '_' then
+			elseif IDENT_START_CHARS[c] then
 				--ident or keyword
 				local start = p
 				repeat
 					get()
 					c = chars[p]
-				until not (UpperChars[c] or LowerChars[c] or Digits[c] or c == '_')
+				until not IDENT_CHARS[c]
 				local dat = src:sub(start, p-1)
 				if keywords[dat] then
 					to_emit = {type = 'Keyword', data = dat}
@@ -267,25 +269,25 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 					to_emit = {type = 'ident', data = dat}
 				end
 
-			elseif Digits[c] or (chars[p] == '.' and Digits[peek(1)]) then
+			elseif DIGITS[c] or (chars[p] == '.' and DIGITS[peek(1)]) then
 				--number const
 				local start = p
 				if c == '0' and peek(1) == 'x' then
 					get()  -- 0
 					get()  -- x
-					while HexDigits[chars[p]] do get() end
+					while HEX_DIGITS[chars[p]] do get() end
 					if consume('Pp') then
 						consume('+-')
-						while Digits[chars[p]] do get() end
+						while DIGITS[chars[p]] do get() end
 					end
 				else
-					while Digits[chars[p]] do get() end
+					while DIGITS[chars[p]] do get() end
 					if consume('.') then
-						while Digits[chars[p]] do get() end
+						while DIGITS[chars[p]] do get() end
 					end
 					if consume('Ee') then
 						consume('+-')
-						while Digits[chars[p]] do get() end
+						while DIGITS[chars[p]] do get() end
 					end
 				end
 				to_emit = {type = 'Number', data = src:sub(start, p-1)}

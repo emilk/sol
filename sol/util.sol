@@ -319,6 +319,17 @@ function U.set(tb: [string]) -> {string}
 end
 
 
+function U.set_join(... : {string}) -> {string}
+	var ret_set = {} : {string}
+	for _,set in ipairs{...} do
+		for elem in pairs(set) do
+			ret_set[elem] = true
+		end
+	end
+	return ret_set
+end
+
+
 function U.list_join(out: [any], in_table: [any])
 	for _,val in ipairs(in_table) do
 		out #= val

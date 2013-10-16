@@ -386,6 +386,7 @@ function P
 
 
 
+
 .parse_sol(src, tok, filename, settings, module_scope)
 	filename = filename or '' --[[SOL OUTPUT--]] 
 	settings = settings or P.SOL_SETTINGS --[[SOL OUTPUT--]] 
@@ -646,13 +647,14 @@ function P
 					return false, report_error("<ident> expected.") --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				local id = tok:get(token_list) --[[SOL OUTPUT--]] 
-				local node_index = {} --[[SOL OUTPUT--]] 
-				node_index.ast_type  = 'MemberExpr' --[[SOL OUTPUT--]] 
-				node_index.base     = prim --[[SOL OUTPUT--]] 
-				node_index.indexer  = symb --[[SOL OUTPUT--]] 
-				node_index.ident    = id --[[SOL OUTPUT--]] 
-				node_index.tokens   = token_list --[[SOL OUTPUT--]] 
-				node_index.where    = where --[[SOL OUTPUT--]] 
+				local node_index = {
+					ast_type = 'MemberExpr';
+					tokens   = token_list;
+					where    = where;
+					base     = prim;
+					indexer  = symb;
+					ident    = id;
+				} --[[SOL OUTPUT--]] 
 				--
 				prim = node_index --[[SOL OUTPUT--]] 
 
@@ -662,12 +664,13 @@ function P
 				if not tok:consume_symbol(']', token_list) then
 					return false, report_error("`]` expected.") --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				local node_index = {} --[[SOL OUTPUT--]] 
-				node_index.ast_type  = 'IndexExpr' --[[SOL OUTPUT--]] 
-				node_index.base     = prim --[[SOL OUTPUT--]] 
-				node_index.index    = ex --[[SOL OUTPUT--]] 
-				node_index.tokens   = token_list --[[SOL OUTPUT--]] 
-				node_index.where    = where --[[SOL OUTPUT--]] 
+				local node_index = {
+					ast_type = 'IndexExpr';
+					tokens   = token_list;
+					where    = where;
+					base     = prim;
+					index    = ex;
+				} --[[SOL OUTPUT--]] 
 				--
 				prim = node_index --[[SOL OUTPUT--]] 
 
@@ -685,12 +688,13 @@ function P
 						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				local node_call = {} --[[SOL OUTPUT--]] 
-				node_call.ast_type  = 'CallExpr' --[[SOL OUTPUT--]] 
-				node_call.base      = prim --[[SOL OUTPUT--]] 
-				node_call.arguments = args --[[SOL OUTPUT--]] 
-				node_call.tokens    = token_list --[[SOL OUTPUT--]] 
-				node_call.where     = where --[[SOL OUTPUT--]] 
+				local node_call = {
+					ast_type  = 'CallExpr';
+					tokens    = token_list;
+					where     = where;
+					base      = prim;
+					arguments = args;
+				} --[[SOL OUTPUT--]] 
 				--
 				prim = node_call --[[SOL OUTPUT--]] 
 
@@ -698,13 +702,14 @@ function P
 				--string call
 				local st, ex = parse_simple_expr(scope) --[[SOL OUTPUT--]] 
 				if not st then return false, ex --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-				local node_call = {} --[[SOL OUTPUT--]] 
-				node_call.ast_type  = 'StringCallExpr' --[[SOL OUTPUT--]] 
-				node_call.base      = prim --[[SOL OUTPUT--]] 
-				--node_call.arguments  = { tok:get(token_list) }
-				node_call.arguments = { ex } --[[SOL OUTPUT--]] 
-				node_call.tokens    = token_list --[[SOL OUTPUT--]] 
-				node_call.where     = where --[[SOL OUTPUT--]] 
+				local node_call = {
+					ast_type  = 'StringCallExpr';
+					tokens    = token_list;
+					where     = where;
+					base      = prim;
+					--arguments  = { tok:get(token_list) };
+					arguments = { ex };
+				} --[[SOL OUTPUT--]] 
 				--
 				prim = node_call --[[SOL OUTPUT--]] 
 
@@ -714,12 +719,13 @@ function P
 				-- FIX: parse_expr(scope) parses the table AND and any following binary expressions.
 				-- We just want the table
 				if not st then return false, ex --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-				local node_call = {} --[[SOL OUTPUT--]] 
-				node_call.ast_type  = 'TableCallExpr' --[[SOL OUTPUT--]] 
-				node_call.base      = prim --[[SOL OUTPUT--]] 
-				node_call.arguments = { ex } --[[SOL OUTPUT--]] 
-				node_call.tokens    = token_list --[[SOL OUTPUT--]] 
-				node_call.where     = where --[[SOL OUTPUT--]] 
+				local node_call = {
+					ast_type  = 'TableCallExpr';
+					tokens    = token_list;
+					where     = where;
+					base      = prim;
+					arguments = { ex };
+				} --[[SOL OUTPUT--]] 
 				--
 				prim = node_call --[[SOL OUTPUT--]] 
 
@@ -927,14 +933,16 @@ function P
 			if not st then return false, exp --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			local node_ex = {
 				ast_type = 'UnopExpr';
+				tokens   = token_list;
+				where    = where;
 				rhs      = exp;
 				op       = op;
-				tokens   = token_list;
 			} --[[SOL OUTPUT--]] 
 			exp = node_ex --[[SOL OUTPUT--]] 
 		else
 			st, exp = parse_simple_expr(scope) --[[SOL OUTPUT--]] 
 			if not st then return false, exp --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+			exp.where = exp.where or where --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		--next items in chain
@@ -942,15 +950,17 @@ function P
 			local prio = priority[tok:peek().data] --[[SOL OUTPUT--]] 
 			if prio and prio[1] > prio_level then
 				local token_list = {} --[[SOL OUTPUT--]] 
+				local where = where_am_i() --[[SOL OUTPUT--]] 
 				local op = tok:get(token_list).data --[[SOL OUTPUT--]] 
 				local st, rhs = parse_expr(scope, prio[2]) --[[SOL OUTPUT--]] 
 				if not st then return false, rhs --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 				local node_ex = {
 					ast_type = 'BinopExpr';
+					tokens   = token_list;
+					where    = where;
 					lhs      = exp;
 					op       = op;
 					rhs      = rhs;
-					tokens   = token_list;
 				} --[[SOL OUTPUT--]] 
 				--
 				exp = node_ex --[[SOL OUTPUT--]] 
@@ -958,8 +968,6 @@ function P
 				break --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-
-		exp.where = exp.where or where --[[SOL OUTPUT--]] 
 
 		if #tok:peek().leading_white>0 and tok:consume_symbol(':') then
 			-- A cast
@@ -1545,10 +1553,10 @@ function P
 
 
 	local function parse_statement(scope)
-		local            st         = true --[[SOL OUTPUT--]]  -- Success?
-		local   stat       = nil --[[SOL OUTPUT--]] 
+		local st         = true --[[SOL OUTPUT--]]  -- Success?
+		local stat       = nil --[[SOL OUTPUT--]] 
 		local token_list = {} --[[SOL OUTPUT--]] 
-		local            where      = where_am_i() --[[SOL OUTPUT--]] 
+		local where      = where_am_i() --[[SOL OUTPUT--]] 
 
 		if tok:consume_keyword('if', token_list) then
 			--setup
@@ -1636,10 +1644,11 @@ function P
 				return false, report_error("`end` expected.") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			local node_do_stat = {} --[[SOL OUTPUT--]] 
-			node_do_stat.ast_type = 'DoStatement' --[[SOL OUTPUT--]] 
-			node_do_stat.body    = node_block --[[SOL OUTPUT--]] 
-			node_do_stat.tokens  = token_list --[[SOL OUTPUT--]] 
+			local node_do_stat = {
+				ast_type = 'DoStatement';
+				tokens  = token_list;
+				body    = node_block;
+			} --[[SOL OUTPUT--]] 
 			stat = node_do_stat --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_keyword('for', token_list) then
@@ -1741,12 +1750,13 @@ function P
 			local st, cond = parse_expr(body.scope) --[[SOL OUTPUT--]] 
 			if not st then return false, cond --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			--
-			local node_repeat = {} --[[SOL OUTPUT--]] 
-			node_repeat.ast_type  = 'RepeatStatement' --[[SOL OUTPUT--]] 
-			node_repeat.condition = cond --[[SOL OUTPUT--]] 
-			node_repeat.body      = body --[[SOL OUTPUT--]] 
-			node_repeat.tokens    = token_list --[[SOL OUTPUT--]] 
-			node_repeat.scope     = body.scope --[[SOL OUTPUT--]] 
+			local node_repeat = {
+				ast_type  = 'RepeatStatement';
+				tokens    = token_list;
+				condition = cond;
+				body      = body;
+				scope     = body.scope;
+			} --[[SOL OUTPUT--]] 
 			stat = node_repeat --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_keyword('function', token_list) then
@@ -1804,10 +1814,11 @@ function P
 			if not tok:consume_symbol('::', token_list) then
 				return false, report_error("`::` expected") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			local node_label = {} --[[SOL OUTPUT--]] 
-			node_label.ast_type = 'LabelStatement' --[[SOL OUTPUT--]] 
-			node_label.label   = label --[[SOL OUTPUT--]] 
-			node_label.tokens  = token_list --[[SOL OUTPUT--]] 
+			local node_label = {
+				ast_type = 'LabelStatement';
+				tokens   = token_list;
+				label    = label;
+			} --[[SOL OUTPUT--]] 
 			stat = node_label --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_keyword('return', token_list) then
@@ -1831,9 +1842,10 @@ function P
 			} --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_keyword('break', token_list) then
-			local node_break = {} --[[SOL OUTPUT--]] 
-			node_break.ast_type = 'BreakStatement' --[[SOL OUTPUT--]] 
-			node_break.tokens  = token_list --[[SOL OUTPUT--]] 
+			local node_break = {
+				ast_type = 'BreakStatement';
+				tokens  = token_list;
+			} --[[SOL OUTPUT--]] 
 			stat = node_break --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_keyword('goto', token_list) then
