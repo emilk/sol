@@ -1,12 +1,13 @@
 -- For running a .sol without outputting a .lua to disk
 -- TODO: compiler.sol continaing thing common to sol.sol and solc.sol
 
+require 'globals'
 local lfs  = require 'lfs'
 local path = require 'pl.path'
 
 ------------------------------------------------
 -- Setup local includes:
--- Without this code 
+-- Without this code
 
 local sol_dir  = path.dirname(arg[0])
 
@@ -20,7 +21,7 @@ end
 
 -- Ensure the local includes work:
 package.path = sol_dir..'?.lua;' .. package.path
-	
+
 
 ------------------------------------------------
 
@@ -128,9 +129,9 @@ else
 		if a == '-h' or a == '--help' then
 			print_help()
 		elseif a == '-s' then
-			_G.g_spam = true
+			g_spam = true
 		elseif a == '-e0' then
-			_G.g_ignore_errors = true
+			g_ignore_errors = true
 		else
 			local path_in = a
 			if path.extension(path_in) ~= '.sol' then

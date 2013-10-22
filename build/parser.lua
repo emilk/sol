@@ -5,6 +5,7 @@
 -- It keeps track of scoping and variables.
 
 
+require 'globals' --[[SOL OUTPUT--]] 
 local L = require 'lexer' --[[SOL OUTPUT--]] 
 local _ = require 'scope' --[[SOL OUTPUT--]] 
 local T = require 'type' --[[SOL OUTPUT--]]  -- For intrinsic functions
@@ -440,7 +441,7 @@ function P
 	end --[[SOL OUTPUT--]] 
 
 	local function report_warning(msg_fmt, ...)
-		if _G.g_warnings_as_errors then
+		if g_warnings_as_errors then
 			return report_error(msg_fmt, ...) --[[SOL OUTPUT--]] 
 		else
 			local msg = generate_msg(msg_fmt, ...) --[[SOL OUTPUT--]] 
@@ -450,7 +451,7 @@ function P
 	end --[[SOL OUTPUT--]] 
 
 	local function report_spam(msg_fmt, ...)
-		if _G.g_spam then
+		if g_spam then
 			local msg = generate_msg(msg_fmt, ...) --[[SOL OUTPUT--]] 
 			print( msg ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -473,7 +474,7 @@ function P
 
 
 	local parse_statement_list --[[SOL OUTPUT--]] 
-	local parse_simple_expr, 
+	local parse_simple_expr,
 	      parse_expr,
 	      parse_primary_expr,
 	      parse_suffixed_expr,
@@ -1036,7 +1037,7 @@ function P
 						report_error('Bad object: identifier expected') --[[SOL OUTPUT--]] 
 						return T.Any --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
-					
+
 					local id = tok:get().data --[[SOL OUTPUT--]] 
 
 					if not tok:consume_symbol(':') then
@@ -1345,7 +1346,7 @@ function P
 		end --[[SOL OUTPUT--]] 
 		local type_name = tok:get().data --[[SOL OUTPUT--]] 
 
-		local node = { 
+		local node = {
 			ast_type  = 'Typedef',
 			scope     = scope,
 			type_name = type_name,
@@ -1400,7 +1401,7 @@ function P
 				local type = parse_type(scope) --[[SOL OUTPUT--]] 
 
 				if not type then
-					report_error("Expected type") --[[SOL OUTPUT--]]  
+					report_error("Expected type") --[[SOL OUTPUT--]] 
 					return nil --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
@@ -1515,7 +1516,7 @@ function P
 
 		function Foo:init()
 			-- The next line extends the instance type
-			self.member_var = 32 
+			self.member_var = 32
 		end
 
 		function Foo:member_fun()
@@ -1535,10 +1536,10 @@ function P
 		end --[[SOL OUTPUT--]] 
 
 		local st, rhs = parse_expr(scope) --[[SOL OUTPUT--]] 
-		
+
 		if not st then return false, rhs --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-		local node = { 
+		local node = {
 			ast_type  = 'ClassDeclStatement',
 			scope     = scope,
 			name      = name,
@@ -2005,12 +2006,12 @@ function P
 					expression = suffixed;
 					tokens     = token_list;
 				} --[[SOL OUTPUT--]] 
-				
+
 			else
 				return false, report_error("Assignment statement expected, got (" .. tok:peek().data .. ")") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-		
+
 		if not st then return st, stat --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
 		assert(stat) --[[SOL OUTPUT--]] 

@@ -49,7 +49,7 @@ package.path = sol_dir..'?.lua;' .. package.path
 
 ------------------------------------------------
 
-
+require 'globals'
 local D          = require 'sol_debug'
 local output     = require 'output'
 local Lexer      = require 'lexer'
@@ -62,12 +62,6 @@ local intrinsics = require 'lua_intrinsics'
 local printf_err = U.printf_err
 
 ------------------------------------------------
-
-_G.g_local_parse        = false -- If true, ignore 'require'
-_G.g_spam               = false
-_G.g_ignore_errors      = false
-_G.g_break_on_error     = false
-_G.g_warnings_as_errors = false
 
 
 typedef parse_info = {
@@ -180,7 +174,7 @@ local function require_module(path_in: string, mod_name: string, module_scope: S
 			end
 
 			if not existing then
-				if _G.g_spam then
+				if g_spam then
 					U.printf("Adding global '%s'", v.name)
 				end
 				module_scope:add_global(v)
@@ -197,7 +191,7 @@ local function require_module(path_in: string, mod_name: string, module_scope: S
 			end
 
 			if not existing then
-				if _G.g_spam then
+				if g_spam then
 					U.printf("Adding global '%s'", name)
 				end
 				module_scope:add_global_type( name, type )
@@ -284,7 +278,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	end
 
 	var on_require = function(mod_name: string, req_where: string) -> T.Typelist
-		if _G.g_local_parse then
+		if g_local_parse then
 			return T.AnyTypeList
 		end
 
@@ -303,7 +297,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 		return info
 	end
 
-	if _G.g_spam then
+	if g_spam then
 		U.printf("Module %q successfully deduced to type %s", path_in, T.name(type))
 	else
 		--U.printf("Module %q successfully parsed and checked", module_name)
@@ -337,7 +331,7 @@ parse_module = function(chain: [string], path_in: string) -> parse_info
 
 	g_modules[module_id] = CURRENTLY_PARSING
 
-	if _G.g_spam then
+	if g_spam then
 		U.printf("Parsing %q...", path_in)
 	end
 
@@ -365,7 +359,7 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 			printf_err("Failed to open %q for writing", path_out)
 			os.exit(4)
 		else
-			if _G.g_spam then
+			if g_spam then
 				U.printf("File written to %q", path_out)
 			end
 			U.write_protect(path_out)
@@ -408,14 +402,14 @@ local function parse_global_require(mod_name: string) -> bool
 	end
 
 	for _,v in ipairs(mod_info.global_vars) do
-		if _G.g_spam then
+		if g_spam then
 			U.printf("Adding global '%s'", v.name)
 		end
 		g_globals.global_vars #= v
 	end
 
 	for name,type in pairs(mod_info.global_typedefs) do
-		if _G.g_spam then
+		if g_spam then
 			U.printf("Adding global type '%s'", name)
 		end
 		g_globals.global_typedefs[name] = type
@@ -537,10 +531,10 @@ else
 			g_parse_only = true
 
 		elseif a == '-s' or a == '--spam' then
-			_G.g_spam = true
+			g_spam = true
 
 		elseif a == '-e0' then
-			_G.g_ignore_errors = true
+			g_ignore_errors = true
 
 		elseif a == '--profile' then
 			g_profiler = require 'ProFi'
@@ -555,7 +549,7 @@ else
 			local path_in = arg[ix]
 			ix +=  1
 
-			--_G.g_local_parse = true
+			--g_local_parse = true
 
 			-- Read entire stdin
 			print("Reading from stdin...")
@@ -582,7 +576,7 @@ else
 			g_mod_paths #= dir
 
 		elseif a == '-Werror' then
-			_G.g_warnings_as_errors = true
+			g_warnings_as_errors = true
 
 		elseif a:match('^-') then
 			U.printf_err("Unknown option: %q", a)

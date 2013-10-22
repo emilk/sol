@@ -49,7 +49,7 @@ package.path = sol_dir..'?.lua;' .. package.path --[[SOL OUTPUT--]]
 
 ------------------------------------------------
 
-
+require 'globals' --[[SOL OUTPUT--]] 
 local D          = require 'sol_debug' --[[SOL OUTPUT--]] 
 local output     = require 'output' --[[SOL OUTPUT--]] 
 local Lexer      = require 'lexer' --[[SOL OUTPUT--]] 
@@ -59,17 +59,11 @@ local T          = require 'type' --[[SOL OUTPUT--]]
 local TypeCheck  = require 'type_check' --[[SOL OUTPUT--]] 
 local U          = require 'util' --[[SOL OUTPUT--]] 
 local intrinsics = require 'lua_intrinsics' --[[SOL OUTPUT--]] 
-local printf_err = U.printf_err --[[SOL OUTPUT--]] 
-
-------------------------------------------------
-
-_G.g_local_parse        = false --[[SOL OUTPUT--]]  -- If true, ignore 'require'
-_G.g_spam               = false --[[SOL OUTPUT--]] 
-_G.g_ignore_errors      = false --[[SOL OUTPUT--]] 
-_G.g_break_on_error     = false --[[SOL OUTPUT--]] 
-_G.g_warnings_as_errors = false --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+local printf_err = U.printf_err --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 local     CURRENTLY_PARSING = false --[[SOL OUTPUT--]] 
 local   FAIL_INFO = { ast = nil
+
+
 
 
 
@@ -180,7 +174,7 @@ local function require_module(path_in, mod_name, module_scope, req_where, req_ch
 			end --[[SOL OUTPUT--]] 
 
 			if not existing then
-				if _G.g_spam then
+				if g_spam then
 					U.printf("Adding global '%s'", v.name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				module_scope:add_global(v) --[[SOL OUTPUT--]] 
@@ -197,7 +191,7 @@ local function require_module(path_in, mod_name, module_scope, req_where, req_ch
 			end --[[SOL OUTPUT--]] 
 
 			if not existing then
-				if _G.g_spam then
+				if g_spam then
 					U.printf("Adding global '%s'", name) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				module_scope:add_global_type( name, type ) --[[SOL OUTPUT--]] 
@@ -284,7 +278,7 @@ local function parse_module_str(chain, path_in, source_text)
 	end --[[SOL OUTPUT--]] 
 
 	local on_require = function(mod_name, req_where)
-		if _G.g_local_parse then
+		if g_local_parse then
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -303,7 +297,7 @@ local function parse_module_str(chain, path_in, source_text)
 		return info --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	if _G.g_spam then
+	if g_spam then
 		U.printf("Module %q successfully deduced to type %s", path_in, T.name(type)) --[[SOL OUTPUT--]] 
 	else
 		--U.printf("Module %q successfully parsed and checked", module_name)
@@ -337,7 +331,7 @@ parse_module = function(chain, path_in)
 
 	g_modules[module_id] = CURRENTLY_PARSING --[[SOL OUTPUT--]] 
 
-	if _G.g_spam then
+	if g_spam then
 		U.printf("Parsing %q...", path_in) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -365,7 +359,7 @@ local function output_module(info, path_in, path_out, header_path_out)
 			printf_err("Failed to open %q for writing", path_out) --[[SOL OUTPUT--]] 
 			os.exit(4) --[[SOL OUTPUT--]] 
 		else
-			if _G.g_spam then
+			if g_spam then
 				U.printf("File written to %q", path_out) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			U.write_protect(path_out) --[[SOL OUTPUT--]] 
@@ -408,14 +402,14 @@ local function parse_global_require(mod_name)
 	end --[[SOL OUTPUT--]] 
 
 	for _,v in ipairs(mod_info.global_vars) do
-		if _G.g_spam then
+		if g_spam then
 			U.printf("Adding global '%s'", v.name) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		g_globals.global_vars [ # g_globals . global_vars + 1 ] = v --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	for name,type in pairs(mod_info.global_typedefs) do
-		if _G.g_spam then
+		if g_spam then
 			U.printf("Adding global type '%s'", name) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		g_globals.global_typedefs[name] = type --[[SOL OUTPUT--]] 
@@ -537,10 +531,10 @@ else
 			g_parse_only = true --[[SOL OUTPUT--]] 
 
 		elseif a == '-s' or a == '--spam' then
-			_G.g_spam = true --[[SOL OUTPUT--]] 
+			g_spam = true --[[SOL OUTPUT--]] 
 
 		elseif a == '-e0' then
-			_G.g_ignore_errors = true --[[SOL OUTPUT--]] 
+			g_ignore_errors = true --[[SOL OUTPUT--]] 
 
 		elseif a == '--profile' then
 			g_profiler = require 'ProFi' --[[SOL OUTPUT--]] 
@@ -555,7 +549,7 @@ else
 			local path_in = arg[ix] --[[SOL OUTPUT--]] 
 			ix = ix + (  1 ) --[[SOL OUTPUT--]] 
 
-			--_G.g_local_parse = true
+			--g_local_parse = true
 
 			-- Read entire stdin
 			print("Reading from stdin...") --[[SOL OUTPUT--]] 
@@ -582,7 +576,7 @@ else
 			g_mod_paths [ # g_mod_paths + 1 ] = dir --[[SOL OUTPUT--]] 
 
 		elseif a == '-Werror' then
-			_G.g_warnings_as_errors = true --[[SOL OUTPUT--]] 
+			g_warnings_as_errors = true --[[SOL OUTPUT--]] 
 
 		elseif a:match('^-') then
 			U.printf_err("Unknown option: %q", a) --[[SOL OUTPUT--]] 

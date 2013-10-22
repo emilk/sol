@@ -2,6 +2,7 @@
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
+require 'globals'
 local U = require 'util'
 local D = require 'sol_debug'
 
@@ -63,7 +64,7 @@ typedef T.NumLiteral    : T.Type = { tag : 'num_literal',    value : number }
 typedef T.StringLiteral : T.Type = {
 	tag          : 'string_literal',
 	str_quoted   : string,  -- As given in input, e.g:   "\"Hello\"\t'you!'"
-	str_contents : string,  -- As Lua would treat it:    "Hello"	'you' 
+	str_contents : string,  -- As Lua would treat it:    "Hello"	'you'
 }
 typedef T.Nil           : T.Type = { tag : 'nil'     }
 typedef T.True          : T.Type = { tag : 'true'    }
@@ -210,7 +211,7 @@ function T.follow_identifiers(t: T.Type, forgiving: bool?) -> T.Type
 
 	if forgiving == nil then forgiving = false end
 
-	if _G.g_local_parse then
+	if g_local_parse then
 		forgiving = true
 	end
 
@@ -223,7 +224,7 @@ function T.follow_identifiers(t: T.Type, forgiving: bool?) -> T.Type
 			forgiving = true
 		end
 		--]]
-		
+
 		assert( t.scope )
 		var scope = t.scope
 
@@ -926,7 +927,7 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 				return output(typ.variants[1], indent)
 			else
 				if #typ.variants == 2
-					and typ.variants[2] == T.Nil 
+					and typ.variants[2] == T.Nil
 					and typ.variants[1].tag ~= 'variant'
 					and typ.variants[1].tag ~= 'function'
 				then
@@ -958,7 +959,7 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 			end
 
 		elseif typ.tag == 'object' then
-			--verbose = false -- FIXME 
+			--verbose = false -- FIXME
 
 			var obj = typ : T.Object
 
@@ -1020,7 +1021,7 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 			return typ.str_quoted
 
 		elseif typ.tag == 'identifier' then
-			if (verbose or _G.g_spam) and typ.type then
+			if (verbose or g_spam) and typ.type then
 			--if typ.type then
 				return string.format('%s (%s)', typ.name, output(typ.type, next_indent))
 			else
@@ -1183,12 +1184,12 @@ function T.name(typ: T.Type or [T.Type] or nil, verbose: bool?) -> string
 		--D.error_()
 		return 'NIL'
 	end
-	
+
 	if typ == T.AnyTypeList then
 		return "..."
 
 	elseif T.is_type_list(typ) then
-		--D.error_()	
+		--D.error_()
 		return T.names(typ, verbose)
 	end
 
@@ -1359,7 +1360,7 @@ function T.combine_type_lists(a: T.Typelist?, b: T.Typelist?, forgiving: bool?) 
 		forgiving = true
 	end
 
-	if _G.g_spam then
+	if g_spam then
 		--U.printf('combine_type_lists(%s, %s)', T.name(a), T.name(b))
 	end
 
@@ -1367,7 +1368,7 @@ function T.combine_type_lists(a: T.Typelist?, b: T.Typelist?, forgiving: bool?) 
 	if b == nil then return a end
 
 	if a == T.AnyTypeList then return T.AnyTypeList end
-	if b == T.AnyTypeList then return T.AnyTypeList end	
+	if b == T.AnyTypeList then return T.AnyTypeList end
 
 	if forgiving then
 		if #a < #b  then
@@ -1392,7 +1393,7 @@ function T.combine_type_lists(a: T.Typelist?, b: T.Typelist?, forgiving: bool?) 
 		var ret = {} : T.Typelist
 		for i = 1, #a do
 			ret[i] = T.variant( a[i], b[i] )
-			if _G.g_spam then
+			if g_spam then
 				U.printf('variant(%s, %s) = %s', T.name(a[i]), T.name(b[i]), T.name(ret[i]))
 			end
 		end

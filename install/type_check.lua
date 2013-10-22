@@ -1,4 +1,5 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol --]] local U   = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/type_check.sol --]] require 'globals' --[[SOL OUTPUT--]] 
+local U   = require 'util' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 local T   = require 'type' --[[SOL OUTPUT--]] 
 local P   = require 'parser' --[[SOL OUTPUT--]] 
@@ -143,7 +144,7 @@ local function analyze(ast
 	end --[[SOL OUTPUT--]] 
 
 	local function report_spam(node, fmt, ...)
-		if _G.g_spam then
+		if g_spam then
 			print( report('Spam', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -163,7 +164,7 @@ local function analyze(ast
 	end --[[SOL OUTPUT--]] 
 
 	local function report_warning(node, fmt, ...)
-		if _G.g_warnings_as_errors then
+		if g_warnings_as_errors then
 			report_error(node, fmt, ...) --[[SOL OUTPUT--]] 
 		else
 			print( report('WARNING', where_is(node), fmt, ...) ) --[[SOL OUTPUT--]] 
@@ -200,7 +201,7 @@ local function analyze(ast
 		if level == 'ERROR' then
 			U.printf_err( "%s", report('ERROR', where, fmt, ...) ) --[[SOL OUTPUT--]] 
 			error_count = error_count + (  1 ) --[[SOL OUTPUT--]] 
-		elseif level ~= 'SPAM' or _G.g_spam then
+		elseif level ~= 'SPAM' or g_spam then
 			print( report(level, where, fmt, ...)) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -257,7 +258,7 @@ local function analyze(ast
 							['Loop variable'] = 'unused-loop-variable';
 						} --[[SOL OUTPUT--]] 
 						local issue_name = var_type_to_warning_name[var_type] or 'unused-variable' --[[SOL OUTPUT--]] 
-						
+
 						inform_at(issue_name , v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -429,7 +430,7 @@ local function analyze(ast
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	 
+
 	-- analyze a function declaration head - either a named one or a lambda function
 	local analyze_function_head = function(node, scope, is_pre_analyze)
 		assert(node.arguments) --[[SOL OUTPUT--]] 
@@ -608,7 +609,7 @@ local function analyze(ast
 					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
 
 					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), expected)
-					
+
 					if not T.could_be(given, expected) then
 						local problem_rope = {} --[[SOL OUTPUT--]] 
 						T.could_be(given, expected, problem_rope) --[[SOL OUTPUT--]] 
@@ -624,7 +625,7 @@ local function analyze(ast
 					elseif not T.is_nilable(expected) then
 						report_error(expr, "%s: Missing non-nilable argument %i: expected %s", fun_name, i, expected) --[[SOL OUTPUT--]] 
 						all_passed = false --[[SOL OUTPUT--]] 
-					elseif _G.g_spam then
+					elseif g_spam then
 						report_spam(expr, "%s: Ignoring missing argument %i: it's nilable: %s", fun_name, i, expected) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -1177,7 +1178,7 @@ local function analyze(ast
 			return T.AnyTypeList --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		local gen_t = types[1] --[[SOL OUTPUT--]] 
-		--]]	
+		--]]
 		--local gen_t = analyze_expr_single(expr, scope) -- TODO: var
 
 		D.assert(gen_t) --[[SOL OUTPUT--]] 
@@ -1276,7 +1277,7 @@ local function analyze(ast
 					var_.namespace = nil --[[SOL OUTPUT--]]  -- Only warn once
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-			
+
 			--report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, type)
 
 			--D.assert(T.is_type(type)  or  T.is_type_list(type))
@@ -1427,11 +1428,11 @@ local function analyze(ast
 				-- The left argument is returned iff it is evaluated to 'false' or 'nil'
 				-- So we could return 'nil' (iff lt is nil:able), 'false' (iff lt is false:able) or right
 				local types = rt --[[SOL OUTPUT--]] 
-				
+
 				if T.could_be(lt, T.False) then
 					types = T.variant(types, T.False) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				
+
 				if T.could_be(lt, T.Nil) then
 					types = T.variant(types, T.Nil) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -1512,14 +1513,14 @@ local function analyze(ast
 				else
 					return {
 						tag  = 'varargs',
-						type = T.Any 
+						type = T.Any
 					} --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			else
 				report_error(expr, "No ... in scope") --[[SOL OUTPUT--]] 
 				return {
 					tag  = 'varargs',
-					type = T.Any 
+					type = T.Any
 				} --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
@@ -1569,7 +1570,7 @@ local function analyze(ast
 						sol_warning(expr, "Indexing object with string") --[[SOL OUTPUT--]] 
 						return T.Any --[[SOL OUTPUT--]]   -- TODO: combine types of members?
 					end --[[SOL OUTPUT--]] 
-					
+
 					return nil --[[SOL OUTPUT--]] 
 
 				else
@@ -1650,7 +1651,7 @@ local function analyze(ast
 					count[e.type] = count[e.type] + 1 --[[SOL OUTPUT--]] 
 
 					local this_val_type = analyze_expr_single(e.value, scope) --[[SOL OUTPUT--]] 
-					
+
 					if e.type == 'value' then -- a list
 						--if this_val_type == T.Nil then -- TODO!
 						if e.value.ast_type == 'NilExpr' then
@@ -1867,7 +1868,7 @@ local function analyze(ast
 			end --[[SOL OUTPUT--]] 
 
 			-- The member type was reached by the pre-analyzer - overwrite with refined info:
-			
+
 			--obj_t.members[name] = nil  -- TODO: makes compilation hang!
 			left_type = nil --[[SOL OUTPUT--]] 
 
@@ -1991,7 +1992,7 @@ local function analyze(ast
 						if v.tag == 'object' then
 							variant.variants[i] = assign_to_obj_member(stat, scope,
 								                                        is_pre_analyze, is_declare, extend_variant_member,
-								                                        v, name, right_type) --[[SOL OUTPUT--]] 	
+								                                        v, name, right_type) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				elseif var_t.tag == 'object' then
@@ -1999,7 +2000,7 @@ local function analyze(ast
 
 					base_var.type = assign_to_obj_member(stat, scope,
 						                                 is_pre_analyze, is_declare, extend_object,
-						                                 var_t, name, right_type) --[[SOL OUTPUT--]] 	
+						                                 var_t, name, right_type) --[[SOL OUTPUT--]] 
 					return true --[[SOL OUTPUT--]] 
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
@@ -2383,7 +2384,7 @@ local function analyze(ast
 				end --[[SOL OUTPUT--]] 
 
 				if #explicit_types == 1 and #explicit_types ~= #vars then
-					-- One type to be applied to all - just duplicate: 
+					-- One type to be applied to all - just duplicate:
 
 					explicit_types = U.shallow_clone( explicit_types ) --[[SOL OUTPUT--]] 
 
@@ -2412,7 +2413,7 @@ local function analyze(ast
 					end --[[SOL OUTPUT--]] 
 				else
 					local nt = #init_types --[[SOL OUTPUT--]] 
-					
+
 					if #vars < nt then
 						-- Ignoring a few return values is OK
 						report_warning(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types) --[[SOL OUTPUT--]] 
@@ -2614,7 +2615,7 @@ local function analyze(ast
 			iter_var.num_writes = iter_var . num_writes + ( 1 ) --[[SOL OUTPUT--]] 
 			iter_var.num_reads = iter_var . num_reads + ( 1 ) --[[SOL OUTPUT--]]   -- Actual looping counts
 			iter_var.var_type = 'Loop variable' --[[SOL OUTPUT--]] 
-			
+
 			local ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
 			discard_scope(loop_scope) --[[SOL OUTPUT--]] 
 			return ret, false --[[SOL OUTPUT--]] 
@@ -2742,7 +2743,7 @@ local function analyze(ast
 
 						if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
 							--do_assignment(stat, scope, stat.lhs[1], fun_t)
-						
+
 							if v.type then
 								report_error(stat, "Cannot forward declare %q: it already has type %s", v.name, v.type) --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
@@ -2839,7 +2840,7 @@ local function analyze(ast
 		report_error(ast, "Not all paths return a value, but some do") --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	if _G.g_ignore_errors or error_count == 0 then
+	if g_ignore_errors or error_count == 0 then
 		D.assert(ret==nil or T.is_type_list(ret)) --[[SOL OUTPUT--]] 
 		return true, ret --[[SOL OUTPUT--]] 
 	else

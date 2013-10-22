@@ -2,6 +2,7 @@
 A type can either be a particular value (number or string) or one of the following.
 --]]
 
+require 'globals' --[[SOL OUTPUT--]] 
 local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 
@@ -210,7 +211,7 @@ function T.follow_identifiers(t, forgiving)
 
 	if forgiving == nil then forgiving = false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-	if _G.g_local_parse then
+	if g_local_parse then
 		forgiving = true --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -223,7 +224,7 @@ function T.follow_identifiers(t, forgiving)
 			forgiving = true
 		end
 		--]]
-		
+
 		assert( t.scope ) --[[SOL OUTPUT--]] 
 		local scope = t.scope --[[SOL OUTPUT--]] 
 
@@ -926,7 +927,7 @@ function T.format_type(root, verbose)
 				return output(typ.variants[1], indent) --[[SOL OUTPUT--]] 
 			else
 				if #typ.variants == 2
-					and typ.variants[2] == T.Nil 
+					and typ.variants[2] == T.Nil
 					and typ.variants[1].tag ~= 'variant'
 					and typ.variants[1].tag ~= 'function'
 				then
@@ -958,7 +959,7 @@ function T.format_type(root, verbose)
 			end --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'object' then
-			--verbose = false -- FIXME 
+			--verbose = false -- FIXME
 
 			local obj = typ --[[SOL OUTPUT--]] 
 
@@ -1020,7 +1021,7 @@ function T.format_type(root, verbose)
 			return typ.str_quoted --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'identifier' then
-			if (verbose or _G.g_spam) and typ.type then
+			if (verbose or g_spam) and typ.type then
 			--if typ.type then
 				return string.format('%s (%s)', typ.name, output(typ.type, next_indent)) --[[SOL OUTPUT--]] 
 			else
@@ -1183,12 +1184,12 @@ function T.name(typ, verbose)
 		--D.error_()
 		return 'NIL' --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
-	
+
 	if typ == T.AnyTypeList then
 		return "..." --[[SOL OUTPUT--]] 
 
 	elseif T.is_type_list(typ) then
-		--D.error_()	
+		--D.error_()
 		return T.names(typ, verbose) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -1359,7 +1360,7 @@ function T.combine_type_lists(a, b, forgiving)
 		forgiving = true --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-	if _G.g_spam then
+	if g_spam then
 		--U.printf('combine_type_lists(%s, %s)', T.name(a), T.name(b))
 	end --[[SOL OUTPUT--]] 
 
@@ -1367,7 +1368,7 @@ function T.combine_type_lists(a, b, forgiving)
 	if b == nil then return a --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
 	if a == T.AnyTypeList then return T.AnyTypeList --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	if b == T.AnyTypeList then return T.AnyTypeList --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 	
+	if b == T.AnyTypeList then return T.AnyTypeList --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
 	if forgiving then
 		if #a < #b  then
@@ -1392,7 +1393,7 @@ function T.combine_type_lists(a, b, forgiving)
 		local ret = {} --[[SOL OUTPUT--]] 
 		for i = 1, #a do
 			ret[i] = T.variant( a[i], b[i] ) --[[SOL OUTPUT--]] 
-			if _G.g_spam then
+			if g_spam then
 				U.printf('variant(%s, %s) = %s', T.name(a[i]), T.name(b[i]), T.name(ret[i])) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 

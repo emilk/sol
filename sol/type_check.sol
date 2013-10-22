@@ -1,3 +1,4 @@
+require 'globals'
 local U   = require 'util'
 local set = U.set
 local T   = require 'type'
@@ -143,7 +144,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	local function report_spam(node: P.Node, fmt: string, ...)
-		if _G.g_spam then
+		if g_spam then
 			print( report('Spam', where_is(node), fmt, ...) )
 		end
 	end
@@ -163,7 +164,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	local function report_warning(node: P.Node, fmt: string, ...)
-		if _G.g_warnings_as_errors then
+		if g_warnings_as_errors then
 			report_error(node, fmt, ...)
 		else
 			print( report('WARNING', where_is(node), fmt, ...) )
@@ -200,7 +201,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		if level == 'ERROR' then
 			U.printf_err( "%s", report('ERROR', where, fmt, ...) )
 			error_count +=  1
-		elseif level ~= 'SPAM' or _G.g_spam then
+		elseif level ~= 'SPAM' or g_spam then
 			print( report(level, where, fmt, ...))
 		end
 	end
@@ -257,7 +258,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							['Loop variable'] = 'unused-loop-variable';
 						}
 						local issue_name = var_type_to_warning_name[var_type] or 'unused-variable'
-						
+
 						inform_at(issue_name , v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name)
 					end
 				end
@@ -429,7 +430,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 	end
 
-	 
+
 	-- analyze a function declaration head - either a named one or a lambda function
 	local analyze_function_head = function(node: P.Node, scope: Scope, is_pre_analyze: bool) -> T.Function
 		assert(node.arguments)
@@ -608,7 +609,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
 
 					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), expected)
-					
+
 					if not T.could_be(given, expected) then
 						local problem_rope = {}
 						T.could_be(given, expected, problem_rope)
@@ -624,7 +625,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					elseif not T.is_nilable(expected) then
 						report_error(expr, "%s: Missing non-nilable argument %i: expected %s", fun_name, i, expected)
 						all_passed = false
-					elseif _G.g_spam then
+					elseif g_spam then
 						report_spam(expr, "%s: Ignoring missing argument %i: it's nilable: %s", fun_name, i, expected)
 					end
 				end
@@ -1177,7 +1178,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return T.AnyTypeList
 		end
 		local gen_t = types[1]
-		--]]	
+		--]]
 		--local gen_t = analyze_expr_single(expr, scope) -- TODO: var
 
 		D.assert(gen_t)
@@ -1276,7 +1277,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					var_.namespace = nil -- Only warn once
 				end
 			end
-			
+
 			--report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, type)
 
 			--D.assert(T.is_type(type)  or  T.is_type_list(type))
@@ -1427,11 +1428,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				-- The left argument is returned iff it is evaluated to 'false' or 'nil'
 				-- So we could return 'nil' (iff lt is nil:able), 'false' (iff lt is false:able) or right
 				local types = rt
-				
+
 				if T.could_be(lt, T.False) then
 					types = T.variant(types, T.False)
 				end
-				
+
 				if T.could_be(lt, T.Nil) then
 					types = T.variant(types, T.Nil)
 				end
@@ -1512,14 +1513,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				else
 					return {
 						tag  = 'varargs',
-						type = T.Any 
+						type = T.Any
 					}
 				end
 			else
 				report_error(expr, "No ... in scope")
 				return {
 					tag  = 'varargs',
-					type = T.Any 
+					type = T.Any
 				}
 			end
 
@@ -1569,7 +1570,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						sol_warning(expr, "Indexing object with string")
 						return T.Any  -- TODO: combine types of members?
 					end
-					
+
 					return nil
 
 				else
@@ -1650,7 +1651,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					count[e.type] = count[e.type] + 1
 
 					local this_val_type = analyze_expr_single(e.value, scope)
-					
+
 					if e.type == 'value' then -- a list
 						--if this_val_type == T.Nil then -- TODO!
 						if e.value.ast_type == 'NilExpr' then
@@ -1867,7 +1868,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			end
 
 			-- The member type was reached by the pre-analyzer - overwrite with refined info:
-			
+
 			--obj_t.members[name] = nil  -- TODO: makes compilation hang!
 			left_type = nil
 
@@ -1991,7 +1992,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						if v.tag == 'object' then
 							variant.variants[i] = assign_to_obj_member(stat, scope,
 								                                        is_pre_analyze, is_declare, extend_variant_member,
-								                                        v, name, right_type)	
+								                                        v, name, right_type)
 						end
 					end
 				elseif var_t.tag == 'object' then
@@ -1999,7 +2000,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 					base_var.type = assign_to_obj_member(stat, scope,
 						                                 is_pre_analyze, is_declare, extend_object,
-						                                 var_t, name, right_type)	
+						                                 var_t, name, right_type)
 					return true
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
@@ -2383,7 +2384,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 
 				if #explicit_types == 1 and #explicit_types ~= #vars then
-					-- One type to be applied to all - just duplicate: 
+					-- One type to be applied to all - just duplicate:
 
 					explicit_types = U.shallow_clone( explicit_types )
 
@@ -2412,7 +2413,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					end
 				else
 					local nt = #init_types
-					
+
 					if #vars < nt then
 						-- Ignoring a few return values is OK
 						report_warning(stat, "Declaration discards values: left hand side has %i variables, right hand side evaluates to %s", #vars, init_types)
@@ -2614,7 +2615,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			iter_var.num_writes += 1
 			iter_var.num_reads += 1  -- Actual looping counts
 			iter_var.var_type = 'Loop variable'
-			
+
 			local ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun)
 			discard_scope(loop_scope)
 			return ret, false
@@ -2742,7 +2743,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 						if stat.rhs[1].ast_type == 'LambdaFunctionExpr' then
 							--do_assignment(stat, scope, stat.lhs[1], fun_t)
-						
+
 							if v.type then
 								report_error(stat, "Cannot forward declare %q: it already has type %s", v.name, v.type)
 							end
@@ -2839,7 +2840,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		report_error(ast, "Not all paths return a value, but some do")
 	end
 
-	if _G.g_ignore_errors or error_count == 0 then
+	if g_ignore_errors or error_count == 0 then
 		D.assert(ret==nil or T.is_type_list(ret))
 		return true, ret
 	else

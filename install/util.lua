@@ -4,6 +4,7 @@ Util.lua
 Provides some common utilities shared throughout the project.
 --]]
 
+require 'globals' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 
 ------------------------------------------------
@@ -73,7 +74,7 @@ function U.serialize_to_rope(rope, val, ignore_set, indent, discovered)
 	ignore_set = ignore_set or {} --[[SOL OUTPUT--]] 
 	indent     = indent     or "" --[[SOL OUTPUT--]] 
 	discovered = discovered or {} --[[SOL OUTPUT--]] 
-	
+
 	if type(val) == "table" then
 		if discovered[val] then
 			--error("serialize: loop discovered")
@@ -202,7 +203,7 @@ function U.printf_err(fmt, ...)
 	io.stderr:write( msg .. '\n' ) --[[SOL OUTPUT--]] 
 	D.break_() --[[SOL OUTPUT--]] 
 
-	if _G.g_break_on_error then
+	if g_break_on_error then
 		os.exit(1) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
@@ -401,7 +402,7 @@ function U.make_const(table)
 		local clone = U.shallow_clone(table) --[[SOL OUTPUT--]] 
 
 		U.table_clear(table) --[[SOL OUTPUT--]] 
-		
+
 		table.__protected = clone --[[SOL OUTPUT--]]   -- Visible in debugger
 
 		setmetatable(table, {

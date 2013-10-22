@@ -5,6 +5,7 @@
 -- It keeps track of scoping and variables.
 
 
+require 'globals'
 local L = require 'lexer'
 local _ = require 'scope'
 local T = require 'type' -- For intrinsic functions
@@ -142,7 +143,7 @@ typedef P.NumberExpr : P.ExprNode = {
 typedef P.StringExpr : P.ExprNode = {
 	ast_type     : 'StringExpr';
 	str_quoted   : string,  -- As given in input, e.g:   "\"Hello\"\t'you!'"
-	str_contents : string,  -- As Lua would treat it:    "Hello"	'you' 
+	str_contents : string,  -- As Lua would treat it:    "Hello"	'you'
 }
 
 typedef P.BooleanExpr : P.ExprNode = {
@@ -381,7 +382,7 @@ typedef P.Typedef : P.StatNode = {
 
 typedef ExprNode_or_error = P.ExprNode or string or nil
 typedef StatNode_or_error = P.StatNode or string or nil
- 
+
 typedef TokenList = L.TokenList
 
 
@@ -440,7 +441,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 	local function report_warning(msg_fmt: string, ...) -> string
-		if _G.g_warnings_as_errors then
+		if g_warnings_as_errors then
 			return report_error(msg_fmt, ...)
 		else
 			local msg = generate_msg(msg_fmt, ...)
@@ -450,7 +451,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 	local function report_spam(msg_fmt: string, ...) -> void
-		if _G.g_spam then
+		if g_spam then
 			local msg = generate_msg(msg_fmt, ...)
 			print( msg )
 		end
@@ -473,7 +474,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 
 	local parse_statement_list
-	local parse_simple_expr, 
+	local parse_simple_expr,
 	      parse_expr,
 	      parse_primary_expr,
 	      parse_suffixed_expr,
@@ -1036,7 +1037,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 						report_error('Bad object: identifier expected')
 						return T.Any
 					end
-					
+
 					local id = tok:get().data
 
 					if not tok:consume_symbol(':') then
@@ -1345,7 +1346,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		end
 		local type_name = tok:get().data
 
-		local node = { 
+		local node = {
 			ast_type  = 'Typedef',
 			scope     = scope,
 			type_name = type_name,
@@ -1400,7 +1401,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				var type = parse_type(scope)
 
 				if not type then
-					report_error("Expected type") 
+					report_error("Expected type")
 					return nil
 				end
 
@@ -1515,7 +1516,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		function Foo:init()
 			-- The next line extends the instance type
-			self.member_var = 32 
+			self.member_var = 32
 		end
 
 		function Foo:member_fun()
@@ -1535,10 +1536,10 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		end
 
 		local st, rhs = parse_expr(scope)
-		
+
 		if not st then return false, rhs end
 
-		local node = { 
+		local node = {
 			ast_type  = 'ClassDeclStatement',
 			scope     = scope,
 			name      = name,
@@ -2005,12 +2006,12 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					expression = suffixed;
 					tokens     = token_list;
 				}
-				
+
 			else
 				return false, report_error("Assignment statement expected, got (" .. tok:peek().data .. ")")
 			end
 		end
-		
+
 		if not st then return st, stat end
 
 		assert(stat)
