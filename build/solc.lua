@@ -28,7 +28,7 @@ local path = require 'pl.path' --[[SOL OUTPUT--]]
 
 ------------------------------------------------
 -- Setup local includes:
--- Without this code 
+-- Without this code
 
 local sol_dir  = path.dirname(arg[0]) --[[SOL OUTPUT--]] 
 
@@ -218,7 +218,8 @@ end --[[SOL OUTPUT--]]
 
 
 local function parse_module_str(chain, path_in, source_text)
-	local filename = path.basename( path_in ) --[[SOL OUTPUT--]]   -- Keep error messages short
+	--local filename = path.basename( path_in )  -- Keep error messages short
+	local filename = path_in --[[SOL OUTPUT--]]    -- Make sure error message point out the file in full
 
 	local module_id = path.abspath( path_in:lower() ) --[[SOL OUTPUT--]] 
 
@@ -453,7 +454,7 @@ local function print_help()
 				Write header files here
 
 			-l name
-				Require library 'name' 
+				Require library 'name'
 
 			-m dir
 				Look for modules here
@@ -478,13 +479,13 @@ local function print_help()
 				For debugging solc compiler
 
 			-L
-				Lex only: Useful for profiling 
+				Lex only: Useful for profiling
 
 			-P
-				Parse only: Useful for profiling 
+				Parse only: Useful for profiling
 
 			-Werror
-				Make all warnings into errors. 
+				Make all warnings into errors.
 		]]) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
@@ -553,7 +554,7 @@ else
 		elseif a == '--check' then
 			local path_in = arg[ix] --[[SOL OUTPUT--]] 
 			ix = ix + (  1 ) --[[SOL OUTPUT--]] 
-			
+
 			--_G.g_local_parse = true
 
 			-- Read entire stdin
