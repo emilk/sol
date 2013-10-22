@@ -1,4 +1,4 @@
--- Globals settings
+-- Globals settings - set by solc
 
 global g_local_parse        = false -- If true, ignore 'require'
 global g_spam               = false

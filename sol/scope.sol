@@ -61,15 +61,15 @@ Scope.GLOBALS_IN_TOP_SCOPE = true
 -- Constructor
 function Scope:init(where: string, parent: Scope?)
 	self.where           = where
-	self.parent          = parent 
+	self.parent          = parent
 	self.children        = {}  : [Scope]
 	self.locals          = {}  : { string => Variable }
 	self.globals         = {}  : [Variable]  -- TODO: string->var map
 	self.typedefs        = {}  : { string => T.Type }
 	self.global_typedefs = {}  : { string => T.Type }
 	self.vararg          = nil : Variable?
-	self.fixed           = false  
-	
+	self.fixed           = false
+
 	if parent then
 		parent.children #= self
 	end
@@ -174,7 +174,7 @@ end
 function Scope:get_global_type(name: string) -> T.Type ?
 	local t = self.global_typedefs[name]
 	if t then return t end
-	
+
 	if self.parent then
 		return self.parent:get_global_type(name)
 	end
@@ -202,7 +202,7 @@ end
 function Scope:get_local(name: string, options: VarOptions?) -> Variable?
 	local v = self:get_scoped(name, options)
 	if v then return v end
-	
+
 	if self.parent then
 		return self.parent:get_local(name, options)
 	end
@@ -225,7 +225,7 @@ end
 function Scope:get_global(name: string, options: VarOptions?) -> Variable ?
 	local v = self:get_scoped_global(name, options)
 	if v then return v end
-	
+
 	if self.parent then
 		return self.parent:get_global(name, options)
 	end
@@ -290,7 +290,6 @@ function Scope.create_global_scope() -> Scope
 
 	var tables = {
 		'_G',
-		'package',
 		'jit'  -- luaJIT
 	}
 

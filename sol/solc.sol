@@ -290,6 +290,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	local success, type = TypeCheck(ast, filename, on_require, settings)
 
 	if not success then
+		U.printf("TypeCheck failed for module %q", module_id)
 		--printf_err("TypeCheck failed: " .. type)
 		local info = { ast = ast, type = T.AnyTypeList }
 		g_modules[module_id] = info
@@ -302,6 +303,8 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	else
 		--U.printf("Module %q successfully parsed and checked", module_name)
 	end
+
+	U.printf("Storing result for module %q", module_id)
 
 	local info = {
 		--name            = module_name;
@@ -551,14 +554,19 @@ else
 
 			--g_local_parse = true
 
-			-- Read entire stdin
-			print("Reading from stdin...")
-			local file_content = U.read_entire_stdin()
-			U.printf("Parsing " .. path_in)
-			local info = parse_module_str({}, path_in, file_content)
+			local module_id = path.abspath( path_in:lower() )
 
-			-- TODO: write output?
-			--output_module(info, path_in, path_out)
+			U.printf("Checking module %q...", module_id)
+
+			if g_modules[module_id] then
+				print("Skipping stdin - path already parsed via -l")
+			else
+				-- Read entire stdin
+				print("Reading from stdin...")
+				local file_content = U.read_entire_stdin()
+				U.printf("Parsing " .. path_in)
+				parse_module_str({}, path_in, file_content)
+			end
 
 			num_files +=  1
 

@@ -43,6 +43,10 @@ var INTRINSICS = [[
 		execute = extern : function(...) -> ...;
 	}
 
+	global package = {
+		path = extern : string;
+	}
+
 	global string = {
 		byte   = extern : function(string, int, int?, int?) -> ...;
 		char   = extern : function(string, ... : int) -> string;

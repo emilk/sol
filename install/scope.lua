@@ -61,15 +61,15 @@ Scope
 -- Constructor
 function Scope:init(where, parent)
 	self.where           = where --[[SOL OUTPUT--]] 
-	self.parent          = parent --[[SOL OUTPUT--]]  
+	self.parent          = parent --[[SOL OUTPUT--]] 
 	self.children        = {} --[[SOL OUTPUT--]] 
 	self.locals          = {} --[[SOL OUTPUT--]] 
 	self.globals         = {} --[[SOL OUTPUT--]]   -- TODO: string->var map
 	self.typedefs        = {} --[[SOL OUTPUT--]] 
 	self.global_typedefs = {} --[[SOL OUTPUT--]] 
 	self.vararg          = nil --[[SOL OUTPUT--]] 
-	self.fixed           = false --[[SOL OUTPUT--]]   
-	
+	self.fixed           = false --[[SOL OUTPUT--]] 
+
 	if parent then
 		parent.children [ # parent . children + 1 ] = self --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -174,7 +174,7 @@ end --[[SOL OUTPUT--]]
 function Scope:get_global_type(name)
 	local t = self.global_typedefs[name] --[[SOL OUTPUT--]] 
 	if t then return t --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	
+
 	if self.parent then
 		return self.parent:get_global_type(name) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -202,7 +202,7 @@ end --[[SOL OUTPUT--]]
 function Scope:get_local(name, options)
 	local v = self:get_scoped(name, options) --[[SOL OUTPUT--]] 
 	if v then return v --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	
+
 	if self.parent then
 		return self.parent:get_local(name, options) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -225,7 +225,7 @@ end --[[SOL OUTPUT--]]
 function Scope:get_global(name, options)
 	local v = self:get_scoped_global(name, options) --[[SOL OUTPUT--]] 
 	if v then return v --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-	
+
 	if self.parent then
 		return self.parent:get_global(name, options) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -290,7 +290,6 @@ function Scope.create_global_scope()
 
 	local tables = {
 		'_G',
-		'package',
 		'jit'  -- luaJIT
 	} --[[SOL OUTPUT--]] 
 
@@ -405,4 +404,5 @@ end --[[SOL OUTPUT--]]
 
 ----------------------------------------
 
-return {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+return {} --[[SOL OUTPUT--]] 
+ --[[SOL OUTPUT--]] 

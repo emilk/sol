@@ -1,4 +1,4 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/globals.sol --]] -- Globals settings
+--[[ DO NOT MODIFY - COMPILED FROM sol/globals.sol --]] -- Globals settings - set by solc
 
  g_local_parse        = false --[[SOL OUTPUT--]]  -- If true, ignore 'require'
  g_spam               = false --[[SOL OUTPUT--]] 

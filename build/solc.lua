@@ -290,6 +290,7 @@ local function parse_module_str(chain, path_in, source_text)
 	local success, type = TypeCheck(ast, filename, on_require, settings) --[[SOL OUTPUT--]] 
 
 	if not success then
+		U.printf("TypeCheck failed for module %q", module_id) --[[SOL OUTPUT--]] 
 		--printf_err("TypeCheck failed: " .. type)
 		local info = { ast = ast, type = T.AnyTypeList } --[[SOL OUTPUT--]] 
 		g_modules[module_id] = info --[[SOL OUTPUT--]] 
@@ -302,6 +303,8 @@ local function parse_module_str(chain, path_in, source_text)
 	else
 		--U.printf("Module %q successfully parsed and checked", module_name)
 	end --[[SOL OUTPUT--]] 
+
+	U.printf("Storing result for module %q", module_id) --[[SOL OUTPUT--]] 
 
 	local info = {
 		--name            = module_name;
@@ -551,14 +554,19 @@ else
 
 			--g_local_parse = true
 
-			-- Read entire stdin
-			print("Reading from stdin...") --[[SOL OUTPUT--]] 
-			local file_content = U.read_entire_stdin() --[[SOL OUTPUT--]] 
-			U.printf("Parsing " .. path_in) --[[SOL OUTPUT--]] 
-			local info = parse_module_str({}, path_in, file_content) --[[SOL OUTPUT--]] 
+			local module_id = path.abspath( path_in:lower() ) --[[SOL OUTPUT--]] 
 
-			-- TODO: write output?
-			--output_module(info, path_in, path_out)
+			U.printf("Checking module %q...", module_id) --[[SOL OUTPUT--]] 
+
+			if g_modules[module_id] then
+				print("Skipping stdin - path already parsed via -l") --[[SOL OUTPUT--]] 
+			else
+				-- Read entire stdin
+				print("Reading from stdin...") --[[SOL OUTPUT--]] 
+				local file_content = U.read_entire_stdin() --[[SOL OUTPUT--]] 
+				U.printf("Parsing " .. path_in) --[[SOL OUTPUT--]] 
+				parse_module_str({}, path_in, file_content) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 
 			num_files = num_files + (  1 ) --[[SOL OUTPUT--]] 
 
