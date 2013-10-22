@@ -269,7 +269,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 		--we failed to parse the file, show why
 		printf_err("Failed to parse %q", path_in)
 		g_modules[module_id] = FAIL_INFO
-		os.exit(2)
+		os.exit(2)  -- report the failure
 		return FAIL_INFO
 	end
 
@@ -290,11 +290,10 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 	local success, type = TypeCheck(ast, filename, on_require, settings)
 
 	if not success then
-		U.printf("TypeCheck failed for module %q", module_id)
-		--printf_err("TypeCheck failed: " .. type)
+		U.printf("TypeCheck failed for %q: %s", filename, type)
 		local info = { ast = ast, type = T.AnyTypeList }
 		g_modules[module_id] = info
-		os.exit(3)
+		os.exit(3)  -- report the failure
 		return info
 	end
 
@@ -304,7 +303,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 		--U.printf("Module %q successfully parsed and checked", module_name)
 	end
 
-	U.printf("Storing result for module %q", module_id)
+	--U.printf("Storing result for module %q", module_id)
 
 	local info = {
 		--name            = module_name;
