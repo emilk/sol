@@ -6,5 +6,6 @@ return {
 	typedef TokenList = [Token];
 
 	-- Members:
-	lex_sol: function(src: string, filename: string, settings) -> bool, any;
+	lex_sol:     function(src: string, filename: string, settings) -> bool, any;
+	print_stats: function() -> void;
 }

@@ -52,16 +52,41 @@ package.path = sol_dir..'?.lua;' .. package.path --[[SOL OUTPUT--]]
 require 'globals' --[[SOL OUTPUT--]] 
 local D          = require 'sol_debug' --[[SOL OUTPUT--]] 
 local output     = require 'output' --[[SOL OUTPUT--]] 
-local Lexer      = require 'lexer' --[[SOL OUTPUT--]] 
+local L          = require 'lexer' --[[SOL OUTPUT--]] 
 local Parser     = require 'parser' --[[SOL OUTPUT--]] 
 local _          = require 'scope' --[[SOL OUTPUT--]] 
 local T          = require 'type' --[[SOL OUTPUT--]] 
 local TypeCheck  = require 'type_check' --[[SOL OUTPUT--]] 
 local U          = require 'util' --[[SOL OUTPUT--]] 
 local intrinsics = require 'lua_intrinsics' --[[SOL OUTPUT--]] 
-local printf_err = U.printf_err --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
+local printf_err = U.printf_err --[[SOL OUTPUT--]] 
+
+------------------------------------------------
+
+local ast_type_count = {} --[[SOL OUTPUT--]] 
+local has_stats_for  = {} --[[SOL OUTPUT--]]  local 
+
+function collect_stats(ast)
+	if type(ast) == 'table' and not has_stats_for[ast] then
+		has_stats_for[ast] = true --[[SOL OUTPUT--]] 
+
+		if type(ast.ast_type) == 'string' then
+			ast_type_count[ast.ast_type] = (ast_type_count[ast.ast_type] or 0) + 1 --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		for k,v in pairs(ast) do
+			collect_stats(v) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]]  local 
+
+function print_stats()
+	U.printf("Ast type popularity:") --[[SOL OUTPUT--]] 
+	U.print_sorted_stats(ast_type_count) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 local     CURRENTLY_PARSING = false --[[SOL OUTPUT--]] 
 local   FAIL_INFO = { ast = nil
+
 
 
 
@@ -221,7 +246,7 @@ local function parse_module_str(chain, path_in, source_text)
 
 	local settings = (is_sol and Parser.SOL_SETTINGS or Parser.LUA_SETTINGS) --[[SOL OUTPUT--]] 
 
-	local st, tokens = Lexer.lex_sol(source_text, filename, settings) --[[SOL OUTPUT--]] 
+	local st, tokens = L.lex_sol(source_text, filename, settings) --[[SOL OUTPUT--]] 
 	if not st then
 		printf_err("Failed to lex %q", path_in) --[[SOL OUTPUT--]] 
 		g_modules[module_id] = FAIL_INFO --[[SOL OUTPUT--]] 
@@ -271,6 +296,10 @@ local function parse_module_str(chain, path_in, source_text)
 		g_modules[module_id] = FAIL_INFO --[[SOL OUTPUT--]] 
 		os.exit(2) --[[SOL OUTPUT--]]   -- report the failure
 		return FAIL_INFO --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	if g_print_stats then
+		collect_stats(ast) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	if g_parse_only then
@@ -629,6 +658,11 @@ if g_profiler then
 	local REPORT_PATH = os.date("solc_profile_reports/profiler_report_%Y_%m_%d__%H_%M_%S.txt") --[[SOL OUTPUT--]] 
 	g_profiler:writeReport( REPORT_PATH ) --[[SOL OUTPUT--]] 
 	--print( 'Profile report written to ' .. REPORT_PATH)
+end --[[SOL OUTPUT--]] 
+
+if g_print_stats then
+	L.print_stats() --[[SOL OUTPUT--]] 
+	print_stats() --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 os.exit(0) --[[SOL OUTPUT--]]  -- Success

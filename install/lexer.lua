@@ -1,4 +1,5 @@
---[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol --]] local U = require 'util' --[[SOL OUTPUT--]] 
+--[[ DO NOT MODIFY - COMPILED FROM sol/lexer.sol --]] require 'globals' --[[SOL OUTPUT--]]  -- g_write_timings
+local U = require 'util' --[[SOL OUTPUT--]] 
 local D = require 'sol_debug' --[[SOL OUTPUT--]] 
 local set = U.set --[[SOL OUTPUT--]] 
 
@@ -14,6 +15,12 @@ local HEX_DIGITS   = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 
 local IDENT_START_CHARS = U.set_join(LOWER_CHARS, UPPER_CHARS, set{'_'}) --[[SOL OUTPUT--]] 
 local IDENT_CHARS       = U.set_join(IDENT_START_CHARS, DIGITS) --[[SOL OUTPUT--]] 
+
+
+-- Stats:
+local g_type_to_count   = {} --[[SOL OUTPUT--]] 
+local g_symbol_to_count = {} --[[SOL OUTPUT--]] 
+
 
 local L = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
 
@@ -48,18 +55,19 @@ local function extract_chars(str)
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 	assert(#chars == #str) --[[SOL OUTPUT--]] 
-	
+
 	-- Signal eof:
 	chars [ # chars + 1 ] = '' --[[SOL OUTPUT--]] 
 	chars [ # chars + 1 ] = '' --[[SOL OUTPUT--]] 
 	chars [ # chars + 1 ] = '' --[[SOL OUTPUT--]] 
 
 	return chars --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]]  
+end --[[SOL OUTPUT--]] 
 
 
 -- The settings are found in Parser.sol
 function L.lex_sol(src, filename, settings)
+	local tic = os.clock() --[[SOL OUTPUT--]] 
 	assert(type(src) == 'string') --[[SOL OUTPUT--]] 
 
 	local chars = extract_chars(src) --[[SOL OUTPUT--]] 
@@ -244,7 +252,6 @@ function L.lex_sol(src, filename, settings)
 			--get the initial char
 			local this_line = line --[[SOL OUTPUT--]] 
 			local this_char = char --[[SOL OUTPUT--]] 
-			local error_at = ":"..line..":"..char..":> " --[[SOL OUTPUT--]] 
 			local c = chars[p] --[[SOL OUTPUT--]] 
 
 			--symbol to emit
@@ -266,7 +273,7 @@ function L.lex_sol(src, filename, settings)
 				if keywords[dat] then
 					to_emit = {type = 'Keyword', data = dat} --[[SOL OUTPUT--]] 
 				else
-					to_emit = {type = 'ident', data = dat} --[[SOL OUTPUT--]] 
+					to_emit = {type = 'Ident', data = dat} --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
 			elseif DIGITS[c] or (chars[p] == '.' and DIGITS[peek(1)]) then
@@ -344,12 +351,7 @@ function L.lex_sol(src, filename, settings)
 				to_emit = {type = 'Symbol', data = c} --[[SOL OUTPUT--]] 
 
 			else
-				local contents, all = try_get_long_string() --[[SOL OUTPUT--]] 
-				if contents then
-					to_emit = {type = 'String', data = all, Constant = contents} --[[SOL OUTPUT--]] 
-				else
-					return report_lexer_error("Unexpected Symbol `"..c.."`.", 2) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
+				return report_lexer_error("Unexpected Symbol `"..c.."`.", 2) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			--add the emitted symbol, after adding some common data
@@ -375,22 +377,35 @@ function L.lex_sol(src, filename, settings)
 		return false, err --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
+	----------------------------------------
+
+	if g_print_stats then
+		for _, tok in ipairs(tokens) do
+			g_type_to_count[tok.type] = (g_type_to_count[tok.type] or 0) + 1 --[[SOL OUTPUT--]] 
+			if tok.type == 'Symbol' then
+				g_symbol_to_count[tok.data] = (g_symbol_to_count[tok.data] or 0) + 1 --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	----------------------------------------
+
 	--public interface:
 	local tok = {} --[[SOL OUTPUT--]] 
 	local p = 1 --[[SOL OUTPUT--]] 
-	
+
 	function tok:getp()
 		return p --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
-	
+
 	function tok:setp(n)
 		p = n --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
-	
+
 	function tok:get_token_list()
 		return tokens --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
-	
+
 	--getters
 	function tok:peek(n)
 		if n then
@@ -412,7 +427,7 @@ function L.lex_sol(src, filename, settings)
 	end --[[SOL OUTPUT--]] 
 
 	function tok:get_ident(token_list)
-		if tok:is('ident') then
+		if tok:is('Ident') then
 			return tok:get(token_list).data --[[SOL OUTPUT--]] 
 		else
 			return nil --[[SOL OUTPUT--]] 
@@ -460,8 +475,23 @@ function L.lex_sol(src, filename, settings)
 		return tok:peek().type == 'Eof' --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
+	local toc = os.clock() --[[SOL OUTPUT--]] 
+	if g_write_timings then
+		U.printf("Lexing %s: %d tokens in %.1f ms", filename, #tokens, 1000*(toc-tic)) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
 	return true, tok --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
+
+
+function L.print_stats()
+	U.printf("Token popularity:") --[[SOL OUTPUT--]] 
+	U.print_sorted_stats(g_type_to_count) --[[SOL OUTPUT--]] 
+
+	U.printf("Symbol popularity:") --[[SOL OUTPUT--]] 
+	U.print_sorted_stats(g_symbol_to_count) --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
 
 return L --[[SOL OUTPUT--]] 
  --[[SOL OUTPUT--]] 

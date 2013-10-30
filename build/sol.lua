@@ -118,7 +118,6 @@ if #arg == 0 then
 	print_help() --[[SOL OUTPUT--]] 
 	os.exit(-1) --[[SOL OUTPUT--]] 
 else
-	local g_write_lua = true --[[SOL OUTPUT--]] 
 	local ix          = 1 --[[SOL OUTPUT--]] 
 	local num_files   = 0 --[[SOL OUTPUT--]] 
 

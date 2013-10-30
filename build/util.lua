@@ -372,6 +372,25 @@ end --[[SOL OUTPUT--]]
 
 
 ------------------------------------------------------
+
+function U.print_sorted_stats(map)
+	local list = {} --[[SOL OUTPUT--]] 
+	local sum  = 0.0 --[[SOL OUTPUT--]] 
+
+	for key,value in pairs(map) do
+		list [ # list + 1 ] = { key = key, value = value } --[[SOL OUTPUT--]] 
+		sum  = sum + ( value ) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	table.sort(list, function(a,b) return a.value>b.value --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
+
+	for _,v in ipairs(list) do
+		U.printf("%24s : %5d   %4.1f %%", "'"..v.key.."'", v.value, 100*v.value/sum) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
+------------------------------------------------------
 -- TODO: only in debug/development
 local DEBUG = true --[[SOL OUTPUT--]] 
 

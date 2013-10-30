@@ -504,7 +504,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		var vararg   = nil : T.VarArgs?
 
 		while not tok:consume_symbol(')', token_list) do
-			if tok:is('ident') then
+			if tok:is('Ident') then
 				local arg = {
 					name = tok:get(token_list).data
 				}
@@ -588,7 +588,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 
 	local function parse_id_expr() -> ExprNode_or_error
-		assert(tok:is('ident'))
+		assert(tok:is('Ident'))
 
 		local token_list = {}
 		var where = where_am_i()
@@ -621,7 +621,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			}
 			return true, parens_exp
 
-		elseif tok:is('ident') then
+		elseif tok:is('Ident') then
 			return true, parse_id_expr()
 		else
 			return false, report_error("primary expression expected")
@@ -644,7 +644,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				   (tok:is_symbol(':') and tok:peek().leading_white=="")
 		   then
 				local symb = tok:get(token_list).data
-				if not tok:is('ident') then
+				if not tok:is('Ident') then
 					return false, report_error("<ident> expected.")
 				end
 				local id = tok:get(token_list)
@@ -812,7 +812,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 						value = value;
 					}
 
-				elseif tok:is('ident') then
+				elseif tok:is('Ident') then
 					--value or key
 					local lookahead = tok:peek(1)
 					if lookahead.type == 'Symbol' and lookahead.data == '=' then
@@ -1021,7 +1021,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				report_error("Use 'object'")
 				return T.create_empty_table()
 
-			elseif tok:is('ident')
+			elseif tok:is('Ident')
 			   and tok:peek(1).data == ':'
 			   --and #tok:peek(1).leading_white > 0
 			then
@@ -1033,7 +1033,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				while true do
 					if tok:consume_symbol('}') then break end
 
-					if not tok:is('ident') then
+					if not tok:is('Ident') then
 						report_error('Bad object: identifier expected')
 						return T.Any
 					end
@@ -1138,7 +1138,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					end
 
 					var arg_name = nil : string?
-					if tok:is('ident') and tok:peek(1).data == ':' then
+					if tok:is('Ident') and tok:peek(1).data == ':' then
 						-- named type
 						arg_name = tok:get_ident()
 						tok:get() -- Swallow ':'
@@ -1192,12 +1192,12 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		elseif tok:consume_keyword('extern') then
 			return { tag = 'extern', where = where }
 
-		elseif tok:is('ident') then
+		elseif tok:is('Ident') then
 			local name = tok:get().data
 
 			if tok:consume_symbol('.') then
 				-- namespaced type
-				if not tok:is('ident') then
+				if not tok:is('Ident') then
 					report_error("Identifier expected")
 					return nil
 				end
@@ -1341,7 +1341,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		local where = where_am_i()
 
-		if not tok:is('ident') then
+		if not tok:is('Ident') then
 			return false, report_error("Name expected")
 		end
 		local type_name = tok:get().data
@@ -1424,7 +1424,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	local function parse_function_decl(scope: Scope, token_list: L.TokenList,
 		                                scoping: 'local' or 'global') -> bool, StatNode_or_error
 
-		if not tok:is('ident') then
+		if not tok:is('Ident') then
 			return false, report_error("Function name expected")
 		end
 
@@ -1462,13 +1462,13 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			return false, report_error("Empty type list")
 		end
 
-		if not tok:is('ident') then
+		if not tok:is('Ident') then
 			return false, report_error("Variable name expected")
 		end
 
 		local name_list = { tok:get(token_list).data }
 		while tok:consume_symbol(',', token_list) do
-			if not tok:is('ident') then
+			if not tok:is('Ident') then
 				return false, report_error("local variable name expected")
 			end
 			name_list #= tok:get(token_list).data
@@ -1526,7 +1526,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		local where = where_am_i()
 
-		if not tok:is('ident') then
+		if not tok:is('Ident') then
 			return false, report_error("Name expected")
 		end
 		local name = tok:get(token_list).data
@@ -1654,7 +1654,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		elseif tok:consume_keyword('for', token_list) then
 			--for block
-			if not tok:is('ident') then
+			if not tok:is('Ident') then
 				return false, report_error("<ident> expected.")
 			end
 			local base_var_name = tok:get(token_list)
@@ -1703,7 +1703,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				--
 				var var_names = { base_var_name.data }
 				while tok:consume_symbol(',', token_list) do
-					if not tok:is('ident') then
+					if not tok:is('Ident') then
 						return false, report_error("for variable expected.")
 					end
 					var_names #= tok:get(token_list).data
@@ -1761,7 +1761,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			stat = node_repeat
 
 		elseif tok:consume_keyword('function', token_list) then
-			if not tok:is('ident') then
+			if not tok:is('Ident') then
 				return false, report_error("Function name expected")
 			end
 			local st, name_expr = parse_suffixed_expr(scope, 'only_dot_colon')
@@ -1808,7 +1808,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			st, stat = parse_class(scope, token_list, 'local')
 
 		elseif tok:consume_symbol('::', token_list) then
-			if not tok:is('ident') then
+			if not tok:is('Ident') then
 				return false, report_error('label name expected')
 			end
 			local label = tok:get(token_list).data
@@ -1850,7 +1850,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			stat = node_break
 
 		elseif tok:consume_keyword('goto', token_list) then
-			if not tok:is('ident') then
+			if not tok:is('Ident') then
 				return false, report_error("label expected")
 			end
 			local label = tok:get(token_list).data

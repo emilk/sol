@@ -1,3 +1,4 @@
+require 'globals' -- g_write_timings
 local U = require 'util'
 local D = require 'sol_debug'
 local set = U.set
@@ -15,9 +16,15 @@ var HEX_DIGITS   = set{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 var IDENT_START_CHARS = U.set_join(LOWER_CHARS, UPPER_CHARS, set{'_'})
 var IDENT_CHARS       = U.set_join(IDENT_START_CHARS, DIGITS)
 
+
+-- Stats:
+var g_type_to_count   = {} : {string => uint}
+var g_symbol_to_count = {} : {string => uint}
+
+
 local L = {}
 
-typedef TokID = 'Keyword' or 'ident' or 'Number' or 'String' or 'Symbol' or 'Eof'
+typedef TokID = 'Keyword' or 'Ident' or 'Number' or 'String' or 'Symbol' or 'Eof'
 
 typedef Token = {
 	type          : TokID,
@@ -48,18 +55,19 @@ local function extract_chars(str: string) -> [string]
 		end
 	end
 	assert(#chars == #str)
-	
+
 	-- Signal eof:
 	chars #= ''
 	chars #= ''
 	chars #= ''
 
 	return chars
-end 
+end
 
 
 -- The settings are found in Parser.sol
 function L.lex_sol(src: string, filename: string, settings) -> bool, any
+	local tic = os.clock()
 	assert(type(src) == 'string')
 
 	local chars = extract_chars(src)
@@ -244,7 +252,6 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			--get the initial char
 			local this_line = line
 			local this_char = char
-			local error_at = ":"..line..":"..char..":> "
 			local c = chars[p]
 
 			--symbol to emit
@@ -266,7 +273,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 				if keywords[dat] then
 					to_emit = {type = 'Keyword', data = dat}
 				else
-					to_emit = {type = 'ident', data = dat}
+					to_emit = {type = 'Ident', data = dat}
 				end
 
 			elseif DIGITS[c] or (chars[p] == '.' and DIGITS[peek(1)]) then
@@ -344,12 +351,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 				to_emit = {type = 'Symbol', data = c}
 
 			else
-				local contents, all = try_get_long_string()
-				if contents then
-					to_emit = {type = 'String', data = all, Constant = contents}
-				else
-					return report_lexer_error("Unexpected Symbol `"..c.."`.", 2)
-				end
+				return report_lexer_error("Unexpected Symbol `"..c.."`.", 2)
 			end
 
 			--add the emitted symbol, after adding some common data
@@ -375,22 +377,35 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 		return false, err
 	end
 
+	----------------------------------------
+
+	if g_print_stats then
+		for _, tok in ipairs(tokens) do
+			g_type_to_count[tok.type] = (g_type_to_count[tok.type] or 0) + 1
+			if tok.type == 'Symbol' then
+				g_symbol_to_count[tok.data] = (g_symbol_to_count[tok.data] or 0) + 1
+			end
+		end
+	end
+
+	----------------------------------------
+
 	--public interface:
 	local tok = {}
 	local p = 1
-	
+
 	function tok:getp() -> int
 		return p
 	end
-	
+
 	function tok:setp(n: int)
 		p = n
 	end
-	
+
 	function tok:get_token_list() -> L.TokenList
 		return tokens
 	end
-	
+
 	--getters
 	function tok:peek(n: int?) -> L.Token?
 		if n then
@@ -412,7 +427,7 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 	end
 
 	function tok:get_ident(token_list: L.TokenList?) -> string?
-		if tok:is('ident') then
+		if tok:is('Ident') then
 			return tok:get(token_list).data
 		else
 			return nil
@@ -460,7 +475,22 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 		return tok:peek().type == 'Eof'
 	end
 
+	local toc = os.clock()
+	if g_write_timings then
+		U.printf("Lexing %s: %d tokens in %.1f ms", filename, #tokens, 1000*(toc-tic))
+	end
+
 	return true, tok
 end
+
+
+function L.print_stats()
+	U.printf("Token popularity:")
+	U.print_sorted_stats(g_type_to_count)
+
+	U.printf("Symbol popularity:")
+	U.print_sorted_stats(g_symbol_to_count)
+end
+
 
 return L

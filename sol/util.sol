@@ -372,6 +372,25 @@ end
 
 
 ------------------------------------------------------
+
+function U.print_sorted_stats(map: {string => number})
+	var list = {} : [{key: string, value: number}]
+	var sum  = 0.0
+
+	for key,value in pairs(map) do
+		list #= { key = key, value = value }
+		sum  += value
+	end
+
+	table.sort(list, function(a,b) return a.value>b.value end)
+
+	for _,v in ipairs(list) do
+		U.printf("%24s : %5d   %4.1f %%", "'"..v.key.."'", v.value, 100*v.value/sum)
+	end
+end
+
+
+------------------------------------------------------
 -- TODO: only in debug/development
 local DEBUG = true
 

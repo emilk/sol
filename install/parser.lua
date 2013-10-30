@@ -504,7 +504,7 @@ function P
 
 
 :consume_symbol(')', token_list) do
-			if tok:is('ident') then
+			if tok:is('Ident') then
 				local arg = {
 					name = tok:get(token_list).data
 				} --[[SOL OUTPUT--]] 
@@ -588,7 +588,7 @@ function P
 
 
 	local function parse_id_expr()
-		assert(tok:is('ident')) --[[SOL OUTPUT--]] 
+		assert(tok:is('Ident')) --[[SOL OUTPUT--]] 
 
 		local token_list = {} --[[SOL OUTPUT--]] 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
@@ -621,7 +621,7 @@ function P
 			} --[[SOL OUTPUT--]] 
 			return true, parens_exp --[[SOL OUTPUT--]] 
 
-		elseif tok:is('ident') then
+		elseif tok:is('Ident') then
 			return true, parse_id_expr() --[[SOL OUTPUT--]] 
 		else
 			return false, report_error("primary expression expected") --[[SOL OUTPUT--]] 
@@ -644,7 +644,7 @@ function P
 				   (tok:is_symbol(':') and tok:peek().leading_white=="")
 		   then
 				local symb = tok:get(token_list).data --[[SOL OUTPUT--]] 
-				if not tok:is('ident') then
+				if not tok:is('Ident') then
 					return false, report_error("<ident> expected.") --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				local id = tok:get(token_list) --[[SOL OUTPUT--]] 
@@ -812,7 +812,7 @@ function P
 						value = value;
 					} --[[SOL OUTPUT--]] 
 
-				elseif tok:is('ident') then
+				elseif tok:is('Ident') then
 					--value or key
 					local lookahead = tok:peek(1) --[[SOL OUTPUT--]] 
 					if lookahead.type == 'Symbol' and lookahead.data == '=' then
@@ -1021,7 +1021,7 @@ function P
 				report_error("Use 'object'") --[[SOL OUTPUT--]] 
 				return T.create_empty_table() --[[SOL OUTPUT--]] 
 
-			elseif tok:is('ident')
+			elseif tok:is('Ident')
 			   and tok:peek(1).data == ':'
 			   --and #tok:peek(1).leading_white > 0
 			then
@@ -1033,7 +1033,7 @@ function P
 				while true do
 					if tok:consume_symbol('}') then break --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 
-					if not tok:is('ident') then
+					if not tok:is('Ident') then
 						report_error('Bad object: identifier expected') --[[SOL OUTPUT--]] 
 						return T.Any --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
@@ -1138,7 +1138,7 @@ function P
 					end --[[SOL OUTPUT--]] 
 
 					local arg_name = nil --[[SOL OUTPUT--]] 
-					if tok:is('ident') and tok:peek(1).data == ':' then
+					if tok:is('Ident') and tok:peek(1).data == ':' then
 						-- named type
 						arg_name = tok:get_ident() --[[SOL OUTPUT--]] 
 						tok:get() --[[SOL OUTPUT--]]  -- Swallow ':'
@@ -1192,12 +1192,12 @@ function P
 		elseif tok:consume_keyword('extern') then
 			return { tag = 'extern', where = where } --[[SOL OUTPUT--]] 
 
-		elseif tok:is('ident') then
+		elseif tok:is('Ident') then
 			local name = tok:get().data --[[SOL OUTPUT--]] 
 
 			if tok:consume_symbol('.') then
 				-- namespaced type
-				if not tok:is('ident') then
+				if not tok:is('Ident') then
 					report_error("Identifier expected") --[[SOL OUTPUT--]] 
 					return nil --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
@@ -1341,7 +1341,7 @@ function P
 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
 
-		if not tok:is('ident') then
+		if not tok:is('Ident') then
 			return false, report_error("Name expected") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		local type_name = tok:get().data --[[SOL OUTPUT--]] 
@@ -1424,7 +1424,7 @@ function P
 	local function parse_function_decl(scope, token_list,
 		                                scoping)
 
-		if not tok:is('ident') then
+		if not tok:is('Ident') then
 			return false, report_error("Function name expected") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -1462,13 +1462,13 @@ function P
 			return false, report_error("Empty type list") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		if not tok:is('ident') then
+		if not tok:is('Ident') then
 			return false, report_error("Variable name expected") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		local name_list = { tok:get(token_list).data } --[[SOL OUTPUT--]] 
 		while tok:consume_symbol(',', token_list) do
-			if not tok:is('ident') then
+			if not tok:is('Ident') then
 				return false, report_error("local variable name expected") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			name_list [ # name_list + 1 ] = tok:get(token_list).data --[[SOL OUTPUT--]] 
@@ -1526,7 +1526,7 @@ function P
 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
 
-		if not tok:is('ident') then
+		if not tok:is('Ident') then
 			return false, report_error("Name expected") --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		local name = tok:get(token_list).data --[[SOL OUTPUT--]] 
@@ -1654,7 +1654,7 @@ function P
 
 		elseif tok:consume_keyword('for', token_list) then
 			--for block
-			if not tok:is('ident') then
+			if not tok:is('Ident') then
 				return false, report_error("<ident> expected.") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			local base_var_name = tok:get(token_list) --[[SOL OUTPUT--]] 
@@ -1703,7 +1703,7 @@ function P
 				--
 				local var_names = { base_var_name.data } --[[SOL OUTPUT--]] 
 				while tok:consume_symbol(',', token_list) do
-					if not tok:is('ident') then
+					if not tok:is('Ident') then
 						return false, report_error("for variable expected.") --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 					var_names [ # var_names + 1 ] = tok:get(token_list).data --[[SOL OUTPUT--]] 
@@ -1761,7 +1761,7 @@ function P
 			stat = node_repeat --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_keyword('function', token_list) then
-			if not tok:is('ident') then
+			if not tok:is('Ident') then
 				return false, report_error("Function name expected") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			local st, name_expr = parse_suffixed_expr(scope, 'only_dot_colon') --[[SOL OUTPUT--]] 
@@ -1808,7 +1808,7 @@ function P
 			st, stat = parse_class(scope, token_list, 'local') --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_symbol('::', token_list) then
-			if not tok:is('ident') then
+			if not tok:is('Ident') then
 				return false, report_error('label name expected') --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			local label = tok:get(token_list).data --[[SOL OUTPUT--]] 
@@ -1850,7 +1850,7 @@ function P
 			stat = node_break --[[SOL OUTPUT--]] 
 
 		elseif tok:consume_keyword('goto', token_list) then
-			if not tok:is('ident') then
+			if not tok:is('Ident') then
 				return false, report_error("label expected") --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			local label = tok:get(token_list).data --[[SOL OUTPUT--]] 

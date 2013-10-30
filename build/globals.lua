@@ -5,4 +5,6 @@
  g_ignore_errors      = false --[[SOL OUTPUT--]] 
  g_break_on_error     = false --[[SOL OUTPUT--]] 
  g_warnings_as_errors = false --[[SOL OUTPUT--]] 
+ g_write_timings      = false --[[SOL OUTPUT--]] 
+ g_print_stats        = true --[[SOL OUTPUT--]] 
  --[[SOL OUTPUT--]] 

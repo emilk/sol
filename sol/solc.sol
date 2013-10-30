@@ -52,7 +52,7 @@ package.path = sol_dir..'?.lua;' .. package.path
 require 'globals'
 local D          = require 'sol_debug'
 local output     = require 'output'
-local Lexer      = require 'lexer'
+local L          = require 'lexer'
 local Parser     = require 'parser'
 local _          = require 'scope'
 local T          = require 'type'
@@ -60,6 +60,31 @@ local TypeCheck  = require 'type_check'
 local U          = require 'util'
 local intrinsics = require 'lua_intrinsics'
 local printf_err = U.printf_err
+
+------------------------------------------------
+
+var ast_type_count = {} : {string => uint}
+var has_stats_for  = {} : {any}
+
+function collect_stats(ast)
+	if type(ast) == 'table' and not has_stats_for[ast] then
+		has_stats_for[ast] = true
+
+		if type(ast.ast_type) == 'string' then
+			ast_type_count[ast.ast_type] = (ast_type_count[ast.ast_type] or 0) + 1
+		end
+
+		for k,v in pairs(ast) do
+			collect_stats(v)
+		end
+	end
+end
+
+function print_stats()
+	U.printf("Ast type popularity:")
+	U.print_sorted_stats(ast_type_count)
+end
+
 
 ------------------------------------------------
 
@@ -221,7 +246,7 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 
 	local settings = (is_sol and Parser.SOL_SETTINGS or Parser.LUA_SETTINGS)
 
-	local st, tokens = Lexer.lex_sol(source_text, filename, settings)
+	local st, tokens = L.lex_sol(source_text, filename, settings)
 	if not st then
 		printf_err("Failed to lex %q", path_in)
 		g_modules[module_id] = FAIL_INFO
@@ -271,6 +296,10 @@ local function parse_module_str(chain: [string], path_in: string, source_text: s
 		g_modules[module_id] = FAIL_INFO
 		os.exit(2)  -- report the failure
 		return FAIL_INFO
+	end
+
+	if g_print_stats then
+		collect_stats(ast)
 	end
 
 	if g_parse_only then
@@ -629,6 +658,11 @@ if g_profiler then
 	local REPORT_PATH = os.date("solc_profile_reports/profiler_report_%Y_%m_%d__%H_%M_%S.txt")
 	g_profiler:writeReport( REPORT_PATH )
 	--print( 'Profile report written to ' .. REPORT_PATH)
+end
+
+if g_print_stats then
+	L.print_stats()
+	print_stats()
 end
 
 os.exit(0) -- Success

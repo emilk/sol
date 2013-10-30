@@ -1741,6 +1741,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif expr.ast_type == 'ParenthesesExpr' then
+			--[[
+			function ret_123() return 1,2,3 end
+			print(   ret_123()   )  -- prints 1 2 3
+			print( ( ret_123() ) )  -- prints 1
+			--]]
 			local t = analyze_expr_single( expr.inner, scope )
 			return t
 

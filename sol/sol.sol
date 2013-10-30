@@ -118,7 +118,6 @@ if #arg == 0 then
 	print_help()
 	os.exit(-1)
 else
-	local g_write_lua = true
 	local ix          = 1
 	local num_files   = 0
 

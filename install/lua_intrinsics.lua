@@ -41,6 +41,8 @@
 		date    = extern : function(...) -> ...;
 		getenv  = extern : function(...) -> ...;
 		execute = extern : function(...) -> ...;
+
+		clock = extern : function() -> number;
 	}
 
 	global package = {
