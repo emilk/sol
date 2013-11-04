@@ -579,7 +579,7 @@ else
 			print('Profiling (this may take a while)...') --[[SOL OUTPUT--]] 
 			g_profiler:start() --[[SOL OUTPUT--]] 
 
-		elseif a == '-d' or a == '--ebug' then
+		elseif a == '-d' or a == '--debug' then
 			D.activate() --[[SOL OUTPUT--]] 
 			print('Debugger activated') --[[SOL OUTPUT--]] 
 

@@ -1765,7 +1765,7 @@ function P
 
 			func.ast_type     = 'FunctionDeclStatement' --[[SOL OUTPUT--]] 
 			if not is_aggregate then
-				func.is_local  = settings.sol --[[SOL OUTPUT--]] 
+				func.is_local  = settings.is_sol --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			func.scoping      = '' --[[SOL OUTPUT--]] 
 			func.is_aggregate = is_aggregate --[[SOL OUTPUT--]] 

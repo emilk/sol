@@ -1242,6 +1242,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				var_.num_reads += 1
 			else
 				if expr.name ~= '_' then  -- Implicit '_' var is OK
+					D.break_()
 					report_error(expr, "Implicit global %q", expr.name)
 				end
 				var_ = top_scope:create_global( expr.name, where_is(expr) )
@@ -2693,14 +2694,21 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						--[[
 						  HACK: Foo = Foo or EXPR
 						  This is a very common Lua idiom
+						  We forgive this as a global declare in lua. NOT COOL!
 						--]]
 						var name = stat.lhs[1].name
 
 						var v = scope:get_var( name )
+
 						if not v then
-							sol_error(stat, "Pre-analyze: Declaring global %q", name)
+							D.break_()
+							if not settings.is_sol and scope:is_module_level() then
+								report_spam(stat, "Forgiving implicit global on the form <%s = %s or EXPR>", name, name)
+							else
+								report_error(stat, "Pre-analyze: Implicit global %q", name)
+							end
 							v = top_scope:create_global( name, where_is(stat) )
-							v.forward_declared = true
+							--v.forward_declared = true
 						end
 
 					elseif stat.rhs[1].ast_type      == 'CallExpr'

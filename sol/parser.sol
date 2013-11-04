@@ -1765,7 +1765,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 			func.ast_type     = 'FunctionDeclStatement'
 			if not is_aggregate then
-				func.is_local  = settings.sol
+				func.is_local  = settings.is_sol
 			end
 			func.scoping      = ''
 			func.is_aggregate = is_aggregate

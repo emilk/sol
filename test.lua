@@ -1,2 +1,1 @@
-Foo = Foo or {}
-function Foo.bar() end
+x = x or {}
