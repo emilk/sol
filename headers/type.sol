@@ -171,7 +171,7 @@ return {
 	extend_variant_one:    function(v: Variant, e: Type) -> Variant;
 	find_meta_method:      function(t: Type, name: string) -> Type?;
 	follow_identifiers:    function(t: Type, forgiving: bool?) -> Type;
-	format_type:           function(root: Type, verbose: bool?) -> string;
+	format_type:           function(root: Type, verbosity: Verbosity) -> string;
 	from_num_literal:      function(str: string) -> IntLiteral or NumLiteral?;
 	from_string_literal:   function(str: string) -> StringLiteral;
 	has_tag:               function(t: Type, target: string) -> bool;
@@ -194,9 +194,8 @@ return {
 	isa_typelists:         function(d: [Type]?, b: [Type]?, problem_rope: [string]?) -> bool;
 	make_nilable:          function(a: Type) -> Type;
 	make_variant:          function(... : any) -> Variant;
-	name:                  function(typ: Type or [Type]?, verbose: bool?) -> string;
-	name_verbose:          function(typ: Type or [Type]?) -> string;
-	names:                 function(typ: [Type], verbose: bool?) -> string;
+	name:                  function(typ: Type or [Type]?, verbosity: 'verbose' or 'concise'?) -> string;
+	names:                 function(typ: [Type], verbosity: 'verbose' or 'concise'?) -> string;
 	on_error:              function(fmt, ... : any) -> void;
 	should_extend_in_situ: function(typ: Type) -> bool;
 	simplify:              function(t: Type) -> Type;

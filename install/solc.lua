@@ -490,6 +490,9 @@ local function print_help()
 			-s
 				Spam mode: Will print extensive trace text (for debugging solc)
 
+			--single-line
+				Errors and warnings will be printed on single lines
+
 			-e0
 				Ignore all errors and push through
 
@@ -535,6 +538,7 @@ else
 
 		if a == '-h' or a == '--help' then
 			print_help() --[[SOL OUTPUT--]] 
+			os.exit(0) --[[SOL OUTPUT--]] 
 
 		elseif a == '-o' then
 			g_out_dir = arg[ix] .. '/' --[[SOL OUTPUT--]] 
@@ -564,6 +568,9 @@ else
 		elseif a == '-s' or a == '--spam' then
 			g_spam = true --[[SOL OUTPUT--]] 
 
+		elseif a == '--single-line' then
+			g_one_line_errors = true --[[SOL OUTPUT--]] 
+
 		elseif a == '-e0' then
 			g_ignore_errors = true --[[SOL OUTPUT--]] 
 
@@ -572,7 +579,7 @@ else
 			print('Profiling (this may take a while)...') --[[SOL OUTPUT--]] 
 			g_profiler:start() --[[SOL OUTPUT--]] 
 
-		elseif a == '-d' or a == '--debug' then
+		elseif a == '-d' or a == '--ebug' then
 			D.activate() --[[SOL OUTPUT--]] 
 			print('Debugger activated') --[[SOL OUTPUT--]] 
 
@@ -618,6 +625,8 @@ else
 			U.printf_err("Unknown option: %q", a) --[[SOL OUTPUT--]] 
 			print_help() --[[SOL OUTPUT--]] 
 			os.exit(1337) --[[SOL OUTPUT--]] 
+
+		-- TODO: --  (meaning all subsequent arguments are files and not options)
 
 		else
 			local path_in = a --[[SOL OUTPUT--]] 

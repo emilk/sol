@@ -198,6 +198,7 @@ end
 function U.printf_err(fmt: string, ...)
 	local msg = string.format(fmt, ...)
 
+	if g_one_line_errors then msg = msg:gsub("\n", " ") end
 	--msg = U.ellipsis(msg)
 
 	io.stderr:write( msg .. '\n' )

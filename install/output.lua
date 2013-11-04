@@ -64,7 +64,9 @@ local function output(ast, filename, strip_white_space)
 
 			local str  = token.data --[[SOL OUTPUT--]] 
 
-			if not strip_white_space then
+			if strip_white_space then
+				self.rope [ # self . rope + 1 ] = str --[[SOL OUTPUT--]] 
+			else
 				local nl = count_line_breaks(str) --[[SOL OUTPUT--]] 
 
 				while self.line + nl < token.line do
@@ -72,14 +74,9 @@ local function output(ast, filename, strip_white_space)
 					self.rope [ # self . rope + 1 ] = '\n' --[[SOL OUTPUT--]] 
 					self.line = self . line + ( 1 ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
 
-			self:append_str(str) --[[SOL OUTPUT--]] 
-		end,
-
-		append_tokens = function(self, tokens)
-			for _,token in ipairs(tokens) do
-				self:append_token( token ) --[[SOL OUTPUT--]] 
+				self.line = self . line + ( nl ) --[[SOL OUTPUT--]] 
+				self.rope [ # self . rope + 1 ] = str --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end,
 
@@ -326,21 +323,25 @@ local function output(ast, filename, strip_white_space)
 		--debug_printf("")
 		--debug_printf(string.format("format_statement(%s) at line %i", stat.ast_type, stat.tokens and stat.tokens[1] and stat.tokens[1].line or -1))
 
-		if stat.ast_type == 'AssignmentStatement' then
-			for i,v in ipairs(stat.lhs) do
-				format_expr(v) --[[SOL OUTPUT--]] 
-				t:append_comma( i ~= #stat.lhs ) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-			if #stat.rhs > 0 then
-				t:append_str( "=" ) --[[SOL OUTPUT--]] 
-				for i,v in ipairs(stat.rhs) do
-					format_expr(v) --[[SOL OUTPUT--]] 
-					t:append_comma( i ~= #stat.rhs ) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
 
-		elseif stat.ast_type == 'CallStatement' then
-			format_expr(stat.expression) --[[SOL OUTPUT--]] 
+		-- Ordered by popularity
+		if stat.ast_type == 'IfStatement' then
+			t:append_next_token( "if" ) --[[SOL OUTPUT--]] 
+			format_expr( stat.clauses[1].condition ) --[[SOL OUTPUT--]] 
+			t:append_next_token( "then" ) --[[SOL OUTPUT--]] 
+			format_statlist( stat.clauses[1].body ) --[[SOL OUTPUT--]] 
+			for i = 2, #stat.clauses do
+				local st = stat.clauses[i] --[[SOL OUTPUT--]] 
+				if st.condition then
+					t:append_next_token( "elseif" ) --[[SOL OUTPUT--]] 
+					format_expr(st.condition) --[[SOL OUTPUT--]] 
+					t:append_next_token( "then" ) --[[SOL OUTPUT--]] 
+				else
+					t:append_next_token( "else" ) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+				format_statlist(st.body) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			t:append_next_token( "end" ) --[[SOL OUTPUT--]] 
 
 		elseif stat.ast_type == 'VarDeclareStatement' then
 			if t:peek() == "local" then
@@ -364,6 +365,22 @@ local function output(ast, filename, strip_white_space)
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
+		elseif stat.ast_type == 'CallStatement' then
+			format_expr(stat.expression) --[[SOL OUTPUT--]] 
+
+		elseif stat.ast_type == 'AssignmentStatement' then
+			for i,v in ipairs(stat.lhs) do
+				format_expr(v) --[[SOL OUTPUT--]] 
+				t:append_comma( i ~= #stat.lhs ) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			if #stat.rhs > 0 then
+				t:append_str( "=" ) --[[SOL OUTPUT--]] 
+				for i,v in ipairs(stat.rhs) do
+					format_expr(v) --[[SOL OUTPUT--]] 
+					t:append_comma( i ~= #stat.rhs ) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
 		elseif stat.ast_type == 'ClassDeclStatement' then
 			if stat.is_local then
 				t:append_str( "local" ) --[[SOL OUTPUT--]]  -- replaces 'class'
@@ -374,24 +391,6 @@ local function output(ast, filename, strip_white_space)
 			t:append_str( stat.name ) --[[SOL OUTPUT--]] 
 			t:append_next_token( "=" ) --[[SOL OUTPUT--]] 
 			format_expr(stat.rhs) --[[SOL OUTPUT--]] 
-
-		elseif stat.ast_type == 'IfStatement' then
-			t:append_next_token( "if" ) --[[SOL OUTPUT--]] 
-			format_expr( stat.clauses[1].condition ) --[[SOL OUTPUT--]] 
-			t:append_next_token( "then" ) --[[SOL OUTPUT--]] 
-			format_statlist( stat.clauses[1].body ) --[[SOL OUTPUT--]] 
-			for i = 2, #stat.clauses do
-				local st = stat.clauses[i] --[[SOL OUTPUT--]] 
-				if st.condition then
-					t:append_next_token( "elseif" ) --[[SOL OUTPUT--]] 
-					format_expr(st.condition) --[[SOL OUTPUT--]] 
-					t:append_next_token( "then" ) --[[SOL OUTPUT--]] 
-				else
-					t:append_next_token( "else" ) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-				format_statlist(st.body) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-			t:append_next_token( "end" ) --[[SOL OUTPUT--]] 
 
 		elseif stat.ast_type == 'WhileStatement' then
 			t:append_next_token( "while" ) --[[SOL OUTPUT--]] 

@@ -140,6 +140,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	local function report(type: string, where: string, fmt: string, ...) -> string
 		local inner_msg = fancy_format(fmt, ...)
 		local msg = string.format('%s: %s: %s', type, where, inner_msg)
+		if g_one_line_errors then msg = msg:gsub("\n", " ") end
 		return msg
 	end
 

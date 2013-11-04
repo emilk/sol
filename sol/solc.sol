@@ -490,6 +490,9 @@ local function print_help()
 			-s
 				Spam mode: Will print extensive trace text (for debugging solc)
 
+			--single-line
+				Errors and warnings will be printed on single lines
+
 			-e0
 				Ignore all errors and push through
 
@@ -535,6 +538,7 @@ else
 
 		if a == '-h' or a == '--help' then
 			print_help()
+			os.exit(0)
 
 		elseif a == '-o' then
 			g_out_dir = arg[ix] .. '/'
@@ -563,6 +567,9 @@ else
 
 		elseif a == '-s' or a == '--spam' then
 			g_spam = true
+
+		elseif a == '--single-line' then
+			g_one_line_errors = true
 
 		elseif a == '-e0' then
 			g_ignore_errors = true
@@ -618,6 +625,8 @@ else
 			U.printf_err("Unknown option: %q", a)
 			print_help()
 			os.exit(1337)
+
+		-- TODO: --  (meaning all subsequent arguments are files and not options)
 
 		else
 			local path_in = a

@@ -897,10 +897,19 @@ end
 
 function T.table_id(t)
 	return tostring(t):gsub("table: ", "") --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]         -- Default (depends on global settings)
 
-function T.format_type(root, verbose)
-	if verbose == nil then verbose = false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+function T
+
+
+
+
+.format_type(root, verbosity)
+	if g_one_line_errors then
+		verbosity = verbosity or 'concise' --[[SOL OUTPUT--]] 
+	else
+		verbosity = verbosity or 'medium' --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	local written_objs = {} --[[SOL OUTPUT--]] 
 	local output_types, output_obj --[[SOL OUTPUT--]] 
@@ -959,19 +968,21 @@ function T.format_type(root, verbose)
 			end --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'object' then
-			--verbose = false -- FIXME
+			if verbosity == 'concise' then
+				return "<object>" --[[SOL OUTPUT--]] 
+			else
+				local obj = typ --[[SOL OUTPUT--]] 
 
-			local obj = typ --[[SOL OUTPUT--]] 
+				if written_objs[obj] then
+					return '<RECURSION '..T.table_id(obj)..'>' --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 
-			if written_objs[obj] then
-				return '<RECURSION '..T.table_id(obj)..'>' --[[SOL OUTPUT--]] 
+				written_objs[obj] = true --[[SOL OUTPUT--]] 
+				local ret = output_obj(obj, indent) --[[SOL OUTPUT--]] 
+				written_objs[obj] = nil --[[SOL OUTPUT--]] 
+
+				return ret --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
-
-			written_objs[obj] = true --[[SOL OUTPUT--]] 
-			local ret = output_obj(obj, indent) --[[SOL OUTPUT--]] 
-			written_objs[obj] = nil --[[SOL OUTPUT--]] 
-
-			return ret --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'list' then
 			return '[' .. output(typ.type, next_indent) .. ']' --[[SOL OUTPUT--]] 
@@ -986,6 +997,8 @@ function T.format_type(root, verbose)
 			end --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'function' then
+			-- TODO: verbosity = 'concise' -- Less verbose upon recurse (send as argument)
+
 			local str = 'function(' --[[SOL OUTPUT--]] 
 			for i,arg in ipairs(typ.args) do
 				if arg.name then
@@ -1021,7 +1034,7 @@ function T.format_type(root, verbose)
 			return typ.str_quoted --[[SOL OUTPUT--]] 
 
 		elseif typ.tag == 'identifier' then
-			if (verbose or g_spam) and typ.type then
+			if (verbosity=='verbose' or g_spam) and typ.type then
 			--if typ.type then
 				return string.format('%s (%s)', typ.name, output(typ.type, next_indent)) --[[SOL OUTPUT--]] 
 			else
@@ -1161,13 +1174,13 @@ function T.format_type(root, verbose)
 end --[[SOL OUTPUT--]] 
 
 
-function T.names(typ, verbose)
+function T.names(typ, verbosity)
 	if #typ == 0 then
 		return "void" --[[SOL OUTPUT--]] 
 	else
 		local str='' --[[SOL OUTPUT--]] 
 		for i,t in ipairs(typ) do
-			str = str .. ( T.name(t, verbose) ) --[[SOL OUTPUT--]] 
+			str = str .. ( T.name(t, verbosity) ) --[[SOL OUTPUT--]] 
 			if i ~= #typ then
 				str = str .. ( ', ' ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
@@ -1177,12 +1190,10 @@ function T.names(typ, verbose)
 end --[[SOL OUTPUT--]] 
 
 
-function T.name(typ, verbose)
-	if verbose == nil then verbose = false --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-
+function T.name(typ, verbosity)
 	if typ == nil then
 		--D.error_()
-		return 'NIL' --[[SOL OUTPUT--]] 
+		return '<nil>' --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	if typ == T.AnyTypeList then
@@ -1190,18 +1201,14 @@ function T.name(typ, verbose)
 
 	elseif T.is_type_list(typ) then
 		--D.error_()
-		return T.names(typ, verbose) --[[SOL OUTPUT--]] 
+		return T.names(typ, verbosity) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 	D.assert( T.is_type(typ) ) --[[SOL OUTPUT--]] 
 
-	return T.format_type(typ, verbose) --[[SOL OUTPUT--]] 
+	return T.format_type(typ, verbosity) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
-
-function T.name_verbose(typ)
-	return T.name(typ, true) --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
 
 function T.is_variant(t)
 	t = T.follow_identifiers(t) --[[SOL OUTPUT--]] 
@@ -1569,7 +1576,6 @@ function T.visit(t, lambda)
 		for _,v in ipairs(t.variants) do
 			T.visit(v, lambda) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-
 	else
 		lambda(t) --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

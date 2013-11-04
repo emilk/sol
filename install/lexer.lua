@@ -18,8 +18,9 @@ local IDENT_CHARS       = U.set_join(IDENT_START_CHARS, DIGITS) --[[SOL OUTPUT--
 
 
 -- Stats:
-local g_type_to_count   = {} --[[SOL OUTPUT--]] 
-local g_symbol_to_count = {} --[[SOL OUTPUT--]] 
+local g_type_to_count    = {} --[[SOL OUTPUT--]] 
+local g_symbol_to_count  = {} --[[SOL OUTPUT--]] 
+local g_keyword_to_count = {} --[[SOL OUTPUT--]] 
 
 
 local L = {} --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 
@@ -385,6 +386,9 @@ function L.lex_sol(src, filename, settings)
 			if tok.type == 'Symbol' then
 				g_symbol_to_count[tok.data] = (g_symbol_to_count[tok.data] or 0) + 1 --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
+			if tok.type == 'Keyword' then
+				g_keyword_to_count[tok.data] = (g_keyword_to_count[tok.data] or 0) + 1 --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -490,6 +494,9 @@ function L.print_stats()
 
 	U.printf("Symbol popularity:") --[[SOL OUTPUT--]] 
 	U.print_sorted_stats(g_symbol_to_count) --[[SOL OUTPUT--]] 
+
+	U.printf("Keyword popularity:") --[[SOL OUTPUT--]] 
+	U.print_sorted_stats(g_keyword_to_count) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 

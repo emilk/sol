@@ -393,6 +393,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	settings = settings or P.SOL_SETTINGS
 	local num_err = 0
 
+	local tic = os.clock()
 	--
 	local function where_am_i(offset: int?) -> string
 		local token = tok:peek(offset)
@@ -403,30 +404,33 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		local msg = string.format(msg_fmt, ...)
 		--local err = ">> :"..tok:peek().line..":"..tok:peek().char..": "..msg.."\n"
 		local err = "solc: "..where_am_i(-1)..": "..msg.."\n"
-		--find the line
-		local line_num = 0
-		for line in src:gmatch("[^\n]*\n?") do
-			if line:sub(-1,-1) == '\n' then line = line:sub(1,-2) end
-			line_num += 1
-			if line_num == tok:peek().line then
-				err = err..">> `"..line:gsub('\t','    ').."`\n"
-				for i = 1, tok:peek().char do
-					local c = line:sub(i,i)
-					if c == '\t' then
-						err = err..'    '
+
+		if not g_one_line_errors then
+			--find the line
+			local line_num = 0
+			for line in src:gmatch("[^\n]*\n?") do
+				if line:sub(-1,-1) == '\n' then line = line:sub(1,-2) end
+
+				if line_num == tok:peek().line then
+					err ..= ">> `"..line:gsub('\t','    ').."`\n"
+					for i = 1, tok:peek().char do
+						local c = line:sub(i,i)
+						if c == '\t' then
+							err ..= '    '
+						else
+							err ..= ' '
+						end
+					end
+					if not tok:peek().data then
+						err ..= "   ^^^^"
 					else
-						err = err..' '
+						err ..= "   ^"
+						for i = 2, #tok:peek().data do
+							err ..= "^"
+						end
 					end
+					break
 				end
-				if not tok:peek().data then
-					err = err.."   ^^^^"
-				else
-					err = err.."   ^"
-					for i = 2, #tok:peek().data do
-						err = err.."^"
-					end
-				end
-				break
 			end
 		end
 
@@ -765,16 +769,16 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 				tokens   = token_list;
 			}
 
-		elseif tok:consume_keyword('extern', token_list) then
-			node = {
-				ast_type = 'ExternExpr';
-				tokens   = token_list;
-			}
-
 		elseif tok:is_keyword('false') or tok:is_keyword('true') then
 			node = {
 				ast_type = 'BooleanExpr';
 				value    = (tok:get(token_list).data == 'true');
+				tokens   = token_list;
+			}
+
+		elseif tok:consume_keyword('extern', token_list) then
+			node = {
+				ast_type = 'ExternExpr';
 				tokens   = token_list;
 			}
 
@@ -1447,20 +1451,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		var is_local = (scoping ~= 'global')
 
 		var where = where_am_i()
-		var types = nil : T.Typelist?
-
-		--[[
-		--parse var<type>
-		if scoping == 'var' then
-			types = parse_type_args(scope)
-		elseif parse_type_args(scope) then
-			return false, report_error("%s cannot have type list - did you want 'var' ?")
-		end
-		--]]
-
-		if types and #types == 0 then
-			return false, report_error("Empty type list")
-		end
 
 		if not tok:is('Ident') then
 			return false, report_error("Variable name expected")
@@ -1487,7 +1477,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			ast_type  = 'VarDeclareStatement';
 			scoping   = scoping; -- 'local' or 'global' or 'var'
 			is_local  = is_local;
-			type_list = types;
 			name_list = name_list;
 			init_list = init_list;
 			tokens    = token_list;
@@ -1870,11 +1859,6 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 			--assignment or call?
 			if tok:is_symbol(',') or tok:is_symbol('=') then
-				--check that it was not parenthesized, making it not an lvalue
-				if (suffixed.paren_count or 0) > 0 then
-					return false, report_error("Can not assign to parenthesized expression, is not an lvalue")
-				end
-
 				--more processing needed
 				var lhs = { suffixed }
 				while tok:consume_symbol(',', token_list) do
@@ -2065,7 +2049,12 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 	local st, main = mainfunc()
-	--print("Last Token: "..PrintTable(tok:peek()))
+
+	local toc = os.clock()
+	if g_write_timings then
+		U.printf("Parsing %s: %.1f ms", filename, 1000*(toc-tic))
+	end
+
 	if num_err == 0 then
 		return st, main
 	else

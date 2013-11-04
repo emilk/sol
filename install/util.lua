@@ -198,6 +198,7 @@ end --[[SOL OUTPUT--]]
 function U.printf_err(fmt, ...)
 	local msg = string.format(fmt, ...) --[[SOL OUTPUT--]] 
 
+	if g_one_line_errors then msg = msg:gsub("\n", " ") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 	--msg = U.ellipsis(msg)
 
 	io.stderr:write( msg .. '\n' ) --[[SOL OUTPUT--]] 

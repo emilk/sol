@@ -140,6 +140,7 @@ local function analyze(ast
 	local function report(type, where, fmt, ...)
 		local inner_msg = fancy_format(fmt, ...) --[[SOL OUTPUT--]] 
 		local msg = string.format('%s: %s: %s', type, where, inner_msg) --[[SOL OUTPUT--]] 
+		if g_one_line_errors then msg = msg:gsub("\n", " ") --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 		return msg --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 

@@ -899,8 +899,17 @@ function T.table_id(t: table) -> string
 	return tostring(t):gsub("table: ", "")
 end
 
-function T.format_type(root: T.Type, verbose: bool?) -> string
-	if verbose == nil then verbose = false end
+typedef Verbosity = 'verbose'  -- as much as possible
+                 or 'medium'   -- shorten to typedefs, else show object contents
+                 or 'concise'  -- show unnamed objects as '<object>'
+                 or nil        -- Default (depends on global settings)
+
+function T.format_type(root: T.Type, verbosity: Verbosity) -> string
+	if g_one_line_errors then
+		verbosity = verbosity or 'concise'
+	else
+		verbosity = verbosity or 'medium'
+	end
 
 	var written_objs = {} : {T.Object}
 	local output_types, output_obj
@@ -959,19 +968,21 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 			end
 
 		elseif typ.tag == 'object' then
-			--verbose = false -- FIXME
+			if verbosity == 'concise' then
+				return "<object>"
+			else
+				var obj = typ : T.Object
 
-			var obj = typ : T.Object
+				if written_objs[obj] then
+					return '<RECURSION '..T.table_id(obj)..'>'
+				end
 
-			if written_objs[obj] then
-				return '<RECURSION '..T.table_id(obj)..'>'
+				written_objs[obj] = true
+				var ret = output_obj(obj, indent)
+				written_objs[obj] = nil
+
+				return ret
 			end
-
-			written_objs[obj] = true
-			var ret = output_obj(obj, indent)
-			written_objs[obj] = nil
-
-			return ret
 
 		elseif typ.tag == 'list' then
 			return '[' .. output(typ.type, next_indent) .. ']'
@@ -986,6 +997,8 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 			end
 
 		elseif typ.tag == 'function' then
+			-- TODO: verbosity = 'concise' -- Less verbose upon recurse (send as argument)
+
 			local str = 'function('
 			for i,arg in ipairs(typ.args) do
 				if arg.name then
@@ -1021,7 +1034,7 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 			return typ.str_quoted
 
 		elseif typ.tag == 'identifier' then
-			if (verbose or g_spam) and typ.type then
+			if (verbosity=='verbose' or g_spam) and typ.type then
 			--if typ.type then
 				return string.format('%s (%s)', typ.name, output(typ.type, next_indent))
 			else
@@ -1161,13 +1174,13 @@ function T.format_type(root: T.Type, verbose: bool?) -> string
 end
 
 
-function T.names(typ: [T.Type], verbose: bool?) -> string
+function T.names(typ: [T.Type], verbosity: 'verbose' or 'concise' or nil) -> string
 	if #typ == 0 then
 		return "void"
 	else
 		local str=''
 		for i,t in ipairs(typ) do
-			str ..= T.name(t, verbose)
+			str ..= T.name(t, verbosity)
 			if i ~= #typ then
 				str ..= ', '
 			end
@@ -1177,12 +1190,10 @@ function T.names(typ: [T.Type], verbose: bool?) -> string
 end
 
 
-function T.name(typ: T.Type or [T.Type] or nil, verbose: bool?) -> string
-	if verbose == nil then verbose = false end
-
+function T.name(typ: T.Type or [T.Type] or nil, verbosity: 'verbose' or 'concise' or nil) -> string
 	if typ == nil then
 		--D.error_()
-		return 'NIL'
+		return '<nil>'
 	end
 
 	if typ == T.AnyTypeList then
@@ -1190,18 +1201,14 @@ function T.name(typ: T.Type or [T.Type] or nil, verbose: bool?) -> string
 
 	elseif T.is_type_list(typ) then
 		--D.error_()
-		return T.names(typ, verbose)
+		return T.names(typ, verbosity)
 	end
 
 	D.assert( T.is_type(typ) )
 
-	return T.format_type(typ, verbose)
+	return T.format_type(typ, verbosity)
 end
 
-
-function T.name_verbose(typ: T.Type or [T.Type] or nil) -> string
-	return T.name(typ, true)
-end
 
 function T.is_variant(t: T.Type) -> T.Variant?
 	t = T.follow_identifiers(t)
@@ -1569,7 +1576,6 @@ function T.visit(t: T.Type, lambda: function(T.Type))
 		for _,v in ipairs(t.variants) do
 			T.visit(v, lambda)
 		end
-
 	else
 		lambda(t)
 	end

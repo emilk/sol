@@ -393,6 +393,7 @@ function P
 	settings = settings or P.SOL_SETTINGS --[[SOL OUTPUT--]] 
 	local num_err = 0 --[[SOL OUTPUT--]] 
 
+	local tic = os.clock() --[[SOL OUTPUT--]] 
 	--
 	local function where_am_i(offset)
 		local token = tok:peek(offset) --[[SOL OUTPUT--]] 
@@ -403,30 +404,33 @@ function P
 		local msg = string.format(msg_fmt, ...) --[[SOL OUTPUT--]] 
 		--local err = ">> :"..tok:peek().line..":"..tok:peek().char..": "..msg.."\n"
 		local err = "solc: "..where_am_i(-1)..": "..msg.."\n" --[[SOL OUTPUT--]] 
-		--find the line
-		local line_num = 0 --[[SOL OUTPUT--]] 
-		for line in src:gmatch("[^\n]*\n?") do
-			if line:sub(-1,-1) == '\n' then line = line:sub(1,-2) --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
-			line_num = line_num + ( 1 ) --[[SOL OUTPUT--]] 
-			if line_num == tok:peek().line then
-				err = err..">> `"..line:gsub('\t','    ').."`\n" --[[SOL OUTPUT--]] 
-				for i = 1, tok:peek().char do
-					local c = line:sub(i,i) --[[SOL OUTPUT--]] 
-					if c == '\t' then
-						err = err..'    ' --[[SOL OUTPUT--]] 
+
+		if not g_one_line_errors then
+			--find the line
+			local line_num = 0 --[[SOL OUTPUT--]] 
+			for line in src:gmatch("[^\n]*\n?") do
+				if line:sub(-1,-1) == '\n' then line = line:sub(1,-2) --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
+
+				if line_num == tok:peek().line then
+					err = err .. ( ">> `"..line:gsub('\t','    ').."`\n" ) --[[SOL OUTPUT--]] 
+					for i = 1, tok:peek().char do
+						local c = line:sub(i,i) --[[SOL OUTPUT--]] 
+						if c == '\t' then
+							err = err .. ( '    ' ) --[[SOL OUTPUT--]] 
+						else
+							err = err .. ( ' ' ) --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+					if not tok:peek().data then
+						err = err .. ( "   ^^^^" ) --[[SOL OUTPUT--]] 
 					else
-						err = err..' ' --[[SOL OUTPUT--]] 
+						err = err .. ( "   ^" ) --[[SOL OUTPUT--]] 
+						for i = 2, #tok:peek().data do
+							err = err .. ( "^" ) --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
+					break --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
-				if not tok:peek().data then
-					err = err.."   ^^^^" --[[SOL OUTPUT--]] 
-				else
-					err = err.."   ^" --[[SOL OUTPUT--]] 
-					for i = 2, #tok:peek().data do
-						err = err.."^" --[[SOL OUTPUT--]] 
-					end --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-				break --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -765,16 +769,16 @@ function P
 				tokens   = token_list;
 			} --[[SOL OUTPUT--]] 
 
-		elseif tok:consume_keyword('extern', token_list) then
-			node = {
-				ast_type = 'ExternExpr';
-				tokens   = token_list;
-			} --[[SOL OUTPUT--]] 
-
 		elseif tok:is_keyword('false') or tok:is_keyword('true') then
 			node = {
 				ast_type = 'BooleanExpr';
 				value    = (tok:get(token_list).data == 'true');
+				tokens   = token_list;
+			} --[[SOL OUTPUT--]] 
+
+		elseif tok:consume_keyword('extern', token_list) then
+			node = {
+				ast_type = 'ExternExpr';
 				tokens   = token_list;
 			} --[[SOL OUTPUT--]] 
 
@@ -1447,20 +1451,6 @@ function P
 		local is_local = (scoping ~= 'global') --[[SOL OUTPUT--]] 
 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
-		local types = nil --[[SOL OUTPUT--]] 
-
-		--[[
-		--parse var<type>
-		if scoping == 'var' then
-			types = parse_type_args(scope)
-		elseif parse_type_args(scope) then
-			return false, report_error("%s cannot have type list - did you want 'var' ?")
-		end
-		--]]
-
-		if types and #types == 0 then
-			return false, report_error("Empty type list") --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
 
 		if not tok:is('Ident') then
 			return false, report_error("Variable name expected") --[[SOL OUTPUT--]] 
@@ -1487,7 +1477,6 @@ function P
 			ast_type  = 'VarDeclareStatement';
 			scoping   = scoping; -- 'local' or 'global' or 'var'
 			is_local  = is_local;
-			type_list = types;
 			name_list = name_list;
 			init_list = init_list;
 			tokens    = token_list;
@@ -1870,11 +1859,6 @@ function P
 
 			--assignment or call?
 			if tok:is_symbol(',') or tok:is_symbol('=') then
-				--check that it was not parenthesized, making it not an lvalue
-				if (suffixed.paren_count or 0) > 0 then
-					return false, report_error("Can not assign to parenthesized expression, is not an lvalue") --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-
 				--more processing needed
 				local lhs = { suffixed } --[[SOL OUTPUT--]] 
 				while tok:consume_symbol(',', token_list) do
@@ -2065,7 +2049,12 @@ function P
 	end --[[SOL OUTPUT--]] 
 
 	local st, main = mainfunc() --[[SOL OUTPUT--]] 
-	--print("Last Token: "..PrintTable(tok:peek()))
+
+	local toc = os.clock() --[[SOL OUTPUT--]] 
+	if g_write_timings then
+		U.printf("Parsing %s: %.1f ms", filename, 1000*(toc-tic)) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
 	if num_err == 0 then
 		return st, main --[[SOL OUTPUT--]] 
 	else

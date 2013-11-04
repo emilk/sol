@@ -18,8 +18,9 @@ var IDENT_CHARS       = U.set_join(IDENT_START_CHARS, DIGITS)
 
 
 -- Stats:
-var g_type_to_count   = {} : {string => uint}
-var g_symbol_to_count = {} : {string => uint}
+var g_type_to_count    = {} : {string => uint}
+var g_symbol_to_count  = {} : {string => uint}
+var g_keyword_to_count = {} : {string => uint}
 
 
 local L = {}
@@ -385,6 +386,9 @@ function L.lex_sol(src: string, filename: string, settings) -> bool, any
 			if tok.type == 'Symbol' then
 				g_symbol_to_count[tok.data] = (g_symbol_to_count[tok.data] or 0) + 1
 			end
+			if tok.type == 'Keyword' then
+				g_keyword_to_count[tok.data] = (g_keyword_to_count[tok.data] or 0) + 1
+			end
 		end
 	end
 
@@ -490,6 +494,9 @@ function L.print_stats()
 
 	U.printf("Symbol popularity:")
 	U.print_sorted_stats(g_symbol_to_count)
+
+	U.printf("Keyword popularity:")
+	U.print_sorted_stats(g_keyword_to_count)
 end
 
 

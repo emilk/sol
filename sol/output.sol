@@ -64,7 +64,9 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 
 			local str  = token.data
 
-			if not strip_white_space then
+			if strip_white_space then
+				self.rope #= str
+			else
 				local nl = count_line_breaks(str)
 
 				while self.line + nl < token.line do
@@ -72,14 +74,9 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 					self.rope #= '\n'
 					self.line += 1
 				end
-			end
 
-			self:append_str(str)
-		end,
-
-		append_tokens = function(self, tokens)
-			for _,token in ipairs(tokens) do
-				self:append_token( token )
+				self.line += nl
+				self.rope #= str
 			end
 		end,
 
@@ -326,21 +323,25 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 		--debug_printf("")
 		--debug_printf(string.format("format_statement(%s) at line %i", stat.ast_type, stat.tokens and stat.tokens[1] and stat.tokens[1].line or -1))
 
-		if stat.ast_type == 'AssignmentStatement' then
-			for i,v in ipairs(stat.lhs) do
-				format_expr(v)
-				t:append_comma( i ~= #stat.lhs )
-			end
-			if #stat.rhs > 0 then
-				t:append_str( "=" )
-				for i,v in ipairs(stat.rhs) do
-					format_expr(v)
-					t:append_comma( i ~= #stat.rhs )
-				end
-			end
 
-		elseif stat.ast_type == 'CallStatement' then
-			format_expr(stat.expression)
+		-- Ordered by popularity
+		if stat.ast_type == 'IfStatement' then
+			t:append_next_token( "if" )
+			format_expr( stat.clauses[1].condition )
+			t:append_next_token( "then" )
+			format_statlist( stat.clauses[1].body )
+			for i = 2, #stat.clauses do
+				local st = stat.clauses[i]
+				if st.condition then
+					t:append_next_token( "elseif" )
+					format_expr(st.condition)
+					t:append_next_token( "then" )
+				else
+					t:append_next_token( "else" )
+				end
+				format_statlist(st.body)
+			end
+			t:append_next_token( "end" )
 
 		elseif stat.ast_type == 'VarDeclareStatement' then
 			if t:peek() == "local" then
@@ -364,6 +365,22 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 				end
 			end
 
+		elseif stat.ast_type == 'CallStatement' then
+			format_expr(stat.expression)
+
+		elseif stat.ast_type == 'AssignmentStatement' then
+			for i,v in ipairs(stat.lhs) do
+				format_expr(v)
+				t:append_comma( i ~= #stat.lhs )
+			end
+			if #stat.rhs > 0 then
+				t:append_str( "=" )
+				for i,v in ipairs(stat.rhs) do
+					format_expr(v)
+					t:append_comma( i ~= #stat.rhs )
+				end
+			end
+
 		elseif stat.ast_type == 'ClassDeclStatement' then
 			if stat.is_local then
 				t:append_str( "local" ) -- replaces 'class'
@@ -374,24 +391,6 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 			t:append_str( stat.name )
 			t:append_next_token( "=" )
 			format_expr(stat.rhs)
-
-		elseif stat.ast_type == 'IfStatement' then
-			t:append_next_token( "if" )
-			format_expr( stat.clauses[1].condition )
-			t:append_next_token( "then" )
-			format_statlist( stat.clauses[1].body )
-			for i = 2, #stat.clauses do
-				local st = stat.clauses[i]
-				if st.condition then
-					t:append_next_token( "elseif" )
-					format_expr(st.condition)
-					t:append_next_token( "then" )
-				else
-					t:append_next_token( "else" )
-				end
-				format_statlist(st.body)
-			end
-			t:append_next_token( "end" )
 
 		elseif stat.ast_type == 'WhileStatement' then
 			t:append_next_token( "while" )

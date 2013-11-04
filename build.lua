@@ -52,7 +52,7 @@ function cp(source, dest)
 			local source_path = source .. '/' .. filename
 			local attr = lfs.attributes(source_path)
 			--print(attr.mode, path)
-			if type(attr) == "table" and attr.mode == "directory" then 
+			if type(attr) == "table" and attr.mode == "directory" then
 				local dest_path = dest .. "/" .. filename
 				lfs.mkdir(dest_path)
 				cp(source_path, dest_path)
@@ -68,7 +68,7 @@ function cp(source, dest)
 					error("Failed to write to " .. out_path)
 				end
 				w:write(content)
-				w:close() 
+				w:close()
 				write_protect(out_path)  -- Ensure the user doesn't accidently modify a .lua file instead of a .sol file!
 			end
 		end
@@ -96,7 +96,8 @@ run_lua( "build/solc.lua " ..solc_args.." -o build sol/*.sol" )
 print "----------------------------------------"
 print "BUILD 3/3: last santiy check"
 print "----------------------------------------"
-run_lua "build/solc.lua -o build sol/*.sol"
+--run_lua "build/solc.lua -o build sol/*.sol"
+run_lua( "build/solc.lua " ..solc_args.." -o build sol/*.sol" )
 
 --run_cmd "cp build/* install/"  -- no cp in windows
 cp("build", "install")
