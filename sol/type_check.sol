@@ -454,7 +454,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			node.self_var_type = self_type  -- Assign a type to the local 'self' variable
 
-			--report_spam(node, "self: '%s'", self_type)
+			--report_spam(node, "self: %s", self_type)
 		end
 
 		for _,arg in ipairs(node.arguments) do
@@ -607,7 +607,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						report_error(expr, "Var-args must be the last argument")
 					end
 
-					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
+					--report_spam(expr, "Checking argument %i: can we convert from %s to %s?", i, given, expected)
 
 					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), expected)
 
@@ -809,7 +809,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						return types
 					else
 						if error_rope then
-							error_rope #= string.format("Incompatible type: '%s'", T.name(typ))
+							error_rope #= fancy_format("Incompatible type: %s", T.name(typ))
 						end
 						return nil
 					end
@@ -1215,6 +1215,32 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 
+	-- eg:  check_condition('while', some_expr, scope)
+	-- examples:   if some_expr then ...
+	-- examples:   while true then ...
+	local check_condition_type = function(expr: P.Node, name: string, typ: T.Type) -> T.Type
+		if expr.ast_type == 'BooleanExpr' then
+			-- 'true' or 'false' as explicit argument - that's OK
+			-- e.g. for   while true do  ... break ... end
+		else
+			var t,f = T.could_be_true_false(typ)
+			if t and not f then
+				report_error(expr, "%s never evaluates to false nor nil: %s", name, typ)
+			end
+			if not t and f then
+				report_error(expr, "%s always evaluates to false or nil: %s", name, typ)
+			end
+		end
+
+		return typ
+	end
+
+	local check_condition = function(name: string, expr: P.Node, scope: Scope) -> T.Type
+		local typ = analyze_expr_single(expr, scope)
+		return check_condition_type(expr, name, typ)
+	end
+
+
 	local analyze_simple_expr_unchecked
 
 
@@ -1248,7 +1274,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				var_ = top_scope:create_global( expr.name, where_is(expr) )
 			end
 
-			--report_spam(expr, "IdExpr '%s': var_.type: '%s'", var_.name, var_.type)
+			--report_spam(expr, "IdExpr '%s': var_.type: %s", var_.name, var_.type)
 
 			local type = var_.type or T.Any
 			if var_.namespace then
@@ -1280,7 +1306,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 			end
 
-			--report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, type)
+			--report_spam(expr, "analyze_expr_unchecked('%s'): %s", expr.ast_type, type)
 
 			--D.assert(T.is_type(type)  or  T.is_type_list(type))
 			D.assert( T.is_type(type) )
@@ -1307,7 +1333,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		else
 			local type = analyze_simple_expr_unchecked(expr, scope)
 
-			report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, type)
+			report_spam(expr, "analyze_expr_unchecked('%s'): %s", expr.ast_type, type)
 			D.assert(T.is_type(type))
 
 			return { type }, nil
@@ -1422,9 +1448,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				TODO: check for trinary operator emulation   A and B or C
 			--]]
 			elseif op == 'and' then
-				if not T.is_useful_boolean(lt) then
-					report_warning(expr, "Operator 'and' expected boolean expression to the left, got %s", lt)
-				end
+				check_condition_type(expr, "'and' lhs", lt)
 
 				-- Iff left is false, then left, else right
 				-- The left argument is returned iff it is evaluated to 'false' or 'nil'
@@ -1442,9 +1466,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				return types
 
 			elseif op == 'or' then
-				if not T.is_useful_boolean(lt) then
-					report_warning(expr, "Operator 'or' expected boolean expression to the left, got %s", lt)
-				end
+				check_condition_type(expr, "'or' lhs", lt)
 
 				-- If first argument is true, then the left is returned, else the right
 				-- So we could return the right type or
@@ -1486,10 +1508,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 
 			elseif expr.op == 'not' then
-				if not T.is_useful_boolean(arg_t) then
-					report_warning(expr, "'not' operator expected boolean or nil:able, got %s", arg_t)
-				end
-				return T.Bool
+				return check_condition_type(expr, "not", arg_t)
 
 			elseif expr.op == '#' then
 				if not T.could_be(arg_t, T.List) and not T.could_be(arg_t, T.String) then
@@ -1764,25 +1783,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		report_error(expr, "Failed to figure out type of %s", expr.ast_type)
 
 		return T.Any
-	end
-
-
-	-- eg:  check_condition('while', some_expr, scope)
-	-- examples:   if some_expr then ...
-	-- examples:   while true then ...
-	local check_condition = function(name, expr, scope: Scope)
-		local t = analyze_expr_single(expr, scope)
-
-		if expr.ast_type == 'BooleanExpr' then
-			-- 'true' or 'false' as explicit argument - that's OK
-			-- e.g. for   while true do  ... break ... end
-		else
-			if not T.is_useful_boolean(t) then
-				report_error(expr, "Not a useful boolean expression in %q, type is %s", name, t)
-			end
-		end
-
-		return t
 	end
 
 
@@ -2465,9 +2465,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			for i = 1, #stat.clauses do
 				var st = stat.clauses[i]
 				if i == 1 then
-					check_condition( 'if',     st.condition, scope )
+					check_condition( 'if condition',     st.condition, scope )
 				elseif st.condition then
-					check_condition( 'elseif', st.condition, scope )
+					check_condition( 'elseif condition', st.condition, scope )
 				end
 				var clause_ret, clause_returns = analyze_closed_off_statlist( st.body, scope_fun )
 				ret = T.combine_type_lists(ret, clause_ret)
@@ -2480,7 +2480,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif stat.ast_type == 'WhileStatement' then
-			var cond_t = check_condition( 'while', stat.condition, scope )
+			var cond_t = check_condition( 'while condition', stat.condition, scope )
 			var ret, always_return = analyze_closed_off_statlist(stat.body, scope_fun)
 
 			if cond_t == T.True then
@@ -2527,7 +2527,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		elseif stat.ast_type == 'RepeatStatement' then
 			var loop_scope = stat.scope
 			var ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun)
-			check_condition( 'repeat', stat.condition, loop_scope )
+			check_condition( 'repeat condition', stat.condition, loop_scope )
 			discard_scope(loop_scope)
 			return ret, false
 

@@ -454,7 +454,7 @@ local function analyze(ast
 
 			node.self_var_type = self_type --[[SOL OUTPUT--]]   -- Assign a type to the local 'self' variable
 
-			--report_spam(node, "self: '%s'", self_type)
+			--report_spam(node, "self: %s", self_type)
 		end --[[SOL OUTPUT--]] 
 
 		for _,arg in ipairs(node.arguments) do
@@ -607,7 +607,7 @@ local function analyze(ast
 						report_error(expr, "Var-args must be the last argument") --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 
-					--report_spam(expr, "Checking argument %i: can we convert from '%s' to '%s'?", i, given, expected)
+					--report_spam(expr, "Checking argument %i: can we convert from %s to %s?", i, given, expected)
 
 					--report_info(expr, "Checking argument %i: could %s be %s ?", i, T.name(arg_ts[i]), expected)
 
@@ -809,7 +809,7 @@ local function analyze(ast
 						return types --[[SOL OUTPUT--]] 
 					else
 						if error_rope then
-							error_rope [ # error_rope + 1 ] = string.format("Incompatible type: '%s'", T.name(typ)) --[[SOL OUTPUT--]] 
+							error_rope [ # error_rope + 1 ] = fancy_format("Incompatible type: %s", T.name(typ)) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 						return nil --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
@@ -1215,6 +1215,32 @@ local function analyze(ast
 
 
 
+	-- eg:  check_condition('while', some_expr, scope)
+	-- examples:   if some_expr then ...
+	-- examples:   while true then ...
+	local check_condition_type = function(expr, name, typ)
+		if expr.ast_type == 'BooleanExpr' then
+			-- 'true' or 'false' as explicit argument - that's OK
+			-- e.g. for   while true do  ... break ... end
+		else
+			local t,f = T.could_be_true_false(typ) --[[SOL OUTPUT--]] 
+			if t and not f then
+				report_error(expr, "%s never evaluates to false nor nil: %s", name, typ) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+			if not t and f then
+				report_error(expr, "%s always evaluates to false or nil: %s", name, typ) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
+		return typ --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+	local check_condition = function(name, expr, scope)
+		local typ = analyze_expr_single(expr, scope) --[[SOL OUTPUT--]] 
+		return check_condition_type(expr, name, typ) --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
+
 	local analyze_simple_expr_unchecked --[[SOL OUTPUT--]] 
 
 
@@ -1248,7 +1274,7 @@ local function analyze(ast
 				var_ = top_scope:create_global( expr.name, where_is(expr) ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			--report_spam(expr, "IdExpr '%s': var_.type: '%s'", var_.name, var_.type)
+			--report_spam(expr, "IdExpr '%s': var_.type: %s", var_.name, var_.type)
 
 			local type = var_.type or T.Any --[[SOL OUTPUT--]] 
 			if var_.namespace then
@@ -1280,7 +1306,7 @@ local function analyze(ast
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
-			--report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, type)
+			--report_spam(expr, "analyze_expr_unchecked('%s'): %s", expr.ast_type, type)
 
 			--D.assert(T.is_type(type)  or  T.is_type_list(type))
 			D.assert( T.is_type(type) ) --[[SOL OUTPUT--]] 
@@ -1307,7 +1333,7 @@ local function analyze(ast
 		else
 			local type = analyze_simple_expr_unchecked(expr, scope) --[[SOL OUTPUT--]] 
 
-			report_spam(expr, "analyze_expr_unchecked('%s'): '%s'", expr.ast_type, type) --[[SOL OUTPUT--]] 
+			report_spam(expr, "analyze_expr_unchecked('%s'): %s", expr.ast_type, type) --[[SOL OUTPUT--]] 
 			D.assert(T.is_type(type)) --[[SOL OUTPUT--]] 
 
 			return { type }, nil --[[SOL OUTPUT--]] 
@@ -1422,9 +1448,7 @@ local function analyze(ast
 				TODO: check for trinary operator emulation   A and B or C
 			--]]
 			elseif op == 'and' then
-				if not T.is_useful_boolean(lt) then
-					report_warning(expr, "Operator 'and' expected boolean expression to the left, got %s", lt) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
+				check_condition_type(expr, "'and' lhs", lt) --[[SOL OUTPUT--]] 
 
 				-- Iff left is false, then left, else right
 				-- The left argument is returned iff it is evaluated to 'false' or 'nil'
@@ -1442,9 +1466,7 @@ local function analyze(ast
 				return types --[[SOL OUTPUT--]] 
 
 			elseif op == 'or' then
-				if not T.is_useful_boolean(lt) then
-					report_warning(expr, "Operator 'or' expected boolean expression to the left, got %s", lt) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
+				check_condition_type(expr, "'or' lhs", lt) --[[SOL OUTPUT--]] 
 
 				-- If first argument is true, then the left is returned, else the right
 				-- So we could return the right type or
@@ -1486,10 +1508,7 @@ local function analyze(ast
 				end --[[SOL OUTPUT--]] 
 
 			elseif expr.op == 'not' then
-				if not T.is_useful_boolean(arg_t) then
-					report_warning(expr, "'not' operator expected boolean or nil:able, got %s", arg_t) --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-				return T.Bool --[[SOL OUTPUT--]] 
+				return check_condition_type(expr, "not", arg_t) --[[SOL OUTPUT--]] 
 
 			elseif expr.op == '#' then
 				if not T.could_be(arg_t, T.List) and not T.could_be(arg_t, T.String) then
@@ -1764,25 +1783,6 @@ local function analyze(ast
 		report_error(expr, "Failed to figure out type of %s", expr.ast_type) --[[SOL OUTPUT--]] 
 
 		return T.Any --[[SOL OUTPUT--]] 
-	end --[[SOL OUTPUT--]] 
-
-
-	-- eg:  check_condition('while', some_expr, scope)
-	-- examples:   if some_expr then ...
-	-- examples:   while true then ...
-	local check_condition = function(name, expr, scope)
-		local t = analyze_expr_single(expr, scope) --[[SOL OUTPUT--]] 
-
-		if expr.ast_type == 'BooleanExpr' then
-			-- 'true' or 'false' as explicit argument - that's OK
-			-- e.g. for   while true do  ... break ... end
-		else
-			if not T.is_useful_boolean(t) then
-				report_error(expr, "Not a useful boolean expression in %q, type is %s", name, t) --[[SOL OUTPUT--]] 
-			end --[[SOL OUTPUT--]] 
-		end --[[SOL OUTPUT--]] 
-
-		return t --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
 
@@ -2465,9 +2465,9 @@ local function analyze(ast
 			for i = 1, #stat.clauses do
 				local st = stat.clauses[i] --[[SOL OUTPUT--]] 
 				if i == 1 then
-					check_condition( 'if',     st.condition, scope ) --[[SOL OUTPUT--]] 
+					check_condition( 'if condition',     st.condition, scope ) --[[SOL OUTPUT--]] 
 				elseif st.condition then
-					check_condition( 'elseif', st.condition, scope ) --[[SOL OUTPUT--]] 
+					check_condition( 'elseif condition', st.condition, scope ) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				local clause_ret, clause_returns = analyze_closed_off_statlist( st.body, scope_fun ) --[[SOL OUTPUT--]] 
 				ret = T.combine_type_lists(ret, clause_ret) --[[SOL OUTPUT--]] 
@@ -2480,7 +2480,7 @@ local function analyze(ast
 
 
 		elseif stat.ast_type == 'WhileStatement' then
-			local cond_t = check_condition( 'while', stat.condition, scope ) --[[SOL OUTPUT--]] 
+			local cond_t = check_condition( 'while condition', stat.condition, scope ) --[[SOL OUTPUT--]] 
 			local ret, always_return = analyze_closed_off_statlist(stat.body, scope_fun) --[[SOL OUTPUT--]] 
 
 			if cond_t == T.True then
@@ -2527,7 +2527,7 @@ local function analyze(ast
 		elseif stat.ast_type == 'RepeatStatement' then
 			local loop_scope = stat.scope --[[SOL OUTPUT--]] 
 			local ret, _ = analyze_statlist(stat.body, loop_scope, scope_fun) --[[SOL OUTPUT--]] 
-			check_condition( 'repeat', stat.condition, loop_scope ) --[[SOL OUTPUT--]] 
+			check_condition( 'repeat condition', stat.condition, loop_scope ) --[[SOL OUTPUT--]] 
 			discard_scope(loop_scope) --[[SOL OUTPUT--]] 
 			return ret, false --[[SOL OUTPUT--]] 
 

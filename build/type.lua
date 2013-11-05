@@ -859,15 +859,6 @@ function T.could_be_true_false(a)
 end --[[SOL OUTPUT--]] 
 
 
--- is 'a' a boolean expresson that could be evaluates as either true and false?
--- If not, we are doing something like    if always_true then ...
--- Which is almost certainly wrong
-function T.is_useful_boolean(a)
-	local t,f = T.could_be_true_false(a) --[[SOL OUTPUT--]] 
-	return t and f --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]] 
-
-
 ----------------------------------------------
 
 

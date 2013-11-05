@@ -859,15 +859,6 @@ function T.could_be_true_false(a: T.Type) -> bool, bool
 end
 
 
--- is 'a' a boolean expresson that could be evaluates as either true and false?
--- If not, we are doing something like    if always_true then ...
--- Which is almost certainly wrong
-function T.is_useful_boolean(a: T.Type) -> bool
-	var t,f = T.could_be_true_false(a)
-	return t and f
-end
-
-
 ----------------------------------------------
 
 

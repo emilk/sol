@@ -186,7 +186,6 @@ return {
 	is_obj_obj:            function(d: Object, b: Object, problem_rope: [string]?) -> bool;
 	is_type:               function(x) -> bool;
 	is_type_list:          function(list) -> bool;
-	is_useful_boolean:     function(a: Type) -> bool;
 	is_variant:            function(t: Type) -> Variant?;
 	is_void:               function(ts: Typelist) -> bool;
 	isa:                   function(d: Type, b: Type, problem_rope: [string]?) -> bool;
