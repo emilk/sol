@@ -32,6 +32,7 @@ typedef Scope = object
 
 
 T.on_error = function(fmt, ...)
+	-- TODO: fancy_format
 	local msg = string.format(fmt, ...)
 	U.printf_err( "%s", msg )
 	--error(msg, 2)

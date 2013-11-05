@@ -2,3 +2,6 @@ history
 tests_built
 
 solc_profile_reports
+
+test.sol
+test.lua
