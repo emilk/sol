@@ -5,6 +5,7 @@ local T   = require 'type'
 local P   = require 'parser'
 local _   = require 'scope'
 local D   = require 'sol_debug'
+local AST = require 'ast'
 
 
 var NumOps = {
@@ -1241,6 +1242,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 
+	-- Warn if comparing/assigning the same stuff, eg  x=x   a.b <= a.b
+	-- Example: check_non_eq(or_node, 'or', lhs, rhs)
+	local function check_non_eq(node: P.Node, name: string, lhs: P.Node, rhs: P.Node)
+		if AST.eq(lhs, rhs) then
+			report_error(node, "%s: lhs and rhs are equivalent: %s vs %s", name, lhs, rhs)
+		end
+	end
+
 	local analyze_simple_expr_unchecked
 
 
@@ -1406,6 +1415,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 
 			elseif NumCompOps[op] then
+				check_non_eq(expr, string.format("Operator '%s'", op), expr.lhs, expr.rhs)
+
 				if T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
 					return T.Bool
 				elseif T.could_be(lt, T.String) and T.could_be(rt, T.String) then
@@ -1428,6 +1439,8 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 
 			elseif op == '==' or op== '~=' then
+				check_non_eq(expr, string.format("Operator '%s'", op), expr.lhs, expr.rhs)
+
 				lt = T.simplify(lt)
 				rt = T.simplify(rt)
 
@@ -1449,6 +1462,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--]]
 			elseif op == 'and' then
 				check_condition_type(expr, "'and' lhs", lt)
+				check_non_eq(expr, op, expr.lhs, expr.rhs)
 
 				-- Iff left is false, then left, else right
 				-- The left argument is returned iff it is evaluated to 'false' or 'nil'
@@ -1467,6 +1481,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			elseif op == 'or' then
 				check_condition_type(expr, "'or' lhs", lt)
+				check_non_eq(expr, op, expr.lhs, expr.rhs)
 
 				-- If first argument is true, then the left is returned, else the right
 				-- So we could return the right type or
@@ -2281,6 +2296,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			local nlhs = #stat.lhs
 			local nrhs = #stat.rhs
 			assert(nrhs > 0)
+
+			for i = 1,math.min(nlhs,nrhs) do
+				check_non_eq(stat, "Assignment", stat.lhs[i], stat.rhs[i])
+			end
 
 			--[-[
 			if    nlhs == 1

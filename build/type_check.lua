@@ -5,6 +5,7 @@ local T   = require 'type' --[[SOL OUTPUT--]]
 local P   = require 'parser' --[[SOL OUTPUT--]] 
 local _   = require 'scope' --[[SOL OUTPUT--]] 
 local D   = require 'sol_debug' --[[SOL OUTPUT--]] 
+local AST = require 'ast' --[[SOL OUTPUT--]] 
 
 
 local NumOps = {
@@ -1241,6 +1242,14 @@ local function analyze(ast
 	end --[[SOL OUTPUT--]] 
 
 
+	-- Warn if comparing/assigning the same stuff, eg  x=x   a.b <= a.b
+	-- Example: check_non_eq(or_node, 'or', lhs, rhs)
+	local function check_non_eq(node, name, lhs, rhs)
+		if AST.eq(lhs, rhs) then
+			report_error(node, "%s: lhs and rhs are equivalent: %s vs %s", name, lhs, rhs) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+
 	local analyze_simple_expr_unchecked --[[SOL OUTPUT--]] 
 
 
@@ -1406,6 +1415,8 @@ local function analyze(ast
 				end --[[SOL OUTPUT--]] 
 
 			elseif NumCompOps[op] then
+				check_non_eq(expr, string.format("Operator '%s'", op), expr.lhs, expr.rhs) --[[SOL OUTPUT--]] 
+
 				if T.could_be(lt, T.Num) and T.could_be(rt, T.Num) then
 					return T.Bool --[[SOL OUTPUT--]] 
 				elseif T.could_be(lt, T.String) and T.could_be(rt, T.String) then
@@ -1428,6 +1439,8 @@ local function analyze(ast
 				end --[[SOL OUTPUT--]] 
 
 			elseif op == '==' or op== '~=' then
+				check_non_eq(expr, string.format("Operator '%s'", op), expr.lhs, expr.rhs) --[[SOL OUTPUT--]] 
+
 				lt = T.simplify(lt) --[[SOL OUTPUT--]] 
 				rt = T.simplify(rt) --[[SOL OUTPUT--]] 
 
@@ -1449,6 +1462,7 @@ local function analyze(ast
 			--]]
 			elseif op == 'and' then
 				check_condition_type(expr, "'and' lhs", lt) --[[SOL OUTPUT--]] 
+				check_non_eq(expr, op, expr.lhs, expr.rhs) --[[SOL OUTPUT--]] 
 
 				-- Iff left is false, then left, else right
 				-- The left argument is returned iff it is evaluated to 'false' or 'nil'
@@ -1467,6 +1481,7 @@ local function analyze(ast
 
 			elseif op == 'or' then
 				check_condition_type(expr, "'or' lhs", lt) --[[SOL OUTPUT--]] 
+				check_non_eq(expr, op, expr.lhs, expr.rhs) --[[SOL OUTPUT--]] 
 
 				-- If first argument is true, then the left is returned, else the right
 				-- So we could return the right type or
@@ -2281,6 +2296,10 @@ local function analyze(ast
 			local nlhs = #stat.lhs --[[SOL OUTPUT--]] 
 			local nrhs = #stat.rhs --[[SOL OUTPUT--]] 
 			assert(nrhs > 0) --[[SOL OUTPUT--]] 
+
+			for i = 1,math.min(nlhs,nrhs) do
+				check_non_eq(stat, "Assignment", stat.lhs[i], stat.rhs[i]) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 
 			--[-[
 			if    nlhs == 1

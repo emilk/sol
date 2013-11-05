@@ -204,7 +204,7 @@ typedef P.MemberExpr : P.ExprNode = {
 	ast_type:  'MemberExpr';
 	base:      P.ExprNode;
 	indexer:   string;
-	ident:     string;
+	ident:     L.Token;
 }
 
 typedef P.LambdaFunctionExpr : P.ExprNode = {

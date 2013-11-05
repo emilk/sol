@@ -177,7 +177,7 @@ return {
 	typedef MemberExpr = {
 		ast_type: 'MemberExpr';
 		base:     ExprNode;
-		ident:    string;
+		ident:    Token;
 		indexer:  string;
 		tokens:   [Token];
 		where:    string;

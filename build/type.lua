@@ -32,6 +32,7 @@ T
 
 
 .on_error = function(fmt, ...)
+	-- TODO: fancy_format
 	local msg = string.format(fmt, ...) --[[SOL OUTPUT--]] 
 	U.printf_err( "%s", msg ) --[[SOL OUTPUT--]] 
 	--error(msg, 2)
