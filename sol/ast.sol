@@ -7,7 +7,7 @@ local AST = {}
 
 -- Are two AST:s equal? Good for detecting stupid stuff like  a = a
 -- Assummes same scope etc
-function AST.eq(a: P.Node, b: P.Node)
+function AST.eq(a: P.Node, b: P.Node) -> bool
 	if a == b then return true end -- Not sure when this could happen
 
 	if a.ast_type ~= b.ast_type then

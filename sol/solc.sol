@@ -74,7 +74,7 @@ function collect_stats(ast)
 			ast_type_count[ast.ast_type] = (ast_type_count[ast.ast_type] or 0) + 1
 		end
 
-		for k,v in pairs(ast) do
+		for _,v in pairs(ast) do
 			collect_stats(v)
 		end
 	end
