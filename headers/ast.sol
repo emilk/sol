@@ -1,3 +1,3 @@
 -- Compiled from sol/ast.sol
 
-return <object>
+return { eq: function(a: Node, b: Node) -> bool; }

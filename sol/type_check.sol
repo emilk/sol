@@ -261,11 +261,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						}
 						local issue_name = var_type_to_warning_name[var_type] or 'unused-variable'
 
-						inform_at(issue_name , v.where, "%s %q is never read (use _ to silence this warning)", var_type, v.name)
+						inform_at(issue_name , v.where, "%s %q is never read (name it _ to silence this warning)", var_type, v.name)
 					end
 				end
 				if v.num_writes == 0 then
-					inform_at('unassigned-variable' , v.where, "%s %q is never written to (use _ to silence this warning)", var_type, v.name)
+					inform_at('unassigned-variable' , v.where, "%s %q is never written to (name it _ to silence this warning)", var_type, v.name)
 				end
 			end
 		end
@@ -829,7 +829,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				else
 					var error_rope = {} : [string]
 					pairs_type( arg_ts[1], error_rope )
-					report_error(expr, "'pairs' called on incompatible type: " .. rope_to_msg(error_rope))
+					report_error(expr, "'pairs' called on incompatible type %s: %s", arg_ts[1], rope_to_msg(error_rope))
 					return { T.Any, T.Any }
 				end
 			end
@@ -1689,59 +1689,81 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				var obj_members = {} : {string => T.Type}
 
 				local count = { ['key'] = 0, ['ident_key'] = 0, ['value'] = 0 }
-				for exntry_ix,e in ipairs(expr.entry_list) do
+				for entry_ix,e in ipairs(expr.entry_list) do
 					count[e.type] = count[e.type] + 1
 
-					local this_val_type = analyze_expr_single(e.value, scope)
-
 					if e.type == 'value' then -- a list
-						--if this_val_type == T.Nil then -- TODO!
+						local this_val_types, _ = analyze_expr(e.value, scope)
+
+						if this_val_types == T.AnyTypeList then
+							value_type = T.make_variant( T.Any )
+						else
+							if entry_ix ~= #expr.entry_list then
+								if #this_val_types == 0 then
+									report_error(expr, "Expected value, got void")
+								elseif #this_val_types > 1 then
+									report_error(expr, "Expected single value, got: %s", this_val_types)
+								end
+							end
+
+							for _,t in ipairs(this_val_types) do
+								if t.tag == 'varargs' then
+									t = t.type -- Many of these
+								end
+								value_type = T.extend_variant( value_type, t )
+							end
+						end
+
 						if e.value.ast_type == 'NilExpr' then
-							if exntry_ix == #expr.entry_list then
+							if entry_ix == #expr.entry_list then
 								inform('nil-ends-list', expr, "Lists ends in 'nil' - will be ignored by Lua.")
 							else
 								inform('nil-in-list', expr, "Nil in list - could be dangerous.")
 							end
 						end
-					end
 
-					if this_val_type.tag == 'varargs' then
-						this_val_type = this_val_type.type -- Many of these
-					end
+					else
+						-- Not a list
+						local this_val_type = analyze_expr_single(e.value, scope)
 
-					value_type = T.extend_variant( value_type, this_val_type )
+						if this_val_type.tag == 'varargs' then
+							this_val_type = this_val_type.type -- Many of these
+						end
 
-					if e.type == 'key' then
-						local this_key_type = analyze_expr_single(e.key, scope)
-						key_type = T.extend_variant( key_type, this_key_type )
+						value_type = T.extend_variant( value_type, this_val_type )
 
-						if this_key_type.tag == 'int_literal' or
-						   this_key_type.tag == 'num_literal'
-						then
-							if map_keys[ this_key_type.value ] then
-								report_error(expr, "Map key %f declared twice", this_key_type.value)
+						if e.type == 'key' then
+							local this_key_type = analyze_expr_single(e.key, scope)
+							key_type = T.extend_variant( key_type, this_key_type )
+
+							if this_key_type.tag == 'int_literal' or
+							   this_key_type.tag == 'num_literal'
+							then
+								if map_keys[ this_key_type.value ] then
+									report_error(expr, "Map key %f declared twice", this_key_type.value)
+								end
+								map_keys[ this_key_type.value ] = true
 							end
-							map_keys[ this_key_type.value ] = true
-						end
 
-						if this_key_type.tag == 'string_literal' then
-							if map_keys[ this_key_type.str_contents ] then
-								report_error(expr, "Map key %q declared twice", this_key_type.str_contents)
+							if this_key_type.tag == 'string_literal' then
+								if map_keys[ this_key_type.str_contents ] then
+									report_error(expr, "Map key %q declared twice", this_key_type.str_contents)
+								end
+								map_keys[ this_key_type.str_contents ] = true
 							end
-							map_keys[ this_key_type.str_contents ] = true
 						end
-					end
 
-					if e.type == 'ident_key' then
-						if obj_members[ e.key ] then
-							report_error(e.value, "Object member %q declared twice", e.key)
-						end
-						obj_members[ e.key ] = this_val_type
+						if e.type == 'ident_key' then
+							if obj_members[ e.key ] then
+								report_error(e.value, "Object member %q declared twice", e.key)
+							end
+							obj_members[ e.key ] = this_val_type
 
 
-						if this_val_type.tag == 'function' and this_val_type.name == '<lambda>' then
-							-- Give the lmabda-function a more helpful name:
-							this_val_type.name = e.key
+							if this_val_type.tag == 'function' and this_val_type.name == '<lambda>' then
+								-- Give the lmabda-function a more helpful name:
+								this_val_type.name = e.key
+							end
 						end
 					end
 				end
