@@ -297,7 +297,7 @@ local function analyze(ast
 		end --[[SOL OUTPUT--]] 
 
 		if old then
-			if name ~= "st" and name ~= "_" then  -- HACK
+			if name ~= "st" and name ~= '_' then  -- HACK: TODO: stop treating 'st' differently
 				report_error(node, "%q already declared in this scope, in %s", name, old.where) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			return old --[[SOL OUTPUT--]] 
@@ -332,7 +332,9 @@ local function analyze(ast
 		end --[[SOL OUTPUT--]] 
 
 		if old then
-			report_error(node, "global %q already declared in %s", name, old.where) --[[SOL OUTPUT--]] 
+			if name ~= '_' then
+				report_error(node, "global %q already declared in %s", name, old.where) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 			return old --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -341,6 +343,11 @@ local function analyze(ast
 	end --[[SOL OUTPUT--]] 
 
 	local function declare_var(node, scope, name, is_local, typ)
+		if name == '_' then
+			-- This is to avoid type-errors involving _
+			typ = T.Any --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
 		if is_local then
 			return declare_local(node, scope, name, typ) --[[SOL OUTPUT--]] 
 		else
@@ -1655,7 +1662,6 @@ local function analyze(ast
 
 
 		elseif expr.ast_type == 'ConstructorExpr' then
-			-- TODO    { foo = 32, bar = 15 }
 			--[[ v.entry_list contains entries on the form
 
 				{
@@ -2468,7 +2474,9 @@ local function analyze(ast
 
 			if stat.scoping == 'var' then
 				for ix, v in ipairs(vars) do
-					if explicit_types and explicit_types[ix] == T.Any then
+					if v.name == '_' then
+						-- ignore
+					elseif explicit_types and explicit_types[ix] == T.Any then
 						-- explicit any is ok
 					elseif v.type==nil or T.is_any(v.type) then
 						report_error(stat, "%q has undeducible type - the type of a 'var' must be compile-time deducible", v.name) --[[SOL OUTPUT--]] 

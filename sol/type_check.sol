@@ -297,7 +297,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		if old then
-			if name ~= "st" and name ~= "_" then  -- HACK
+			if name ~= "st" and name ~= '_' then  -- HACK: TODO: stop treating 'st' differently
 				report_error(node, "%q already declared in this scope, in %s", name, old.where)
 			end
 			return old
@@ -332,7 +332,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		end
 
 		if old then
-			report_error(node, "global %q already declared in %s", name, old.where)
+			if name ~= '_' then
+				report_error(node, "global %q already declared in %s", name, old.where)
+			end
 			return old
 		end
 
@@ -341,6 +343,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	local function declare_var(node: P.Node, scope: Scope, name: string, is_local: bool, typ: T.Type?) -> Variable
+		if name == '_' then
+			-- This is to avoid type-errors involving _
+			typ = T.Any
+		end
+
 		if is_local then
 			return declare_local(node, scope, name, typ)
 		else
@@ -1655,7 +1662,6 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 
 		elseif expr.ast_type == 'ConstructorExpr' then
-			-- TODO    { foo = 32, bar = 15 }
 			--[[ v.entry_list contains entries on the form
 
 				{
@@ -2468,7 +2474,9 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 			if stat.scoping == 'var' then
 				for ix, v in ipairs(vars) do
-					if explicit_types and explicit_types[ix] == T.Any then
+					if v.name == '_' then
+						-- ignore
+					elseif explicit_types and explicit_types[ix] == T.Any then
 						-- explicit any is ok
 					elseif v.type==nil or T.is_any(v.type) then
 						report_error(stat, "%q has undeducible type - the type of a 'var' must be compile-time deducible", v.name)
