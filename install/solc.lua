@@ -167,7 +167,7 @@ local parse_module --[[SOL OUTPUT--]]
 
 -- Returns its type
 local function require_module(path_in, mod_name, module_scope, req_where, req_chain)
-	--U.printf('require %q', v)
+	-- U.printf('require %q', mod_name)
 	req_chain = { unpack(req_chain) } --[[SOL OUTPUT--]]   -- clone
 	req_chain [ # req_chain + 1 ] = mod_name --[[SOL OUTPUT--]] 
 
@@ -175,7 +175,7 @@ local function require_module(path_in, mod_name, module_scope, req_where, req_ch
 	if not mod_path then
 		if not g_did_warn_about[mod_name:lower()] then
 			g_did_warn_about[mod_name:lower()] = true --[[SOL OUTPUT--]] 
-			U.printf("WARNING: %s: Failed to find module %q",req_where, mod_name) --[[SOL OUTPUT--]] 
+			U.printf("WARNING: %s: Failed to find module %q", req_where, mod_name) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return T.AnyTypeList --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

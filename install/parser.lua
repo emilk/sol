@@ -592,7 +592,7 @@ function P
 
 
 	local function parse_id_expr()
-		assert(tok:is('Ident')) --[[SOL OUTPUT--]] 
+		assert(tok:is('Ident') or tok:peek().data == 'class') --[[SOL OUTPUT--]] 
 
 		local token_list = {} --[[SOL OUTPUT--]] 
 		local where = where_am_i() --[[SOL OUTPUT--]] 
@@ -625,7 +625,7 @@ function P
 			} --[[SOL OUTPUT--]] 
 			return true, parens_exp --[[SOL OUTPUT--]] 
 
-		elseif tok:is('Ident') then
+		elseif tok:is('Ident') or tok:peek().data == 'class' then
 			return true, parse_id_expr() --[[SOL OUTPUT--]] 
 		else
 			return false, report_error("primary expression expected") --[[SOL OUTPUT--]] 
@@ -895,9 +895,9 @@ function P
 	end --[[SOL OUTPUT--]] 
 
 
-	local unops = set{'-', 'not', '#'} --[[SOL OUTPUT--]] 
-	local unopprio = 8 --[[SOL OUTPUT--]] 
-	local priority = {
+	local UNARY_OPERATORS = set{'-', 'not', '#'} --[[SOL OUTPUT--]] 
+	local UNARY_PRIO = 8 --[[SOL OUTPUT--]] 
+	local OP_PRIORITY = {
 		['+']   = {6,6};
 		['-']   = {6,6};
 		['%']   = {7,7};
@@ -915,7 +915,7 @@ function P
 		['or']  = {1,1};
 	} --[[SOL OUTPUT--]] 
 
-	local assign_op = {
+	local ASSIGNMENT_OPERATORS = {
 		['+=']  = '+',
 		['-=']  = '-',
 		['*=']  = '*',
@@ -931,10 +931,10 @@ function P
 		local where = where_am_i() --[[SOL OUTPUT--]] 
 
 		--base item, possibly with unop prefix
-		if unops[tok:peek().data] then
+		if UNARY_OPERATORS[tok:peek().data] then
 			local token_list = {} --[[SOL OUTPUT--]] 
 			local op = tok:get(token_list).data --[[SOL OUTPUT--]] 
-			st, exp = parse_expr(scope, unopprio) --[[SOL OUTPUT--]] 
+			st, exp = parse_expr(scope, UNARY_PRIO) --[[SOL OUTPUT--]] 
 			if not st then return false, exp --[[SOL OUTPUT--]]  end --[[SOL OUTPUT--]] 
 			local node_ex = {
 				ast_type = 'UnopExpr';
@@ -952,7 +952,7 @@ function P
 
 		--next items in chain
 		while true do
-			local prio = priority[tok:peek().data] --[[SOL OUTPUT--]] 
+			local prio = OP_PRIORITY[tok:peek().data] --[[SOL OUTPUT--]] 
 			if prio and prio[1] > prio_level then
 				local token_list = {} --[[SOL OUTPUT--]] 
 				local where = where_am_i() --[[SOL OUTPUT--]] 
@@ -1891,9 +1891,9 @@ function P
 					tokens   = token_list;
 				} --[[SOL OUTPUT--]] 
 
-			elseif assign_op[tok:peek().data] then
+			elseif ASSIGNMENT_OPERATORS[tok:peek().data] then
 				-- += etc
-				local op = assign_op[ tok:get(token_list).data ] --[[SOL OUTPUT--]] 
+				local op = ASSIGNMENT_OPERATORS[ tok:get(token_list).data ] --[[SOL OUTPUT--]] 
 				assert(op) --[[SOL OUTPUT--]] 
 
 				local st, rhs = parse_expr(scope) --[[SOL OUTPUT--]] 

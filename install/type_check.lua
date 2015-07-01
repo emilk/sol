@@ -907,9 +907,19 @@ local function analyze(ast
 			return --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		if arg_ts[2].tag ~= 'object' then
-			report_warning(expr, "setmetatable: second argument must be an object") --[[SOL OUTPUT--]] 
-			return --[[SOL OUTPUT--]] 
+		local mt_type = arg_ts[2] --[[SOL OUTPUT--]] 
+
+		if mt_type.tag ~= 'object' then
+			if mt_type.tag == 'table' or mt_type.tag == 'any' then
+				-- local mt = {}; setmetatable(obj, mt)
+				mt_type = {
+					tag     = 'object';
+					members = { };
+				} --[[SOL OUTPUT--]] 
+			else
+				report_warning(expr, "setmetatable: second argument must be an object, got: %s", mt_type) --[[SOL OUTPUT--]] 
+				return --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
 		local target_var = args[1].variable --[[SOL OUTPUT--]] 
@@ -932,7 +942,7 @@ local function analyze(ast
 		if not T.should_extend_in_situ(target_type) then
 			target_type = U.shallow_clone(target_type) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
-		target_type.metatable = arg_ts[2] --[[SOL OUTPUT--]] 
+		target_type.metatable = mt_type --[[SOL OUTPUT--]] 
 
 		report_spam(expr, "Setting metatable") --[[SOL OUTPUT--]] 
 
@@ -2854,6 +2864,24 @@ local function analyze(ast
 				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t)
 				v.forward_declared = true
 				--]]
+			end --[[SOL OUTPUT--]] 
+
+		elseif stat.ast_type == 'CallStatement' then
+			local expr = stat.expression --[[SOL OUTPUT--]] 
+			if expr.ast_type == 'StringCallExpr' then
+				local base = expr.base --[[SOL OUTPUT--]] 
+
+				if base.ast_type == 'IdExpr' and base.name == 'require' then
+					local args = expr.arguments --[[SOL OUTPUT--]] 
+					if #args == 1 and args[1].ast_type == 'StringExpr' then
+						--U.printf('"require" called with argument: %q', arg_ts[1])
+						if on_require then
+							analyze_require( args[1].str_contents, where_is(expr) ) --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
+					else
+						report_warning(expr, '"require" called with indeducible argument') --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

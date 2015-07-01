@@ -167,7 +167,7 @@ local parse_module
 
 -- Returns its type
 local function require_module(path_in: string, mod_name: string, module_scope: Scope, req_where: string, req_chain: [string]) -> T.Typelist
-	--U.printf('require %q', v)
+	-- U.printf('require %q', mod_name)
 	req_chain = { unpack(req_chain) }  -- clone
 	req_chain #= mod_name
 
@@ -175,7 +175,7 @@ local function require_module(path_in: string, mod_name: string, module_scope: S
 	if not mod_path then
 		if not g_did_warn_about[mod_name:lower()] then
 			g_did_warn_about[mod_name:lower()] = true
-			U.printf("WARNING: %s: Failed to find module %q",req_where, mod_name)
+			U.printf("WARNING: %s: Failed to find module %q", req_where, mod_name)
 		end
 		return T.AnyTypeList
 	end

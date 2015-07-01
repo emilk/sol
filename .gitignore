@@ -5,3 +5,4 @@ solc_profile_reports
 
 test.sol
 test.lua
+*.sublime-workspace

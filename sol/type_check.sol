@@ -907,9 +907,19 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			return
 		end
 
-		if arg_ts[2].tag ~= 'object' then
-			report_warning(expr, "setmetatable: second argument must be an object")
-			return
+		local mt_type = arg_ts[2]
+
+		if mt_type.tag ~= 'object' then
+			if mt_type.tag == 'table' or mt_type.tag == 'any' then
+				-- local mt = {}; setmetatable(obj, mt)
+				mt_type = {
+					tag     = 'object';
+					members = { };
+				}
+			else
+				report_warning(expr, "setmetatable: second argument must be an object, got: %s", mt_type)
+				return
+			end
 		end
 
 		var target_var = args[1].variable
@@ -932,7 +942,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		if not T.should_extend_in_situ(target_type) then
 			target_type = U.shallow_clone(target_type)
 		end
-		target_type.metatable = arg_ts[2]
+		target_type.metatable = mt_type
 
 		report_spam(expr, "Setting metatable")
 
@@ -2854,6 +2864,24 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				var v = declare_var(stat, scope, stat.name_expr.name, stat.is_local, fun_t)
 				v.forward_declared = true
 				--]]
+			end
+
+		elseif stat.ast_type == 'CallStatement' then
+			local expr = stat.expression
+			if expr.ast_type == 'StringCallExpr' then
+				local base = expr.base
+
+				if base.ast_type == 'IdExpr' and base.name == 'require' then
+					local args = expr.arguments
+					if #args == 1 and args[1].ast_type == 'StringExpr' then
+						-- require 'module'  -  parse now to bring in globals.
+						if on_require then
+							analyze_require( args[1].str_contents, where_is(expr) )
+						end
+					else
+						report_warning(expr, '"require" called with indeducible argument')
+					end
+				end
 			end
 		end
 	end

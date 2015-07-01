@@ -7,7 +7,7 @@
 		},
 		{
 			"follow_symlinks": true,
-			"path": "D:\\GitHub\\sol"
-		}
+			"path": "tests"
+		},
 	]
 }

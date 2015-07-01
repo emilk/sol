@@ -1,7 +1,7 @@
 class Klass = {}
 
 function Klass.new() -> Klass
-	local obj = {}	
+	local obj = {}
 	setmetatable(obj, { __index = Klass })
 	obj:init()
 	return obj

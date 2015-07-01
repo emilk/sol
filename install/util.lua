@@ -26,33 +26,33 @@ end --[[SOL OUTPUT--]]
 
 
 local function is_keyword(key)
-	return key == "and"
-	or     key == "break"
-	or     key == "do"
-	or     key == "else"
-	or     key == "elseif"
-	or     key == "end"
-	or     key == "false"
-	or     key == "for"
-	or     key == "function"
-	or     key == "if"
-	or     key == "in"
-	or     key == "local"
-	or     key == "nil"
-	or     key == "not"
-	or     key == "or"
-	or     key == "repeat"
-	or     key == "return"
-	or     key == "then"
-	or     key == "true"
-	or     key == "until"
-	or     key == "while"
+	return key == 'and'
+	or     key == 'break'
+	or     key == 'do'
+	or     key == 'else'
+	or     key == 'elseif'
+	or     key == 'end'
+	or     key == 'false'
+	or     key == 'for'
+	or     key == 'function'
+	or     key == 'if'
+	or     key == 'in'
+	or     key == 'local'
+	or     key == 'nil'
+	or     key == 'not'
+	or     key == 'or'
+	or     key == 'repeat'
+	or     key == 'return'
+	or     key == 'then'
+	or     key == 'true'
+	or     key == 'until'
+	or     key == 'while'
 
 	-- Sol:
-	or     key == "class"
-	or     key == "global"
-	or     key == "typedef"
-	or     key == "var" --[[SOL OUTPUT--]] 
+	or     key == 'class'
+	or     key == 'global'
+	or     key == 'typedef'
+	or     key == 'var' --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 

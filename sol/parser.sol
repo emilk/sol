@@ -592,7 +592,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 
 	local function parse_id_expr() -> ExprNode_or_error
-		assert(tok:is('Ident'))
+		assert(tok:is('Ident') or tok:peek().data == 'class')
 
 		local token_list = {}
 		var where = where_am_i()
@@ -625,7 +625,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 			}
 			return true, parens_exp
 
-		elseif tok:is('Ident') then
+		elseif tok:is('Ident') or tok:peek().data == 'class' then
 			return true, parse_id_expr()
 		else
 			return false, report_error("primary expression expected")
@@ -895,9 +895,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 	end
 
 
-	var unops = set{'-', 'not', '#'}
-	var unopprio = 8
-	var priority = {
+	var UNARY_OPERATORS = set{'-', 'not', '#'}
+	var UNARY_PRIO = 8
+	var OP_PRIORITY = {
 		['+']   = {6,6};
 		['-']   = {6,6};
 		['%']   = {7,7};
@@ -915,7 +915,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		['or']  = {1,1};
 	}
 
-	var assign_op = {
+	var ASSIGNMENT_OPERATORS = {
 		['+=']  = '+',
 		['-=']  = '-',
 		['*=']  = '*',
@@ -931,10 +931,10 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		var where = where_am_i()
 
 		--base item, possibly with unop prefix
-		if unops[tok:peek().data] then
+		if UNARY_OPERATORS[tok:peek().data] then
 			local token_list = {}
 			local op = tok:get(token_list).data
-			st, exp = parse_expr(scope, unopprio)
+			st, exp = parse_expr(scope, UNARY_PRIO)
 			if not st then return false, exp end
 			local node_ex = {
 				ast_type = 'UnopExpr';
@@ -952,7 +952,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 		--next items in chain
 		while true do
-			local prio = priority[tok:peek().data]
+			local prio = OP_PRIORITY[tok:peek().data]
 			if prio and prio[1] > prio_level then
 				local token_list = {}
 				local where = where_am_i()
@@ -1891,9 +1891,9 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 					tokens   = token_list;
 				}
 
-			elseif assign_op[tok:peek().data] then
+			elseif ASSIGNMENT_OPERATORS[tok:peek().data] then
 				-- += etc
-				var op = assign_op[ tok:get(token_list).data ]
+				var op = ASSIGNMENT_OPERATORS[ tok:get(token_list).data ]
 				assert(op)
 
 				local st, rhs = parse_expr(scope)
