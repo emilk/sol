@@ -40,6 +40,7 @@ global typedef Variable = {
 	name             : string,
 	type             : T.Type?,
 	is_global        : bool,
+	is_constant      : bool,
 	namespace        : { string => T.Type } ?,
 	where            : string,
 	forward_declared : bool?,
@@ -109,12 +110,13 @@ function Scope:create_local(name: string, where: string) -> Variable
 	D.assert(not self.fixed)
 
 	local v = {
-		scope      = self,
-		name       = name,
-		is_global  = false,
-		where      = where,
-		num_reads  = 0,
-		num_writes = 0,
+		scope       = self,
+		name        = name,
+		is_global   = false,
+		is_constant = U.is_constant_name(name),
+		where       = where,
+		num_reads   = 0,
+		num_writes  = 0,
 	}
 
 	D.assert(not self.locals[name])
@@ -134,13 +136,14 @@ function Scope:create_global(name: string, where: string, typ: T.Type?) -> Varia
 	assert(not self.fixed)
 
 	local v = {
-		scope      = self,
-		name       = name,
-		is_global  = true,
-		where      = where,
-		type       = typ,
-		num_reads  = 0,
-		num_writes = 0,
+		scope       = self,
+		name        = name,
+		is_global   = true,
+		is_constant = U.is_constant_name(name),
+		where       = where,
+		type        = typ,
+		num_reads   = 0,
+		num_writes  = 0,
 	}
 
 	if Scope.GLOBALS_IN_TOP_SCOPE and self ~= Scope.global_scope then

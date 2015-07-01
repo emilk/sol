@@ -31,6 +31,7 @@ T
 
 
 
+
 .on_error = function(fmt, ...)
 	-- TODO: fancy_format
 	local msg = string.format(fmt, ...) --[[SOL OUTPUT--]] 
@@ -197,6 +198,12 @@ function T.is_empty_table(t)
 	return t == T._empty_table --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
+function T.is_table(t)
+	return t.tag == 'table'
+	    or t.tag == 'object'
+	    or t.tag == 'list'
+	    or t.tag == 'map' --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 function T.is_void(ts)
 	return T.is_type_list(ts) and #ts == 0 --[[SOL OUTPUT--]] 

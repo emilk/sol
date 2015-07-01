@@ -135,7 +135,7 @@ function U.pretty(arg)
 	return U.serialize(arg) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
-local EscapeLookup = { ['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'" } --[[SOL OUTPUT--]] 
+local ESCAPE_LOOKUP = { ['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'" } --[[SOL OUTPUT--]] 
 
 function U.escape(str)
 	if true then
@@ -144,7 +144,7 @@ function U.escape(str)
 		local ret = '' --[[SOL OUTPUT--]] 
 		for i=1,#str do
 			local c = str:sub(i,i) --[[SOL OUTPUT--]]   -- TODO: var
-			ret = ret .. ( EscapeLookup[c] or c ) --[[SOL OUTPUT--]] 
+			ret = ret .. ( ESCAPE_LOOKUP[c] or c ) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 		return ret --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
@@ -436,6 +436,10 @@ function U.make_const(table)
 end --[[SOL OUTPUT--]] 
 
 ------------------------------------------------------
+
+function U.is_constant_name(name)
+	return name:match("^[_A-Z][_A-Z0-9]+$") --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
 
 return U --[[SOL OUTPUT--]] 
  --[[SOL OUTPUT--]] 

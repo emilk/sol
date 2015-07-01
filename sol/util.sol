@@ -135,7 +135,7 @@ function U.pretty(arg: any) -> string
 	return U.serialize(arg)
 end
 
-var EscapeLookup = { ['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'" }
+var ESCAPE_LOOKUP = { ['\r'] = '\\r', ['\n'] = '\\n', ['\t'] = '\\t', ['"'] = '\\"', ["'"] = "\\'" }
 
 function U.escape(str: string) -> string
 	if true then
@@ -144,7 +144,7 @@ function U.escape(str: string) -> string
 		var ret = ''
 		for i=1,#str do
 			local c = str:sub(i,i)  -- TODO: var
-			ret ..= EscapeLookup[c] or c
+			ret ..= ESCAPE_LOOKUP[c] or c
 		end
 		return ret
 	end
@@ -436,5 +436,9 @@ function U.make_const(table: table) -> void
 end
 
 ------------------------------------------------------
+
+function U.is_constant_name(name: string) -> bool
+	return name:match("^[_A-Z][_A-Z0-9]+$")
+end
 
 return U

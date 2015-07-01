@@ -20,7 +20,6 @@ local NumCompOps = set{
 	'<', '<=', '>', '>='
 } --[[SOL OUTPUT--]] 
 
-
 local function rope_to_msg(rope)
 	local str = U.trim( table.concat(rope, '\n') ) --[[SOL OUTPUT--]] 
 	if str == '' then
@@ -261,11 +260,20 @@ local function analyze(ast
 						} --[[SOL OUTPUT--]] 
 						local issue_name = var_type_to_warning_name[var_type] or 'unused-variable' --[[SOL OUTPUT--]] 
 
-						inform_at(issue_name , v.where, "%s %q is never read (name it _ to silence this warning)", var_type, v.name) --[[SOL OUTPUT--]] 
+						inform_at(issue_name, v.where, "%s %q is never read (name it _ to silence this warning)", var_type, v.name) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				if v.num_writes == 0 then
-					inform_at('unassigned-variable' , v.where, "%s %q is never written to (name it _ to silence this warning)", var_type, v.name) --[[SOL OUTPUT--]] 
+					inform_at('unassigned-variable', v.where, "%s %q is never written to (name it _ to silence this warning)", var_type, v.name) --[[SOL OUTPUT--]] 
+				end --[[SOL OUTPUT--]] 
+				if v.num_writes == 1 and not v.is_constant then
+					if v.is_global or scope:is_module_level() then
+						if v.type and (v.type.tag == 'function' or T.is_table(v.type) or T.is_any(v.type)) then
+							-- pass
+						else
+							inform_at('const-should-be-uppercase', v.where, "%s %q is never written to - consider giving it an ALL_CAPS_NAME to declare it constant", var_type, v.name) --[[SOL OUTPUT--]]  -- TODO
+						end --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -891,7 +899,7 @@ local function analyze(ast
 		return rets --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
-
+	-- TODO setmetatable returns first argument
 	local function handle_setmetatable(expr, args, arg_ts)
 		if #args ~= 2 then
 			return --[[SOL OUTPUT--]] 
@@ -1243,10 +1251,10 @@ local function analyze(ast
 		else
 			local t,f = T.could_be_true_false(typ) --[[SOL OUTPUT--]] 
 			if t and not f then
-				report_error(expr, "%s never evaluates to false nor nil: %s", name, typ) --[[SOL OUTPUT--]] 
+				report_error(expr, "'%s' never evaluates to false nor nil: %s", name, typ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 			if not t and f then
-				report_error(expr, "%s always evaluates to false or nil: %s", name, typ) --[[SOL OUTPUT--]] 
+				report_error(expr, "'%s' always evaluates to false or nil: %s", name, typ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
@@ -1912,24 +1920,24 @@ local function analyze(ast
 
 	local function assign_to_obj_member(stat, _,
 		                                 is_pre_analyze, is_declare, extend_existing_type,
-		                                 obj_t, name, right_type)
+		                                 obj_t, member_name, right_type)
 	 											--> T.Type -- TODO: have this here
 
 
 		report_spam(stat, "Exisiting object") --[[SOL OUTPUT--]] 
 
-		local left_type = obj_t.members[name] --[[SOL OUTPUT--]] 
+		local left_type = obj_t.members[member_name] --[[SOL OUTPUT--]] 
 
 		if left_type and left_type.pre_analyzed then
 			if right_type.pre_analyzed and is_pre_analyze then
-				report_error(stat, "Name clash: %q, previously declared in %s", name, left_type.where) --[[SOL OUTPUT--]] 
+				report_error(stat, "Name clash: %q, previously declared in %s", member_name, left_type.where) --[[SOL OUTPUT--]] 
 			else
 				D.assert(not right_type.pre_analyzed) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			-- The member type was reached by the pre-analyzer - overwrite with refined info:
 
-			--obj_t.members[name] = nil  -- TODO: makes compilation hang!
+			--obj_t.members[member_name] = nil  -- TODO: makes compilation hang!
 			left_type = nil --[[SOL OUTPUT--]] 
 
 			report_spam(stat, "Replacing pre-analyzed type with refined type: %s", right_type) --[[SOL OUTPUT--]] 
@@ -1937,20 +1945,25 @@ local function analyze(ast
 
 		if left_type then
 			report_spam(stat, "Object already has member") --[[SOL OUTPUT--]] 
+
+			if U.is_constant_name(member_name) then
+				report_error(stat, "Cannot assign to constant: '%s' (upper-case names always assumed constant)", member_name) --[[SOL OUTPUT--]] 
+			end --[[SOL OUTPUT--]] 
+
 			left_type = T.broaden( left_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
 
 			if not T.could_be(right_type, left_type) then
-				report_error(stat, "[B] type clash: cannot assign to %q (of type %s) with %s", name, left_type, right_type) --[[SOL OUTPUT--]] 
+				report_error(stat, "[B] type clash: cannot assign to %q (of type %s) with %s", member_name, left_type, right_type) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			return obj_t --[[SOL OUTPUT--]] 
 		else
-			if not obj_t.members[name] then
+			if not obj_t.members[member_name] then
 				if not is_declare then
-					local close_name = loose_lookup(obj_t.members, name) --[[SOL OUTPUT--]] 
+					local close_name = loose_lookup(obj_t.members, member_name) --[[SOL OUTPUT--]] 
 
 					if close_name then
-						report_warning(stat, "Could not find %q - Did you mean %q?", name, close_name) --[[SOL OUTPUT--]] 
+						report_warning(stat, "Could not find %q - Did you mean %q?", member_name, close_name) --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
@@ -1972,27 +1985,27 @@ local function analyze(ast
 			--extend_existing_type = true -- don't do this
 
 			if extend_existing_type then
-				report_spam(stat, "Extending class with %q - class: %s", name, tostring(obj_t)) --[[SOL OUTPUT--]] 
+				report_spam(stat, "Extending class with %q - class: %s", member_name, tostring(obj_t)) --[[SOL OUTPUT--]] 
 
 				--[[
 				var foo = Foo:new()
 				if ... then
-					foo.name = "hello"
+					foo.member_name = "hello"
 				end
 
-				-- Don't change 'Foo' to having a member:  name: string
-				-- Just add an optional member:            name: string?
+				-- Don't change 'Foo' to having a member:  member_name: string
+				-- Just add an optional member:            member_name: string?
 				--]]
 				if not T.is_class(right_type) then
 					right_type = T.make_nilable(right_type) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-				obj_t.members[name] = right_type --[[SOL OUTPUT--]] 
+				obj_t.members[member_name] = right_type --[[SOL OUTPUT--]] 
 			else
 				D.assert(not T.should_extend_in_situ(obj_t)) --[[SOL OUTPUT--]] 
 				obj_t = U.shallow_clone( obj_t ) --[[SOL OUTPUT--]] 
 				obj_t.members = U.shallow_clone( obj_t.members ) --[[SOL OUTPUT--]] 
-				obj_t.members[name] = right_type --[[SOL OUTPUT--]] 
+				obj_t.members[member_name] = right_type --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 
 			return obj_t --[[SOL OUTPUT--]] 
@@ -2017,9 +2030,14 @@ local function analyze(ast
 
 		report_spam(stat, 'do_assignment, left_expr.ast_type: %s', left_expr.ast_type) --[[SOL OUTPUT--]] 
 
+		if left_expr.ast_type == 'IdExpr' and U.is_constant_name(left_expr.name) then
+			report_error(stat, "Cannot assign to constant: '%s' (upper-case names always assumed constant)", left_expr.name) --[[SOL OUTPUT--]] 
+			return false --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
 		if left_expr.ast_type == 'MemberExpr' then
 			-- foo.bar = ...
-			local name = left_expr.ident.data --[[SOL OUTPUT--]] 
+			local member_name = left_expr.ident.data --[[SOL OUTPUT--]] 
 
 			local base_t, base_var = analyze_expr_single_custom(left_expr.base, scope, is_pre_analyze) --[[SOL OUTPUT--]] 
 
@@ -2028,14 +2046,13 @@ local function analyze(ast
 				-- think ctors and the like
 				local extend_existing_type = (base_var.name == 'self') --[[SOL OUTPUT--]] 
 
-
 				if not base_var.type or T.is_empty_table(base_var.type) then
 					report_spam(stat, "New object") --[[SOL OUTPUT--]] 
 					base_var.type = { tag = 'object', members = {} } --[[SOL OUTPUT--]] 
 					extend_existing_type = false --[[SOL OUTPUT--]]  -- bad idea
 				end --[[SOL OUTPUT--]] 
 
-				report_spam(stat, "Assigning to %s.%s", base_var.name, name) --[[SOL OUTPUT--]] 
+				report_spam(stat, "Assigning to %s.%s", base_var.name, member_name) --[[SOL OUTPUT--]] 
 				base_var.num_writes = base_var . num_writes + ( 1 ) --[[SOL OUTPUT--]] 
 
 				local var_t = T.follow_identifiers(base_var.type) --[[SOL OUTPUT--]] 
@@ -2052,7 +2069,7 @@ local function analyze(ast
 						if v.tag == 'object' then
 							variant.variants[i] = assign_to_obj_member(stat, scope,
 								                                        is_pre_analyze, is_declare, extend_variant_member,
-								                                        v, name, right_type) --[[SOL OUTPUT--]] 
+								                                        v, member_name, right_type) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
 				elseif var_t.tag == 'object' then
@@ -2060,16 +2077,16 @@ local function analyze(ast
 
 					base_var.type = assign_to_obj_member(stat, scope,
 						                                 is_pre_analyze, is_declare, extend_object,
-						                                 var_t, name, right_type) --[[SOL OUTPUT--]] 
+						                                 var_t, member_name, right_type) --[[SOL OUTPUT--]] 
 					return true --[[SOL OUTPUT--]] 
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					sol_warning(stat, "[B] Indexing type 'any' with %q", name) --[[SOL OUTPUT--]] 
+					sol_warning(stat, "[B] Indexing type 'any' with %q", member_name) --[[SOL OUTPUT--]] 
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Looking up %q in non-object of type %s", name, var_t) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[B] Looking up %q in non-object of type %s", member_name, var_t) --[[SOL OUTPUT--]] 
 					--D.break_()
 				end --[[SOL OUTPUT--]] 
 
@@ -2085,11 +2102,11 @@ local function analyze(ast
 					if T.is_any(t) then
 						-- not an object? then no need to extend the type
 						-- eg.   local foo = som_fun()   foo.var_ = ...
-						sol_warning(stat, "[A] Member-accessing type 'any' with %q", name) --[[SOL OUTPUT--]] 
+						sol_warning(stat, "[A] Member-accessing type 'any' with %q", member_name) --[[SOL OUTPUT--]] 
 						fail = true --[[SOL OUTPUT--]] 
 
 					elseif t.tag == 'object' then
-						local left_type = t.members[name] --[[SOL OUTPUT--]] 
+						local left_type = t.members[member_name] --[[SOL OUTPUT--]] 
 
 						if left_type and left_type.pre_analyzed then
 							-- The member type was reached by the pre-analyzer - overwrite with refined info:
@@ -2104,22 +2121,22 @@ local function analyze(ast
 							left_type = T.broaden( left_type ) --[[SOL OUTPUT--]]  -- Previous value may have been 'false' - we should allow 'true' now:
 
 							if not T.could_be(right_type, left_type) then
-								report_error(stat, "[A] type clash: cannot assign to %q (of type %s) with %s", name, left_type, right_type) --[[SOL OUTPUT--]] 
+								report_error(stat, "[A] type clash: cannot assign to %q (of type %s) with %s", member_name, left_type, right_type) --[[SOL OUTPUT--]] 
 								fail = true --[[SOL OUTPUT--]] 
 							else
 								success = true --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
 						else
-							if not is_declare and not t.members[name] then
-								local close_name = loose_lookup(t.members, name) --[[SOL OUTPUT--]] 
+							if not is_declare and not t.members[member_name] then
+								local close_name = loose_lookup(t.members, member_name) --[[SOL OUTPUT--]] 
 
 								if close_name then
-									report_warning(stat, "Could not find %q - Did you mean %q?", name, close_name) --[[SOL OUTPUT--]] 
+									report_warning(stat, "Could not find %q - Did you mean %q?", member_name, close_name) --[[SOL OUTPUT--]] 
 								end --[[SOL OUTPUT--]] 
 							end --[[SOL OUTPUT--]] 
 
 							report_spam(stat, "Adding member") --[[SOL OUTPUT--]] 
-							sol_warning(stat, "Adding member %q to %q", name, t) --[[SOL OUTPUT--]] 
+							sol_warning(stat, "Adding member %q to %q", member_name, t) --[[SOL OUTPUT--]] 
 
 							--[[
 							We do not broaden the type here, to make sure the following code works:
@@ -2132,7 +2149,7 @@ local function analyze(ast
 								return ret
 							end
 							--]]
-							t.members[name] = right_type --[[SOL OUTPUT--]] 
+							t.members[member_name] = right_type --[[SOL OUTPUT--]] 
 							success = true --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
@@ -2143,7 +2160,7 @@ local function analyze(ast
 				elseif fail then
 					return false --[[SOL OUTPUT--]] 
 				else
-					report_warning(stat, "[B] Looking up %q in non-object of type %s", name, base_t) --[[SOL OUTPUT--]] 
+					report_warning(stat, "[B] Looking up %q in non-object of type %s", member_name, base_t) --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
@@ -2183,6 +2200,7 @@ local function analyze(ast
 				end --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
+
 		return true --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -2874,7 +2892,7 @@ local function analyze(ast
 				if base.ast_type == 'IdExpr' and base.name == 'require' then
 					local args = expr.arguments --[[SOL OUTPUT--]] 
 					if #args == 1 and args[1].ast_type == 'StringExpr' then
-						--U.printf('"require" called with argument: %q', arg_ts[1])
+						-- require 'module'  -  parse now to bring in globals.
 						if on_require then
 							analyze_require( args[1].str_contents, where_is(expr) ) --[[SOL OUTPUT--]] 
 						end --[[SOL OUTPUT--]] 

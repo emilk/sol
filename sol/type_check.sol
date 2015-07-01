@@ -20,7 +20,6 @@ var NumCompOps = set{
 	'<', '<=', '>', '>='
 }
 
-
 local function rope_to_msg(rope: [string]) -> string
 	local str = U.trim( table.concat(rope, '\n') )
 	if str == '' then
@@ -261,11 +260,20 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						}
 						local issue_name = var_type_to_warning_name[var_type] or 'unused-variable'
 
-						inform_at(issue_name , v.where, "%s %q is never read (name it _ to silence this warning)", var_type, v.name)
+						inform_at(issue_name, v.where, "%s %q is never read (name it _ to silence this warning)", var_type, v.name)
 					end
 				end
 				if v.num_writes == 0 then
-					inform_at('unassigned-variable' , v.where, "%s %q is never written to (name it _ to silence this warning)", var_type, v.name)
+					inform_at('unassigned-variable', v.where, "%s %q is never written to (name it _ to silence this warning)", var_type, v.name)
+				end
+				if v.num_writes == 1 and not v.is_constant then
+					if v.is_global or scope:is_module_level() then
+						if v.type and (v.type.tag == 'function' or T.is_table(v.type) or T.is_any(v.type)) then
+							-- pass
+						else
+							inform_at('const-should-be-uppercase', v.where, "%s %q is never written to - consider giving it an ALL_CAPS_NAME to declare it constant", var_type, v.name) -- TODO
+						end
+					end
 				end
 			end
 		end
@@ -891,7 +899,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		return rets
 	end
 
-
+	-- TODO setmetatable returns first argument
 	local function handle_setmetatable(expr: P.Node, args: [P.Node], arg_ts: [T.Type]) -> void
 		if #args ~= 2 then
 			return
@@ -1243,10 +1251,10 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 		else
 			var t,f = T.could_be_true_false(typ)
 			if t and not f then
-				report_error(expr, "%s never evaluates to false nor nil: %s", name, typ)
+				report_error(expr, "'%s' never evaluates to false nor nil: %s", name, typ)
 			end
 			if not t and f then
-				report_error(expr, "%s always evaluates to false or nil: %s", name, typ)
+				report_error(expr, "'%s' always evaluates to false or nil: %s", name, typ)
 			end
 		end
 
@@ -1912,24 +1920,24 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 	local function assign_to_obj_member(stat: P.Node, _: Scope,
 		                                 is_pre_analyze: bool, is_declare: bool, extend_existing_type: bool,
-		                                 obj_t: T.Object, name: string, right_type: T.Type) -> T.Type
+		                                 obj_t: T.Object, member_name: string, right_type: T.Type) -> T.Type
 	 											--> T.Type -- TODO: have this here
 
 
 		report_spam(stat, "Exisiting object")
 
-		local left_type = obj_t.members[name]
+		local left_type = obj_t.members[member_name]
 
 		if left_type and left_type.pre_analyzed then
 			if right_type.pre_analyzed and is_pre_analyze then
-				report_error(stat, "Name clash: %q, previously declared in %s", name, left_type.where)
+				report_error(stat, "Name clash: %q, previously declared in %s", member_name, left_type.where)
 			else
 				D.assert(not right_type.pre_analyzed)
 			end
 
 			-- The member type was reached by the pre-analyzer - overwrite with refined info:
 
-			--obj_t.members[name] = nil  -- TODO: makes compilation hang!
+			--obj_t.members[member_name] = nil  -- TODO: makes compilation hang!
 			left_type = nil
 
 			report_spam(stat, "Replacing pre-analyzed type with refined type: %s", right_type)
@@ -1937,20 +1945,25 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		if left_type then
 			report_spam(stat, "Object already has member")
+
+			if U.is_constant_name(member_name) then
+				report_error(stat, "Cannot assign to constant: '%s' (upper-case names always assumed constant)", member_name)
+			end
+
 			left_type = T.broaden( left_type ) -- Previous value may have been 'false' - we should allow 'true' now:
 
 			if not T.could_be(right_type, left_type) then
-				report_error(stat, "[B] type clash: cannot assign to %q (of type %s) with %s", name, left_type, right_type)
+				report_error(stat, "[B] type clash: cannot assign to %q (of type %s) with %s", member_name, left_type, right_type)
 			end
 
 			return obj_t
 		else
-			if not obj_t.members[name] then
+			if not obj_t.members[member_name] then
 				if not is_declare then
-					local close_name = loose_lookup(obj_t.members, name)
+					local close_name = loose_lookup(obj_t.members, member_name)
 
 					if close_name then
-						report_warning(stat, "Could not find %q - Did you mean %q?", name, close_name)
+						report_warning(stat, "Could not find %q - Did you mean %q?", member_name, close_name)
 					end
 				end
 
@@ -1972,27 +1985,27 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			--extend_existing_type = true -- don't do this
 
 			if extend_existing_type then
-				report_spam(stat, "Extending class with %q - class: %s", name, tostring(obj_t))
+				report_spam(stat, "Extending class with %q - class: %s", member_name, tostring(obj_t))
 
 				--[[
 				var foo = Foo:new()
 				if ... then
-					foo.name = "hello"
+					foo.member_name = "hello"
 				end
 
-				-- Don't change 'Foo' to having a member:  name: string
-				-- Just add an optional member:            name: string?
+				-- Don't change 'Foo' to having a member:  member_name: string
+				-- Just add an optional member:            member_name: string?
 				--]]
 				if not T.is_class(right_type) then
 					right_type = T.make_nilable(right_type)
 				end
 
-				obj_t.members[name] = right_type
+				obj_t.members[member_name] = right_type
 			else
 				D.assert(not T.should_extend_in_situ(obj_t))
 				obj_t = U.shallow_clone( obj_t )
 				obj_t.members = U.shallow_clone( obj_t.members )
-				obj_t.members[name] = right_type
+				obj_t.members[member_name] = right_type
 			end
 
 			return obj_t
@@ -2017,9 +2030,14 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 		report_spam(stat, 'do_assignment, left_expr.ast_type: %s', left_expr.ast_type)
 
+		if left_expr.ast_type == 'IdExpr' and U.is_constant_name(left_expr.name) then
+			report_error(stat, "Cannot assign to constant: '%s' (upper-case names always assumed constant)", left_expr.name)
+			return false
+		end
+
 		if left_expr.ast_type == 'MemberExpr' then
 			-- foo.bar = ...
-			local name = left_expr.ident.data
+			local member_name = left_expr.ident.data
 
 			local base_t, base_var = analyze_expr_single_custom(left_expr.base, scope, is_pre_analyze)
 
@@ -2028,14 +2046,13 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				-- think ctors and the like
 				var extend_existing_type = (base_var.name == 'self')
 
-
 				if not base_var.type or T.is_empty_table(base_var.type) then
 					report_spam(stat, "New object")
 					base_var.type = { tag = 'object', members = {} }
 					extend_existing_type = false -- bad idea
 				end
 
-				report_spam(stat, "Assigning to %s.%s", base_var.name, name)
+				report_spam(stat, "Assigning to %s.%s", base_var.name, member_name)
 				base_var.num_writes += 1
 
 				local var_t = T.follow_identifiers(base_var.type)
@@ -2052,7 +2069,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 						if v.tag == 'object' then
 							variant.variants[i] = assign_to_obj_member(stat, scope,
 								                                        is_pre_analyze, is_declare, extend_variant_member,
-								                                        v, name, right_type)
+								                                        v, member_name, right_type)
 						end
 					end
 				elseif var_t.tag == 'object' then
@@ -2060,16 +2077,16 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 
 					base_var.type = assign_to_obj_member(stat, scope,
 						                                 is_pre_analyze, is_declare, extend_object,
-						                                 var_t, name, right_type)
+						                                 var_t, member_name, right_type)
 					return true
 				elseif T.is_any(var_t) then
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					sol_warning(stat, "[B] Indexing type 'any' with %q", name)
+					sol_warning(stat, "[B] Indexing type 'any' with %q", member_name)
 				else
 					-- not an object? then no need to extend the type
 					-- eg.   local foo = som_fun()   foo.var_ = ...
-					report_warning(stat, "[B] Looking up %q in non-object of type %s", name, var_t)
+					report_warning(stat, "[B] Looking up %q in non-object of type %s", member_name, var_t)
 					--D.break_()
 				end
 
@@ -2085,11 +2102,11 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 					if T.is_any(t) then
 						-- not an object? then no need to extend the type
 						-- eg.   local foo = som_fun()   foo.var_ = ...
-						sol_warning(stat, "[A] Member-accessing type 'any' with %q", name)
+						sol_warning(stat, "[A] Member-accessing type 'any' with %q", member_name)
 						fail = true
 
 					elseif t.tag == 'object' then
-						local left_type = t.members[name]
+						local left_type = t.members[member_name]
 
 						if left_type and left_type.pre_analyzed then
 							-- The member type was reached by the pre-analyzer - overwrite with refined info:
@@ -2104,22 +2121,22 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 							left_type = T.broaden( left_type ) -- Previous value may have been 'false' - we should allow 'true' now:
 
 							if not T.could_be(right_type, left_type) then
-								report_error(stat, "[A] type clash: cannot assign to %q (of type %s) with %s", name, left_type, right_type)
+								report_error(stat, "[A] type clash: cannot assign to %q (of type %s) with %s", member_name, left_type, right_type)
 								fail = true
 							else
 								success = true
 							end
 						else
-							if not is_declare and not t.members[name] then
-								local close_name = loose_lookup(t.members, name)
+							if not is_declare and not t.members[member_name] then
+								local close_name = loose_lookup(t.members, member_name)
 
 								if close_name then
-									report_warning(stat, "Could not find %q - Did you mean %q?", name, close_name)
+									report_warning(stat, "Could not find %q - Did you mean %q?", member_name, close_name)
 								end
 							end
 
 							report_spam(stat, "Adding member")
-							sol_warning(stat, "Adding member %q to %q", name, t)
+							sol_warning(stat, "Adding member %q to %q", member_name, t)
 
 							--[[
 							We do not broaden the type here, to make sure the following code works:
@@ -2132,7 +2149,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 								return ret
 							end
 							--]]
-							t.members[name] = right_type
+							t.members[member_name] = right_type
 							success = true
 						end
 					end
@@ -2143,7 +2160,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				elseif fail then
 					return false
 				else
-					report_warning(stat, "[B] Looking up %q in non-object of type %s", name, base_t)
+					report_warning(stat, "[B] Looking up %q in non-object of type %s", member_name, base_t)
 				end
 			end
 		end
@@ -2183,6 +2200,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 				end
 			end
 		end
+
 		return true
 	end
 

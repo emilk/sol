@@ -18,6 +18,7 @@ typedef Variable = {
 	name             : string,
 	type             : T.Type?,
 	is_global        : bool,
+	is_constant      : bool,
 	namespace        : { string => T.Type } ?,
 	where            : string,
 	forward_declared : bool?,
@@ -197,6 +198,12 @@ function T.is_empty_table(t: T.Type) -> bool
 	return t == T._empty_table
 end
 
+function T.is_table(t: T.Type) -> bool
+	return t.tag == 'table'
+	    or t.tag == 'object'
+	    or t.tag == 'list'
+	    or t.tag == 'map'
+end
 
 function T.is_void(ts: T.Typelist) -> bool
 	return T.is_type_list(ts) and #ts == 0

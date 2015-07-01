@@ -322,7 +322,7 @@ return {
 	SOL_SETTINGS: {
 	              	function_types: true;
 	              	is_sol:         true;
-	              	issues:         {'unused-parameter' or 'unused-loop-variable' or 'unused-variable' or 'unassigned-variable' or 'nil-init' or 'nil-ends-list' or 'nil-in-list' => 'WARNING' or 'ERROR'};
+	              	issues:         {'unused-parameter' or 'unused-loop-variable' or 'unused-variable' or 'unassigned-variable' or 'nil-init' or 'nil-ends-list' or 'nil-in-list' or 'const-should-be-uppercase' => 'WARNING' or 'ERROR'};
 	              	keywords:       {string};
 	              	symbols:        {string};
 	              };

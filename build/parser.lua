@@ -84,6 +84,7 @@ P.SOL_SETTINGS = {
 
 		['nil-ends-list'] = 'ERROR';  -- { 42, nil }
 		['nil-in-list']   = 'ERROR';  -- { nil, 42 }
+		['const-should-be-uppercase'] = 'WARNING'
 	}
 } --[[SOL OUTPUT--]] 
 

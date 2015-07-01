@@ -9,6 +9,7 @@ return {
 	file_exists:        function(path: string) -> bool;
 	indent:             function(str: string) -> string;
 	is_array:           function(val) -> bool;
+	is_constant_name:   function(name: string) -> bool;
 	list_concat:        function(a: [any], b: [any]) -> [any];
 	list_join:          function(out: [any], in_table: [any]) -> void;
 	make_const:         function(table: table) -> void;

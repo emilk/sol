@@ -54,6 +54,7 @@ Scope
 
 
 
+
 .GLOBALS_IN_TOP_SCOPE = true --[[SOL OUTPUT--]] 
 
 --------------------------------------------------
@@ -109,12 +110,13 @@ function Scope:create_local(name, where)
 	D.assert(not self.fixed) --[[SOL OUTPUT--]] 
 
 	local v = {
-		scope      = self,
-		name       = name,
-		is_global  = false,
-		where      = where,
-		num_reads  = 0,
-		num_writes = 0,
+		scope       = self,
+		name        = name,
+		is_global   = false,
+		is_constant = U.is_constant_name(name),
+		where       = where,
+		num_reads   = 0,
+		num_writes  = 0,
 	} --[[SOL OUTPUT--]] 
 
 	D.assert(not self.locals[name]) --[[SOL OUTPUT--]] 
@@ -134,13 +136,14 @@ function Scope:create_global(name, where, typ)
 	assert(not self.fixed) --[[SOL OUTPUT--]] 
 
 	local v = {
-		scope      = self,
-		name       = name,
-		is_global  = true,
-		where      = where,
-		type       = typ,
-		num_reads  = 0,
-		num_writes = 0,
+		scope       = self,
+		name        = name,
+		is_global   = true,
+		is_constant = U.is_constant_name(name),
+		where       = where,
+		type        = typ,
+		num_reads   = 0,
+		num_writes  = 0,
 	} --[[SOL OUTPUT--]] 
 
 	if Scope.GLOBALS_IN_TOP_SCOPE and self ~= Scope.global_scope then

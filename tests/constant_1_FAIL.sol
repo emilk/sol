@@ -1,0 +1,2 @@
+local CONST = 42
+CONST = 13 -- SHOULD FAIL

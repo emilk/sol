@@ -184,6 +184,7 @@ return {
 	is_integral:           function(str: string) -> bool;
 	is_nilable:            function(a: Type) -> bool;
 	is_obj_obj:            function(d: Object, b: Object, problem_rope: [string]?) -> bool;
+	is_table:              function(t: Type) -> bool;
 	is_type:               function(x) -> bool;
 	is_type_list:          function(list) -> bool;
 	is_variant:            function(t: Type) -> Variant?;

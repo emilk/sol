@@ -2,7 +2,7 @@ Sol
 ===
 Typesafe Lua. Work in progress.
 
- 
+
 ## What?
 Sol is an almost-super-set of Lua that provides a novel(?) form of static, non-constricting optional type safety. Sol compiles line-for-line to Lua, and is thus compatible with existing Lua code (both ways) and tools (luajit, profilers, debuggers etc).
 
@@ -13,28 +13,30 @@ The Sol compiler is written in Sol.
 
 	function sqrt(x: number) -> number?
 		return a >= 0 and math.sqrt(x) or nil
-	end	
-	
+	end
+
 	typedef Interface = {
 		foo: int,
 		bar: string
 	}
-	
+
 	function use(x: Interface)
 		print(x.bar)
 	end
-	
+
 	use{foo: 42, bar: "fortytwo"}
-	
+
 	typedef Option = "A" or "B" or "C"
 	var x = "B" : Option
-	
-	
+
+	var CONSTANT = 42
+
 	-- Stuff the compiler catches:
 	x = "D" -- ERROR: "D" is not an Option
 	X = "A" -- ERROR: 'X' is undeclared
 	sqrt()  -- ERROR: Missing non-nilable argument 'x'
 	use{foo: "fortytwo", bar: 42}  -- ERROR
+	CONSTANT = 1337 -- ERROR: Cannot assign to constant: 'CONSTANT' (upper-case names always assumed constant)
 
 
 ## Why?
@@ -50,7 +52,7 @@ Type annotations also help makes the code more readible as it provides **self-do
 
 
 ## State
-Sol is work in progress and is still evolving rapidly. Version 1.0 expected some tme 2013.
+Sol is work in progress.
 
 
 ## Similar attempts
