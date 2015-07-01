@@ -1,10 +1,15 @@
-#! /usr/local/bin/luajit
+#! /usr/local/bin/lua
 
 io.stdout:setvbuf 'no'
 local lfs = require 'lfs'
 
-local interpreter = ('"'..arg[-1]..'"'  or  'luajit')
+local interpreter = ('"'..arg[-1]..'"'  or  'lua')
 local PLATFORM = os.getenv("windir") and "win" or "unix"
+
+function os_execute(cmd)
+	local result = os.execute(cmd)
+	return result == true or result == 0
+end
 
 function file_exists(path)
 	local f = io.open(path, "rb")
@@ -18,25 +23,27 @@ end
 
 function write_protect(path)
 	if PLATFORM == "unix" then
-		return 0 == os.execute("chmod -w " .. path)
+		return os_execute("chmod -w " .. path)
 	else
-		return 0 == os.execute("attrib +R " .. path)
+		return os_execute("attrib +R " .. path)
 	end
 end
 
 function write_unprotect(path)
 	if file_exists(path) then
 		if PLATFORM == "unix" then
-			return 0 == os.execute("chmod +w " .. path)
+			return os_execute("chmod +w " .. path)
 		else
-			return 0 == os.execute("attrib -R " .. path)
+			return os_execute("attrib -R " .. path)
 		end
 	end
 end
 
 
 local function run_cmd(cmd)
-	if 0 ~= os.execute(cmd) then
+	print(string.format("Executing '%s'...", cmd))
+	if not os_execute(cmd) then
+		print(string.format("Command '%s' failed", cmd))
 		os.exit(1)
 	end
 end
@@ -47,6 +54,7 @@ end
 
 -- From http://kracekumar.com/post/53685731325/cp-command-implementation-and-benchmark-in-python-go
 function cp(source, dest)
+	print(string.format("Copying files from '%s' to '%s'", source, dest))
 	for filename in lfs.dir(source) do
 		if filename ~= '.' and filename ~= '..' then
 			local source_path = source .. '/' .. filename

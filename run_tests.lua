@@ -42,6 +42,10 @@ print("interpreter: "..interpreter)
 
 local spam = (arg[1] == '-s')
 
+function os_execute(cmd)
+	local result = os.execute(cmd)
+	return result == true or result == 0
+end
 
 local function test_dir(dir)
 	for file in lfs.dir(dir) do
@@ -56,26 +60,26 @@ local function test_dir(dir)
 
 			--lfs.chdir(sol_dir .. 'install/')
 			local file_path = dir .. '/' .. file
-			local result = os.execute( interpreter .. ' -o tests_built ' .. file_path .. NULL_PIPE)
+			local passed = os_execute( interpreter .. ' -o tests_built ' .. file_path .. NULL_PIPE)
 
-			if shouldPass and result ~= 0 then
+			if shouldPass and not passed then
 				failed_to_pass = failed_to_pass + 1
 				print("Test should have passed but didn't: " .. file)
 				print(DIVISION)
-				os.execute( interpreter .. ' -o tests_built ' .. file_path ) -- Standard
+				os_execute( interpreter .. ' -o tests_built ' .. file_path ) -- Standard
 				print(DIVISION)
 				if spam then
-					os.execute( interpreter .. ' -d -o tests_built -s ' .. dir .. '/' .. file ) -- Extra spam
+					os_execute( interpreter .. ' -d -o tests_built -s ' .. dir .. '/' .. file ) -- Extra spam
 					print(DIVISION)
 				end
 			end
 
-			if not shouldPass and result == 0 then
+			if not shouldPass and passed then
 				failed_to_fail = failed_to_fail + 1
 				print("Test should have failed but passed: " .. file)
 				print(DIVISION)
 				if spam then
-					os.execute( interpreter .. ' -p -s ' .. dir .. '/' .. file ) -- Extra spam
+					os_execute( interpreter .. ' -p -s ' .. dir .. '/' .. file ) -- Extra spam
 					print(DIVISION)
 				end
 			end

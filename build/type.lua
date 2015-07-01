@@ -146,12 +146,12 @@ T
 T.AnyTypeList = {} --[[SOL OUTPUT--]]    -- Unkown number of unknown values
 --T.AnyTypeList = { { tag = 'varargs', type = T.Any } }  -- TODO
 
-T.Nil      = { tag = 'nil'    } --[[SOL OUTPUT--]] 
-T.True     = { tag = 'true'   } --[[SOL OUTPUT--]] 
-T.False    = { tag = 'false'  } --[[SOL OUTPUT--]] 
-T.String   = { tag = 'string' } --[[SOL OUTPUT--]] 
-T.Num      = { tag = 'number'    } --[[SOL OUTPUT--]] 
-T.Int      = { tag = 'int'    } --[[SOL OUTPUT--]] 
+T.Nil    = { tag = 'nil'    } --[[SOL OUTPUT--]] 
+T.True   = { tag = 'true'   } --[[SOL OUTPUT--]] 
+T.False  = { tag = 'false'  } --[[SOL OUTPUT--]] 
+T.String = { tag = 'string' } --[[SOL OUTPUT--]] 
+T.Num    = { tag = 'number' } --[[SOL OUTPUT--]] 
+T.Int    = { tag = 'int'    } --[[SOL OUTPUT--]] 
 --T.Empty    = { tag = 'variant', variants = {} }
 
 --T.Void     = T.Empty

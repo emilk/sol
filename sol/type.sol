@@ -67,12 +67,12 @@ typedef T.StringLiteral : T.Type = {
 	str_quoted   : string,  -- As given in input, e.g:   "\"Hello\"\t'you!'"
 	str_contents : string,  -- As Lua would treat it:    "Hello"	'you'
 }
-typedef T.Nil           : T.Type = { tag : 'nil'     }
-typedef T.True          : T.Type = { tag : 'true'    }
-typedef T.False         : T.Type = { tag : 'false'   }
-typedef T.Int           : T.Type = { tag : 'int'     }
-typedef T.Num           : T.Type = { tag : 'number'     }
-typedef T.String        : T.Type = { tag : 'string'  }
+typedef T.Nil    : T.Type = { tag : 'nil'    }
+typedef T.True   : T.Type = { tag : 'true'   }
+typedef T.False  : T.Type = { tag : 'false'  }
+typedef T.Int    : T.Type = { tag : 'int'    }
+typedef T.Num    : T.Type = { tag : 'number' }
+typedef T.String : T.Type = { tag : 'string' }
 
 typedef T.Table : T.Type = {
 	tag  : 'table',
@@ -146,12 +146,12 @@ T.Any  = { tag = 'any'  }  -- Single unknown value
 T.AnyTypeList = {}   -- Unkown number of unknown values
 --T.AnyTypeList = { { tag = 'varargs', type = T.Any } }  -- TODO
 
-T.Nil      = { tag = 'nil'    }
-T.True     = { tag = 'true'   }
-T.False    = { tag = 'false'  }
-T.String   = { tag = 'string' }
-T.Num      = { tag = 'number'    }
-T.Int      = { tag = 'int'    }
+T.Nil    = { tag = 'nil'    }
+T.True   = { tag = 'true'   }
+T.False  = { tag = 'false'  }
+T.String = { tag = 'string' }
+T.Num    = { tag = 'number' }
+T.Int    = { tag = 'int'    }
 --T.Empty    = { tag = 'variant', variants = {} }
 
 --T.Void     = T.Empty
