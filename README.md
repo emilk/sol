@@ -1,10 +1,12 @@
-Sol
-===
-Typesafe Lua. Work in progress.
+Sol - Typesafe Lua
+==================
+Static type checker and (optional) gradual typing for Lua.
 
+Sol is to Lua as Typescript is to JS.
 
 ## What?
-Sol is an almost-super-set of Lua that provides a novel(?) form of static, non-constricting optional type safety. Sol compiles line-for-line to Lua, and is thus compatible with existing Lua code (both ways) and tools (luajit, profilers, debuggers etc).
+Sol is a dialect (almost super-set) of Lua which adds optional type annotations, to provide type safety through [gradual typing](https://en.wikipedia.org/wiki/Gradual_typing).
+Sol compiles line-for-line to Lua, and is thus compatible with existing Lua code (both ways) and tools (luajit, profilers, debuggers etc).
 
 The Sol compiler is written in Sol.
 
@@ -48,15 +50,15 @@ Scripting languages like Lua has many things going for them, but they all fail t
 
 That being said, dynamically typed languages provides a flexibility that a statically typed language like C++ or Java does not. Sol aims to provide the best of both worlds by the concept of *plausible typing*.
 
-Type annotations also help makes the code more readible as it provides **self-documentation**.
+Type annotations also help makes the code more readable as it provides **self-documentation**.
 
 
 ## State
-Sol is work in progress.
+Sol is no longer in active development.
 
 
 ## Similar attempts
-There has been other atempts to bring static typing to Lua. Hoever, they all suffer from attempting to be compatible without compilation, which means putting the type into comments or via MetaLua-syntax which makes the code ugly to the point of unintelligibleness. My experience tells me that if it aint pretty, it aint gonna be used.
+There has been other attempts to bring static typing to Lua. However, they all suffer from attempting to be compatible without compilation, which means putting the type into comments or via MetaLua-syntax which makes the code ugly to the point of unintelligibleness. My experience tells me that if it ain't pretty, it ain't gonna be used.
 
 ### [Tidal Lock](https://github.com/fab13n/metalua/tree/tilo/src/tilo)
 
