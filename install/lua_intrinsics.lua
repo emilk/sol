@@ -93,11 +93,11 @@ function M.add_intrinsics_to_global_scope()
 	local settings = P.SOL_SETTINGS --[[SOL OUTPUT--]] 
 
 	local st, tokens = L.lex_sol(INTRINSICS, filename, settings) --[[SOL OUTPUT--]] 
-	assert(st) --[[SOL OUTPUT--]] 
+	assert(st, tokens) --[[SOL OUTPUT--]] 
 	local st, ast = P.parse_sol(INTRINSICS, tokens, filename, settings, scope) --[[SOL OUTPUT--]] 
-	assert(st) --[[SOL OUTPUT--]] 
-	local st, _ = TypeCheck(ast, filename, nil, settings) --[[SOL OUTPUT--]] 
-	assert(st) --[[SOL OUTPUT--]] 
+	assert(st, ast) --[[SOL OUTPUT--]] 
+	local st, err = TypeCheck(ast, filename, nil, settings) --[[SOL OUTPUT--]] 
+	assert(st, err) --[[SOL OUTPUT--]] 
 
 	if not Scope.GLOBALS_IN_TOP_SCOPE then
 		global_scope.fixed = false --[[SOL OUTPUT--]] 
