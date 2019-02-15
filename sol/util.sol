@@ -152,7 +152,7 @@ end
 
 function U.unescape(str: string) -> string
 	-- FIXME: unescape is unsafe
-	return loadstring("return "..str)()
+	return load("return "..str)()
 end
 
 ------------------------------------------------------

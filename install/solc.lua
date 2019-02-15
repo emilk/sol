@@ -168,7 +168,7 @@ local parse_module --[[SOL OUTPUT--]]
 -- Returns its type
 local function require_module(path_in, mod_name, module_scope, req_where, req_chain)
 	-- U.printf('require %q', mod_name)
-	req_chain = { unpack(req_chain) } --[[SOL OUTPUT--]]   -- clone
+	req_chain = { table.unpack(req_chain) } --[[SOL OUTPUT--]]   -- clone
 	req_chain [ # req_chain + 1 ] = mod_name --[[SOL OUTPUT--]] 
 
 	local mod_path = find_moudle(path_in, mod_name) --[[SOL OUTPUT--]] 

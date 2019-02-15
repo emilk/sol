@@ -128,7 +128,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 			buf[i] = a
 		end
 
-		local str = U.trim( string.format( fmt, unpack( buf ) ) )
+		local str = U.trim( string.format( fmt, table.unpack( buf ) ) )
 
 		if U.count_line_breaks(str) == 0 then
 			return str

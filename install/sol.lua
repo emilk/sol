@@ -73,7 +73,7 @@ end --[[SOL OUTPUT--]]
 local function run_sol(sol)
 	local lua = compile_sol(sol) --[[SOL OUTPUT--]] 
 	if lua then
-		local f = loadstring(lua) --[[SOL OUTPUT--]] 
+		local f = load(lua) --[[SOL OUTPUT--]] 
 		if f then
 			f() --[[SOL OUTPUT--]] 
 		else

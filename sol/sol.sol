@@ -73,7 +73,7 @@ end
 local function run_sol(sol: string)
 	local lua = compile_sol(sol)
 	if lua then
-		local f = loadstring(lua)
+		local f = load(lua)
 		if f then
 			f()
 		else

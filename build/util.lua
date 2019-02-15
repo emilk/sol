@@ -152,7 +152,7 @@ end --[[SOL OUTPUT--]]
 
 function U.unescape(str)
 	-- FIXME: unescape is unsafe
-	return loadstring("return "..str)() --[[SOL OUTPUT--]] 
+	return load("return "..str)() --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]] 
 
 ------------------------------------------------------

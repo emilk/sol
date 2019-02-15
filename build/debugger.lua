@@ -151,7 +151,7 @@ end
 
 local function compile_chunk(expr, env)
 	if _VERSION <= "Lua 5.1" then
-		local chunk = loadstring("return "..expr, "<debugger repl>")
+		local chunk = load("return "..expr, "<debugger repl>")
 		if chunk then setfenv(chunk, env) end
 		return chunk
 	else
@@ -171,8 +171,8 @@ local function cmd_print(expr)
 		dbg_writeln("Error: Could not evaluate expression.")
 		return false
 	end
-	
-	local count, results = super_pack(pcall(chunk, unpack(env[VARARG_SENTINEL])))
+
+	local count, results = super_pack(pcall(chunk, table.unpack(env[VARARG_SENTINEL])))
 	if not results[1] then
 		dbg_writeln("Error: %s", results[2])
 	elseif count == 1 then
@@ -254,7 +254,7 @@ local function run_command(line)
 	
 	-- Execute the previous command or cache it
 	if line == "" then
-		if last_cmd then return unpack({run_command(last_cmd)}) else return false end
+		if last_cmd then return table.unpack({run_command(last_cmd)}) else return false end
 	else
 		last_cmd = line
 	end
@@ -275,7 +275,7 @@ local function run_command(line)
 	for cmd, cmd_func in pairs(commands) do
 		local matches = {string.match(line, "^("..cmd..")$")}
 		if matches[1] then
-			return unpack({cmd_func(select(2, unpack(matches)))})
+			return table.unpack({cmd_func(select(2, table.unpack(matches)))})
 		end
 	end
 	

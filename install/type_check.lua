@@ -128,7 +128,7 @@ local function analyze(ast
 			buf[i] = a --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 
-		local str = U.trim( string.format( fmt, unpack( buf ) ) ) --[[SOL OUTPUT--]] 
+		local str = U.trim( string.format( fmt, table.unpack( buf ) ) ) --[[SOL OUTPUT--]] 
 
 		if U.count_line_breaks(str) == 0 then
 			return str --[[SOL OUTPUT--]] 
