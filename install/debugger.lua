@@ -10,12 +10,12 @@ local function pretty(obj, non_recursive)
 		return string.format("%q", obj)
 	elseif type(obj) == "table" and not non_recursive then
 		local str = "{"
-		
+
 		for k, v in pairs(obj) do
 			local pair = pretty(k, true).." = "..pretty(v, true)
 			str = str..(str == "{" and pair or ", "..pair)
 		end
-		
+
 		return str.."}"
 	else
 		return tostring(obj)
@@ -73,7 +73,7 @@ local function hook_factory(repl_threshold)
 	return function(offset)
 		return function(event, line)
 			local info = debug.getinfo(2)
-			
+
 			if event == "call" and info.linedefined >= 0 then
 				offset = offset + 1
 			elseif event == "return" and info.linedefined >= 0 then
@@ -99,7 +99,7 @@ local function table_merge(t1, t2)
 	local tbl = {}
 	for k, v in pairs(t1) do tbl[k] = v end
 	for k, v in pairs(t2) do tbl[k] = v end
-	
+
 	return tbl
 end
 
@@ -109,25 +109,25 @@ local function local_bindings(offset, include_globals)
 	--[[ TODO
 		Need to figure out how to get varargs with LuaJIT
 	]]
-	
+
 	local level = stack_offset + offset + LOCAL_STACK_LEVEL
 	local func = debug.getinfo(level).func
 	local bindings = {}
-	
+
 	-- Retrieve the upvalues
 	do local i = 1; repeat
 		local name, value = debug.getupvalue(func, i)
 		if name then bindings[name] = value end
 		i = i + 1
 	until name == nil end
-	
+
 	-- Retrieve the locals (overwriting any upvalues)
 	do local i = 1; repeat
 		local name, value = debug.getlocal(level, i)
 		if name then bindings[name] = value end
 		i = i + 1
 	until name == nil end
-	
+
 	-- Retrieve the varargs. (only works in Lua 5.2)
 	local varargs = {}
 	do local i = -1; repeat
@@ -136,12 +136,12 @@ local function local_bindings(offset, include_globals)
 		i = i - 1
 	until name == nil end
 	bindings[VARARG_SENTINEL] = varargs
-	
+
 	if include_globals then
 		-- Merge the local bindings over the top of the environment table.
 		-- In Lua 5.2, you have to get the environment table from the function's locals.
 		local env = (_VERSION <= "Lua 5.1" and getfenv(func) or bindings._ENV)
-		
+
 		-- Finally, merge the tables and add a lookup for globals.
 		return setmetatable(table_merge(env, bindings), {__index = _G})
 	else
@@ -171,8 +171,8 @@ local function cmd_print(expr)
 		dbg_writeln("Error: Could not evaluate expression.")
 		return false
 	end
-	
-	local count, results = super_pack(pcall(chunk, unpack(env[VARARG_SENTINEL])))
+
+	local count, results = super_pack(pcall(chunk, table.unpack(env[VARARG_SENTINEL])))
 	if not results[1] then
 		dbg_writeln("Error: %s", results[2])
 	elseif count == 1 then
@@ -182,37 +182,37 @@ local function cmd_print(expr)
 		for i=2, count do
 			result = result..(i ~= 2 and ", " or "")..pretty(results[i])
 		end
-		
+
 		--dbg_writeln("%s => %s", expr, result)
 		dbg_writeln("%s => %s", expr, result)
 	end
-	
+
 	return false
 end
 
 local function cmd_up()
 	local info = debug.getinfo(stack_offset + LOCAL_STACK_LEVEL + 1)
-	
+
 	if info then
 		stack_offset = stack_offset + 1
 		dbg_writeln("Inspecting frame: "..formatStackLocation(info))
 	else
 		dbg_writeln("Error: Already at the top of the stack.")
 	end
-	
+
 	return false
 end
 
 local function cmd_down()
 	if stack_offset > stack_top then
 		stack_offset = stack_offset - 1
-		
+
 		local info = debug.getinfo(stack_offset + LOCAL_STACK_LEVEL)
 		dbg_writeln("Inspecting frame: "..formatStackLocation(info))
 	else
 		dbg_writeln("Error: Already at the bottom of the stack.")
 	end
-	
+
 	return false
 end
 
@@ -221,7 +221,7 @@ local function cmd_trace()
 	local offset = stack_offset - stack_top
 	local message = string.format("Inspecting frame: %d - (%s)", offset, location)
 	dbg_writeln(debug.traceback(message, stack_offset + LOCAL_STACK_LEVEL))
-	
+
 	return false
 end
 
@@ -232,7 +232,7 @@ local function cmd_locals()
 			dbg_writeln("\t%s => %s", k, pretty(v))
 		end
 	end
-	
+
 	return false
 end
 
@@ -251,14 +251,14 @@ local function run_command(line)
 		dbg_writeln()
 		return true
 	end
-	
+
 	-- Execute the previous command or cache it
 	if line == "" then
 		if last_cmd then return table.unpack({run_command(last_cmd)}) else return false end
 	else
 		last_cmd = line
 	end
-	
+
 	local commands = {
 		["c"] = function() return true end,
 		["s"] = function() return true, hook_step end,
@@ -271,21 +271,21 @@ local function run_command(line)
 		["l"] = cmd_locals,
 		["h"] = cmd_help,
 	}
-	
+
 	for cmd, cmd_func in pairs(commands) do
 		local matches = {string.match(line, "^("..cmd..")$")}
 		if matches[1] then
 			return table.unpack({cmd_func(select(2, table.unpack(matches)))})
 		end
 	end
-	
+
 	dbg_writeln("Error: command '%s' not recognized", line)
 	return false
 end
 
 repl = function()
 	dbg_writeln(formatStackLocation(debug.getinfo(LOCAL_STACK_LEVEL - 3 + stack_top)))
-	
+
 	repeat
 		local success, done, hook = pcall(run_command, dbg_read("debugger.lua> "))
 		if success then
@@ -301,11 +301,11 @@ end
 local dbg = setmetatable({}, {
 	__call = function(self, condition, offset)
 		if condition then return end
-		
+
 		offset = (offset or 0)
 		stack_offset = offset
 		stack_top = offset
-		
+
 		debug.sethook(hook_next(1), "crl")
 		return
 	end,
@@ -340,33 +340,33 @@ end
 
 local function luajit_load_readline_support()
 	local ffi = require("ffi")
-	
+
 	ffi.cdef[[
 		void free(void *ptr);
-		
+
 		char *readline(const char *);
 		int add_history(const char *);
 	]]
-	
+
 	local readline = ffi.load("readline")
-	
+
 	dbg_read = function(prompt)
 		local cstr = readline.readline(prompt)
-		
+
 		if cstr ~= nil then
 			local str = ffi.string(cstr)
-			
+
 			if string.match(str, "[^%s]+") then
 				readline.add_history(cstr)
 			end
-			
+
 			ffi.C.free(cstr)
 			return str
 		else
 			return nil
 		end
 	end
-	
+
 	dbg_writeln("Readline support loaded.")
 end
 
@@ -377,7 +377,7 @@ then
 	pcall(luajit_load_readline_support)
 elseif
 	 _VERSION == "Lua 5.2" or
-	 _VERSION == "Lua 5.1"	 
+	 _VERSION == "Lua 5.1"
 then
 	dbg_writeln("debugger.lua loaded for ".._VERSION)
 else
