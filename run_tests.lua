@@ -1,7 +1,7 @@
 io.stdout:setvbuf 'no'
 
-local lfs  = require 'lfs'
-local path = require 'pl.path'
+local lfs  = require 'lfs' -- luarocks install luafilesystem
+local path = require 'pl.path' -- luarocks install penlight
 
 local rel_path  = path.dirname(arg[0])
 local sol_dir = lfs.currentdir() .. '/'
