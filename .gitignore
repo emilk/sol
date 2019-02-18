@@ -1,8 +1,3 @@
-history
-tests_built
-
-solc_profile_reports
-
-test.sol
-test.lua
-*.sublime-workspace
+/build/
+/solc_profile_reports/
+/tests_built/

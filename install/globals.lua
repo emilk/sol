@@ -8,4 +8,8 @@
  g_write_timings      = false --[[SOL OUTPUT--]] 
  g_print_stats        = false --[[SOL OUTPUT--]]   -- Prints out stats on the popularity of tokens and ast_type:s
  g_one_line_errors    = false --[[SOL OUTPUT--]]   -- Print errors and warnigns on single lines
+
+-- Output options:
+ g_align_lines        = false --[[SOL OUTPUT--]]   -- Align line numbers in output?
+ g_warn_output        = false --[[SOL OUTPUT--]]   -- Print --[[SOL OUTPUT--]]  on each line in output file?
  --[[SOL OUTPUT--]] 

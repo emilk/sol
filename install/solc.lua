@@ -383,8 +383,12 @@ local function output_module(info, path_in, path_out, header_path_out)
 	if info.ast and path_out then
 		U.write_unprotect(path_out) --[[SOL OUTPUT--]]  -- Ensure we can write over it
 
-		--local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. " on " .. os.date("%Y %b %d  %X") .. ' --]] '
-		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] ' --[[SOL OUTPUT--]] 
+		local out_text = "" --[[SOL OUTPUT--]] 
+		if g_warn_output then
+			--local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. " on " .. os.date("%Y %b %d  %X") .. ' --]] '
+			out_text = out_text .. ( '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] ' ) --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
+
 		out_text = out_text .. ( output(info.ast, path_in) ) --[[SOL OUTPUT--]] 
 		if not U.write_file(path_out, out_text) then
 			printf_err("Failed to open %q for writing", path_out) --[[SOL OUTPUT--]] 
@@ -496,12 +500,20 @@ local function print_help()
 			-e0
 				Ignore all errors and push through
 
+			--align-lines
+				Make sure the line numbers on the input match that of the output.
+				If you Lua code has an error in it this will help you to find the error in the .sol file.
+
 			--check input_file_path
 				Will read from stdin as if it was a file at the given path.
 				Will look for local includes using that path.
 
 			--profile
 				Will profile solc to find slow parts of compilation process
+
+			--ugly
+				Add ugly "SOL OUTPUT" warning texts to avoid
+				people accidentally editing the .lua file instead of the .sol file.
 
 			-d  or  --debug
 				For debugging solc compiler
@@ -574,10 +586,16 @@ else
 		elseif a == '-e0' then
 			g_ignore_errors = true --[[SOL OUTPUT--]] 
 
+		elseif a == '--align-lines' then
+			g_align_lines = true --[[SOL OUTPUT--]] 
+
 		elseif a == '--profile' then
 			g_profiler = require 'ProFi' --[[SOL OUTPUT--]] 
 			print('Profiling (this may take a while)...') --[[SOL OUTPUT--]] 
 			g_profiler:start() --[[SOL OUTPUT--]] 
+
+		elseif a == '--ugly' then
+			g_warn_output = true --[[SOL OUTPUT--]] 
 
 		elseif a == '-d' or a == '--debug' then
 			D.activate() --[[SOL OUTPUT--]] 

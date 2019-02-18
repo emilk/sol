@@ -244,27 +244,31 @@ local function analyze(ast
 	end
 	--]]
 
-
+	local function starts_with_underscore(str)
+		return str:sub(1, 1) == "_" --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
 
 	local function discard_scope(scope)
 		for _,v in scope:locals_iterator() do
 			if v.name ~= '_' and v.name ~= '...' then -- TODO: how do we silence ... non-use?
 				local var_type = v.var_type or 'Variable' --[[SOL OUTPUT--]] 
-				if v.num_reads == 0 then
-					if v.type and v.type.tag == 'function' then
-						print( report('WARNING', v.where, "Unused function %q", v.name) ) --[[SOL OUTPUT--]] 
-					else
-						local var_type_to_warning_name = {
-							['Argument']      = 'unused-parameter';
-							['Loop variable'] = 'unused-loop-variable';
-						} --[[SOL OUTPUT--]] 
-						local issue_name = var_type_to_warning_name[var_type] or 'unused-variable' --[[SOL OUTPUT--]] 
+				if not starts_with_underscore(v.name) then
+					if v.num_reads == 0 then
+						if v.type and v.type.tag == 'function' then
+							print( report('WARNING', v.where, "Unused function %q", v.name) ) --[[SOL OUTPUT--]] 
+						else
+							local var_type_to_warning_name = {
+								['Argument']      = 'unused-parameter';
+								['Loop variable'] = 'unused-loop-variable';
+							} --[[SOL OUTPUT--]] 
+							local issue_name = var_type_to_warning_name[var_type] or 'unused-variable' --[[SOL OUTPUT--]] 
 
-						inform_at(issue_name, v.where, "%s %q is never read (name it _ to silence this warning)", var_type, v.name) --[[SOL OUTPUT--]] 
+							inform_at(issue_name, v.where, "%s %q is never read (prefix it with _ to silence this warning)", var_type, v.name) --[[SOL OUTPUT--]] 
+						end --[[SOL OUTPUT--]] 
 					end --[[SOL OUTPUT--]] 
-				end --[[SOL OUTPUT--]] 
-				if v.num_writes == 0 then
-					inform_at('unassigned-variable', v.where, "%s %q is never written to (name it _ to silence this warning)", var_type, v.name) --[[SOL OUTPUT--]] 
+					if v.num_writes == 0 then
+						inform_at('unassigned-variable', v.where, "%s %q is never written to (prefix it with _ to silence this warning)", var_type, v.name) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 				if v.num_writes == 1 and not v.is_constant then
 					if v.is_global or scope:is_module_level() then

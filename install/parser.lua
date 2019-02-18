@@ -629,7 +629,7 @@ function P
 		elseif tok:is('Ident') or tok:peek().data == 'class' then
 			return true, parse_id_expr() --[[SOL OUTPUT--]] 
 		else
-			return false, report_error("primary expression expected") --[[SOL OUTPUT--]] 
+			return false, report_error("primary expression expected, got '%s'", tok:peek().data) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
 
@@ -647,7 +647,7 @@ function P
 
 			if tok:is_symbol('.') or
 				   (tok:is_symbol(':') and tok:peek().leading_white=="")
-		   then
+		    then
 				local symb = tok:get(token_list).data --[[SOL OUTPUT--]] 
 				if not tok:is('Ident') then
 					return false, report_error("<ident> expected.") --[[SOL OUTPUT--]] 

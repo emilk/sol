@@ -54,9 +54,8 @@ local function output(ast, filename, strip_white_space)
 		line = 1,
 
 		append_str = function(self, str)
-			local nl = count_line_breaks(str) --[[SOL OUTPUT--]] 
-			self.line = self . line + ( nl ) --[[SOL OUTPUT--]] 
 			self.rope [ # self . rope + 1 ] = str --[[SOL OUTPUT--]] 
+			self.line = self . line + ( count_line_breaks(str) ) --[[SOL OUTPUT--]] 
 		end,
 
 		append_token = function(self, token)
@@ -66,17 +65,20 @@ local function output(ast, filename, strip_white_space)
 
 			if strip_white_space then
 				self.rope [ # self . rope + 1 ] = str --[[SOL OUTPUT--]] 
+				self.line = self . line + ( count_line_breaks(str) ) --[[SOL OUTPUT--]] 
 			else
-				local nl = count_line_breaks(str) --[[SOL OUTPUT--]] 
+				local lines_in_str = count_line_breaks(str) --[[SOL OUTPUT--]] 
 
-				while self.line + nl < token.line do
-					--print("Inserting extra line")
-					self.rope [ # self . rope + 1 ] = '\n' --[[SOL OUTPUT--]] 
-					self.line = self . line + ( 1 ) --[[SOL OUTPUT--]] 
+				if g_align_lines then
+					while self.line + lines_in_str < token.line do
+						--print("Inserting extra line")
+						self.rope [ # self . rope + 1 ] = '\n' --[[SOL OUTPUT--]] 
+						self.line = self . line + ( 1 ) --[[SOL OUTPUT--]] 
+					end --[[SOL OUTPUT--]] 
 				end --[[SOL OUTPUT--]] 
 
-				self.line = self . line + ( nl ) --[[SOL OUTPUT--]] 
 				self.rope [ # self . rope + 1 ] = str --[[SOL OUTPUT--]] 
+				self.line = self . line + ( lines_in_str ) --[[SOL OUTPUT--]] 
 			end --[[SOL OUTPUT--]] 
 		end,
 
@@ -502,8 +504,10 @@ local function output(ast, filename, strip_white_space)
 
 		t:on_end() --[[SOL OUTPUT--]] 
 
-		-- Ensure the lua code is easily spotted as something you shouldn't modify:
-		out:append_str(" --[[SOL OUTPUT--]] ") --[[SOL OUTPUT--]] 
+		if g_warn_output then
+			-- Ensure the lua code is easily spotted as something you shouldn't modify:
+			out:append_str(" --[[SOL OUTPUT--]] ") --[[SOL OUTPUT--]] 
+		end --[[SOL OUTPUT--]] 
 
 		debug_printf("/format_statment") --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 

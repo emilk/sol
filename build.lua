@@ -7,87 +7,87 @@ local interpreter = ('"'..arg[-1]..'"'  or  'lua')
 local PLATFORM = os.getenv("windir") and "win" or "unix"
 
 function os_execute(cmd)
-	local result = os.execute(cmd)
-	return result == true or result == 0
+    local result = os.execute(cmd)
+    return result == true or result == 0
 end
 
 function file_exists(path)
-	local f = io.open(path, "rb")
-	if f then
-		f:close()
-		return true
-	else
-		return false
-	end
+    local f = io.open(path, "rb")
+    if f then
+        f:close()
+        return true
+    else
+        return false
+    end
 end
 
 function write_protect(path)
-	if PLATFORM == "unix" then
-		return os_execute("chmod -w " .. path)
-	else
-		return os_execute("attrib +R " .. path)
-	end
+    if PLATFORM == "unix" then
+        return os_execute("chmod -w " .. path)
+    else
+        return os_execute("attrib +R " .. path)
+    end
 end
 
 function write_unprotect(path)
-	if file_exists(path) then
-		if PLATFORM == "unix" then
-			return os_execute("chmod +w " .. path)
-		else
-			return os_execute("attrib -R " .. path)
-		end
-	end
+    if file_exists(path) then
+        if PLATFORM == "unix" then
+            return os_execute("chmod +w " .. path)
+        else
+            return os_execute("attrib -R " .. path)
+        end
+    end
 end
 
 
 local function run_cmd(cmd)
-	print(string.format("Executing '%s'...", cmd))
-	if not os_execute(cmd) then
-		print(string.format("Command '%s' failed", cmd))
-		os.exit(1)
-	end
+    print(string.format("Executing '%s'...", cmd))
+    if not os_execute(cmd) then
+        print(string.format("Command '%s' failed", cmd))
+        os.exit(1)
+    end
 end
 
 local function run_lua(cmd)
-	return run_cmd(interpreter..' '..cmd)
+    return run_cmd(interpreter..' '..cmd)
 end
 
 -- From http://kracekumar.com/post/53685731325/cp-command-implementation-and-benchmark-in-python-go
 function cp(source, dest)
-	print(string.format("Copying files from '%s' to '%s'", source, dest))
-	for filename in lfs.dir(source) do
-		if filename ~= '.' and filename ~= '..' then
-			local source_path = source .. '/' .. filename
-			local attr = lfs.attributes(source_path)
-			--print(attr.mode, path)
-			if type(attr) == "table" and attr.mode == "directory" then
-				local dest_path = dest .. "/" .. filename
-				lfs.mkdir(dest_path)
-				cp(source_path, dest_path)
-			else
-				local f = io.open(source_path, "rb")
-				local content = f:read("*all")
-				f:close()
+    print(string.format("Copying files from '%s' to '%s'", source, dest))
+    for filename in lfs.dir(source) do
+        if filename ~= '.' and filename ~= '..' then
+            local source_path = source .. '/' .. filename
+            local attr = lfs.attributes(source_path)
+            --print(attr.mode, path)
+            if type(attr) == "table" and attr.mode == "directory" then
+                local dest_path = dest .. "/" .. filename
+                lfs.mkdir(dest_path)
+                cp(source_path, dest_path)
+            else
+                local f = io.open(source_path, "rb")
+                local content = f:read("*all")
+                f:close()
 
-				local out_path = dest .. "/" .. filename
-				write_unprotect(out_path)
-				local w = io.open(out_path, "wb")
-				if not w then
-					error("Failed to write to " .. out_path)
-				end
-				w:write(content)
-				w:close()
-				write_protect(out_path)  -- Ensure the user doesn't accidently modify a .lua file instead of a .sol file!
-			end
-		end
-	end
+                local out_path = dest .. "/" .. filename
+                write_unprotect(out_path)
+                local w = io.open(out_path, "wb")
+                if not w then
+                    error("Failed to write to " .. out_path)
+                end
+                w:write(content)
+                w:close()
+                write_protect(out_path)  -- Ensure the user doesn't accidently modify a .lua file instead of a .sol file!
+            end
+        end
+    end
 end
 
 
 -- Allow user to pass in things like -s (spam) and -d (debug), -e0  (force build)
-local solc_args = ''
+local solc_args = '--ugly --align-lines'
 for _,a in ipairs(arg) do
-	solc_args = solc_args .. ' ' .. a
+    solc_args = solc_args .. ' ' .. a
 end
 
 
