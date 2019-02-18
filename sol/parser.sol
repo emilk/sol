@@ -647,7 +647,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 
 			if tok:is_symbol('.') or
 				   (tok:is_symbol(':') and tok:peek().leading_white=="")
-		   then
+		    then
 				local symb = tok:get(token_list).data
 				if not tok:is('Ident') then
 					return false, report_error("<ident> expected.")
