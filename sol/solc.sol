@@ -383,8 +383,12 @@ local function output_module(info: parse_info, path_in: string, path_out: string
 	if info.ast and path_out then
 		U.write_unprotect(path_out) -- Ensure we can write over it
 
-		--local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. " on " .. os.date("%Y %b %d  %X") .. ' --]] '
-		local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] '
+		local out_text = ""
+		if g_warn_output then
+			--local out_text = '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. " on " .. os.date("%Y %b %d  %X") .. ' --]] '
+			out_text ..= '--[[ DO NOT MODIFY - COMPILED FROM ' .. path_in .. ' --]] '
+		end
+
 		out_text ..= output(info.ast, path_in)
 		if not U.write_file(path_out, out_text) then
 			printf_err("Failed to open %q for writing", path_out)

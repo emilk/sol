@@ -54,9 +54,8 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 		line = 1,
 
 		append_str = function(self, str: string)
-			local nl = count_line_breaks(str)
-			self.line += nl
 			self.rope #= str
+			self.line += count_line_breaks(str)
 		end,
 
 		append_token = function(self, token)
@@ -66,17 +65,20 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 
 			if strip_white_space then
 				self.rope #= str
+				self.line += count_line_breaks(str)
 			else
-				local nl = count_line_breaks(str)
+				local lines_in_str = count_line_breaks(str)
 
-				while self.line + nl < token.line do
-					--print("Inserting extra line")
-					self.rope #= '\n'
-					self.line += 1
+				if g_align_lines then
+					while self.line + lines_in_str < token.line do
+						--print("Inserting extra line")
+						self.rope #= '\n'
+						self.line += 1
+					end
 				end
 
-				self.line += nl
 				self.rope #= str
+				self.line += lines_in_str
 			end
 		end,
 
@@ -502,8 +504,10 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 
 		t:on_end()
 
-		-- Ensure the lua code is easily spotted as something you shouldn't modify:
-		out:append_str(" --[[SOL OUTPUT--]] ")
+		if g_warn_output then
+			-- Ensure the lua code is easily spotted as something you shouldn't modify:
+			out:append_str(" --[[SOL OUTPUT--]] ")
+		end
 
 		debug_printf("/format_statment")
 	end
