@@ -629,7 +629,7 @@ function P.parse_sol(src: string, tok, filename: string?, settings, module_scope
 		elseif tok:is('Ident') or tok:peek().data == 'class' then
 			return true, parse_id_expr()
 		else
-			return false, report_error("primary expression expected")
+			return false, report_error("primary expression expected, got '%s'", tok:peek().data)
 		end
 	end
 
