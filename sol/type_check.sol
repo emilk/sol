@@ -244,27 +244,31 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 	--]]
 
-
+	local function starts_with_underscore(str: string) -> bool
+		return str:sub(1, 1) == "_"
+	end
 
 	local function discard_scope(scope: Scope)
 		for _,v in scope:locals_iterator() do
 			if v.name ~= '_' and v.name ~= '...' then -- TODO: how do we silence ... non-use?
 				local var_type = v.var_type or 'Variable'
-				if v.num_reads == 0 then
-					if v.type and v.type.tag == 'function' then
-						print( report('WARNING', v.where, "Unused function %q", v.name) )
-					else
-						local var_type_to_warning_name = {
-							['Argument']      = 'unused-parameter';
-							['Loop variable'] = 'unused-loop-variable';
-						}
-						local issue_name = var_type_to_warning_name[var_type] or 'unused-variable'
+				if not starts_with_underscore(v.name) then
+					if v.num_reads == 0 then
+						if v.type and v.type.tag == 'function' then
+							print( report('WARNING', v.where, "Unused function %q", v.name) )
+						else
+							local var_type_to_warning_name = {
+								['Argument']      = 'unused-parameter';
+								['Loop variable'] = 'unused-loop-variable';
+							}
+							local issue_name = var_type_to_warning_name[var_type] or 'unused-variable'
 
-						inform_at(issue_name, v.where, "%s %q is never read (name it _ to silence this warning)", var_type, v.name)
+							inform_at(issue_name, v.where, "%s %q is never read (prefix it with _ to silence this warning)", var_type, v.name)
+						end
 					end
-				end
-				if v.num_writes == 0 then
-					inform_at('unassigned-variable', v.where, "%s %q is never written to (name it _ to silence this warning)", var_type, v.name)
+					if v.num_writes == 0 then
+						inform_at('unassigned-variable', v.where, "%s %q is never written to (prefix it with _ to silence this warning)", var_type, v.name)
+					end
 				end
 				if v.num_writes == 1 and not v.is_constant then
 					if v.is_global or scope:is_module_level() then
