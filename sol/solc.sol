@@ -500,12 +500,20 @@ local function print_help()
 			-e0
 				Ignore all errors and push through
 
+			--align-lines
+				Make sure the line numbers on the input match that of the output.
+				If you Lua code has an error in it this will help you to find the error in the .sol file.
+
 			--check input_file_path
 				Will read from stdin as if it was a file at the given path.
 				Will look for local includes using that path.
 
 			--profile
 				Will profile solc to find slow parts of compilation process
+
+			--ugly
+				Add ugly "SOL OUTPUT" warning texts to avoid
+				people accidentally editing the .lua file instead of the .sol file.
 
 			-d  or  --debug
 				For debugging solc compiler
@@ -578,10 +586,16 @@ else
 		elseif a == '-e0' then
 			g_ignore_errors = true
 
+		elseif a == '--align-lines' then
+			g_align_lines = true
+
 		elseif a == '--profile' then
 			g_profiler = require 'ProFi'
 			print('Profiling (this may take a while)...')
 			g_profiler:start()
+
+		elseif a == '--ugly' then
+			g_warn_output = true
 
 		elseif a == '-d' or a == '--debug' then
 			D.activate()
