@@ -249,7 +249,7 @@ local function analyze(ast, filename: string, on_require: OnRequireT?, settings)
 	end
 
 	local function discard_scope(scope: Scope)
-		for _,v in scope:locals_iterator() do
+		for _,v in ipairs(scope:sorted_locals()) do
 			if v.name ~= '_' and v.name ~= '...' then -- TODO: how do we silence ... non-use?
 				local var_type = v.var_type or 'Variable'
 				if not starts_with_underscore(v.name) then

@@ -189,6 +189,16 @@ function Scope:locals_iterator() -> (function(...) -> string,Variable)
 end
 
 
+function Scope:sorted_locals() -> [Variable]
+	local variables = {} : [Variable]
+	for _, v in pairs(self.locals) do
+		variables #= v
+	end
+	table.sort(variables, function(a,b) return a.where < b.where end)
+	return variables
+end
+
+
 -- Will only check local scope
 function Scope:get_scoped(name: string, options: VarOptions?) -> Variable?
 	var v = self.locals[name]

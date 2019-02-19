@@ -249,7 +249,7 @@ local function analyze(ast
 	end --[[SOL OUTPUT--]] 
 
 	local function discard_scope(scope)
-		for _,v in scope:locals_iterator() do
+		for _,v in ipairs(scope:sorted_locals()) do
 			if v.name ~= '_' and v.name ~= '...' then -- TODO: how do we silence ... non-use?
 				local var_type = v.var_type or 'Variable' --[[SOL OUTPUT--]] 
 				if not starts_with_underscore(v.name) then

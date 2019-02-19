@@ -189,6 +189,16 @@ function Scope:locals_iterator()
 end --[[SOL OUTPUT--]] 
 
 
+function Scope:sorted_locals()
+	local variables = {} --[[SOL OUTPUT--]] 
+	for _, v in pairs(self.locals) do
+		variables [ # variables + 1 ] = v --[[SOL OUTPUT--]] 
+	end --[[SOL OUTPUT--]] 
+	table.sort(variables, function(a,b) return a.where < b.where --[[SOL OUTPUT--]]  end) --[[SOL OUTPUT--]] 
+	return variables --[[SOL OUTPUT--]] 
+end --[[SOL OUTPUT--]] 
+
+
 -- Will only check local scope
 function Scope:get_scoped(name, options)
 	local v = self.locals[name] --[[SOL OUTPUT--]] 
