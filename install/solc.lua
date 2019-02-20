@@ -64,9 +64,9 @@ local printf_err = U.printf_err --[[SOL OUTPUT--]]
 ------------------------------------------------
 
 local ast_type_count = {} --[[SOL OUTPUT--]] 
-local has_stats_for  = {} --[[SOL OUTPUT--]]  local 
+local has_stats_for  = {} --[[SOL OUTPUT--]] 
 
-function collect_stats(ast)
+local function collect_stats(ast)
 	if type(ast) == 'table' and not has_stats_for[ast] then
 		has_stats_for[ast] = true --[[SOL OUTPUT--]] 
 
@@ -78,9 +78,9 @@ function collect_stats(ast)
 			collect_stats(v) --[[SOL OUTPUT--]] 
 		end --[[SOL OUTPUT--]] 
 	end --[[SOL OUTPUT--]] 
-end --[[SOL OUTPUT--]]  local 
+end --[[SOL OUTPUT--]] 
 
-function print_stats()
+local function print_stats()
 	U.printf("Ast type popularity:") --[[SOL OUTPUT--]] 
 	U.print_sorted_stats(ast_type_count) --[[SOL OUTPUT--]] 
 end --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]]  --[[SOL OUTPUT--]] 

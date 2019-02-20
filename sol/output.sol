@@ -116,8 +116,7 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 	local function tokens(expr)
 		local it = 1
 
-		local t = {
-		}
+		local t = {}
 
 		function t:append_next_token(str: string?)
 			--[[
@@ -143,6 +142,12 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 		function t:append_token(token: L.Token)
 			out:append_token( token )
 			it +=  1
+		end
+		function t:append_white_for_next_token()
+			local tok = expr.tokens[it]
+			if tok then
+				out:append_white( tok )
+			end
 		end
 		function t:append_white()
 			local tok = expr.tokens[it]
@@ -467,7 +472,9 @@ local function output(ast, filename: string, strip_white_space : bool?) -> strin
 			elseif stat.scoping == 'global' then
 				t:skip_next_token()
 			elseif not stat.is_aggregate then
-				t:inject_str(' local ') -- turn global function into local
+				-- Move forward before inserting local/global etc:
+				t:append_white_for_next_token()
+				t:inject_str('local') -- turn global function into local
 			end
 			t:append_next_token( "function" )
 			format_expr( stat.name_expr )
