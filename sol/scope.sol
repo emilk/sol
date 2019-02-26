@@ -379,15 +379,6 @@ function Scope.create_global_scope() -> Scope
 		name           = "setmetatable",
 	}
 
-	local type = s:create_global( 'type', where )
-	type.type = {
-		tag            = 'function',
-		args           = { {        type = T.Any } },
-		rets           = { T.String },
-		intrinsic_name = "type",
-		name           = "type",
-	}
-
 
 	var is_local = true
 	--s:declare_type( 'void',    T.Void ) -- Not a valid type, only allowed as a typelist

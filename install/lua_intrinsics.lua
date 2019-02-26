@@ -1,4 +1,6 @@
 --[[ DO NOT MODIFY - COMPILED FROM sol/lua_intrinsics.sol --]] local INTRINSICS = [[
+	global type = extern : function(t: any) -> "nil" or "number" or "string" or "boolean" or "table" or "function" or "thread" or "userdata"
+
 	global unpack = extern : function(t: [any]) -> ...
 
 	global coroutine = {

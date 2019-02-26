@@ -379,15 +379,6 @@ function Scope.create_global_scope()
 		name           = "setmetatable",
 	} --[[SOL OUTPUT--]] 
 
-	local type = s:create_global( 'type', where ) --[[SOL OUTPUT--]] 
-	type.type = {
-		tag            = 'function',
-		args           = { {        type = T.Any } },
-		rets           = { T.String },
-		intrinsic_name = "type",
-		name           = "type",
-	} --[[SOL OUTPUT--]] 
-
 
 	local is_local = true --[[SOL OUTPUT--]] 
 	--s:declare_type( 'void',    T.Void ) -- Not a valid type, only allowed as a typelist
