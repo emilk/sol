@@ -307,18 +307,14 @@ function Scope.create_global_scope()
 	} --[[SOL OUTPUT--]] 
 
 	local functions = {
-		'assert',
-		'collectgarbage',
-		'dofile',
-		'error',
 		'gcinfo', 'getfenv', 'getmetatable',
 		'load', 'loadfile', 'loadstring',
 		'module',
 		'newproxy', 'next',
-		'pcall', 'print',
+		'pcall',
 		'rawequal', 'rawget', 'rawset',
 		'select', 'setfenv',
-		'tonumber', 'tostring', 'xpcall',
+		'xpcall',
 	} --[[SOL OUTPUT--]] 
 
 	for _,name in ipairs(tables) do

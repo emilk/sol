@@ -307,18 +307,14 @@ function Scope.create_global_scope() -> Scope
 	}
 
 	var functions = {
-		'assert',
-		'collectgarbage',
-		'dofile',
-		'error',
 		'gcinfo', 'getfenv', 'getmetatable',
 		'load', 'loadfile', 'loadstring',
 		'module',
 		'newproxy', 'next',
-		'pcall', 'print',
+		'pcall',
 		'rawequal', 'rawget', 'rawset',
 		'select', 'setfenv',
-		'tonumber', 'tostring', 'xpcall',
+		'xpcall',
 	}
 
 	for _,name in ipairs(tables) do

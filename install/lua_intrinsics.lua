@@ -1,7 +1,13 @@
 --[[ DO NOT MODIFY - COMPILED FROM sol/lua_intrinsics.sol --]] local INTRINSICS = [[
-	global type = extern : function(t: any) -> "nil" or "number" or "string" or "boolean" or "table" or "function" or "thread" or "userdata"
-
-	global unpack = extern : function(t: [any]) -> ...
+	global assert = extern : function(any, string?, ...) -> ...
+	global collectgarbage = extern : function("collect" or "stop" or "restart" or "count" or "step" or "setpause" or "setstepmul" or "isrunning", any?) -> ...
+	global dofile = extern : function(string?) -> ...
+	global error = extern : function(any, int?) -> ... -- TODO: return never-type
+	global print = extern : function(...) -> void
+	global tonumber = extern : function(any, uint?) -> number?
+	global tostring = extern : function(any, uint?) -> string
+	global type = extern : function(any) -> "nil" or "number" or "string" or "boolean" or "table" or "function" or "thread" or "userdata"
+	global unpack = extern : function([any]) -> ...
 
 	global coroutine = {
 		yield = extern : function(...) -> ...;

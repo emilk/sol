@@ -1,2 +1,2 @@
-local _A = print()  -- Discard result
-local foo = _A      -- OK
+local _A = unpack({}) -- Discard result
+local foo = _A        -- OK
